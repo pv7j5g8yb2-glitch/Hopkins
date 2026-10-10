@@ -23,6 +23,7 @@
     color: var(--ink);
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     padding: 24px 16px;
     min-height: 100vh;
     background:
@@ -602,6 +603,10 @@
       languageScreen.classList.add("hidden");
       if (data.status === "completed") {
         renderDone(false);
+        // If they already answered the waitlist question (yes or no) before leaving, show
+        // that same closed, confirmed state again instead of a bare "Thanks" with nothing
+        // else on it, which reads like their submission might not have actually gone through.
+        if (data.wantsUpdates) renderFinalThanks();
       } else {
         renderQuestion(data.currentQuestion);
       }

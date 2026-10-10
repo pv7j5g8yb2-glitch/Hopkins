@@ -41,18 +41,29 @@ function buildTranscriptText(niche, transcript) {
 // Never throws: a failed or missing summary just means the waitlist question falls back
 // to a generic phrasing client-side, the same resilience every other AI-dependent piece
 // of this survey already relies on. Returns { en, localized } with both null on failure.
+// This runs exactly once per response, at the moment it completes, with no second chance
+// later the way a cached translation bundle gets one on its next request, so a single
+// transient failure here (a rate limit, a dropped connection) would otherwise show as a
+// permanently generic waitlist question for that one respondent. One retry is worth it.
 export async function summarizePainPoint({ segment, transcript, language }) {
   if (translateProvider === "none" || !transcript.length) return { en: null, localized: null };
 
-  try {
-    const out = await callProvider(SYSTEM_PROMPT, buildTranscriptText(segment.niche, transcript), { json: false });
-    const phrase = out?.trim();
-    if (!phrase || /^none\.?$/i.test(phrase)) return { en: null, localized: null };
-
-    const localized = await translateFromEnglish(phrase, language);
-    return { en: phrase, localized };
-  } catch (err) {
-    console.error("Pain-point summarization failed, the waitlist question will use a generic fallback:", err.message);
-    return { en: null, localized: null };
+  const transcriptText = buildTranscriptText(segment.niche, transcript);
+  let phrase = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const out = await callProvider(SYSTEM_PROMPT, transcriptText, { json: false });
+      phrase = out?.trim() || null;
+      break;
+    } catch (err) {
+      console.error(`Pain-point summarization failed on attempt ${attempt}:`, err.message);
+      if (attempt === 2) return { en: null, localized: null };
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
   }
+
+  if (!phrase || /^none\.?$/i.test(phrase)) return { en: null, localized: null };
+
+  const localized = await translateFromEnglish(phrase, language);
+  return { en: phrase, localized };
 }

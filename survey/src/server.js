@@ -102,6 +102,7 @@ app.get("/", async (request, reply) => {
     color: var(--ink);
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     padding: 60px 16px;
     min-height: 100vh;
     background:
@@ -221,6 +222,7 @@ app.get("/api/s/:slug/response/:responseId", async (request, reply) => {
     status: response.status,
     respondentName: response.respondent_name,
     respondentLanguage: response.respondent_language,
+    wantsUpdates: response.wants_updates,
     cap: QUESTION_CAP,
     currentQuestion:
       response.status === "in_progress"
