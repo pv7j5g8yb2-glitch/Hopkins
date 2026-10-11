@@ -138,6 +138,8 @@ app.get("/", async (request, reply) => {
      visibly higher opacity than this card, the same stepped-shade layering the reference
      uses to read as distinct nested glass without needing any added color. */
   .card {
+    position: relative;
+    overflow: hidden;
     width: 100%;
     max-width: 420px;
     height: fit-content;
@@ -151,6 +153,29 @@ app.get("/", async (request, reply) => {
     border: 1px solid var(--glass-border);
     box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 10px 32px -20px rgba(20,20,30,0.2);
     animation: materialize 380ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  /* The page background's color blobs sit at fixed viewport positions, so whether a
+     button inside the card lands over one is luck. This covers the card's own entire
+     area with the same kind of texture, scaled to the card instead of the viewport, so
+     every button inside always has something to blur behind it. A 3x3 grid of large,
+     heavily overlapping blobs (each sized well past the spacing between grid points) so
+     there is no gap anywhere in the card, not just mostly-covered with holes between
+     discrete spots. */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: -15%;
+    z-index: -1;
+    background:
+      radial-gradient(60% 60% at 15% 15%, rgba(255, 150, 100, 0.5), transparent 75%),
+      radial-gradient(60% 60% at 50% 12%, rgba(255, 210, 130, 0.45), transparent 75%),
+      radial-gradient(60% 60% at 85% 15%, rgba(130, 160, 255, 0.5), transparent 75%),
+      radial-gradient(60% 60% at 12% 50%, rgba(130, 220, 180, 0.45), transparent 75%),
+      radial-gradient(60% 60% at 50% 50%, rgba(180, 140, 255, 0.4), transparent 75%),
+      radial-gradient(60% 60% at 88% 50%, rgba(255, 190, 140, 0.45), transparent 75%),
+      radial-gradient(60% 60% at 15% 85%, rgba(130, 200, 255, 0.5), transparent 75%),
+      radial-gradient(60% 60% at 50% 88%, rgba(255, 170, 150, 0.4), transparent 75%),
+      radial-gradient(60% 60% at 85% 85%, rgba(150, 215, 190, 0.45), transparent 75%);
   }
   h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 10px; }
   p.intro { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
@@ -206,10 +231,12 @@ app.get("/", async (request, reply) => {
   @media (prefers-reduced-transparency: reduce) {
     body { background: #f5f4f1; }
     .card { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(0,0,0,0.1); }
+    .card::before { display: none; }
     ul.links a { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
   @media (prefers-contrast: more) {
     .card { background: #fff; border: 1px solid #000; box-shadow: none; }
+    .card::before { display: none; }
     ul.links a { background: #fff; border: 1px solid #000; }
   }
 </style></head>
