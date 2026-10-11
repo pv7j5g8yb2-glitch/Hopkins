@@ -47,7 +47,8 @@
   }
   .progress { font-size: 13px; letter-spacing: 0.01em; color: var(--ink-soft); margin-bottom: 10px; font-weight: 500; }
   h1 { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; margin: 0 0 12px; }
-  p.intro { color: var(--ink-soft); line-height: 1.55; font-size: 15px; }
+  p.intro { color: var(--ink-soft); line-height: 1.55; font-size: 15px; margin: 0 0 14px; }
+  p.intro:last-of-type { margin-bottom: 18px; }
   textarea, input[type="text"], input[type="tel"], input[type="email"], select {
     width: 100%;
     font-size: 16px;
@@ -487,9 +488,12 @@
       return;
     }
     cap = (bundle && bundle.cap) || cap;
+    const introParagraphs = (Array.isArray(seg.intro) ? seg.intro : [seg.intro])
+      .map((p) => '<p class="intro">' + p + "</p>")
+      .join("");
     introScreen.innerHTML =
-      '<p class="progress">' + t("before_you_start") + "</p><h1>" + seg.title + '</h1><p class="intro">' + seg.intro +
-      "</p><button id=\"start-btn\">" + t("start_button") + "</button>";
+      '<p class="progress">' + t("before_you_start") + "</p><h1>" + seg.title + "</h1>" + introParagraphs +
+      "<button id=\"start-btn\">" + t("start_button") + "</button>";
     introScreen.classList.remove("hidden");
     document.getElementById("start-btn").addEventListener("click", () => {
       introScreen.classList.add("hidden");

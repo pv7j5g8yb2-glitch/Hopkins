@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { get, run } from "./db.js";
 import { segments } from "./segments.js";
 import { translateBundle } from "./translate.js";
@@ -31,8 +32,8 @@ export const SOURCE_BUNDLE = {
     done_heading_default: "Thanks, genuinely.",
     done_heading_named: "Thanks, {name}.",
     done_body: "That’s everything. This goes straight into research, nothing else happens with it.",
-    waitlist_question: "If we ever launch a product that solves {problem}, would you like us to let you know?",
-    problem_fallback: "this",
+    waitlist_question: "If we ever figure out something that solves your {problem}, would you like us to let you know?",
+    problem_fallback: "problem",
     waitlist_yes_button: "Yes",
     waitlist_no_button: "No",
     channel_question: "What’s the best way to reach you?",
@@ -55,16 +56,13 @@ export const SOURCE_BUNDLE = {
   ),
 };
 
-// True once every key SOURCE_BUNDLE currently defines is present in a cached bundle. A
-// cached bundle predating a later addition to SOURCE_BUNDLE.ui (a new button, a new
-// screen) is missing that key, and would otherwise silently serve English for just that
-// one string forever, the cache never knowing SOURCE_BUNDLE grew. Treating that as stale
-// and regenerating is the only way a cached bundle keeps up with new UI without a manual
-// cache-clearing step every time a string gets added.
-function isStale(parsed) {
-  if (!parsed || !parsed.ui || !parsed.segments) return true;
-  return Object.keys(SOURCE_BUNDLE.ui).some((key) => !(key in parsed.ui));
-}
+// A hash of the whole source bundle, computed once at startup. Cached translations are
+// keyed to this: any change to SOURCE_BUNDLE, a new string, a reworded one, invalidates
+// every cached language at once. A key-presence check alone (the previous approach) only
+// caught new keys, not a key whose English wording changed, which would otherwise leave
+// every non-English respondent reading stale copy indefinitely with no sign anything was
+// wrong.
+const SOURCE_HASH = createHash("sha256").update(JSON.stringify(SOURCE_BUNDLE)).digest("hex");
 
 // Static content (UI chrome plus each niche's title, intro, and baseline questions) is
 // translated once per language and cached, rather than re-translated on every request:
@@ -73,11 +71,11 @@ function isStale(parsed) {
 export async function getBundle(language) {
   if (!language || language === "English") return SOURCE_BUNDLE;
 
-  const cached = await get(`SELECT bundle FROM translation_bundles WHERE language = ?`, [language]);
-  if (cached) {
+  const cached = await get(`SELECT bundle, source_hash FROM translation_bundles WHERE language = ?`, [language]);
+  if (cached && cached.source_hash === SOURCE_HASH) {
     try {
       const parsed = JSON.parse(cached.bundle);
-      if (!isStale(parsed)) return parsed;
+      if (parsed && parsed.ui && parsed.segments) return parsed;
     } catch {
       // Fall through and regenerate if the cached row is somehow corrupt.
     }
@@ -105,11 +103,10 @@ export async function getBundle(language) {
   };
 
   try {
-    await run(`INSERT OR REPLACE INTO translation_bundles (language, bundle, created_at) VALUES (?, ?, ?)`, [
-      language,
-      JSON.stringify(merged),
-      new Date().toISOString(),
-    ]);
+    await run(
+      `INSERT OR REPLACE INTO translation_bundles (language, bundle, created_at, source_hash) VALUES (?, ?, ?, ?)`,
+      [language, JSON.stringify(merged), new Date().toISOString(), SOURCE_HASH]
+    );
   } catch (err) {
     console.error(`Failed to cache the ${language} bundle, it will be regenerated next request:`, err.message);
   }

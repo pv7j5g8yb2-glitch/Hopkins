@@ -21,14 +21,15 @@ Priority order:
 2. If no problem in the conversation has a clear value attached, use whichever problem the
    respondent actually spent the most of the conversation describing.
 
-Condense that one problem into a short, natural phrase of 3 to 8 words that fits
-grammatically into this exact sentence, filling the blank: "If we ever launch a product
-that solves ___, would you like us to let you know?" Use plain lowercase words, no
-trailing punctuation, no quotation marks, no the-respondent's-name, just the problem
-itself (for example: "late bank reconciliation every month", "slow after-hours enquiry
-follow-up"). Exception: keep acronyms and abbreviations in their normal written form
-even though everything else is lowercase, for example "manual AML compliance", "KYC
-document chasing", "VAT return prep", not "manual aml compliance".
+Condense that one problem into a short, natural phrase of 3 to 7 words that fits
+grammatically into this exact sentence, filling the blank: "If we ever figure out
+something that solves your ___, would you like us to let you know?" The phrase must end
+with the word "problem" itself, naming what the problem actually is before that word (for
+example: "late bank reconciliation problem", "slow after-hours enquiry follow-up
+problem"). Use plain lowercase words throughout, no trailing punctuation, no quotation
+marks, no the-respondent's-name. Exception: keep acronyms and abbreviations in their
+normal written form even though everything else is lowercase, for example "manual AML
+compliance problem", "KYC document chasing problem", not "manual aml compliance problem".
 
 If you genuinely cannot identify any usable problem from the conversation, respond with
 exactly: NONE

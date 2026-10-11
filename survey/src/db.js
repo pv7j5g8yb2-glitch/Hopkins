@@ -59,6 +59,7 @@ const migrations = [
   ["responses", "problem_summary_localized", "TEXT"],
   ["answers", "question_text_localized", "TEXT"],
   ["answers", "answer_text_original", "TEXT"],
+  ["translation_bundles", "source_hash", "TEXT"],
 ];
 for (const [table, column, type] of migrations) {
   try {
