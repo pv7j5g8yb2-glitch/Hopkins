@@ -224,13 +224,13 @@
     </div>
 
     <div id="role-screen" class="hidden screen">
-      <p class="progress">Almost there</p>
+      <p class="progress" id="role-progress">Almost there</p>
       <h1 id="role-heading">What best describes you?</h1>
       <div class="role-list">
-        <button class="role-btn" type="button" data-role="solo">Solo agent / independent</button>
-        <button class="role-btn" type="button" data-role="team">Agent on a team</button>
-        <button class="role-btn" type="button" data-role="broker">Broker / team lead / agency owner</button>
-        <button class="role-btn" type="button" data-role="other">Something else</button>
+        <button class="role-btn" id="role-btn-solo" type="button" data-role="solo">Solo agent / independent</button>
+        <button class="role-btn" id="role-btn-team" type="button" data-role="team">Agent on a team</button>
+        <button class="role-btn" id="role-btn-broker" type="button" data-role="broker">Broker / team lead / agency owner</button>
+        <button class="role-btn" id="role-btn-other" type="button" data-role="other">Something else</button>
       </div>
     </div>
 
@@ -474,6 +474,13 @@
   // yet). Called once, right after the bundle for that language is fetched, before any
   // of these screens are ever shown.
   function applyBundle() {
+    document.getElementById("role-progress").textContent = t("name_progress");
+    document.getElementById("role-heading").textContent = t("role_heading");
+    document.getElementById("role-btn-solo").textContent = t("role_option_solo");
+    document.getElementById("role-btn-team").textContent = t("role_option_team");
+    document.getElementById("role-btn-broker").textContent = t("role_option_broker");
+    document.getElementById("role-btn-other").textContent = t("role_option_other");
+
     document.getElementById("name-progress").textContent = t("name_progress");
     document.getElementById("name-heading").textContent = t("name_heading");
     nameInput.placeholder = t("name_placeholder");

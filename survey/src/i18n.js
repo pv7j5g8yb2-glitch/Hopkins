@@ -15,6 +15,11 @@ export const SOURCE_BUNDLE = {
   ui: {
     before_you_start: "Before you start",
     start_button: "Start",
+    role_heading: "What best describes you?",
+    role_option_solo: "Solo agent / independent",
+    role_option_team: "Agent on a team",
+    role_option_broker: "Broker / team lead / agency owner",
+    role_option_other: "Something else",
     name_progress: "Almost there",
     name_heading: "What should I call you?",
     name_placeholder: "First name",
