@@ -12,7 +12,7 @@
     color-scheme: light;
     --ink: #1a1a1a;
     --ink-soft: #52535a;
-    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-bg: rgba(255, 255, 255, 0.6);
     --glass-border: rgba(255, 255, 255, 0.55);
     --glass-edge: rgba(255, 255, 255, 0.95);
     --radius-lg: 28px;
@@ -30,9 +30,9 @@
     padding: 24px 16px;
     min-height: 100vh;
     background:
-      radial-gradient(1000px 600px at 8% -10%, rgba(255, 214, 196, 0.22), transparent 55%),
-      radial-gradient(900px 700px at 108% 10%, rgba(196, 214, 255, 0.2), transparent 55%),
-      radial-gradient(800px 600px at 50% 115%, rgba(205, 240, 222, 0.16), transparent 55%),
+      radial-gradient(1000px 600px at 8% -10%, rgba(255, 170, 120, 0.55), transparent 60%),
+      radial-gradient(900px 700px at 108% 10%, rgba(130, 165, 255, 0.5), transparent 60%),
+      radial-gradient(800px 600px at 50% 115%, rgba(130, 225, 180, 0.45), transparent 60%),
       #f5f4f1;
     background-attachment: fixed;
   }
@@ -97,19 +97,21 @@
   }
   button:active { transform: scale(0.97); box-shadow: 0 1px 1px rgba(0,0,0,0.12); }
   button:disabled { opacity: 0.5; cursor: default; transform: none; }
-  /* Glass treatment, scoped to the intro screen's "Start" button only. Deliberately flat:
-     a uniform translucent fill, blur, a thin even border, and the smallest shadow needed
-     to not vanish against the card. No gradient fill, no brighter top border, no inset
-     highlight/shadow pair, and no glossy overlay: that combination is what fakes a curved,
-     beveled 3D surface, a gummy game-UI button, not a thin pane of glass. The actual
-     in-survey progression buttons (Next, Save, Continue) deliberately keep the current
-     solid high-contrast look: this is decorative, not something completion rate should
-     ride on.
+  /* Glass treatment, scoped to the intro screen's "Start" button only. The second line in
+     each backdrop-filter pair is the real effect: an SVG feDisplacementMap actually warps
+     the pixels behind the button (not just blurs them), which is what makes it read as
+     glass bending light rather than a translucent rectangle. Browsers that can't parse a
+     url() filter reference inside backdrop-filter drop that whole declaration and keep the
+     plain blur above it, so this fails safe rather than breaking. The actual in-survey
+     progression buttons (Next, Save, Continue) deliberately keep the current solid
+     high-contrast look: this is decorative, not something completion rate should ride on.
   */
   #start-btn {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    background: linear-gradient(135deg, rgba(255,170,120,0.3), rgba(130,165,255,0.26) 55%, rgba(130,225,180,0.28));
+    backdrop-filter: blur(16px) saturate(170%);
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(170%);
+    -webkit-backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(170%);
     color: var(--ink);
     border: 1px solid rgba(255, 255, 255, 0.6);
     border-radius: 999px;
@@ -191,6 +193,13 @@
 </style>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="liquid-glass-filter" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="4" result="noise" />
+      <feGaussianBlur in="noise" stdDeviation="2" result="softNoise" />
+      <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="16" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
   <div class="card">
     <div id="language-screen" class="screen">
       <p class="progress">Almost there</p>

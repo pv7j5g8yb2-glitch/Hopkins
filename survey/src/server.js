@@ -98,7 +98,7 @@ app.get("/", async (request, reply) => {
     color-scheme: light;
     --ink: #1a1a1a;
     --ink-soft: #52535a;
-    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-bg: rgba(255, 255, 255, 0.6);
     --glass-border: rgba(255, 255, 255, 0.55);
     --glass-edge: rgba(255, 255, 255, 0.95);
     --radius-lg: 24px;
@@ -116,9 +116,9 @@ app.get("/", async (request, reply) => {
     padding: 60px 16px;
     min-height: 100vh;
     background:
-      radial-gradient(1000px 600px at 8% -10%, rgba(255, 214, 196, 0.22), transparent 55%),
-      radial-gradient(900px 700px at 108% 10%, rgba(196, 214, 255, 0.2), transparent 55%),
-      radial-gradient(800px 600px at 50% 115%, rgba(205, 240, 222, 0.16), transparent 55%),
+      radial-gradient(1000px 600px at 8% -10%, rgba(255, 170, 120, 0.55), transparent 60%),
+      radial-gradient(900px 700px at 108% 10%, rgba(130, 165, 255, 0.5), transparent 60%),
+      radial-gradient(800px 600px at 50% 115%, rgba(130, 225, 180, 0.45), transparent 60%),
       #f5f4f1;
     background-attachment: fixed;
   }
@@ -140,10 +140,15 @@ app.get("/", async (request, reply) => {
   p.intro { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
   ul.links { list-style: none; margin: 0; padding: 0; }
   ul.links li + li { margin-top: 10px; }
-  /* Same flat glass recipe as the survey intro screen's "Start" button: uniform
-     translucent fill, blur, a thin even border, minimal shadow. No gradient fill, no
-     brighter top border, no inset highlight/shadow pair, no glossy overlay: that's what
-     fakes a curved, beveled 3D surface, not a thin pane of glass. */
+  /* Same glass recipe as the survey intro screen's "Start" button: the second
+     backdrop-filter line is the real effect, an SVG feDisplacementMap actually warping
+     the pixels behind the pill rather than just blurring them, which is what makes it
+     read as glass bending light instead of a translucent rectangle. A browser that can't
+     parse a url() filter reference inside backdrop-filter drops that whole declaration
+     and keeps the plain blur above it, so this fails safe. The tinted gradient fill
+     exists so there's always visible color for the glass to carry even when the card
+     behind it is reading mostly white, rather than depending entirely on borrowed color
+     surviving two layers of blur from the page underneath. */
   ul.links a {
     display: flex;
     align-items: center;
@@ -151,9 +156,11 @@ app.get("/", async (request, reply) => {
     gap: 8px;
     padding: 15px 20px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    background: linear-gradient(135deg, rgba(255,170,120,0.3), rgba(130,165,255,0.26) 55%, rgba(130,225,180,0.28));
+    backdrop-filter: blur(16px) saturate(170%);
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(170%);
+    -webkit-backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(170%);
     border: 1px solid rgba(255, 255, 255, 0.6);
     color: var(--ink);
     text-decoration: none;
@@ -196,6 +203,13 @@ app.get("/", async (request, reply) => {
   }
 </style></head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="liquid-glass-filter" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="4" result="noise" />
+      <feGaussianBlur in="noise" stdDeviation="2" result="softNoise" />
+      <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="16" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
   <div class="card">
     <h1>Kirmi Studio</h1>
     <p class="intro">Quick industry survey. Are you a:</p>
