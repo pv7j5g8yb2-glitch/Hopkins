@@ -11,8 +11,9 @@ export const segments = {
   bookkeepers: {
     niche: "bookkeepers",
     intro: [
-      "Quick survey, nothing more, about how bookkeeping work actually goes for you day to day.",
-      "There’s nothing to sign up for and nothing being offered to you, this is pure research data.",
+      "Quick survey, nothing more, about how work goes for you day to day.",
+      "There’s nothing to sign up for and nothing being sold to you here, this is pure research.",
+      "Know that there are no right or wrong answers. The more specific you are with your answers, the more useful it is. Thanks.",
     ],
     baseline: [
       "What is the part of a typical client’s bookkeeping that eats the most of your time, and shouldn’t?",
@@ -25,8 +26,9 @@ export const segments = {
   "real-estate-agents": {
     niche: "real estate agents and brokers",
     intro: [
-      "Quick survey, nothing more, about how handling listings and enquiries actually goes for you day to day.",
-      "There’s nothing to sign up for and nothing being sold here, this is pure research data.",
+      "Quick survey, nothing more, about how work goes for you day to day.",
+      "There’s nothing to sign up for and nothing being sold to you here, this is pure research.",
+      "Know that there are no right or wrong answers. The more specific you are with your answers, the more useful it is. Thanks.",
     ],
     baseline: [
       "What is the part of handling a listing or a client enquiry that eats the most of your time, and shouldn’t?",
