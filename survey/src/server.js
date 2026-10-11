@@ -462,6 +462,16 @@ app.delete("/api/admin/responses/:id", { preHandler: requireAdmin }, async (requ
   return { ok: true };
 });
 
+// Wipes every response, not just the currently filtered/visible set: this exists for
+// clearing out test data before real respondents start, not for routine pruning. The
+// client only reaches this after its own confirm dialog, same two-step precaution as any
+// other irreversible delete.
+app.delete("/api/admin/responses", { preHandler: requireAdmin }, async () => {
+  await run(`DELETE FROM answers`);
+  await run(`DELETE FROM responses`);
+  return { ok: true };
+});
+
 app.get("/api/admin/export.csv", { preHandler: requireAdmin }, async (request, reply) => {
   const rows = await all(
     `SELECT r.id as response_id, r.segment_slug, r.started_at, r.finished_at, r.status,

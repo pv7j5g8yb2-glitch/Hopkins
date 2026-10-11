@@ -184,6 +184,63 @@
   .hidden { display: none; }
   .empty { color: var(--ink-soft); padding: 24px; text-align: center; }
 
+  /* Set apart from the rest of the page and placed at the very bottom, away from routine
+     actions like Export/Log out, so reaching it takes a deliberate scroll, not a stray
+     click near something used every day. */
+  .danger-zone { margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(176, 0, 32, 0.12); }
+  .danger-zone-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #b00020; margin-bottom: 8px; }
+  #delete-all-btn {
+    background: rgba(255, 232, 232, 0.85);
+    color: #b00020;
+    border: 1px solid rgba(176, 0, 32, 0.18);
+    box-shadow: none;
+  }
+  #delete-all-btn:active { background: rgba(255, 215, 215, 0.95); }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 24, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+    animation: fade-in 160ms ease both;
+  }
+  /* Same specificity as .hidden's display:none, so without this override, cascade
+     order alone would decide which wins; this pins "hidden wins" explicitly. */
+  .modal-overlay.hidden { display: none; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: var(--glass-bg);
+    backdrop-filter: blur(26px) saturate(180%);
+    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    border-radius: var(--radius-lg);
+    padding: 22px 20px;
+    border: 1px solid var(--glass-border);
+    border-top-color: var(--glass-edge);
+    box-shadow: 0 20px 60px -24px rgba(20,20,30,0.35), 0 2px 10px rgba(20,20,30,0.08);
+    max-width: 360px;
+    width: 100%;
+    animation: materialize 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  .modal p { font-size: 14px; color: var(--ink-soft); margin: 6px 0 16px; }
+  .modal .row { display: flex; gap: 8px; }
+  #modal-confirm-btn {
+    background: #b00020;
+    color: #fff;
+    border: 1px solid rgba(176, 0, 32, 0.4);
+  }
+  #modal-confirm-btn:active { background: #8e0019; }
+  #modal-cancel-btn {
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--ink);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: none;
+  }
+  #modal-cancel-btn:active { background: rgba(255, 255, 255, 0.95); }
+
   .panel, #detail { animation: materialize 380ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
   @keyframes materialize {
     from { opacity: 0; transform: translateY(6px) scale(0.98); }
@@ -191,23 +248,25 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .panel, #detail { animation: reduced-fade 160ms ease both; }
+    .panel, #detail, .modal { animation: reduced-fade 160ms ease both; }
+    .modal-overlay { animation: none; }
     @keyframes reduced-fade { from { opacity: 0; } to { opacity: 1; } }
     button, .btn, .card, .chip { transition: opacity 120ms ease; }
     button:active, .btn:active, .card:active, .chip:active { transform: none; }
   }
   @media (prefers-reduced-transparency: reduce) {
     body { background: #f5f4f1; }
-    .panel, #detail { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(0,0,0,0.1); }
+    .panel, #detail, .modal { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(0,0,0,0.1); }
     select, input[type="text"], #link-out { background: #fff; }
-    .actions a, .actions button, #close-detail { background: #fff; }
+    .actions a, .actions button, #close-detail, #modal-cancel-btn { background: #fff; }
     .card { background: #fff; }
   }
   @media (prefers-contrast: more) {
-    .panel, #detail, .card { background: #fff; border: 1px solid #000; box-shadow: none; }
+    .panel, #detail, .card, .modal { background: #fff; border: 1px solid #000; box-shadow: none; }
     button, .btn { background: #000; }
-    .actions a, .actions button, #close-detail { background: #fff; border: 1px solid #000; }
-    #delete-response-btn { background: #fff; border: 1px solid #b00020; }
+    .actions a, .actions button, #close-detail, #modal-cancel-btn { background: #fff; border: 1px solid #000; }
+    #delete-response-btn, #delete-all-btn { background: #fff; border: 1px solid #b00020; }
+    #modal-confirm-btn { border: 1px solid #000; }
   }
 </style>
 </head>
@@ -257,6 +316,22 @@
   <div id="list"></div>
   <div id="empty" class="empty hidden">No responses match these filters.</div>
   <div id="detail" class="hidden"></div>
+
+  <div class="danger-zone">
+    <div class="danger-zone-label">Danger zone</div>
+    <button id="delete-all-btn">Delete all responses</button>
+  </div>
+</div>
+
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal">
+    <h2>Delete all responses?</h2>
+    <p id="modal-text">This cannot be undone.</p>
+    <div class="row">
+      <button id="modal-confirm-btn">Delete</button>
+      <button id="modal-cancel-btn">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -439,6 +514,30 @@
   document.getElementById("logout-btn").addEventListener("click", async () => {
     await fetch("/admin/logout", { method: "POST" });
     window.location.href = "/admin/login";
+  });
+
+  const modalOverlay = document.getElementById("modal-overlay");
+
+  document.getElementById("delete-all-btn").addEventListener("click", () => {
+    const count = allResponses.length;
+    document.getElementById("modal-text").textContent =
+      "Delete all " + count + " response" + (count === 1 ? "" : "s") + "? This cannot be undone.";
+    modalOverlay.classList.remove("hidden");
+  });
+
+  document.getElementById("modal-cancel-btn").addEventListener("click", () => {
+    modalOverlay.classList.add("hidden");
+  });
+
+  document.getElementById("modal-confirm-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("modal-confirm-btn");
+    btn.disabled = true;
+    await fetch("/api/admin/responses", { method: "DELETE" });
+    btn.disabled = false;
+    modalOverlay.classList.add("hidden");
+    detailEl.classList.add("hidden");
+    detailEl.innerHTML = "";
+    await loadResponses();
   });
 
   async function loadSegments() {
