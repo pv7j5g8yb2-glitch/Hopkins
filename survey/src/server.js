@@ -114,21 +114,7 @@ app.get("/", async (request, reply) => {
     align-items: flex-start;
     padding: 60px 16px;
     min-height: 100vh;
-    /* Several smaller, harder-edged blobs instead of three huge soft ones: the point is
-       giving backdrop-filter real texture and edges to visibly transform. Blurring
-       something that's already a soft, diffuse gradient barely changes it, which is why
-       the glass elements read as flat no matter how the blur itself is tuned. */
-    background:
-      radial-gradient(180px 180px at 12% 8%, rgba(255, 140, 90, 0.7), transparent 42%),
-      radial-gradient(140px 140px at 34% 20%, rgba(255, 205, 120, 0.6), transparent 45%),
-      radial-gradient(220px 220px at 86% 10%, rgba(120, 150, 255, 0.65), transparent 42%),
-      radial-gradient(160px 160px at 68% 28%, rgba(175, 140, 255, 0.55), transparent 45%),
-      radial-gradient(200px 200px at 14% 80%, rgba(120, 220, 180, 0.6), transparent 42%),
-      radial-gradient(150px 150px at 46% 94%, rgba(255, 190, 140, 0.5), transparent 45%),
-      radial-gradient(240px 240px at 90% 88%, rgba(130, 200, 255, 0.55), transparent 42%),
-      radial-gradient(1000px 700px at 50% 45%, rgba(255, 248, 240, 0.35), transparent 70%),
-      #f5f4f1;
-    background-attachment: fixed;
+    background: #f5f4f1;
   }
   /* Neutral glass, no color: a flat translucent fill, blur, and a barely-visible even
      border, the same restraint real glass UI chrome actually uses. The second
@@ -154,58 +140,26 @@ app.get("/", async (request, reply) => {
     box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 10px 32px -20px rgba(20,20,30,0.2);
     animation: materialize 380ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
   }
-  /* The page background's color blobs sit at fixed viewport positions, so whether a
-     button inside the card lands over one is luck. This covers the card's own entire
-     area with the same kind of texture, scaled to the card instead of the viewport, so
-     every button inside always has something to blur behind it. A 3x3 grid of large,
-     heavily overlapping blobs (each sized well past the spacing between grid points) so
-     there is no gap anywhere in the card, not just mostly-covered with holes between
-     discrete spots. */
-  .card::before {
-    content: "";
-    position: absolute;
-    inset: -15%;
-    z-index: -1;
-    background:
-      radial-gradient(60% 60% at 15% 15%, rgba(255, 150, 100, 0.5), transparent 75%),
-      radial-gradient(60% 60% at 50% 12%, rgba(255, 210, 130, 0.45), transparent 75%),
-      radial-gradient(60% 60% at 85% 15%, rgba(130, 160, 255, 0.5), transparent 75%),
-      radial-gradient(60% 60% at 12% 50%, rgba(130, 220, 180, 0.45), transparent 75%),
-      radial-gradient(60% 60% at 50% 50%, rgba(180, 140, 255, 0.4), transparent 75%),
-      radial-gradient(60% 60% at 88% 50%, rgba(255, 190, 140, 0.45), transparent 75%),
-      radial-gradient(60% 60% at 15% 85%, rgba(130, 200, 255, 0.5), transparent 75%),
-      radial-gradient(60% 60% at 50% 88%, rgba(255, 170, 150, 0.4), transparent 75%),
-      radial-gradient(60% 60% at 85% 85%, rgba(150, 215, 190, 0.45), transparent 75%);
-  }
   h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 10px; }
   p.intro { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
   ul.links { list-style: none; margin: 0; padding: 0; }
   ul.links li + li { margin-top: 10px; }
-  /* Same recipe as the card and the survey intro screen's "Start" button: neutral, no
-     color. A flat fill at a visibly higher opacity than the card it sits on (the same
-     stepped layering the reference uses, not a tint), plus the real SVG distortion as a
-     progressive enhancement over plain blur. */
   ul.links a {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 15px 20px;
-    border-radius: 999px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.78);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(140%);
-    -webkit-backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     color: var(--ink);
     text-decoration: none;
-    font-size: 14.5px;
-    font-weight: 600;
-    box-shadow: 0 1px 2px rgba(20,20,30,0.05), 0 4px 12px -6px rgba(20,20,30,0.1);
-    transition: transform 140ms cubic-bezier(.2,.8,.3,1), box-shadow 140ms ease;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 140ms cubic-bezier(.2,.8,.3,1), background 140ms ease;
   }
-  ul.links a:active { transform: scale(0.97); box-shadow: inset 0 1px 2px rgba(20,20,30,0.08); }
+  ul.links a:active { transform: scale(0.97); background: rgba(255, 255, 255, 0.95); }
   ul.links .arrow { color: var(--ink-soft); }
   .admin-link {
     display: block;
@@ -231,12 +185,10 @@ app.get("/", async (request, reply) => {
   @media (prefers-reduced-transparency: reduce) {
     body { background: #f5f4f1; }
     .card { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(0,0,0,0.1); }
-    .card::before { display: none; }
-    ul.links a { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    ul.links a { background: #fff; }
   }
   @media (prefers-contrast: more) {
     .card { background: #fff; border: 1px solid #000; box-shadow: none; }
-    .card::before { display: none; }
     ul.links a { background: #fff; border: 1px solid #000; }
   }
 </style></head>
