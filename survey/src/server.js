@@ -114,10 +114,19 @@ app.get("/", async (request, reply) => {
     align-items: flex-start;
     padding: 60px 16px;
     min-height: 100vh;
+    /* Several smaller, harder-edged blobs instead of three huge soft ones: the point is
+       giving backdrop-filter real texture and edges to visibly transform. Blurring
+       something that's already a soft, diffuse gradient barely changes it, which is why
+       the glass elements read as flat no matter how the blur itself is tuned. */
     background:
-      radial-gradient(1000px 600px at 8% -10%, rgba(255, 170, 120, 0.55), transparent 60%),
-      radial-gradient(900px 700px at 108% 10%, rgba(130, 165, 255, 0.5), transparent 60%),
-      radial-gradient(800px 600px at 50% 115%, rgba(130, 225, 180, 0.45), transparent 60%),
+      radial-gradient(180px 180px at 12% 8%, rgba(255, 140, 90, 0.7), transparent 42%),
+      radial-gradient(140px 140px at 34% 20%, rgba(255, 205, 120, 0.6), transparent 45%),
+      radial-gradient(220px 220px at 86% 10%, rgba(120, 150, 255, 0.65), transparent 42%),
+      radial-gradient(160px 160px at 68% 28%, rgba(175, 140, 255, 0.55), transparent 45%),
+      radial-gradient(200px 200px at 14% 80%, rgba(120, 220, 180, 0.6), transparent 42%),
+      radial-gradient(150px 150px at 46% 94%, rgba(255, 190, 140, 0.5), transparent 45%),
+      radial-gradient(240px 240px at 90% 88%, rgba(130, 200, 255, 0.55), transparent 42%),
+      radial-gradient(1000px 700px at 50% 45%, rgba(255, 248, 240, 0.35), transparent 70%),
       #f5f4f1;
     background-attachment: fixed;
   }
