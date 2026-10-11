@@ -98,9 +98,8 @@ app.get("/", async (request, reply) => {
     color-scheme: light;
     --ink: #1a1a1a;
     --ink-soft: #52535a;
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.55);
-    --glass-edge: rgba(255, 255, 255, 0.95);
+    --glass-bg: rgba(255, 255, 255, 0.46);
+    --glass-border: rgba(255, 255, 255, 0.4);
     --radius-lg: 24px;
     --radius-md: 14px;
   }
@@ -122,33 +121,36 @@ app.get("/", async (request, reply) => {
       #f5f4f1;
     background-attachment: fixed;
   }
+  /* Neutral glass, no color: a flat translucent fill, blur, and a barely-visible even
+     border, the same restraint real glass UI chrome actually uses. The second
+     backdrop-filter line layers in the real SVG distortion (see the hidden <svg> filter
+     below) as a progressive enhancement; a browser that can't parse the url() reference
+     drops that line and keeps the plain blur above it. Interactive elements inside use a
+     visibly higher opacity than this card, the same stepped-shade layering the reference
+     uses to read as distinct nested glass without needing any added color. */
   .card {
     width: 100%;
     max-width: 420px;
     height: fit-content;
     background: var(--glass-bg);
-    backdrop-filter: blur(26px) saturate(180%);
-    -webkit-backdrop-filter: blur(26px) saturate(180%);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(10px) url(#liquid-glass-filter) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) url(#liquid-glass-filter) saturate(140%);
     border-radius: var(--radius-lg);
     padding: 28px 24px;
     border: 1px solid var(--glass-border);
-    border-top-color: var(--glass-edge);
-    box-shadow: 0 20px 60px -24px rgba(20,20,30,0.28), 0 2px 10px rgba(20,20,30,0.06);
+    box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 10px 32px -20px rgba(20,20,30,0.2);
     animation: materialize 380ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
   }
   h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 10px; }
   p.intro { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
   ul.links { list-style: none; margin: 0; padding: 0; }
   ul.links li + li { margin-top: 10px; }
-  /* Same glass recipe as the survey intro screen's "Start" button: the second
-     backdrop-filter line is the real effect, an SVG feDisplacementMap actually warping
-     the pixels behind the pill rather than just blurring them, which is what makes it
-     read as glass bending light instead of a translucent rectangle. A browser that can't
-     parse a url() filter reference inside backdrop-filter drops that whole declaration
-     and keeps the plain blur above it, so this fails safe. The tinted gradient fill
-     exists so there's always visible color for the glass to carry even when the card
-     behind it is reading mostly white, rather than depending entirely on borrowed color
-     surviving two layers of blur from the page underneath. */
+  /* Same recipe as the card and the survey intro screen's "Start" button: neutral, no
+     color. A flat fill at a visibly higher opacity than the card it sits on (the same
+     stepped layering the reference uses, not a tint), plus the real SVG distortion as a
+     progressive enhancement over plain blur. */
   ul.links a {
     display: flex;
     align-items: center;
@@ -156,17 +158,17 @@ app.get("/", async (request, reply) => {
     gap: 8px;
     padding: 15px 20px;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(255,170,120,0.3), rgba(130,165,255,0.26) 55%, rgba(130,225,180,0.28));
-    backdrop-filter: blur(16px) saturate(170%);
-    -webkit-backdrop-filter: blur(16px) saturate(170%);
-    backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(170%);
-    -webkit-backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(170%);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(140%);
+    -webkit-backdrop-filter: blur(4px) url(#liquid-glass-filter) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     color: var(--ink);
     text-decoration: none;
     font-size: 14.5px;
     font-weight: 600;
-    box-shadow: 0 1px 2px rgba(20,20,30,0.05), 0 4px 12px -6px rgba(20,20,30,0.12);
+    box-shadow: 0 1px 2px rgba(20,20,30,0.05), 0 4px 12px -6px rgba(20,20,30,0.1);
     transition: transform 140ms cubic-bezier(.2,.8,.3,1), box-shadow 140ms ease;
   }
   ul.links a:active { transform: scale(0.97); box-shadow: inset 0 1px 2px rgba(20,20,30,0.08); }
