@@ -92,7 +92,7 @@ app.get("/", async (request, reply) => {
 <meta name="description" content="A short, anonymous survey from Kirmi Studio for bookkeepers and real estate professionals. Nothing to sign up for, nothing for sale, just research.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: light;
@@ -107,7 +107,7 @@ app.get("/", async (request, reply) => {
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font: 400 16px/1.5 "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    font: 400 16px/1.5 "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
     font-optical-sizing: auto;
     color: var(--ink);
     display: flex;
