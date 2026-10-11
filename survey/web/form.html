@@ -168,12 +168,55 @@
   @keyframes tick-draw {
     to { stroke-dashoffset: 0; }
   }
+  #privacy-link {
+    display: block;
+    margin-top: 18px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    padding: 8px;
+  }
+  #privacy-link:active { color: var(--ink); }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 24, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+    animation: fade-in 160ms ease both;
+  }
+  /* Same specificity as .hidden's display:none, so without this override, cascade order
+     alone would decide which wins; this pins "hidden wins" explicitly. */
+  .modal-overlay.hidden { display: none; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  /* More opaque than the card's own --glass-bg on purpose: a privacy notice needs to be
+     clearly readable over whatever happens to be behind it, legibility matters more here
+     than matching the card's thin translucency. */
+  .modal {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border-radius: var(--radius-lg);
+    padding: 24px 22px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 10px 32px -20px rgba(20,20,30,0.2);
+    max-width: 380px;
+    width: 100%;
+    animation: materialize 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  .modal h2 { font-size: 18px; font-weight: 600; margin: 0 0 10px; }
+  .modal p { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin: 0 0 12px; }
   @media (prefers-reduced-motion: reduce) {
     .screen, #hello-text { animation: reduced-fade 160ms ease both; }
     @keyframes reduced-fade { from { opacity: 0; } to { opacity: 1; } }
     button, #back-btn { transition: opacity 120ms ease; }
     button:active, #back-btn:active { transform: none; }
     .tick-path { animation: none; stroke-dashoffset: 0; }
+    .modal, .modal-overlay { animation: none; }
   }
   @media (prefers-reduced-transparency: reduce) {
     body { background: #f5f4f1; }
@@ -181,11 +224,13 @@
     textarea, input[type="text"], input[type="tel"], input[type="email"] { background: #fff; }
     select { background-color: #fff; }
     #back-btn { background: #fff; }
+    .modal { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
   @media (prefers-contrast: more) {
     .card { background: #fff; border: 1px solid #000; box-shadow: none; }
     button { background: #000; }
     #back-btn, .role-btn { background: #fff; color: #000; border: 1px solid #000; }
+    .modal { background: #fff; border: 1px solid #000; box-shadow: none; }
   }
 </style>
 </head>
@@ -302,6 +347,18 @@
     <div id="missing-screen" class="hidden screen">
       <h1 id="missing-heading">That link isn&rsquo;t quite right</h1>
       <p id="missing-body">This survey couldn&rsquo;t be found.</p>
+    </div>
+  </div>
+
+  <a href="#" id="privacy-link">Privacy</a>
+
+  <div id="privacy-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Privacy</h2>
+      <p>This is anonymous market research. We collect your first name, language, and your answers, plus your email or phone number only if you choose to leave one.</p>
+      <p>We use this only to understand this problem and, if you opted in, to let you know if we build something that solves it. We don&rsquo;t sell or share it with anyone else.</p>
+      <p>If you&rsquo;d like your response removed, reply to any message we send you, or reach out through the same channel that sent you this link.</p>
+      <button id="privacy-close-btn" type="button">Close</button>
     </div>
   </div>
 
@@ -451,12 +508,21 @@
     return [...iso.toUpperCase()].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join("");
   }
 
+  // Most respondents on this niche are UAE-based, so pre-selecting it means someone just
+  // types their number instead of first scrolling a 185-country list, friction that lands
+  // at the most fatigued point of the whole flow, right after they have already answered
+  // every question. Anyone outside the UAE can still change it, it is a real select.
   function populateCountrySelect() {
     const select = document.getElementById("phone-country-select");
-    const options = COUNTRY_CODES.map(
-      ([name, iso, code]) => '<option value="' + code + '">' + flagEmoji(iso) + " " + name + " (" + code + ")</option>"
-    ).join("");
-    select.innerHTML = '<option value="" disabled selected id="phone-country-placeholder">Select a country</option>' + options;
+    const defaultIso = slug === "real-estate-agents" ? "AE" : null;
+    const options = COUNTRY_CODES.map(([name, iso, code]) => {
+      const selected = iso === defaultIso ? " selected" : "";
+      return '<option value="' + code + '"' + selected + ">" + flagEmoji(iso) + " " + name + " (" + code + ")</option>";
+    }).join("");
+    const placeholder = defaultIso
+      ? ""
+      : '<option value="" disabled selected id="phone-country-placeholder">Select a country</option>';
+    select.innerHTML = placeholder + options;
   }
 
   // Applies every fixed string for the chosen language to screens other than the language
@@ -825,6 +891,18 @@
   }
 
   populateCountrySelect();
+
+  const privacyOverlay = document.getElementById("privacy-overlay");
+  document.getElementById("privacy-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    privacyOverlay.classList.remove("hidden");
+  });
+  document.getElementById("privacy-close-btn").addEventListener("click", () => {
+    privacyOverlay.classList.add("hidden");
+  });
+  privacyOverlay.addEventListener("click", (e) => {
+    if (e.target === privacyOverlay) privacyOverlay.classList.add("hidden");
+  });
 
   if (!slug) {
     missingScreen.classList.remove("hidden");

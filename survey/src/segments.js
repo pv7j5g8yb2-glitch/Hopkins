@@ -1,4 +1,10 @@
-export const QUESTION_CAP = 10;
+// Was 10. Lowered after live testing showed the adaptive engine routinely used nearly all
+// of it (completing at 8-9 questions, not stopping early), which is a lot of free-text
+// typing to ask a stranger on a cold, unpaid, unincentivized survey, especially on mobile,
+// where composing answers is slower and fatigue shows up as shorter, lazier late-question
+// answers rather than a clean drop-off. 7 keeps the full 5-question baseline intact (still
+// comparable across every respondent) while capping the adaptive depth at 2 follow-ups.
+export const QUESTION_CAP = 7;
 export const BASELINE_COUNT = 5;
 
 export const segments = {

@@ -341,7 +341,7 @@ app.post("/api/s/:slug/answer", async (request, reply) => {
 
     const remaining = QUESTION_CAP - (pendingNumber - 1);
     const transcript = await loadTranscript(responseId);
-    const decision = await decideNextQuestion({ segment, transcript, remaining });
+    const decision = await decideNextQuestion({ segment, transcript, remaining, respondentRole: response.respondent_role });
 
     if (decision.continue && decision.question) {
       const localizedText = await localizeQuestion(segment, request.params.slug, language, pendingNumber, decision.question);
@@ -389,7 +389,7 @@ app.post("/api/s/:slug/answer", async (request, reply) => {
 
   const remaining = QUESTION_CAP - questionNumber;
   const transcript = await loadTranscript(responseId);
-  const decision = await decideNextQuestion({ segment, transcript, remaining });
+  const decision = await decideNextQuestion({ segment, transcript, remaining, respondentRole: response.respondent_role });
 
   if (decision.continue && decision.question && questionNumber < QUESTION_CAP) {
     const nextNumber = questionNumber + 1;
