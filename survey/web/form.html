@@ -98,30 +98,12 @@
     border-color: rgba(0, 0, 0, 0.16);
     box-shadow: 0 0 0 4px rgba(20, 20, 30, 0.08);
   }
+  /* Same neutral glass recipe as the card: a flat fill at a visibly higher opacity than
+     the card it sits on (the stepped layering that reads as distinct nested glass
+     without needing color), plus the real SVG distortion as a progressive enhancement
+     over plain blur. Applies to every button site-wide, Next/Save/Continue included. */
   button {
     margin-top: 14px;
-    background: linear-gradient(180deg, #2c2c2f, #141416);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--radius-md);
-    padding: 13px 22px;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.005em;
-    cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.12), 0 10px 22px -12px rgba(0,0,0,0.4);
-    transition: transform 140ms cubic-bezier(.2,.8,.3,1), box-shadow 140ms ease, opacity 140ms ease;
-  }
-  button:active { transform: scale(0.97); box-shadow: 0 1px 1px rgba(0,0,0,0.12); }
-  button:disabled { opacity: 0.5; cursor: default; transform: none; }
-  /* Glass treatment, scoped to the intro screen's "Start" button only. Neutral, no color:
-     a flat fill at a visibly higher opacity than the card it sits on (the same stepped
-     layering the reference uses, not a tint) plus the real SVG distortion as a
-     progressive enhancement over plain blur. The actual in-survey progression buttons
-     (Next, Save, Continue) deliberately keep the current solid high-contrast look: this
-     is decorative, not something completion rate should ride on.
-  */
-  #start-btn {
     background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
@@ -130,9 +112,16 @@
     color: var(--ink);
     border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 999px;
+    padding: 13px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    cursor: pointer;
     box-shadow: 0 1px 2px rgba(20,20,30,0.05), 0 4px 12px -6px rgba(20,20,30,0.1);
+    transition: transform 140ms cubic-bezier(.2,.8,.3,1), box-shadow 140ms ease, opacity 140ms ease;
   }
-  #start-btn:active { box-shadow: inset 0 1px 2px rgba(20,20,30,0.08); }
+  button:active { transform: scale(0.97); box-shadow: inset 0 1px 2px rgba(20,20,30,0.08); }
+  button:disabled { opacity: 0.5; cursor: default; transform: none; }
   .btn-row { display: flex; gap: 8px; align-items: center; }
   #back-btn {
     background: rgba(255, 255, 255, 0.78);
@@ -198,12 +187,12 @@
     textarea, input[type="text"], input[type="tel"], input[type="email"] { background: #fff; }
     select { background-color: #fff; }
     #back-btn { background: #fff; }
-    #start-btn { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    button { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
   @media (prefers-contrast: more) {
     .card { background: #fff; border: 1px solid #000; box-shadow: none; }
-    button { background: #000; }
-    #start-btn { background: #000; color: #fff; border: 1px solid #000; }
+    button { background: #000; color: #fff; border: 1px solid #000; }
+    #back-btn { background: #fff; color: #000; }
   }
 </style>
 </head>
