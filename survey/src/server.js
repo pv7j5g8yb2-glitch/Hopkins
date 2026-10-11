@@ -274,14 +274,18 @@ app.post("/api/s/:slug/start", async (request, reply) => {
       : null;
   const language =
     typeof request.body?.language === "string" && request.body.language.trim() ? request.body.language.trim().slice(0, 40) : null;
+  // Only collected on the real-estate-agents niche's role-selection screen; an
+  // allow-list rather than trusting the client's string keeps junk out of a field admin
+  // will later filter and segment pricing data by.
+  const role = ["solo", "team", "broker", "other"].includes(request.body?.role) ? request.body.role : null;
 
   const firstQuestion = { number: 1, text: segment.baseline[0] };
   const localizedText = await localizeQuestion(segment, request.params.slug, language, firstQuestion.number, firstQuestion.text);
 
   await run(
-    `INSERT INTO responses (id, segment_slug, started_at, status, current_question_number, current_question_text, current_question_text_localized, source_ref, respondent_name, respondent_language)
-     VALUES (?, ?, ?, 'in_progress', ?, ?, ?, ?, ?, ?)`,
-    [id, request.params.slug, nowIso(), firstQuestion.number, firstQuestion.text, localizedText, ref, name, language]
+    `INSERT INTO responses (id, segment_slug, started_at, status, current_question_number, current_question_text, current_question_text_localized, source_ref, respondent_name, respondent_language, respondent_role)
+     VALUES (?, ?, ?, 'in_progress', ?, ?, ?, ?, ?, ?, ?)`,
+    [id, request.params.slug, nowIso(), firstQuestion.number, firstQuestion.text, localizedText, ref, name, language, role]
   );
 
   return { responseId: id, question: { ...firstQuestion, localizedText }, cap: QUESTION_CAP };
@@ -463,7 +467,7 @@ app.get("/api/admin/responses", { preHandler: requireAdmin }, async () => {
   const responses = await all(
     `SELECT r.id, r.segment_slug, r.started_at, r.finished_at, r.status,
             r.current_question_number, r.current_question_text,
-            r.source_ref, r.respondent_name, r.respondent_language, r.contact_phone, r.contact_email,
+            r.source_ref, r.respondent_name, r.respondent_language, r.respondent_role, r.contact_phone, r.contact_email,
             r.wants_updates, r.problem_summary,
             (SELECT COUNT(*) FROM answers a WHERE a.response_id = r.id) as answer_count
      FROM responses r ORDER BY r.started_at DESC`
@@ -499,7 +503,7 @@ app.delete("/api/admin/responses", { preHandler: requireAdmin }, async () => {
 app.get("/api/admin/export.csv", { preHandler: requireAdmin }, async (request, reply) => {
   const rows = await all(
     `SELECT r.id as response_id, r.segment_slug, r.started_at, r.finished_at, r.status,
-            r.source_ref, r.respondent_name, r.respondent_language, r.contact_phone, r.contact_email,
+            r.source_ref, r.respondent_name, r.respondent_language, r.respondent_role, r.contact_phone, r.contact_email,
             r.wants_updates, r.problem_summary,
             a.question_number, a.question_kind, a.question_text, a.answer_text
      FROM responses r
@@ -510,7 +514,7 @@ app.get("/api/admin/export.csv", { preHandler: requireAdmin }, async (request, r
   const csv = toCsv(
     [
       "response_id", "segment_slug", "started_at", "finished_at", "status", "source_ref", "respondent_name",
-      "respondent_language", "contact_phone", "contact_email", "wants_updates", "problem_summary",
+      "respondent_language", "respondent_role", "contact_phone", "contact_email", "wants_updates", "problem_summary",
       "question_number", "question_kind", "question_text", "answer_text",
     ],
     rows

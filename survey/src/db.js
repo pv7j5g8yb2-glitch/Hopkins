@@ -20,6 +20,7 @@ await client.executeMultiple(`
     source_ref TEXT,
     respondent_name TEXT,
     respondent_language TEXT,
+    respondent_role TEXT,
     contact_phone TEXT,
     contact_email TEXT,
     wants_updates TEXT,
@@ -53,6 +54,7 @@ await client.executeMultiple(`
 // makes this a no-op on every later startup once a column is already there.
 const migrations = [
   ["responses", "respondent_language", "TEXT"],
+  ["responses", "respondent_role", "TEXT"],
   ["responses", "current_question_text_localized", "TEXT"],
   ["responses", "wants_updates", "TEXT"],
   ["responses", "problem_summary", "TEXT"],

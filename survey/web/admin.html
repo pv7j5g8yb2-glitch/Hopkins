@@ -397,6 +397,11 @@
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  const ROLE_LABELS = { solo: "Solo agent", team: "Agent on a team", broker: "Broker/team lead", other: "Other role" };
+  function roleLabel(role) {
+    return ROLE_LABELS[role] || "";
+  }
+
   function applyFiltersAndSort() {
     let rows = allResponses.slice();
 
@@ -425,7 +430,12 @@
       .map((r) => {
         const dropOff = r.status === "completed" ? "" : '<div class="card-dropoff">Dropped at Q' + r.current_question_number + ": " + escapeHtml(r.current_question_text) + "</div>";
         const contact = [r.contact_phone, r.contact_email].filter(Boolean).map(escapeHtml).join(" / ");
-        const sub = [r.respondent_language ? escapeHtml(r.respondent_language) : "", r.source_ref ? "ref " + escapeHtml(r.source_ref) : "", contact]
+        const sub = [
+          r.respondent_language ? escapeHtml(r.respondent_language) : "",
+          r.respondent_role ? roleLabel(r.respondent_role) : "",
+          r.source_ref ? "ref " + escapeHtml(r.source_ref) : "",
+          contact,
+        ]
           .filter(Boolean)
           .join(" &middot; ");
         const wantsUpdates = r.wants_updates === "yes" ? '<span class="badge badge-wants">Wants updates</span>' : "";
@@ -466,6 +476,7 @@
       new Date(r.started_at).toLocaleString(),
       r.status.replace("_", " "),
       r.respondent_language ? escapeHtml(r.respondent_language) : "",
+      r.respondent_role ? roleLabel(r.respondent_role) : "",
       r.source_ref ? "ref " + escapeHtml(r.source_ref) : "",
       contact,
       wantsLabel,

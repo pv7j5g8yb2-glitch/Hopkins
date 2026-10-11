@@ -110,6 +110,20 @@
     box-shadow: none;
   }
   #back-btn:active { background: rgba(255, 255, 255, 0.95); }
+  /* All four role options carry equal weight, no single one is the "recommended" choice,
+     so they share the same flat, light style rather than one being highlighted black. */
+  .role-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .role-btn {
+    margin-top: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--ink);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: none;
+    text-align: left;
+    font-weight: 500;
+  }
+  .role-btn:active { background: rgba(255, 255, 255, 0.95); }
   .review-note { font-size: 13px; color: #a06a00; margin-bottom: 8px; font-weight: 500; }
   .error { color: #b00020; font-size: 14px; margin-top: 10px; font-weight: 500; }
   .thanks { line-height: 1.6; }
@@ -171,6 +185,7 @@
   @media (prefers-contrast: more) {
     .card { background: #fff; border: 1px solid #000; box-shadow: none; }
     button { background: #000; }
+    #back-btn, .role-btn { background: #fff; color: #000; border: 1px solid #000; }
   }
 </style>
 </head>
@@ -206,6 +221,17 @@
       </select>
       <div id="language-error" class="error hidden">Go on, pick one.</div>
       <button id="language-continue-btn">Continue</button>
+    </div>
+
+    <div id="role-screen" class="hidden screen">
+      <p class="progress">Almost there</p>
+      <h1 id="role-heading">What best describes you?</h1>
+      <div class="role-list">
+        <button class="role-btn" type="button" data-role="solo">Solo agent / independent</button>
+        <button class="role-btn" type="button" data-role="team">Agent on a team</button>
+        <button class="role-btn" type="button" data-role="broker">Broker / team lead / agency owner</button>
+        <button class="role-btn" type="button" data-role="other">Something else</button>
+      </div>
     </div>
 
     <div id="intro-screen" class="hidden screen"></div>
@@ -287,6 +313,7 @@
   const slug = window.location.pathname.split("/").filter(Boolean)[1];
   const languageScreen = document.getElementById("language-screen");
   const languageSelect = document.getElementById("language-select");
+  const roleScreen = document.getElementById("role-screen");
   const introScreen = document.getElementById("intro-screen");
   const nameScreen = document.getElementById("name-screen");
   const nameInput = document.getElementById("name-input");
@@ -329,6 +356,7 @@
   let current = null;
   let respondentName = null;
   let respondentLanguage = null;
+  let respondentRole = null; // real-estate-agents only: "solo" | "team" | "broker" | "other"
   let bundle = null; // { ui, segments } for the respondent's chosen language, or English
   let history = []; // [{number, text, localizedText, answer}], one entry per question already answered
   let viewIndex = null; // null = showing the live current question; otherwise reviewing history[viewIndex]
@@ -543,7 +571,7 @@
     const startRes = await fetch("/api/s/" + slug + "/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ref, name: respondentName, language: respondentLanguage }),
+      body: JSON.stringify({ ref, name: respondentName, language: respondentLanguage, role: respondentRole }),
     });
     const data = await startRes.json();
     responseId = data.responseId;
@@ -771,11 +799,24 @@
     btn.disabled = false;
     btn.textContent = originalLabel;
     languageScreen.classList.add("hidden");
-    renderIntro();
+    if (slug === "real-estate-agents") {
+      roleScreen.classList.remove("hidden");
+    } else {
+      renderIntro();
+    }
+  });
+
+  document.querySelectorAll(".role-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      respondentRole = btn.dataset.role;
+      roleScreen.classList.add("hidden");
+      renderIntro();
+    });
   });
 
   function showLanguagePicker() {
     languageScreen.classList.remove("hidden");
+    roleScreen.classList.add("hidden");
     introScreen.classList.add("hidden");
     nameScreen.classList.add("hidden");
     questionScreen.classList.add("hidden");
