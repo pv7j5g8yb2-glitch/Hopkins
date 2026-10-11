@@ -139,23 +139,44 @@ app.get("/", async (request, reply) => {
   h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 10px; }
   p.intro { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin: 0 0 18px; }
   ul.links { list-style: none; margin: 0; padding: 0; }
-  ul.links li + li { margin-top: 8px; }
+  ul.links li + li { margin-top: 10px; }
+  /* Same glass recipe as the survey intro screen's "Start" button: translucent blur, a
+     bright top edge, and a specular highlight overlay, reliable everywhere rather than
+     the SVG distortion trick, which needs rich moving content behind it to read as
+     "liquid" (these sit on a plain card) and is inconsistent on Safari/iOS specifically. */
   ul.links a {
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 12px 14px;
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 15px 20px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.55));
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-top-color: rgba(255,255,255,0.95);
     color: var(--ink);
     text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    transition: transform 140ms cubic-bezier(.2,.8,.3,1), background 140ms ease;
+    font-size: 14.5px;
+    font-weight: 600;
+    box-shadow:
+      0 10px 24px -14px rgba(20,20,30,0.3),
+      0 2px 6px rgba(20,20,30,0.06),
+      inset 0 1px 0 rgba(255,255,255,0.9),
+      inset 0 -1px 1.5px rgba(20,20,30,0.05);
+    transition: transform 140ms cubic-bezier(.2,.8,.3,1), box-shadow 140ms ease;
   }
-  ul.links a:active { transform: scale(0.97); background: rgba(255, 255, 255, 0.95); }
+  ul.links a::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 140% at 18% -20%, rgba(255,255,255,0.95), transparent 55%);
+    pointer-events: none;
+  }
+  ul.links a:active { transform: scale(0.97); box-shadow: inset 0 1px 3px rgba(20,20,30,0.1); }
   ul.links .arrow { color: var(--ink-soft); }
   .admin-link {
     display: block;
@@ -181,11 +202,13 @@ app.get("/", async (request, reply) => {
   @media (prefers-reduced-transparency: reduce) {
     body { background: #f5f4f1; }
     .card { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(0,0,0,0.1); }
-    ul.links a { background: #fff; }
+    ul.links a { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    ul.links a::before { display: none; }
   }
   @media (prefers-contrast: more) {
     .card { background: #fff; border: 1px solid #000; box-shadow: none; }
     ul.links a { background: #fff; border: 1px solid #000; }
+    ul.links a::before { display: none; }
   }
 </style></head>
 <body>
