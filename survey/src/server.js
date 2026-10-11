@@ -32,6 +32,13 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+// Normalizes once at write time, not on every read, so the capitalized form is what the
+// greeting, the done screen, the admin dashboard, and CSV exports all consistently show,
+// regardless of how the respondent actually typed it (e.g. "lea" -> "Lea").
+function capitalizeFirst(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 async function loadTranscript(responseId) {
   return all(
     `SELECT question_number as number, question_kind as kind, question_text as text,
@@ -247,7 +254,10 @@ app.post("/api/s/:slug/start", async (request, reply) => {
 
   const id = randomUUID();
   const ref = typeof request.body?.ref === "string" ? request.body.ref.slice(0, 200) : null;
-  const name = typeof request.body?.name === "string" && request.body.name.trim() ? request.body.name.trim().slice(0, 60) : null;
+  const name =
+    typeof request.body?.name === "string" && request.body.name.trim()
+      ? capitalizeFirst(request.body.name.trim().slice(0, 60))
+      : null;
   const language =
     typeof request.body?.language === "string" && request.body.language.trim() ? request.body.language.trim().slice(0, 40) : null;
 

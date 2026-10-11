@@ -26,7 +26,9 @@ grammatically into this exact sentence, filling the blank: "If we ever launch a 
 that solves ___, would you like us to let you know?" Use plain lowercase words, no
 trailing punctuation, no quotation marks, no the-respondent's-name, just the problem
 itself (for example: "late bank reconciliation every month", "slow after-hours enquiry
-follow-up").
+follow-up"). Exception: keep acronyms and abbreviations in their normal written form
+even though everything else is lowercase, for example "manual AML compliance", "KYC
+document chasing", "VAT return prep", not "manual aml compliance".
 
 If you genuinely cannot identify any usable problem from the conversation, respond with
 exactly: NONE

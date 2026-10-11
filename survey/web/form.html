@@ -560,16 +560,17 @@
     document.getElementById("phone-screen").classList.remove("hidden");
   }
 
-  // Re-triggers the tick's draw animation each time this is shown (a forced reflow between
-  // removing and restoring the animation is the standard way to restart a CSS animation).
+  // Re-triggers the tick's draw animation each time this is shown. Cloning the path and
+  // swapping it in (rather than toggling style.animation + a forced reflow) is what
+  // actually restarts it reliably across browsers: Safari in particular doesn't always
+  // replay a CSS animation when you just clear an inline "none" back to the stylesheet
+  // value, but a genuinely new node always starts its animation from scratch.
   function renderFinalThanks() {
     hideAllDoneSteps();
     const finalThanks = document.getElementById("final-thanks");
     finalThanks.classList.remove("hidden");
-    const path = finalThanks.querySelector(".tick-path");
-    path.style.animation = "none";
-    void path.offsetWidth;
-    path.style.animation = "";
+    const oldPath = finalThanks.querySelector(".tick-path");
+    oldPath.replaceWith(oldPath.cloneNode(true));
   }
 
   function renderDone(offerContact, problem) {
