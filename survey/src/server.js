@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { run, get, all } from "./db.js";
-import { getSegment, listSegments, QUESTION_CAP, BASELINE_COUNT, ROLE_LABELS } from "./segments.js";
+import { getSegment, resolveSlug, listSegments, QUESTION_CAP, BASELINE_COUNT, ROLE_LABELS } from "./segments.js";
 import { decideNextQuestion } from "./followup.js";
 import { translateFromEnglish, translateToEnglish } from "./translate.js";
 import { summarizePainPoint } from "./summarize.js";
@@ -213,7 +213,7 @@ app.get("/", async (request, reply) => {
 // ---- respondent-facing survey ----
 
 app.get("/s/:slug", async (request, reply) => {
-  const segment = getSegment(request.params.slug);
+  const segment = getSegment(resolveSlug(request.params.slug));
   if (!segment) return reply.code(404).send("Not found");
   reply.type("text/html").send(formHtml);
 });

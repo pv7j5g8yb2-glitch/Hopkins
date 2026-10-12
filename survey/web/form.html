@@ -230,7 +230,7 @@
         <button class="role-btn" id="role-btn-solo" type="button" data-role="solo">Solo agent / independent</button>
         <button class="role-btn" id="role-btn-team" type="button" data-role="team">Agent on a team</button>
         <button class="role-btn" id="role-btn-broker" type="button" data-role="broker">Broker / team lead / agency owner</button>
-        <button class="role-btn" id="role-btn-other" type="button" data-role="other">Something else</button>
+        <button class="role-btn" id="role-btn-other" type="button" data-role="other">Another role in real estate</button>
       </div>
     </div>
 
@@ -310,7 +310,11 @@
   // iOS Safari only runs :active styles when a touch listener exists somewhere in the page.
   document.body.addEventListener("touchstart", function () {}, { passive: true });
 
-  const slug = window.location.pathname.split("/").filter(Boolean)[1];
+  // Keep in sync with SLUG_ALIASES in segments.js: the URL can show a public alias, but
+  // every API call and stored response uses the canonical slug.
+  const SLUG_ALIASES = { "real-estate": "real-estate-agents" };
+  const pathSlug = window.location.pathname.split("/").filter(Boolean)[1];
+  const slug = SLUG_ALIASES[pathSlug] || pathSlug;
   const languageScreen = document.getElementById("language-screen");
   const languageSelect = document.getElementById("language-select");
   const roleScreen = document.getElementById("role-screen");

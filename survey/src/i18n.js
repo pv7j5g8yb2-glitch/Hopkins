@@ -19,7 +19,7 @@ export const SOURCE_BUNDLE = {
     role_option_solo: "Solo agent / independent",
     role_option_team: "Agent on a team",
     role_option_broker: "Broker / team lead / agency owner",
-    role_option_other: "Something else",
+    role_option_other: "Another role in real estate",
     name_progress: "Almost there",
     name_heading: "What should I call you?",
     name_placeholder: "First name",

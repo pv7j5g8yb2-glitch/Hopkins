@@ -24,7 +24,7 @@ export const segments = {
     ],
   },
   "real-estate-agents": {
-    niche: "real estate agents and brokers",
+    niche: "real estate",
     intro: [
       "Quick survey, nothing more, about how work goes for you day to day.",
       "There’s nothing to sign up for and nothing being sold to you here, this is pure research.",
@@ -46,8 +46,18 @@ export const segments = {
 // here without a custom label of its own.
 export const ROLE_LABELS = {
   bookkeepers: "Bookkeeper",
-  "real-estate-agents": "Real estate agent, broker, or realtor",
+  "real-estate-agents": "Working in real estate",
 };
+
+// Public link aliases: respondents see the alias in the URL, while responses are still
+// stored under the canonical slug, so data and admin filtering never split in two.
+export const SLUG_ALIASES = {
+  "real-estate": "real-estate-agents",
+};
+
+export function resolveSlug(slug) {
+  return SLUG_ALIASES[slug] ?? slug;
+}
 
 export function getSegment(slug) {
   return segments[slug] ?? null;
