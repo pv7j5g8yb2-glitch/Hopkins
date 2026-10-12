@@ -558,13 +558,15 @@
     const res = await fetch("/api/admin/segments");
     if (!res.ok) return;
     const data = await res.json();
-    document.getElementById("segment-select").innerHTML = data.segments.map((s) => '<option value="' + s.slug + '">' + escapeHtml(s.niche) + "</option>").join("");
+    document.getElementById("segment-select").innerHTML = data.segments.map((s) => '<option value="' + (s.publicSlug || s.slug) + '">' + escapeHtml(s.niche) + "</option>").join("");
     filterSegment.innerHTML = '<option value="">All niches</option>' + data.segments.map((s) => '<option value="' + s.slug + '">' + escapeHtml(s.niche) + "</option>").join("");
   }
 
   document.getElementById("generate-link-btn").addEventListener("click", () => {
     const slug = document.getElementById("segment-select").value;
-    const ref = document.getElementById("ref-input").value.trim();
+    // Plain letters, digits and dashes only, so the link pasted into WhatsApp shows no
+    // encoded characters (a leading "+" would otherwise appear as "%2B").
+    const ref = document.getElementById("ref-input").value.trim().replace(/\s+/g, "-").replace(/[^A-Za-z0-9_-]/g, "");
     const url = window.location.origin + "/s/" + slug + (ref ? "?ref=" + encodeURIComponent(ref) : "");
     const out = document.getElementById("link-out");
     out.style.display = "block";

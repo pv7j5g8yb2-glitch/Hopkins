@@ -63,6 +63,10 @@ export function getSegment(slug) {
   return segments[slug] ?? null;
 }
 
+export function publicSlug(slug) {
+  return Object.keys(SLUG_ALIASES).find((alias) => SLUG_ALIASES[alias] === slug) ?? slug;
+}
+
 export function listSegments() {
-  return Object.entries(segments).map(([slug, segment]) => ({ slug, niche: segment.niche }));
+  return Object.entries(segments).map(([slug, segment]) => ({ slug, publicSlug: publicSlug(slug), niche: segment.niche }));
 }

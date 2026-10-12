@@ -83,7 +83,7 @@ app.get("/", async (request, reply) => {
   const links = listSegments()
     .map((s) => {
       const label = ROLE_LABELS[s.slug] || s.niche.charAt(0).toUpperCase() + s.niche.slice(1);
-      return `<li><a href="/s/${s.slug}"><span>${label}</span><span class="arrow">&rsaquo;</span></a></li>`;
+      return `<li><a href="/s/${s.publicSlug}"><span>${label}</span><span class="arrow">&rsaquo;</span></a></li>`;
     })
     .join("");
   reply.type("text/html").send(`<!doctype html>
