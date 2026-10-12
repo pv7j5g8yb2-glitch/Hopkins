@@ -11,9 +11,9 @@ const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const anthropic = PROVIDER === "anthropic" ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
 
 const DETERMINISTIC_FOLLOWUPS = [
-  "Can you put a number on how often that happens in a typical month?",
-  "What have you already tried to fix that, and why did not it stick?",
-  "If you did not have to deal with that at all, what would you do with the time instead?",
+  "What happened the last time that came up?",
+  "What have you already tried to fix it?",
+  "If you didn't have to deal with that at all, what would you do with the time instead?",
 ];
 
 // A target, not a forced floor: push toward asking at least this many follow-ups when
