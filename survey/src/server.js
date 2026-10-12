@@ -7,6 +7,9 @@ import { dirname, join } from "node:path";
 
 import { run, get, all } from "./db.js";
 import { getSegment, resolveSlug, listSegments, QUESTION_CAP, BASELINE_COUNT, ROLE_LABELS } from "./segments.js";
+import { notify } from "./notify.js";
+
+const ROLE_NOTIFY_LABELS = { solo: "solo agent", team: "agent on a team", broker: "broker / owner", other: "other role" };
 import { decideNextQuestion } from "./followup.js";
 import { translateFromEnglish, translateToEnglish } from "./translate.js";
 import { summarizePainPoint } from "./summarize.js";
@@ -74,6 +77,12 @@ async function completeResponse({ segment, transcript, responseId, language }) {
     localized,
     responseId,
   ]);
+  const row = await get(`SELECT respondent_name FROM responses WHERE id = ?`, [responseId]);
+  notify(
+    "Survey completed",
+    `${row?.respondent_name || "Someone"} · ${segment.niche}` + (en ? `\nMain problem: ${en}` : ""),
+    ["white_check_mark"]
+  );
   return localized;
 }
 
@@ -287,6 +296,11 @@ app.post("/api/s/:slug/start", async (request, reply) => {
      VALUES (?, ?, ?, 'in_progress', ?, ?, ?, ?, ?, ?, ?)`,
     [id, request.params.slug, nowIso(), firstQuestion.number, firstQuestion.text, localizedText, ref, name, language, role]
   );
+  notify(
+    "Survey started",
+    `${name || "Someone"} · ${segment.niche}` + (role ? ` · ${ROLE_NOTIFY_LABELS[role]}` : ""),
+    ["eyes"]
+  );
 
   return { responseId: id, question: { ...firstQuestion, localizedText }, cap: QUESTION_CAP };
 });
@@ -414,10 +428,17 @@ app.post("/api/s/:slug/wants-updates", async (request, reply) => {
     return reply.code(400).send({ error: "responseId and a boolean wantsUpdates are required" });
   }
 
-  const response = await get(`SELECT id FROM responses WHERE id = ? AND segment_slug = ?`, [responseId, request.params.slug]);
+  const response = await get(`SELECT id, respondent_name, wants_updates FROM responses WHERE id = ? AND segment_slug = ?`, [
+    responseId,
+    request.params.slug,
+  ]);
   if (!response) return reply.code(404).send({ error: "unknown response" });
 
   await run(`UPDATE responses SET wants_updates = ? WHERE id = ?`, [wantsUpdates ? "yes" : "no", responseId]);
+  if (wantsUpdates && response.wants_updates !== "yes") {
+    const segment = getSegment(request.params.slug);
+    notify("Joined the waitlist", `${response.respondent_name || "Someone"} · ${segment?.niche ?? request.params.slug}`, ["tada"]);
+  }
   return { ok: true };
 });
 
