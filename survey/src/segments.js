@@ -17,7 +17,7 @@ export const segments = {
     ],
     baseline: [
       "What is the part of a typical client’s bookkeeping that eats the most of your time, and shouldn’t?",
-      "Take me through exactly how you handle that today, step by step.",
+      "Roughly how do you deal with that today?",
       "Does that happen on every client and every month, or mostly at certain points? If it’s the second one, when?",
       "What is that actually costing you? Try to put a number on it, in hours each week or however else you’d measure it.",
       "If something fixed that properly, what would it be worth to you, per month, per client?",
@@ -32,7 +32,7 @@ export const segments = {
     ],
     baseline: [
       "What is the part of handling a listing or a client enquiry that eats the most of your time, and shouldn’t?",
-      "Take me through exactly how you handle that today, step by step.",
+      "Roughly how do you deal with that today?",
       "Does that happen on every enquiry and every listing, or mostly at certain points? If it’s the second one, when?",
       "What is that actually costing you? Try to put a number on it, in hours each week or however else you’d measure it.",
       "If something fixed that properly, what would it be worth to you, per month?",
