@@ -69,7 +69,7 @@ copy. Second style: italic serif headings with soft highlighter marks on grid pa
 
 ## Hopkins brand (locked)
 
-The product: one chat that runs an estate agency's marketing like an agency would.
+The product: one chat that runs a real estate business's marketing like an agency would.
 Name **Hopkins**, after Claude Hopkins, who wrote *Scientific Advertising* in 1923 and
 tested every ad against another. Instagram **@gethopkins**. Domain gethopkins.com is
 not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups prove it.
@@ -87,7 +87,11 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
 * **Where each ground goes:** oxblood outside (logo, posts, ads, the top of the
   landing page), cream inside (the product, long reading sections, forms). Fine
   grain on both.
-* **Tagline:** "Tested, not guessed." **Promise:** "Your agency's marketing, run for
+* **Tagline:** "Tested, not guessed." **Promise:** "Real estate marketing, run for
   you. Nothing goes live without your yes."
+* **Wording in public copy:** say "real estate" (agents, teams, brokerages), never
+  "estate agent", because the US, Canada, Australia and the UAE all say real estate.
+  Never use "Realtor" (a trademark for NAR members only). Messages to Ismael stay in
+  Irish English.
 * **Personality:** a quiet expert. Plain, precise, shows the numbers, never hype.
 * **Recurring stories:** Wanamaker's half, tested not guessed, the empty Monday.
