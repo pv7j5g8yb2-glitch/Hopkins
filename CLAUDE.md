@@ -66,3 +66,28 @@ The six pillars every brand (ours and each customer's) needs defined:
 Reference style: black on warm off white, fine grain, a bold grotesk title over a
 regular weight word, one simple symbol with thick rounded strokes, one short line of
 copy. Second style: italic serif headings with soft highlighter marks on grid paper.
+
+## Hopkins brand (locked)
+
+The product: one chat that runs an estate agency's marketing like an agency would.
+Name **Hopkins**, after Claude Hopkins, who wrote *Scientific Advertising* in 1923 and
+tested every ad against another. Instagram **@gethopkins**. Domain gethopkins.com is
+not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups prove it.
+
+* **Mark, "Rise":** two hand drawn pebbles, deliberately lopsided, never perfect
+  circles. Small plum pebble lower left (the ad that lost), larger gold pebble upper
+  right (the winner). The symbol stands on its own, then the name beside it.
+* **Colours:** Oxblood `#2A0F14` (ground), Oxblood 2 `#36151C` (surfaces), Cream
+  `#F4EBDD` (text on dark, ground on light), Gold `#D7AE62` (the winner, buttons,
+  the number that matters, nothing else), Plum `#5B4873` (second pebble, past or
+  unchosen options; lightens to lilac `#B79DC2` on cream), Rose grey `#C3A9A2`
+  (quiet text). Bronze `#8E6B2C` for gold coloured text on cream.
+* **Type:** Inter Tight, bold over regular, tight spacing. Instrument Serif italic
+  for one accent word at most.
+* **Where each ground goes:** oxblood outside (logo, posts, ads, the top of the
+  landing page), cream inside (the product, long reading sections, forms). Fine
+  grain on both.
+* **Tagline:** "Tested, not guessed." **Promise:** "Your agency's marketing, run for
+  you. Nothing goes live without your yes."
+* **Personality:** a quiet expert. Plain, precise, shows the numbers, never hype.
+* **Recurring stories:** Wanamaker's half, tested not guessed, the empty Monday.
