@@ -102,3 +102,15 @@ What content and ad creative actually works on Instagram for real estate lives i
 `.claude/skills/hopkins-creative/SKILL.md`. Use it for every post, carousel, reel and ad,
 for @gethopkins and for what the product makes for customers. When Ismael sends new
 examples of what's winning, add the learning to its log with the date.
+
+## Product decisions (Hopkins)
+
+* **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name
+  across the middle, no downloads. Changes to those 3 are included. Asking for a 4th, or
+  pressing "run it" on any ad, brings up the upgrade message in the chat.
+* **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
+  a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
+  spend are not final.
+* **Waitlist offer:** 30% off the first year.
+* **Agency offer:** don't ask teams to fire their agency. Run Hopkins next to it on one
+  listing for a month, compare cost per lead, keep whichever wins.
