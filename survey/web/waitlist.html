@@ -45,6 +45,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0
 /* hero */
 .hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:48px;align-items:center;padding:56px 0 88px}
 @media (max-width:900px){.hero{grid-template-columns:1fr;padding:28px 0 64px;gap:40px}}
+@media (min-width:1280px){.wrap{max-width:1280px}.hero{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:72px}}
+@media (min-width:1800px){.wrap{max-width:1400px}.preview .win{zoom:1.08}}
 h1{font-size:clamp(46px,7.2vw,84px);line-height:.96;letter-spacing:-.05em;font-weight:700;margin:0 0 22px}
 h1 .serif{font-weight:400}
 .sub{font-size:clamp(17px,2vw,20px);color:var(--rose);max-width:34em}
