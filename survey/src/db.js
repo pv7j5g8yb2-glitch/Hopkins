@@ -64,6 +64,15 @@ await client.executeMultiple(`
     created_at TEXT NOT NULL,
     updated_at TEXT
   );
+
+  -- Daily visit counts for the waitlist page, by link source. Counts only: no IP
+  -- addresses, no cookies, nothing that identifies a visitor.
+  CREATE TABLE IF NOT EXISTS waitlist_visits (
+    day TEXT NOT NULL,
+    ref TEXT NOT NULL,
+    visits INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, ref)
+  );
 `);
 
 // The CREATE TABLE above only takes effect on a brand new database. The live database

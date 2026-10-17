@@ -62,6 +62,9 @@ export function registerWaitlist(app, webDir) {
     if (request.hostname.startsWith("waitlist.") && (request.method === "GET" || request.method === "HEAD") && request.url.split("?")[0] === "/") {
       return sendPage(reply);
     }
+    if (request.hostname.startsWith("waitlist.") && request.method === "GET" && request.url.split("?")[0] === "/robots.txt") {
+      return reply.type("text/plain").send("User-agent: *\nAllow: /\n");
+    }
     // Browsers ask for /favicon.ico on their own; desktop Safari ignores the inline SVG icon.
     if (request.hostname.startsWith("waitlist.") && (request.method === "GET" || request.method === "HEAD") && request.url.split("?")[0] === "/favicon.ico") {
       return reply.type("image/x-icon").header("Cache-Control", "public, max-age=604800").send(readFileSync(join(assetDir, "favicon.ico")));
@@ -75,6 +78,25 @@ export function registerWaitlist(app, webDir) {
     const path = join(assetDir, file);
     if (!ASSETS.has(file) || !existsSync(path)) return reply.code(404).send("Not found");
     reply.type(TYPES[file.split(".").pop()]).header("Cache-Control", "public, max-age=604800").send(readFileSync(path));
+  });
+
+  // One count per visit, sent by the page itself so crawlers that don't run scripts aren't
+  // counted. Keyed by day and link source only.
+  const visitHits = new Map();
+  app.post("/api/waitlist/visit", async (request, reply) => {
+    const now = Date.now();
+    const recent = (visitHits.get(request.ip) || []).filter((t) => now - t < WINDOW_MS);
+    recent.push(now);
+    visitHits.set(request.ip, recent);
+    if (visitHits.size > 5000) visitHits.clear();
+    if (recent.length > 30) return reply.code(204).send();
+    const ref = clean((request.body ?? {}).ref, 60) || "direct";
+    await run(
+      `INSERT INTO waitlist_visits (day, ref, visits) VALUES (?, ?, 1)
+       ON CONFLICT(day, ref) DO UPDATE SET visits = visits + 1`,
+      [new Date().toISOString().slice(0, 10), ref]
+    );
+    return reply.code(204).send();
   });
 
   app.post("/api/waitlist", async (request, reply) => {
@@ -129,7 +151,10 @@ export function registerWaitlist(app, webDir) {
   const listSql = `SELECT id, email, instagram, business, country, team_size, monthly_spend, source, ref, created_at, updated_at
                    FROM waitlist ORDER BY created_at DESC`;
 
-  app.get("/api/admin/waitlist", { preHandler: requireAdmin }, async () => ({ signups: await all(listSql) }));
+  app.get("/api/admin/waitlist", { preHandler: requireAdmin }, async () => ({
+    signups: await all(listSql),
+    visits: await all(`SELECT ref, SUM(visits) AS visits FROM waitlist_visits GROUP BY ref ORDER BY visits DESC`),
+  }));
 
   app.delete("/api/admin/waitlist/:id", { preHandler: requireAdmin }, async (request, reply) => {
     const row = await get(`SELECT id FROM waitlist WHERE id = ?`, [request.params.id]);
@@ -177,6 +202,7 @@ const ADMIN_PAGE = `<!doctype html>
 <header><div><h1>Hopkins waitlist</h1><div class="muted" id="sub">Loading</div></div>
 <div><a class="btn" href="/api/admin/waitlist.csv">Export CSV</a> <a class="btn" href="/admin" style="background:#5B4873">Survey admin</a></div></header>
 <div class="stats" id="stats"></div>
+<div class="table" id="refs" style="margin-bottom:16px"></div>
 <div class="table"><table><thead><tr><th>Joined</th><th>Email</th><th>Instagram</th><th>Country</th><th>Agents</th><th>Spend a month</th><th>From</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
 </div>
 <script>
@@ -186,14 +212,20 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 async function load(){
   const r=await fetch("/api/admin/waitlist");
   if(r.status===401){location.href="/admin/login";return}
-  const {signups}=await r.json();
+  const {signups,visits}=await r.json();
+  const totalVisits=visits.reduce((a,v)=>a+Number(v.visits),0);
+  const pct=(a,b)=>b?Math.round(a/b*1000)/10+"%":"n/a";
   const withSpend=signups.filter(s=>s.monthly_spend&&s.monthly_spend!=="<500").length;
   document.getElementById("sub").textContent=signups.length+(signups.length===1?" sign up":" sign ups");
   document.getElementById("stats").innerHTML=
+    '<div class="stat"><b>'+totalVisits+'</b>visits</div>'+
+    '<div class="stat"><b>'+pct(signups.length,totalVisits)+'</b>of visits sign up</div>'+
     '<div class="stat"><b>'+signups.length+'</b>on the list</div>'+
     '<div class="stat"><b>'+signups.filter(s=>s.updated_at).length+'</b>answered step two</div>'+
     '<div class="stat"><b>'+signups.filter(s=>!s.updated_at).length+'</b>email only</div>'+
     '<div class="stat"><b>'+withSpend+'</b>spend $500+ a month</div>';
+  const by={};visits.forEach(v=>{by[v.ref]={v:Number(v.visits),s:0}});signups.forEach(s=>{const k=s.ref||"direct";(by[k]=by[k]||{v:0,s:0}).s++});
+  document.getElementById("refs").innerHTML=Object.keys(by).length?'<table><thead><tr><th>From</th><th>Visits</th><th>Sign ups</th><th>Rate</th></tr></thead><tbody>'+Object.entries(by).sort((a,b)=>b[1].v-a[1].v).map(([k,o])=>'<tr><td>'+esc(k)+'</td><td>'+o.v+'</td><td>'+o.s+'</td><td>'+pct(o.s,o.v)+'</td></tr>').join("")+'</tbody></table>':"";
   document.getElementById("rows").innerHTML=signups.length?signups.map(s=>'<tr><td>'+esc(new Date(s.created_at).toLocaleString())+'</td><td>'+esc(s.email)+'</td><td>'+(s.instagram?'<a href="https://instagram.com/'+esc(s.instagram)+'" target="_blank" rel="noopener">@'+esc(s.instagram)+'</a>':esc(s.business))+'</td><td>'+esc(s.country)+'</td><td>'+esc(SIZE[s.team_size])+'</td><td>'+esc(SPEND[s.monthly_spend])+'</td><td>'+esc([s.source,s.ref].filter(Boolean).join(", "))+'</td><td class="del"><button data-id="'+esc(s.id)+'">Remove</button></td></tr>').join(""):'<tr><td colspan="8" class="empty muted">No sign ups yet.</td></tr>';
 }
 document.getElementById("rows").addEventListener("click",async e=>{

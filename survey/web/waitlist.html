@@ -59,7 +59,16 @@ h1 .serif{font-weight:400}
 .form input::placeholder{color:#9C807A}
 .form input:focus{outline:2px solid var(--gold);outline-offset:1px}
 .btn{background:var(--gold);color:var(--ox);border:0;border-radius:12px;padding:15px 20px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;white-space:nowrap}
-.btn:hover{filter:brightness(1.05)}
+.btn{position:relative;overflow:hidden;transition:transform .18s cubic-bezier(.3,.7,.4,1),box-shadow .25s,filter .2s}
+.btn:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 10px 26px rgba(215,174,98,.3)}
+.btn:active{transform:scale(.97);box-shadow:none}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.5) 50%,transparent 65%);transform:translateX(-130%);pointer-events:none}
+.btn:hover::after,.btn.shine::after{animation:sheen .9s ease}
+@keyframes sheen{to{transform:translateX(130%)}}
+.btn.busy{color:transparent;cursor:default;opacity:1;filter:none}
+.btn.busy::before{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:2.5px solid rgba(42,15,20,.22);border-top-color:var(--ox);animation:bspin .7s linear infinite}
+@keyframes bspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn,.btn:hover,.btn:active{transform:none;transition:none}.btn::after{display:none}}
 .fine{font-size:13px;color:#A58A83;margin-top:12px}
 /* product preview */
 .preview{background:var(--paper);color:var(--ox);border-radius:12px;border:1px solid var(--oxl);box-shadow:0 30px 70px rgba(0,0,0,.35);overflow:hidden}
@@ -239,7 +248,7 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 .err{color:#F0A99B;font-size:14px;margin-top:10px;min-height:0}
 .err:empty{display:none}
 .final .err{text-align:center}
-.btn[disabled]{opacity:.6;cursor:wait}
+.btn[disabled]:not(.busy){opacity:.6;cursor:wait}
 /* step two */
 .step2{display:none;margin-top:26px;background:var(--ox2);border:1px solid var(--oxl);border-radius:18px;padding:22px;max-width:520px}
 .step2 h3{font-size:20px;letter-spacing:-.02em}
@@ -288,7 +297,7 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
         <div class="step2" id="step2">
           <h3>You're in. Two quick things?</h3>
           <p>So we know who to let in first. Takes ten seconds.</p>
-          <div class="field"><label for="ig">Business Instagram</label><input id="ig" name="instagram" placeholder="@harbourrealty" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+          <div class="field"><label for="ig">Business Instagram</label><input id="ig" name="instagram" placeholder="@yourhandle" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
           <div class="field"><label for="country">Country</label><select id="country" name="country"><option>United States</option><option>Canada</option><option>United Kingdom</option><option>Ireland</option><option>Australia</option><option>United Arab Emirates</option><option>Somewhere else</option></select></div>
           <div class="field"><label>How many agents?</label><div class="chips"><label><input type="radio" name="size" value="1"><span>Just me</span></label><label><input type="radio" name="size" value="2-5"><span>2 to 5</span></label><label><input type="radio" name="size" value="6-20"><span>6 to 20</span></label><label><input type="radio" name="size" value="21+"><span>21 or more</span></label></div></div>
           <div class="field"><label>Monthly marketing spend, roughly</label><div class="chips"><label><input type="radio" name="spend" value="<500"><span>Under $500</span></label><label><input type="radio" name="spend" value="500-2000"><span>$500 to $2,000</span></label><label><input type="radio" name="spend" value="2000-5000"><span>$2,000 to $5,000</span></label><label><input type="radio" name="spend" value="5000+"><span>$5,000 or more</span></label></div></div>
@@ -413,7 +422,7 @@ async function post(url,data){
 document.querySelectorAll('form[data-step="1"]').forEach(f=>f.addEventListener("submit",async e=>{
   e.preventDefault();
   const btn=f.querySelector(".btn"),err=f.nextElementSibling;
-  err.textContent="";btn.disabled=true;
+  err.textContent="";btn.disabled=true;btn.classList.add("busy");
   try{
     const res=await post("/api/waitlist",{email:f.email.value,website:f.website.value,source:f.closest(".final")?"bottom":"top",ref});
     signupId=res.id;
@@ -426,11 +435,11 @@ document.querySelectorAll('form[data-step="1"]').forEach(f=>f.addEventListener("
     else if(res.already){document.querySelector("#step2 h3").textContent="You're already on the list. Two quick things?";document.getElementById("step2").style.display="block"}
     else document.getElementById("step2").style.display="block";
     join.scrollIntoView({behavior:"smooth",block:"start"});
-  }catch(x){err.textContent=x.message;btn.disabled=false}
+  }catch(x){err.textContent=x.message;btn.disabled=false;btn.classList.remove("busy")}
 }));
 document.getElementById("finish").addEventListener("click",async()=>{
   const v=n=>{const el=document.querySelector('#step2 [name="'+n+'"]:checked')||document.querySelector('#step2 [name="'+n+'"]:not([type=radio])');return el?el.value:""};
-  const btn=document.getElementById("finish");btn.disabled=true;
+  const btn=document.getElementById("finish");btn.disabled=true;btn.classList.add("busy");
   try{if(signupId)await post("/api/waitlist/"+signupId+"/details",{instagram:v("instagram"),country:v("country"),size:v("size"),spend:v("spend")})}catch(x){}
   document.getElementById("step2").style.display="none";document.getElementById("done").style.display="block";
 });
@@ -638,6 +647,10 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   const io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)&&!started){started=true;io.disconnect();loop()}},{threshold:.35});
   io.observe(pv);
 })();
+// Count the visit (by link source only) so the admin page can show the sign up rate.
+try{if(!sessionStorage.getItem("hv")){sessionStorage.setItem("hv","1");fetch("/api/waitlist/visit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ref}),keepalive:true}).catch(()=>{})}}catch(x){}
+// A single sheen across the top button shortly after the page opens, to draw the eye once.
+setTimeout(()=>{const b=document.querySelector("#join .btn");if(b&&!matchMedia("(prefers-reduced-motion: reduce)").matches){b.classList.add("shine");setTimeout(()=>b.classList.remove("shine"),1000)}},1400);
 </script>
 </body>
 </html>
