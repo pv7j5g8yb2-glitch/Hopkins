@@ -128,10 +128,20 @@ h2 .serif{font-weight:400}
 blockquote{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-size:clamp(26px,3.2vw,36px);line-height:1.2;border-left:2px solid var(--gold);padding-left:22px;margin:0 0 10px}
 .cite{font-size:14px;color:var(--rose);padding-left:24px;margin-top:16px;letter-spacing:.01em}
 /* trust */
-.trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:44px}
-@media (max-width:860px){.trust{grid-template-columns:1fr}}
-.trust .card h3{margin-top:0}
-.trust svg{width:30px;height:30px;color:var(--plum);margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:44px}
+.stat{border-top:1px solid var(--line);padding-top:22px}
+.stat b{display:block;font-size:clamp(48px,6vw,72px);line-height:1;letter-spacing:-.05em;font-weight:700;color:var(--bronze)}
+.stat p{color:var(--mut);font-size:15px;margin-top:12px;max-width:17em}
+.src{font-size:13px;color:var(--mut);margin-top:26px;opacity:.85}
+.answer{font-size:clamp(20px,2.4vw,24px);font-weight:600;letter-spacing:-.02em;margin-top:40px;max-width:24em}
+@media (max-width:700px){.stats{grid-template-columns:1fr;gap:22px;margin-top:34px}.stat{display:grid;grid-template-columns:128px 1fr;align-items:center;gap:14px;padding-top:18px}.stat b{font-size:40px}.stat p{margin-top:0}}
+.bar{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--ox);box-shadow:0 8px 24px rgba(42,15,20,.18);border-bottom:1px solid var(--oxl);padding-top:env(safe-area-inset-top);transform:translateY(-102%);transition:transform .35s cubic-bezier(.2,.7,.2,1);visibility:hidden}
+.bar.on{transform:none;visibility:visible}
+.barin{display:flex;align-items:center;justify-content:space-between;height:60px}
+.bar .logo{color:var(--cream);font-size:18px}
+.bar .logo svg{width:24px;height:24px}
+.barbtn{background:var(--gold);color:var(--ox);font-weight:700;font-size:14px;letter-spacing:-.01em;padding:10px 16px;border-radius:10px;text-decoration:none}
+@media (prefers-reduced-motion:reduce){.bar{transition:none}}
 /* faq */
 .faq{margin-top:36px;border-top:1px solid var(--line);max-width:780px}
 details{border-bottom:1px solid var(--line);padding:20px 0}
@@ -199,7 +209,8 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 </head>
 <body>
 
-<header class="top grain">
+<div class="bar" id="bar"><div class="wrap barin"><a class="logo" href="#top" tabindex="-1"><svg class="" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg>Hopkins</a><a class="barbtn" href="#join" tabindex="-1">Join the waitlist</a></div></div>
+<header class="top grain" id="top">
   <div class="wrap">
     <nav><a class="logo" href="#"><svg class="" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg>Hopkins</a><a class="navlink" href="#join">Join the waitlist</a></nav>
     <div class="hero">
@@ -296,13 +307,16 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 
 <section>
   <div class="wrap">
-    <p class="kicker">Built around your yes</p>
-    <h2>Your money, <span class="serif">your call.</span></h2>
-    <div class="trust">
-      <div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><h3>Nothing without approval</h3><p>No ad goes live and no budget is spent until you say yes.</p></div>
-      <div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><h3>Your own ad account</h3><p>Ads run from your account, so you own them and see every cent.</p></div>
-      <div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5m0 14h16M8 15l4-4 3 3 5-6"/></svg><h3>Plain reports</h3><p>Every Monday: what ran, what it cost and what it brought in. No jargon.</p></div>
+    <p class="kicker">The first hour</p>
+    <h2>Whoever replies first <span class="serif">wins the listing.</span></h2>
+    <p class="lead">A new lead is worth most in the first hour. Most businesses miss it.</p>
+    <div class="stats">
+      <div class="stat"><b>42 hrs</b><p>Average time US businesses took to answer an online lead.</p></div>
+      <div class="stat"><b>23%</b><p>Never answered at all.</p></div>
+      <div class="stat"><b>7&times;</b><p>More likely to qualify a lead when you reply within the hour.</p></div>
     </div>
+    <p class="src">Harvard Business Review, 2011. Test leads sent to 2,241 US companies.</p>
+    <p class="answer">Hopkins is built to reply to every new lead in minutes, day or night.</p>
   </div>
 </section>
 
@@ -418,6 +432,25 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
     };
   });
 });
+// A slim bar with the sign up button slides in once both forms are off screen.
+(function(){
+  const bar=document.getElementById("bar"),hero=document.getElementById("top"),fin=document.querySelector(".final");
+  if(!bar||!hero||!fin||!("IntersectionObserver" in window))return;
+  const seen=new Map();
+  const io=new IntersectionObserver(es=>{
+    es.forEach(e=>seen.set(e.target,e.isIntersecting));
+    const on=!seen.get(hero)&&!seen.get(fin);
+    bar.classList.toggle("on",on);
+    bar.querySelectorAll("a").forEach(a=>a.tabIndex=on?0:-1);
+  });
+  io.observe(hero);io.observe(fin);
+  bar.querySelector(".barbtn").addEventListener("click",e=>{
+    e.preventDefault();
+    document.getElementById("join").scrollIntoView({behavior:"smooth",block:"start"});
+    const input=document.querySelector('#join input[type="email"]');
+    if(input&&input.offsetParent)setTimeout(()=>input.focus({preventScroll:true}),600);
+  });
+})();
 </script>
 </body>
 </html>
