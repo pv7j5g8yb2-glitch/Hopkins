@@ -91,6 +91,25 @@ Bold grotesk word mixed with an italic serif word, cream text over warm real pho
 For Hopkins that is Inter Tight bold with Instrument Serif italic, oxblood, cream and
 gold, per CLAUDE.md. Free licence photos only (Unsplash, Pexels), never listing portals.
 
+## Our house style: editorial
+
+The chosen style for @gethopkins (Ismael's pick, 2026-10-17) is the editorial look:
+moody real photos (interiors, desks, coffee, hands, streets, objects), very tight bold
+grotesk mixed with one big italic serif word, type laid over and around the photo, small
+side notes, a tiny signature mark at the bottom, a different background per slide with
+the same type. References: @coffeecontracts, @claunicornios, @heyalyssamichelle,
+@femmebrandsocial, @asylic.inc (the calculator post).
+
+The style wins attention and shares. It does not turn people into customers on its own.
+Every post in this style also needs:
+1. Something usable (a hook, a teardown, a number) so it gets saved and sent.
+2. A next step: comment for the freebie, or the waitlist link.
+3. Proof once it exists (real screenshots, real numbers), never invented.
+4. Ads and numbers as the topic, aimed at team leaders, not lifestyle tips for solo agents.
+
+Backgrounds: Ismael sends the photos (his own or free licence stock), Claude does the
+type, layout and edit on top.
+
 ## Intentionally messy, not template neat
 
 Left alone, AI made layouts come out centred, symmetrical and evenly spaced, and the feed
