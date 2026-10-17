@@ -190,6 +190,14 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 .done{display:none;margin-top:26px;font-size:18px}
 .done b{display:block;font-size:26px;letter-spacing:-.03em;color:var(--cream)}
 .done span{color:var(--rose)}
+.donerow{display:flex;align-items:flex-start;gap:14px}
+.tick{width:34px;height:34px;flex:none;margin-top:1px;fill:none;stroke:var(--gold);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.tick-c{stroke-dasharray:145;stroke-dashoffset:145;animation:tickdraw .6s cubic-bezier(.65,0,.45,1) .1s forwards}
+.tick-p{stroke-dasharray:36;stroke-dashoffset:36;animation:tickdraw .35s cubic-bezier(.65,0,.45,1) .6s forwards}
+.tick{animation:tickpop .3s ease-out .9s}
+@keyframes tickdraw{to{stroke-dashoffset:0}}
+@keyframes tickpop{50%{transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){.tick-c,.tick-p,.tick{animation:none;stroke-dashoffset:0}}
 .sent .form{display:none}
 #join.sent{display:flex;flex-direction:column}
 .sent .fine{order:2;margin-top:18px}
@@ -224,7 +232,7 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
           <button class="btn" id="finish" type="button" style="width:100%;margin-top:6px">Done</button>
           <button type="button" id="skip" style="display:block;margin:12px auto 0;background:none;border:0;color:var(--rose);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer">Skip</button>
         </div>
-        <div class="done" id="done"><b>Thanks, you're on the list.</b><span>We'll email you on launch day.</span></div>
+        <div class="done" id="done"><div class="donerow"><svg class="tick" viewBox="0 0 52 52" aria-hidden="true"><circle class="tick-c" cx="26" cy="26" r="23"/><path class="tick-p" d="M15.5 27.5l7 7 14-15"/></svg><div><b>Thanks, you're on the list.</b><span>We'll email you on launch day.</span></div></div></div>
       </div>
       <div class="preview" aria-label="Preview of the Hopkins chat">
         <div class="win">
