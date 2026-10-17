@@ -343,7 +343,7 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 </footer>
 
 <script>
-// Sign ups are saved by the server (see survey/src/waitlist.js).
+// Sign ups are saved by a Netlify function (see waitlist/lib/signup.mjs).
 const params=new URLSearchParams(location.search);
 const ref=params.get("ref")||[params.get("utm_source"),params.get("utm_campaign")].filter(Boolean).join(" ")||"";
 let signupId=null;

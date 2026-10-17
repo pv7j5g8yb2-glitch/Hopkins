@@ -89,7 +89,7 @@ async function completeResponse({ segment, transcript, responseId, language }) {
 
 app.get("/healthz", async () => ({ ok: true }));
 
-registerWaitlist(app, WEB_DIR);
+registerWaitlist(app);
 
 app.get("/", async (request, reply) => {
   const links = listSegments()

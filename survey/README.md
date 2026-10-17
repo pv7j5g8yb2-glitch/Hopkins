@@ -126,18 +126,24 @@ the current card policy on their pricing page before committing.
 
 ## Hopkins waitlist
 
-The Hopkins landing page and its sign ups also live in this server, so they use the same
-database and phone notifications as the survey.
+The Hopkins landing page runs on Netlify from `waitlist/` at the repo root. Its sign
+ups go into this server's database, so they are listed at `/admin/waitlist` here, next
+to the survey, with an Export CSV button.
 
-- The page is `web/waitlist.html`, with its ad images in `web/waitlist/`. It answers at
-  `/` on any host starting with `waitlist.` (point `waitlist.kirmistudio.com` at this
-  service and add it as a custom domain on the host), and at `/waitlist` everywhere.
+- The page is `waitlist/public/index.html`, with its ad images in
+  `waitlist/public/waitlist-assets/`. The sign up endpoints are one Netlify function,
+  `waitlist/netlify/functions/waitlist.mjs`, with the logic in `waitlist/lib/signup.mjs`.
 - Step one saves the email (`POST /api/waitlist`). The optional step two adds business
   name, country, team size and monthly marketing spend to the same sign up
   (`POST /api/waitlist/:id/details`). A repeat email is not stored twice.
 - `?ref=` or `utm_source` / `utm_campaign` on the link are saved with the sign up, so
   you can tell the Instagram bio link from a story link.
-- A hidden field and a per minute limit keep scripted sign ups out. Visitors' IP addresses
+- A hidden field and a rate limit keep scripted sign ups out. Visitors' IP addresses
   are never stored.
-- Each new sign up sends a notification with the running total, never the email
-  itself. See them all at `/admin/waitlist`, with an Export CSV button.
+- Each new sign up sends a notification with the running total, never the email itself.
+
+To set it up on Netlify: add a new site from this repo with the base directory set to
+`waitlist` (the rest comes from `waitlist/netlify.toml`). Under environment variables,
+add `DATABASE_URL`, `DATABASE_AUTH_TOKEN` and `NTFY_TOPIC` with the same values as this
+server. Then add `waitlist.kirmistudio.com` as a custom domain and create the CNAME
+record Netlify shows you.

@@ -1,117 +1,12 @@
-import { randomUUID } from "node:crypto";
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
-
 import { run, get, all } from "./db.js";
-import { notify } from "./notify.js";
 import { requireAdmin } from "./admin-auth.js";
 import { toCsv } from "./csv.js";
 
-// The Hopkins waitlist: the landing page, its images, the two sign up endpoints, and an
-// admin view. It lives in this server so sign ups land in the same database and send the
-// same phone notifications as the survey, with no second service to run.
-//
-// The page answers on any host whose name starts with "waitlist." (point the
-// waitlist.kirmistudio.com DNS record at this service) and at /waitlist on every host,
-// which is handy for checking it before the DNS record exists.
+// Admin view of the Hopkins waitlist. The page and the sign up endpoints run on Netlify
+// (see waitlist/ at the repo root) and write to this same database, so sign ups are
+// listed here next to the survey.
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const SIZES = new Set(["1", "2-5", "6-20", "21+"]);
-const SPENDS = new Set(["<500", "500-2000", "2000-5000", "5000+"]);
-const COUNTRIES = new Set([
-  "United States", "Canada", "United Kingdom", "Ireland", "Australia", "United Arab Emirates", "Somewhere else",
-]);
-const SIZE_LABELS = { "1": "just them", "2-5": "2 to 5 agents", "6-20": "6 to 20 agents", "21+": "21 or more agents" };
-const SPEND_LABELS = { "<500": "under $500", "500-2000": "$500 to $2,000", "2000-5000": "$2,000 to $5,000", "5000+": "$5,000 or more" };
-const ASSETS = new Set(["ad1.jpg", "ad2.jpg", "ad3.jpg"]);
-
-// A light brake on scripted sign ups. Kept in memory only: addresses are never stored.
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_PER_WINDOW = 12;
-const hits = new Map();
-function tooMany(ip) {
-  const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear();
-  return recent.length > MAX_PER_WINDOW;
-}
-
-function clean(value, max) {
-  return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
-}
-
-export function registerWaitlist(app, webDir) {
-  const pageHtml = readFileSync(join(webDir, "waitlist.html"), "utf8");
-  const assetDir = join(webDir, "waitlist");
-
-  const sendPage = (reply) =>
-    reply.type("text/html").header("Cache-Control", "no-cache").send(pageHtml);
-
-  app.addHook("onRequest", async (request, reply) => {
-    if (request.hostname.startsWith("waitlist.") && request.method === "GET" && request.url.split("?")[0] === "/") {
-      return sendPage(reply);
-    }
-  });
-
-  app.get("/waitlist", async (request, reply) => sendPage(reply));
-
-  app.get("/waitlist-assets/:file", async (request, reply) => {
-    const file = request.params.file;
-    const path = join(assetDir, file);
-    if (!ASSETS.has(file) || !existsSync(path)) return reply.code(404).send("Not found");
-    reply.type("image/jpeg").header("Cache-Control", "public, max-age=604800").send(readFileSync(path));
-  });
-
-  app.post("/api/waitlist", async (request, reply) => {
-    const { email, source, ref, website } = request.body ?? {};
-    // "website" is a field people never see; only bots fill it in. They get a normal
-    // looking reply so they don't retry, and nothing is stored.
-    if (website) return { ok: true, id: randomUUID() };
-    if (tooMany(request.ip)) return reply.code(429).send({ error: "Too many tries. Please wait a few minutes." });
-
-    const address = typeof email === "string" ? email.trim().toLowerCase() : "";
-    if (!EMAIL_RE.test(address) || address.length > 200) {
-      return reply.code(400).send({ error: "That email doesn't look right." });
-    }
-
-    const existing = await get(`SELECT id FROM waitlist WHERE email = ?`, [address]);
-    if (existing) return { ok: true, id: existing.id, already: true };
-
-    const id = randomUUID();
-    const now = new Date().toISOString();
-    await run(`INSERT INTO waitlist (id, email, source, ref, created_at) VALUES (?, ?, ?, ?, ?)`, [
-      id, address, clean(source, 40), clean(ref, 200), now,
-    ]);
-    const count = await get(`SELECT COUNT(*) as n FROM waitlist`);
-    notify("Hopkins waitlist", `New sign up. That's ${count?.n ?? "?"} on the list.`, ["tada"]);
-    return { ok: true, id };
-  });
-
-  app.post("/api/waitlist/:id/details", async (request, reply) => {
-    const row = await get(`SELECT id FROM waitlist WHERE id = ?`, [request.params.id]);
-    if (!row) return reply.code(404).send({ error: "unknown sign up" });
-
-    const { business, country, size, spend } = request.body ?? {};
-    const fields = {
-      business: clean(business, 120),
-      country: COUNTRIES.has(country) ? country : null,
-      team_size: SIZES.has(size) ? size : null,
-      monthly_spend: SPENDS.has(spend) ? spend : null,
-    };
-    await run(
-      `UPDATE waitlist SET business = COALESCE(?, business), country = COALESCE(?, country),
-         team_size = COALESCE(?, team_size), monthly_spend = COALESCE(?, monthly_spend), updated_at = ? WHERE id = ?`,
-      [fields.business, fields.country, fields.team_size, fields.monthly_spend, new Date().toISOString(), row.id]
-    );
-    const parts = [SIZE_LABELS[fields.team_size], SPEND_LABELS[fields.monthly_spend] && `spends ${SPEND_LABELS[fields.monthly_spend]}`, fields.country].filter(Boolean);
-    if (parts.length) notify("Hopkins waitlist", `Sign up details: ${parts.join(", ")}.`, ["memo"]);
-    return { ok: true };
-  });
-
-  // ---- admin ----
-
+export function registerWaitlist(app) {
   const listSql = `SELECT id, email, business, country, team_size, monthly_spend, source, ref, created_at, updated_at
                    FROM waitlist ORDER BY created_at DESC`;
 
