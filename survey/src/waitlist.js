@@ -38,6 +38,14 @@ function tooMany(ip) {
   return recent.length > MAX_PER_WINDOW;
 }
 
+// Accepts "@harbourrealty", "harbourrealty" or an instagram.com link and keeps just the
+// handle. Anything that can't be an Instagram username is dropped.
+function igHandle(value) {
+  if (typeof value !== "string") return null;
+  const handle = value.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").split(/[/?#]/)[0];
+  return /^[A-Za-z0-9._]{1,30}$/.test(handle) ? handle.toLowerCase() : null;
+}
+
 function clean(value, max) {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
 }
@@ -93,17 +101,18 @@ export function registerWaitlist(app, webDir) {
     const row = await get(`SELECT id FROM waitlist WHERE id = ?`, [request.params.id]);
     if (!row) return reply.code(404).send({ error: "unknown sign up" });
 
-    const { business, country, size, spend } = request.body ?? {};
+    const { business, instagram, country, size, spend } = request.body ?? {};
     const fields = {
       business: clean(business, 120),
+      instagram: igHandle(instagram),
       country: COUNTRIES.has(country) ? country : null,
       team_size: SIZES.has(size) ? size : null,
       monthly_spend: SPENDS.has(spend) ? spend : null,
     };
     await run(
-      `UPDATE waitlist SET business = COALESCE(?, business), country = COALESCE(?, country),
+      `UPDATE waitlist SET business = COALESCE(?, business), instagram = COALESCE(?, instagram), country = COALESCE(?, country),
          team_size = COALESCE(?, team_size), monthly_spend = COALESCE(?, monthly_spend), updated_at = ? WHERE id = ?`,
-      [fields.business, fields.country, fields.team_size, fields.monthly_spend, new Date().toISOString(), row.id]
+      [fields.business, fields.instagram, fields.country, fields.team_size, fields.monthly_spend, new Date().toISOString(), row.id]
     );
     const parts = [SIZE_LABELS[fields.team_size], SPEND_LABELS[fields.monthly_spend] && `spends ${SPEND_LABELS[fields.monthly_spend]}`, fields.country].filter(Boolean);
     if (parts.length) notify("Hopkins waitlist", `Sign up details: ${parts.join(", ")}.`, ["memo"]);
@@ -112,7 +121,7 @@ export function registerWaitlist(app, webDir) {
 
   // ---- admin ----
 
-  const listSql = `SELECT id, email, business, country, team_size, monthly_spend, source, ref, created_at, updated_at
+  const listSql = `SELECT id, email, instagram, business, country, team_size, monthly_spend, source, ref, created_at, updated_at
                    FROM waitlist ORDER BY created_at DESC`;
 
   app.get("/api/admin/waitlist", { preHandler: requireAdmin }, async () => ({ signups: await all(listSql) }));
@@ -127,7 +136,7 @@ export function registerWaitlist(app, webDir) {
   app.get("/api/admin/waitlist.csv", { preHandler: requireAdmin }, async (request, reply) => {
     const rows = await all(listSql);
     const csv = toCsv(
-      ["created_at", "email", "business", "country", "team_size", "monthly_spend", "source", "ref", "id"],
+      ["created_at", "email", "instagram", "business", "country", "team_size", "monthly_spend", "source", "ref", "id"],
       rows
     );
     reply.header("Content-Type", "text/csv").header("Content-Disposition", "attachment; filename=hopkins-waitlist.csv").send(csv);
@@ -155,6 +164,7 @@ const ADMIN_PAGE = `<!doctype html>
   table{border-collapse:collapse;width:100%;min-width:760px}
   th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #F0E8DA;vertical-align:top}
   th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#7A5A52}
+  td a{color:#5B4873;font-weight:600;text-decoration:none}
   td.del button{background:none;border:0;color:#9A5A50;cursor:pointer;font:inherit;text-decoration:underline}
   .empty{padding:30px;text-align:center}
 </style></head>
@@ -162,7 +172,7 @@ const ADMIN_PAGE = `<!doctype html>
 <header><div><h1>Hopkins waitlist</h1><div class="muted" id="sub">Loading</div></div>
 <div><a class="btn" href="/api/admin/waitlist.csv">Export CSV</a> <a class="btn" href="/admin" style="background:#5B4873">Survey admin</a></div></header>
 <div class="stats" id="stats"></div>
-<div class="table"><table><thead><tr><th>Joined</th><th>Email</th><th>Business</th><th>Country</th><th>Agents</th><th>Spend a month</th><th>From</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="table"><table><thead><tr><th>Joined</th><th>Email</th><th>Instagram</th><th>Country</th><th>Agents</th><th>Spend a month</th><th>From</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
 </div>
 <script>
 const SIZE={"1":"Just them","2-5":"2 to 5","6-20":"6 to 20","21+":"21 or more"};
@@ -178,7 +188,7 @@ async function load(){
     '<div class="stat"><b>'+signups.length+'</b>on the list</div>'+
     '<div class="stat"><b>'+signups.filter(s=>s.team_size).length+'</b>answered step two</div>'+
     '<div class="stat"><b>'+withSpend+'</b>spend $500+ a month</div>';
-  document.getElementById("rows").innerHTML=signups.length?signups.map(s=>'<tr><td>'+esc(new Date(s.created_at).toLocaleString())+'</td><td>'+esc(s.email)+'</td><td>'+esc(s.business)+'</td><td>'+esc(s.country)+'</td><td>'+esc(SIZE[s.team_size])+'</td><td>'+esc(SPEND[s.monthly_spend])+'</td><td>'+esc([s.source,s.ref].filter(Boolean).join(", "))+'</td><td class="del"><button data-id="'+esc(s.id)+'">Remove</button></td></tr>').join(""):'<tr><td colspan="8" class="empty muted">No sign ups yet.</td></tr>';
+  document.getElementById("rows").innerHTML=signups.length?signups.map(s=>'<tr><td>'+esc(new Date(s.created_at).toLocaleString())+'</td><td>'+esc(s.email)+'</td><td>'+(s.instagram?'<a href="https://instagram.com/'+esc(s.instagram)+'" target="_blank" rel="noopener">@'+esc(s.instagram)+'</a>':esc(s.business))+'</td><td>'+esc(s.country)+'</td><td>'+esc(SIZE[s.team_size])+'</td><td>'+esc(SPEND[s.monthly_spend])+'</td><td>'+esc([s.source,s.ref].filter(Boolean).join(", "))+'</td><td class="del"><button data-id="'+esc(s.id)+'">Remove</button></td></tr>').join(""):'<tr><td colspan="8" class="empty muted">No sign ups yet.</td></tr>';
 }
 document.getElementById("rows").addEventListener("click",async e=>{
   const id=e.target.dataset&&e.target.dataset.id; if(!id)return;

@@ -55,6 +55,7 @@ await client.executeMultiple(`
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     business TEXT,
+    instagram TEXT,
     country TEXT,
     team_size TEXT,
     monthly_spend TEXT,
@@ -78,6 +79,7 @@ const migrations = [
   ["answers", "question_text_localized", "TEXT"],
   ["answers", "answer_text_original", "TEXT"],
   ["translation_bundles", "source_hash", "TEXT"],
+  ["waitlist", "instagram", "TEXT"],
 ];
 for (const [table, column, type] of migrations) {
   try {

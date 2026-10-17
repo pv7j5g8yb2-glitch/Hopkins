@@ -120,11 +120,11 @@ h2 .serif{font-weight:400}
 .dark{background:var(--ox);color:var(--cream)}
 .dark .kicker{color:var(--rose)}
 .dark .lead{color:var(--rose)}
-.story{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:center}
-@media (max-width:860px){.story{grid-template-columns:1fr;gap:36px}}
-.year{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-size:clamp(110px,16vw,190px);line-height:.9;color:var(--gold)}
+.story{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:96px;align-items:center}
+@media (max-width:860px){.story{grid-template-columns:1fr;gap:0}.story .quote{margin-top:48px;padding-top:48px;border-top:1px solid var(--oxl)}}
+.year{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-size:clamp(110px,16vw,190px);line-height:.9;color:var(--gold);margin-bottom:20px}
 blockquote{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-size:clamp(26px,3.2vw,36px);line-height:1.2;border-left:2px solid var(--gold);padding-left:22px;margin:0 0 10px}
-.cite{font-size:14px;color:var(--rose);padding-left:24px}
+.cite{font-size:14px;color:var(--rose);padding-left:24px;margin-top:16px;letter-spacing:.01em}
 /* trust */
 .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:44px}
 @media (max-width:860px){.trust{grid-template-columns:1fr}}
@@ -210,11 +210,11 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
           <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
         </form>
         <p class="err" role="alert"></p>
-        <p class="fine">Early access opens in waves. We only email you about Hopkins.</p>
+        <p class="fine">Early access will open for signed up teams. We only email you once on launch day.</p>
         <div class="step2" id="step2">
           <h3>You're in. Two quick things?</h3>
           <p>So we know who to let in first. Takes ten seconds, and you can skip it.</p>
-          <div class="field"><label for="biz">Business name</label><input id="biz" name="business" placeholder="e.g. Harbour Realty"></div>
+          <div class="field"><label for="ig">Business Instagram</label><input id="ig" name="instagram" placeholder="@harbourrealty" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
           <div class="field"><label for="country">Country</label><select id="country" name="country"><option>United States</option><option>Canada</option><option>United Kingdom</option><option>Ireland</option><option>Australia</option><option>United Arab Emirates</option><option>Somewhere else</option></select></div>
           <div class="field"><label>How many agents?</label><div class="chips"><label><input type="radio" name="size" value="1"><span>Just me</span></label><label><input type="radio" name="size" value="2-5"><span>2 to 5</span></label><label><input type="radio" name="size" value="6-20"><span>6 to 20</span></label><label><input type="radio" name="size" value="21+"><span>21 or more</span></label></div></div>
           <div class="field"><label>Monthly marketing spend, roughly</label><div class="chips"><label><input type="radio" name="spend" value="<500"><span>Under $500</span></label><label><input type="radio" name="spend" value="500-2000"><span>$500 to $2,000</span></label><label><input type="radio" name="spend" value="2000-5000"><span>$2,000 to $5,000</span></label><label><input type="radio" name="spend" value="5000+"><span>$5,000 or more</span></label></div></div>
@@ -284,10 +284,9 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
       <p class="year">1923</p>
       <p class="lead" style="color:var(--cream);font-size:20px;max-width:26em">Claude Hopkins publishes <i>Scientific Advertising</i>. He puts coded coupons in his ads, tests headlines and offers against each other, and keeps only what works.</p>
     </div>
-    <div>
-      <blockquote>"Half the money I spend on advertising is wasted. The trouble is I don't know which half."</blockquote>
+    <div class="quote">
+      <blockquote>&ldquo;Half the money I spend on advertising is wasted. The trouble is I don&rsquo;t know which half.&rdquo;</blockquote>
       <p class="cite">— John Wanamaker</p>
-      <h2 style="margin-top:34px">Tested, <span class="serif">not guessed.</span></h2>
     </div>
   </div>
 </section>
@@ -377,7 +376,7 @@ document.querySelectorAll('form[data-step="1"]').forEach(f=>f.addEventListener("
 document.getElementById("finish").addEventListener("click",async()=>{
   const v=n=>{const el=document.querySelector('#step2 [name="'+n+'"]:checked')||document.querySelector('#step2 [name="'+n+'"]:not([type=radio])');return el?el.value:""};
   const btn=document.getElementById("finish");btn.disabled=true;
-  try{if(signupId)await post("/api/waitlist/"+signupId+"/details",{business:v("business"),country:v("country"),size:v("size"),spend:v("spend")})}catch(x){}
+  try{if(signupId)await post("/api/waitlist/"+signupId+"/details",{instagram:v("instagram"),country:v("country"),size:v("size"),spend:v("spend")})}catch(x){}
   document.getElementById("step2").style.display="none";document.getElementById("done").style.display="block";
 });
 document.getElementById("skip").addEventListener("click",()=>{
