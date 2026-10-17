@@ -47,22 +47,6 @@ await client.executeMultiple(`
   );
 
   CREATE INDEX IF NOT EXISTS answers_response_idx ON answers(response_id);
-
-  -- Hopkins waitlist sign ups from the landing page. Separate from survey responses:
-  -- different people, different purpose. Email is the only required field; the rest
-  -- comes from the optional second step and can stay empty.
-  CREATE TABLE IF NOT EXISTS waitlist (
-    id TEXT PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
-    business TEXT,
-    country TEXT,
-    team_size TEXT,
-    monthly_spend TEXT,
-    source TEXT,
-    ref TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT
-  );
 `);
 
 // The CREATE TABLE above only takes effect on a brand new database. The live database
