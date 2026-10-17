@@ -59,11 +59,11 @@ export function registerWaitlist(app, webDir) {
     reply.type("text/html").header("Cache-Control", "no-cache").send(pageHtml);
 
   app.addHook("onRequest", async (request, reply) => {
-    if (request.hostname.startsWith("waitlist.") && request.method === "GET" && request.url.split("?")[0] === "/") {
+    if (request.hostname.startsWith("waitlist.") && (request.method === "GET" || request.method === "HEAD") && request.url.split("?")[0] === "/") {
       return sendPage(reply);
     }
     // Browsers ask for /favicon.ico on their own; desktop Safari ignores the inline SVG icon.
-    if (request.hostname.startsWith("waitlist.") && request.method === "GET" && request.url.split("?")[0] === "/favicon.ico") {
+    if (request.hostname.startsWith("waitlist.") && (request.method === "GET" || request.method === "HEAD") && request.url.split("?")[0] === "/favicon.ico") {
       return reply.type("image/x-icon").header("Cache-Control", "public, max-age=604800").send(readFileSync(join(assetDir, "favicon.ico")));
     }
   });
