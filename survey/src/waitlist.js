@@ -23,7 +23,8 @@ const COUNTRIES = new Set([
 ]);
 const SIZE_LABELS = { "1": "just them", "2-5": "2 to 5 agents", "6-20": "6 to 20 agents", "21+": "21 or more agents" };
 const SPEND_LABELS = { "<500": "under $500", "500-2000": "$500 to $2,000", "2000-5000": "$2,000 to $5,000", "5000+": "$5,000 or more" };
-const ASSETS = new Set(["ad1.jpg", "ad2.jpg", "ad3.jpg"]);
+const ASSETS = new Set(["ad1.jpg", "ad2.jpg", "ad3.jpg", "favicon-32.png", "apple-touch-icon.png", "favicon.ico"]);
+const TYPES = { jpg: "image/jpeg", png: "image/png", ico: "image/x-icon" };
 
 // A light brake on scripted sign ups. Kept in memory only: addresses are never stored.
 const WINDOW_MS = 10 * 60 * 1000;
@@ -61,6 +62,10 @@ export function registerWaitlist(app, webDir) {
     if (request.hostname.startsWith("waitlist.") && request.method === "GET" && request.url.split("?")[0] === "/") {
       return sendPage(reply);
     }
+    // Browsers ask for /favicon.ico on their own; desktop Safari ignores the inline SVG icon.
+    if (request.hostname.startsWith("waitlist.") && request.method === "GET" && request.url.split("?")[0] === "/favicon.ico") {
+      return reply.type("image/x-icon").header("Cache-Control", "public, max-age=604800").send(readFileSync(join(assetDir, "favicon.ico")));
+    }
   });
 
   app.get("/waitlist", async (request, reply) => sendPage(reply));
@@ -69,7 +74,7 @@ export function registerWaitlist(app, webDir) {
     const file = request.params.file;
     const path = join(assetDir, file);
     if (!ASSETS.has(file) || !existsSync(path)) return reply.code(404).send("Not found");
-    reply.type("image/jpeg").header("Cache-Control", "public, max-age=604800").send(readFileSync(path));
+    reply.type(TYPES[file.split(".").pop()]).header("Cache-Control", "public, max-age=604800").send(readFileSync(path));
   });
 
   app.post("/api/waitlist", async (request, reply) => {
