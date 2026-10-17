@@ -348,7 +348,10 @@ document.querySelectorAll('form[data-step="1"]').forEach(f=>f.addEventListener("
     const join=document.getElementById("join");
     join.classList.add("sent");
     document.querySelectorAll(".form,.err").forEach(x=>x.style.display="none");
-    if(res.already){document.querySelector("#done b").textContent="You're already on the list.";document.getElementById("done").style.display="block"}
+    if(res.already){document.querySelector("#done b").textContent="You're already on the list."}
+    // Back again without having answered step two: ask the questions this time.
+    if(res.already&&res.answered){document.getElementById("done").style.display="block"}
+    else if(res.already){document.querySelector("#step2 h3").textContent="You're already on the list. Two quick things?";document.getElementById("step2").style.display="block"}
     else document.getElementById("step2").style.display="block";
     join.scrollIntoView({behavior:"smooth",block:"start"});
   }catch(x){err.textContent=x.message;btn.disabled=false}

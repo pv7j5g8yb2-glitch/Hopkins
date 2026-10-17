@@ -84,8 +84,8 @@ export function registerWaitlist(app, webDir) {
       return reply.code(400).send({ error: "That email doesn't look right." });
     }
 
-    const existing = await get(`SELECT id FROM waitlist WHERE email = ?`, [address]);
-    if (existing) return { ok: true, id: existing.id, already: true };
+    const existing = await get(`SELECT id, updated_at FROM waitlist WHERE email = ?`, [address]);
+    if (existing) return { ok: true, id: existing.id, already: true, answered: Boolean(existing.updated_at) };
 
     const id = randomUUID();
     const now = new Date().toISOString();
