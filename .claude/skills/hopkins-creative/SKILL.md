@@ -167,6 +167,18 @@ two versions when unsure (clean and messy) and let Ismael pick.
 
 ## Log
 
+- 2026-10-17 (reels): Ismael's pick for reels is the animated explainer format (references:
+  @adilet.fndr "if you vibe coded an app" and @peterstewiestartup "5 tools"). What makes it work:
+  captions that build word by word with the key word boxed, one small piece of moving UI per
+  point (ad cards, Ads Manager panels, forms, maps, counters), a real number on screen with a
+  tiny source line under it, and a share line at the end ("Send this to whoever runs your ads").
+  Hopkins version: oxblood ground, cream UI cards, gold only for the number that matters, plum for
+  the losing version, one Instrument Serif italic word, line art house illustrations instead of
+  stock photos, "Example numbers" on anything illustrative. Quiet expert tone, never the scare
+  tone of the reference. No mascot. Length: about 60s for teaching reels, 30s or more for launch
+  reels. Engine and reel sources live in `content/reels/` (engine.js plus r1 to r5, see its README
+  for how to render).
+
 - 2026-10-17 (later): Added 18 to 21 from @femmebrandsocial (rock paper scissors
   carousel), @claunicornios (designer process carousel) and a @coffeecontracts weak vs
   strong price drop carousel (431 likes, 322 comments, 233 shares).

@@ -1,0 +1,138 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+const {$,$$,P,ease,inout,vis,pop,draw,count,icon,house}=E;
+const OBJ=[["Awareness","eye"],["Traffic","send"],["Engagement","heart"],["Leads","form"],["App promotion","rocket"],["Sales","coin"]];
+const R={
+script:[
+ "Your listing video got [thousands of views]",
+ "and ^zero enquiries?",
+ "Check the ^objective you picked.",
+ "Meta has [six.]",
+ "^Awareness, ^Traffic, ^Engagement,",
+ "^Leads, App promotion, Sales.",
+ "Pick [Engagement,]",
+ "and Meta finds people likely to ^watch.",
+ "Pick [Leads,]",
+ "and it finds people likely to ^fill in forms.",
+ "A ^view isn't a lead.",
+ "You can still use the ^video.",
+ "Just run it in a [Leads campaign.]",
+ "For a listing, choose [Leads,]",
+ "send it to an ^instant form,",
+ "and judge it by [cost per lead.]",
+ "Run it next to your ^last campaign,",
+ "same budget, same area.",
+ "Not ^views. Not ^likes. Not ^reach.",
+ "Views feel good.",
+ "_Leads_ sell homes.",
+ "Send this to whoever boosts your listings.",
+],
+css:`
+#ins{left:200px;top:580px;width:680px;padding:0;overflow:hidden}
+#ins .vid{height:360px;position:relative;overflow:hidden}#ins .vid svg{width:680px;height:420px;margin-top:-30px}
+#ins .play{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px;border-radius:50%;background:rgba(42,15,20,.75);display:flex;align-items:center;justify-content:center}
+#ins .stats{display:flex;padding:26px 30px;gap:10px}
+#ins .st{flex:1;text-align:center}#ins .st b{display:block;font-size:52px;letter-spacing:-.03em}#ins .st span{font-size:20px;color:var(--quiet)}
+#zero{color:var(--plum)}
+#obj{left:150px;top:560px;width:780px;padding:32px 36px}
+#obj h3{font-size:28px;margin-bottom:12px}
+.ob{display:flex;align-items:center;gap:20px;padding:17px 0;border-top:1px solid rgba(42,15,20,.1);font-size:28px;font-weight:700}
+.ob .rd{margin-left:auto;width:30px;height:30px;border-radius:50%;border:3px solid rgba(42,15,20,.3);position:relative}
+.ob .rd i{position:absolute;inset:5px;border-radius:50%;background:var(--plum);opacity:0}
+#lanes{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.ln2{position:absolute;top:660px;width:440px;height:720px;border-radius:30px;border:2px solid rgba(244,235,221,.12)}
+#lE{left:80px}#lL{left:560px}
+.ln2 .hd{position:absolute;top:24px;left:0;right:0;text-align:center;font-size:30px;font-weight:700}
+.ln2 .ft{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-size:24px;color:var(--rose);display:flex;align-items:center;justify-content:center;gap:10px}
+.pp{position:absolute;left:0;top:0;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+#neq{position:absolute;left:0;width:1080px;top:720px;display:flex;justify-content:center;align-items:center;gap:60px}
+#neq .bx{width:260px;height:260px;border-radius:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-size:34px;font-weight:700}
+#neq .ne{font-family:"Instrument Serif";font-style:italic;font-size:200px;color:var(--gold)}
+.scene #vc{left:110px;top:620px;width:620px;padding:0;overflow:hidden}#vc svg{display:block}
+.play2{position:absolute;left:310px;top:190px;width:100px;height:100px;margin:-50px;border-radius:50%;background:rgba(42,15,20,.75);display:flex;align-items:center;justify-content:center}
+.vrow{display:flex;justify-content:space-between;align-items:center;padding:22px 26px}
+#vf{left:690px;top:560px;width:300px;padding:26px}.fl2{height:46px;border-radius:10px;background:var(--paper);border:2px solid rgba(42,15,20,.12);margin-top:12px;font-size:18px;padding:10px 14px;color:var(--quiet)}
+.sb2{margin-top:14px;height:50px;border-radius:12px;background:var(--plum);color:var(--cream);font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center}
+#setup{left:150px;top:600px;width:780px;padding:34px 38px}
+#setup h3{font-size:30px;margin-bottom:8px}
+.sr{display:flex;align-items:center;gap:20px;padding:26px 0;border-top:1px solid rgba(42,15,20,.1)}
+.sr .k{font-size:22px;color:var(--quiet);width:190px}.sr .v{font-size:29px;font-weight:700}.sr .ok{margin-left:auto}
+#cmp{position:absolute;left:0;width:1080px;top:600px;display:flex;justify-content:center;gap:40px}
+.cm{width:420px;padding:30px 32px;background:var(--cream);color:var(--ink);border-radius:26px;box-shadow:0 40px 90px rgba(0,0,0,.45)}
+.cm .lbl{color:var(--quiet)}.cm .t{font-size:30px;font-weight:700;margin:8px 0 18px}
+.cm .r{display:flex;justify-content:space-between;font-size:23px;padding:12px 0;border-top:1px solid rgba(42,15,20,.08)}.cm .r b{font-size:23px}
+.cm .res{margin-top:18px;font-size:22px;color:var(--quiet)}.cm .res b{display:block;font-size:64px;color:var(--ink);letter-spacing:-.03em}
+#mets{position:absolute;left:0;width:1080px;top:640px;display:flex;flex-direction:column;align-items:center;gap:30px}
+.mt{position:relative;font-size:70px;font-weight:700;letter-spacing:-.03em;color:var(--rose);display:flex;align-items:center;gap:24px}
+.mt i{position:absolute;left:-10px;height:8px;top:52%;background:var(--plum);border-radius:4px;width:0}
+#cpl{margin-top:20px;font-size:84px;color:var(--gold)}
+#fin{position:absolute;left:0;width:1080px;top:720px;display:flex;justify-content:center;gap:120px}
+#fin div{display:flex;flex-direction:column;align-items:center;gap:20px;font-size:34px;font-weight:700}
+#share{left:160px;top:640px;width:760px;padding:34px 38px}
+#share h3{font-size:30px;display:flex;align-items:center;gap:16px}
+.avs{display:flex;gap:22px;margin-top:30px}.avs div{width:110px;text-align:center;font-size:19px;color:var(--quiet)}
+.avs i{display:flex;width:96px;height:96px;margin:0 auto 10px;border-radius:50%;align-items:center;justify-content:center;font-style:normal;font-weight:700;font-size:28px;color:var(--cream);position:relative}
+.avs i u{position:absolute;right:-4px;bottom:-4px;width:38px;height:38px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;opacity:0}
+`,
+scenes:`
+<div class="scene" id="s1"><div class="card" id="ins"><div class="vid">${house("hv",680,420)}<div class="play"><svg width="44" height="44" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7Z" fill="#F4EBDD"/></svg></div></div>
+ <div class="stats"><div class="st"><b id="vw">0</b><span>Views</span></div><div class="st"><b id="lk">0</b><span>Likes</span></div><div class="st"><b id="zero">0</b><span>Enquiries</span></div></div></div>
+ <div class="src" style="top:1300px">Example numbers</div></div>
+<div class="scene" id="s2"><div class="card" id="obj"><h3>Choose a campaign objective</h3>
+ ${OBJ.map(([n,i],k)=>`<div class="ob" id="o${k}">${icon(i,40,"#5B4873",1.8)}${n}<span class="rd"><i></i></span></div>`).join("")}</div>
+ <div class="src" style="top:1440px">Meta's six campaign objectives in Ads Manager</div></div>
+<div class="scene" id="s3"><div id="lanes"><div class="ln2" id="lE"><div class="hd">Engagement</div><div class="ft">${icon("eye",30,"#C3A9A2",1.8)} finds watchers</div></div>
+ <div class="ln2" id="lL"><div class="hd">Leads</div><div class="ft">${icon("form",30,"#C3A9A2",1.8)} finds form fillers</div></div><div id="pp"></div></div>
+ <div class="src" style="top:1420px">The objective tells Meta which action to optimise for</div></div>
+<div class="scene" id="s4"><div id="neq"><div class="bx" style="background:var(--ox2)">${icon("eye",110,"#C3A9A2",1.5)}<span style="color:var(--rose)">A view</span></div><div class="ne">≠</div><div class="bx" style="background:var(--cream);color:var(--ink)">${icon("form",110,"#5B4873",1.5)}<span>A lead</span></div></div></div>
+<div class="scene" id="s4b"><div class="card" id="vc">${house("hv2",620,383)}<div class="play2"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7Z" fill="#F4EBDD"/></svg></div>
+ <div class="vrow"><span class="lbl" style="color:var(--quiet)">Objective</span><span class="pill" style="background:var(--gold);color:var(--ox)" id="vobj">Leads</span></div></div>
+ <div class="card" id="vf"><h4 style="font-size:24px">Get the brochure</h4><div class="fl2">Name</div><div class="fl2">Email</div><div class="sb2">Send</div></div></div>
+<div class="scene" id="s5"><div class="card" id="setup"><h3>Listing campaign</h3>
+ <div class="sr" id="q1"><span class="k">Objective</span><span class="v">Leads</span><span class="ok">${icon("check",40,"#8E6B2C",2.6)}</span></div>
+ <div class="sr" id="q2"><span class="k">Destination</span><span class="v">Instant form, higher intent</span><span class="ok">${icon("check",40,"#8E6B2C",2.6)}</span></div>
+ <div class="sr" id="q3"><span class="k">Judge it by</span><span class="v">Cost per lead</span><span class="ok">${icon("check",40,"#8E6B2C",2.6)}</span></div></div></div>
+<div class="scene" id="s6"><div id="cmp"><div class="cm" id="cmA"><div class="lbl">Last campaign</div><div class="t">Engagement</div><div class="r"><span>Budget</span><b>$500</b></div><div class="r"><span>Area</span><b>15 mi, Austin</b></div><div class="res">Enquiries<b id="eA">0</b></div></div>
+ <div class="cm" id="cmB"><div class="lbl">New campaign</div><div class="t">Leads</div><div class="r"><span>Budget</span><b>$500</b></div><div class="r"><span>Area</span><b>15 mi, Austin</b></div><div class="res">Enquiries<b id="eB">0</b></div></div></div>
+ <div class="src" style="top:1180px">Example numbers. Change one thing, keep the rest the same</div></div>
+<div class="scene" id="s7"><div id="mets"><div class="mt" id="m1">${icon("eye",64,"#C3A9A2",1.6)}Views<i></i></div><div class="mt" id="m2">${icon("heart",64,"#C3A9A2",1.6)}Likes<i></i></div><div class="mt" id="m3">${icon("target",64,"#C3A9A2",1.6)}Reach<i></i></div><div class="mt" id="cpl">Cost per lead</div></div></div>
+<div class="scene" id="s8"><div id="fin"><div id="fv">${icon("heart",150,"#C3A9A2",1.3)}<span style="color:var(--rose)">Feels good</span></div><div id="fl">${icon("home",150,"#D7AE62",1.3)}<span style="color:var(--gold)">Sells homes</span></div></div></div>
+<div class="scene" id="s9"><div class="card" id="share"><h3>${icon("send",40,"#5B4873",2)} Send to</h3>
+ <div class="avs"><div><i style="background:#5B4873">TL<u>${icon("check",22,"#2A0F14",3)}</u></i>Team lead</div><div><i style="background:#8E6B2C">MR<u>${icon("check",22,"#2A0F14",3)}</u></i>Marketing</div><div><i style="background:#7d6862">JS<u></u></i>Jess</div><div><i style="background:#36151C">BK<u></u></i>Broker</div><div><i style="background:#B79DC2">AP<u></u></i>Assistant</div></div></div></div>
+`,
+update(t,C,endAt){
+ vis("#s1",t,0,C.e1);draw("#hv .ln",1);E.dusk("hv");
+ count("#vw",P(t,.4,C.thousandsofviews+1),0,12480);count("#lk",P(t,.6,C.thousandsofviews+1),0,640);
+ const zk=P(t,C.zero,C.zero+.4);$("#zero").style.transform=`scale(${1+.25*Math.sin(zk*Math.PI)})`;
+ vis("#s2",t,C.p2,C.e5);vis("#obj",t,C.p2,null);
+ const at=[C.awareness,C.traffic,C.engagement,C.leads,C.leads+.4,C.leads+.8];
+ OBJ.forEach((_,k)=>{const el=$("#o"+k);el.style.opacity=.15+.85*ease(P(t,at[k],at[k]+.3));draw("#o"+k+" svg *",P(t,at[k],at[k]+.6))});
+ vis("#s3",t,C.p6,C.e9);
+ R.pp.forEach(p=>{const ek=ease(P(t,C.engagement2+p.d*.6,C.engagement2+.4+p.d*.6)),lk=ease(P(t,C.leads2+p.d*.6,C.leads2+.4+p.d*.6));
+   let x=p.x,y=p.y,col="rgba(244,235,221,.25)",sc=1;
+   if(p.e&&ek>0){x=p.x+(p.ex-p.x)*ek;y=p.y+(p.ey-p.y)*ek;col=`rgba(195,169,162,${.3+.7*ek})`}
+   if(p.l&&lk>0){x=p.x+(p.lx-p.x)*lk;y=p.y+(p.ly-p.y)*lk;col="#D7AE62";sc=1+.3*lk}
+   p.el.style.transform=`translate(${x}px,${y}px) scale(${sc})`;p.el.style.background=col;p.el.style.opacity=E.clamp(P(t,C.p6,C.p6+.5)*2)});
+ vis("#s4",t,C.p10,C.e10);
+ vis("#s4b",t,C.p11,C.e12);vis("#vc",t,C.p11,null);draw("#hv2 .ln",1);vis("#vf",t,C.leadscampaign+.2,null,{dx:120,dy:0});
+ pop("#vobj",P(t,C.leadscampaign,C.leadscampaign+.35));
+ vis("#s5",t,C.p13,C.e15);vis("#setup",t,C.p13,null);
+ [["#q1",C.leads3],["#q2",C.instant],["#q3",C.costperlead]].forEach(([q,a])=>{$(q).style.opacity=.2+.8*ease(P(t,a-.2,a+.2));draw(q+" .ok path",P(t,a+.1,a+.5))});
+ vis("#s6",t,C.p16,C.e17);vis("#cmA",t,C.last,null);vis("#cmB",t,C.last+.25,null);
+ count("#eB",P(t,C.p17,C.e17),0,9);$("#cmB").style.boxShadow=P(t,C.e17-.4,C.e17)>0?`0 0 0 ${5*ease(P(t,C.e17-.4,C.e17))}px #D7AE62,0 40px 90px rgba(0,0,0,.45)`:"";
+ vis("#s7",t,C.p18,C.e18);
+ [["#m1",C.views],["#m2",C.likes],["#m3",C.reach]].forEach(([m,a])=>{vis(m,t,a-.15,null,{dy:20,blur:8});$(m+" i").style.width=(ease(P(t,a+.15,a+.45))*330)+"px"});
+ vis("#cpl",t,C.e18-.5,null,{dy:20});
+ vis("#s8",t,C.p19,C.e20);vis("#fv",t,C.p19,null);vis("#fl",t,C.p20,null);draw("#fl svg *",P(t,C.p20,C.p20+.8));
+ vis("#s9",t,C.p21,endAt);vis("#share",t,C.p21,null);[0,1].forEach(i=>pop($$("#share u")[i],P(t,C.p21+.8+i*.3,C.p21+1.1+i*.3)));
+}};
+E.boot(R);E.dusk('hv2');
+// people dots: a crowd, engagement grabs many, leads grabs few
+R.pp=[];for(let k=0;k<70;k++){const el=document.createElement("div");el.className="pp";$("#pp").appendChild(el);
+ const x=120+E.rnd()*840,y=500+E.rnd()*90;
+ const e=k%3!==0, l=k%7===0;
+ R.pp.push({el,x,y,e,l,ex:110+E.rnd()*370,ey:760+E.rnd()*500,lx:620+E.rnd()*320,ly:820+E.rnd()*400,d:E.rnd()})}
+// both lanes start empty: put crowd above lanes
+render(0);
+</script></body></html>
