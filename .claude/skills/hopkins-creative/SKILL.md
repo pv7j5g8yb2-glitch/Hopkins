@@ -9,6 +9,16 @@ Studied from feeds that are winning in real estate on Instagram (Coffee & Contra
 @heyalyssamichelle and the member posts they showcase), October 2026. Brand rules in
 CLAUDE.md always come first. Add new learnings to the log at the bottom, with a date.
 
+## Before designing anything
+
+Always open @coffeecontracts on Instagram (instagram.com/coffeecontracts) and study their
+latest grid and two or three recent carousels first: how the slides are laid out, the
+type, the photos, the colours, the footer strip and the overall branding. Note anything
+that has changed since the log below and add it there with the date. Instagram usually
+blocks viewing without a login, so if the page won't open, ask Ismael for fresh
+screenshots of their grid and a recent carousel before starting. Study the visual system
+and the patterns, then make our own in the Hopkins brand. Never copy their designs.
+
 ## The core idea
 
 Real estate content that grows is content people **save and send**. The best posts get
