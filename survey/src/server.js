@@ -16,6 +16,7 @@ import { summarizePainPoint } from "./summarize.js";
 import { getBundle } from "./i18n.js";
 import { checkPassword, requireAdmin, setAdminCookie, clearAdminCookie } from "./admin-auth.js";
 import { toCsv } from "./csv.js";
+import { registerWaitlist } from "./waitlist.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = join(__dirname, "..", "web");
@@ -87,6 +88,8 @@ async function completeResponse({ segment, transcript, responseId, language }) {
 }
 
 app.get("/healthz", async () => ({ ok: true }));
+
+registerWaitlist(app, WEB_DIR);
 
 app.get("/", async (request, reply) => {
   const links = listSegments()
