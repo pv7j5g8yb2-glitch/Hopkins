@@ -161,6 +161,8 @@ two versions when unsure (clean and messy) and let Ismael pick.
   and the person agreed to be shown.
 - Use "Realtor" in public copy (NAR trademark) or "estate agent". Say "real estate".
 - Use dashes as punctuation in any copy.
+- Write "we", "us" or "our" in any copy. It reads like an agency. Hopkins is software:
+  "Hopkins tests both", "what to run instead", or "I" when Hopkins speaks in the chat.
 - Copy another account's post or template word for word. Learn the pattern, make our own.
 
 ## Log

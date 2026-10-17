@@ -93,6 +93,10 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   "estate agent", because the US, Canada, Australia and the UAE all say real estate.
   Never use "Realtor" (a trademark for NAR members only). Messages to Ismael stay in
   Irish English.
+* **Voice: never "we", "us" or "our"** in anything public (page, posts, captions,
+  stories, ads, emails). "We" makes Hopkins sound like an agency. Write as the product:
+  "Hopkins makes the ads", "you approve", or "I" when Hopkins talks in the chat. Same in
+  plans and drafts for Ismael: say what Hopkins does or what to post, not what "we" do.
 * **Personality:** a quiet expert. Plain, precise, shows the numbers, never hype.
 * **Recurring stories:** Wanamaker's half, tested not guessed, the empty Monday.
 
