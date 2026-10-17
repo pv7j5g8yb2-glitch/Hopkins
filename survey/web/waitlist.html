@@ -48,7 +48,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0
 @media (min-width:1280px){.hero h1{font-size:68px}.wrap{max-width:1280px}.hero{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:64px}}
 .dbr{display:none}@media (min-width:901px){.dbr{display:inline}}
 @media (min-width:1800px){.wrap{max-width:1400px}.preview .win{zoom:1.08}}
-h1{font-size:clamp(46px,7.2vw,84px);line-height:.96;letter-spacing:-.05em;font-weight:700;margin:0 0 22px}
+h1{font-size:clamp(46px,7.2vw,84px);line-height:.96;letter-spacing:-.05em;font-weight:700;margin:0 0 30px}
+.hero .sub{max-width:31em;line-height:1.55}
+@media (min-width:901px){.hero h1{margin-bottom:38px}}
 h1 .serif{font-weight:400}
 .sub{font-size:clamp(17px,2vw,20px);color:var(--rose);max-width:34em}
 .form{display:flex;gap:8px;margin-top:30px;max-width:520px}
@@ -208,6 +210,8 @@ details p{color:var(--mut);margin-top:10px;max-width:40em}
 .final{text-align:center}
 .final h2{margin-left:auto;margin-right:auto}
 .final .lead{margin:0 auto}
+.flead{max-width:30em;text-wrap:balance}
+.foffer{margin-top:14px;font-weight:600;color:var(--gold);letter-spacing:-.01em;text-wrap:balance}
 .final .form{margin:30px auto 0}
 .final .bigpeb{width:110px;height:110px;margin:0 auto 10px;display:block}
 footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40px;border-top:1px solid var(--oxl)}
@@ -361,13 +365,12 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
   <div class="wrap">
     <h2>Questions</h2>
     <div class="faq">
-      <details><summary>How much will it cost?</summary><p>From $299 a month for smaller teams. Larger teams and brokerages pay more, based on how many agents use it. Teams on the waitlist get 30% off their first year.</p></details>
+      <details><summary>How much will it cost?</summary><p>From $299 a month for smaller teams. Larger teams and brokerages pay more, based on team size and monthly ad spend. Solo agents will have a lower priced plan. Teams on the waitlist get 30% off their first year.</p></details>
       <details><summary>When does it open?</summary><p>No date yet. Teams on the waitlist get early access, and you'll get one email on launch day.</p></details>
-      <details><summary>Which countries?</summary><p>Tell us where you are when you join, and we'll prioritise the places most people are waiting.</p></details>
       <details><summary>Can it run on autopilot?</summary><p>Yes. Set a monthly budget and what you want, and Hopkins makes, tests and runs the ads within it. You still get the Monday report and can pause it any time. Or keep it on approving every ad yourself.</p></details>
       <details><summary>Do I need my own photos?</summary><p>No. Use your own listing photos and videos, or Hopkins makes the ads from scratch.</p></details>
       <details><summary>Do I need a Meta ad account?</summary><p>Yes. Ads run from your own account, so you own them and see every cent spent.</p></details>
-      <details><summary>Is it for single agents or brokerages?</summary><p>Both can join. It's built for teams and brokerages that already spend on marketing and want it run properly.</p></details>
+      <details><summary>Can a single agent use it?</summary><p>Yes. There will be a plan for solo agents, priced below the team plans. Hopkins is built first for teams and brokerages that already spend on ads, so they get early access first.</p></details>
     </div>
   </div>
 </section>
@@ -376,7 +379,8 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
   <div class="wrap">
     <svg class="bigpeb" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg>
     <h2>Be first in.</h2>
-    <p class="lead">Early access, and 30% off the first year, for teams on the waitlist.</p>
+    <p class="lead flead">From $299 a month for smaller teams and brokerages, based on team size and monthly ad spend.</p>
+    <p class="foffer">Teams on the waitlist get 30% off their first year.</p>
     <form class="form" data-step="1" action="#" method="post">
       <input type="email" name="email" placeholder="Your email" required aria-label="Your email" autocomplete="email">
       <button class="btn" type="submit">Join the waitlist</button>
@@ -562,12 +566,12 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   function days(t){const m=t.match(/(\d+)\s*(day|week)s?/i);if(!m)return null;return m[2].toLowerCase()==="week"?+m[1]*7:+m[1]}
   const A={
     monday:"Monday is when most teams plan the week, so that's when the report lands: what ran, what it cost and what it brought in. You can ask me how things are going any other day too.",
-    price:"From $299 a month for smaller teams. Larger teams and brokerages pay more, based on how many agents use it. Teams on the waitlist get 30% off their first year.",
+    price:"From $299 a month for smaller teams. Larger teams and brokerages pay more, based on team size and monthly ad spend. Solo agents will have a lower priced plan. Teams on the waitlist get 30% off their first year.",
     when:"No date yet. Teams on the waitlist get early access, and you'll get one email on launch day.",
-    where:"Tell us where you are when you join, and we'll open first where most people are waiting.",
+    where:"Anywhere Instagram and Facebook ads run. Tell us where you are when you join.",
     meta:"Yes, ads run from your own Meta ad account, so you own them and see every cent. If you don't have one yet, it takes a few minutes to set up in Meta Business.",
     other:"Instagram and Facebook to start. If you need another platform, mention it when you join the waitlist so we know.",
-    who:"Both can join. Hopkins is built for teams and brokerages that already spend on marketing and want it run properly.",
+    who:"Yes. There will be a plan for solo agents, priced below the team plans. Teams and brokerages that already spend on ads get early access first.",
     how:"You tell me what you need in plain words. I make a few different ads, show you them with the budget and the area, and nothing runs until you say yes, unless you put me on autopilot. Then I switch off the weak ones, give the winner more budget and report every Monday.",
     agency:"I'm software, not an agency. No retainer, no waiting on emails. You type, I make the ads, you approve, and they run from your own ad account.",
     fair:"In the US, real estate ads run under Meta's housing rules, which limit how ads can be targeted. Hopkins is being built around those rules, and nothing runs without your yes.",
