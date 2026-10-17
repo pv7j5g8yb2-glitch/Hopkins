@@ -91,6 +91,26 @@ Bold grotesk word mixed with an italic serif word, cream text over warm real pho
 For Hopkins that is Inter Tight bold with Instrument Serif italic, oxblood, cream and
 gold, per CLAUDE.md. Free licence photos only (Unsplash, Pexels), never listing portals.
 
+## Intentionally messy, not template neat
+
+Left alone, AI made layouts come out centred, symmetrical and evenly spaced, and the feed
+can tell straight away. The posts that win break the rules on purpose. Every creative needs
+at least two of these, and it should still look deliberate, not broken:
+
+- Type that touches or crosses the photo, a person or an object, not sitting in a safe box.
+- Very tight letter spacing on the big words, so letters nearly touch.
+- Mixed scale in one line: a huge word next to tiny side notes ("I know it sounds weird",
+  "but hear me out").
+- Words placed off grid or scattered across the slide with uneven gaps.
+- A real phone photo with grain, shadows and clutter (a desk, a coffee, hands, a street),
+  never glossy stock or a perfect render.
+- One taped on or rotated element: a sticker, a cut out photo, a highlighter mark, a
+  note in a different typeface.
+- Backgrounds that change from slide to slide while the type stays the same.
+
+The real photos matter most, and they come from Ismael's phone, not from stock. Make
+two versions when unsure (clean and messy) and let Ismael pick.
+
 ## For the @gethopkins account
 
 - Audience line: "real estate teams:" or "team leaders:". Speak to team leaders and
