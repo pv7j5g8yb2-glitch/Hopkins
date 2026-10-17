@@ -95,3 +95,10 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   Irish English.
 * **Personality:** a quiet expert. Plain, precise, shows the numbers, never hype.
 * **Recurring stories:** Wanamaker's half, tested not guessed, the empty Monday.
+
+## Creative playbook
+
+What content and ad creative actually works on Instagram for real estate lives in
+`.claude/skills/hopkins-creative/SKILL.md`. Use it for every post, carousel, reel and ad,
+for @gethopkins and for what the product makes for customers. When Ismael sends new
+examples of what's winning, add the learning to its log with the date.
