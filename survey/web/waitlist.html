@@ -224,13 +224,12 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
         <p class="fine fine2">No spam. One email on launch day.</p>
         <div class="step2" id="step2">
           <h3>You're in. Two quick things?</h3>
-          <p>So we know who to let in first. Takes ten seconds, and you can skip it.</p>
+          <p>So we know who to let in first. Takes ten seconds.</p>
           <div class="field"><label for="ig">Business Instagram</label><input id="ig" name="instagram" placeholder="@harbourrealty" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
           <div class="field"><label for="country">Country</label><select id="country" name="country"><option>United States</option><option>Canada</option><option>United Kingdom</option><option>Ireland</option><option>Australia</option><option>United Arab Emirates</option><option>Somewhere else</option></select></div>
           <div class="field"><label>How many agents?</label><div class="chips"><label><input type="radio" name="size" value="1"><span>Just me</span></label><label><input type="radio" name="size" value="2-5"><span>2 to 5</span></label><label><input type="radio" name="size" value="6-20"><span>6 to 20</span></label><label><input type="radio" name="size" value="21+"><span>21 or more</span></label></div></div>
           <div class="field"><label>Monthly marketing spend, roughly</label><div class="chips"><label><input type="radio" name="spend" value="<500"><span>Under $500</span></label><label><input type="radio" name="spend" value="500-2000"><span>$500 to $2,000</span></label><label><input type="radio" name="spend" value="2000-5000"><span>$2,000 to $5,000</span></label><label><input type="radio" name="spend" value="5000+"><span>$5,000 or more</span></label></div></div>
           <button class="btn" id="finish" type="button" style="width:100%;margin-top:6px">Done</button>
-          <button type="button" id="skip" style="display:block;margin:12px auto 0;background:none;border:0;color:var(--rose);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer">Skip</button>
         </div>
         <div class="done" id="done"><div class="donerow"><svg class="tick" viewBox="0 0 52 52" aria-hidden="true"><circle class="tick-c" cx="26" cy="26" r="23"/><path class="tick-p" d="M15.5 27.5l7 7 14-15"/></svg><div><b>Thanks, you're on the list.</b><span>We'll email you on launch day.</span></div></div></div>
       </div>
@@ -358,9 +357,6 @@ document.getElementById("finish").addEventListener("click",async()=>{
   const v=n=>{const el=document.querySelector('#step2 [name="'+n+'"]:checked')||document.querySelector('#step2 [name="'+n+'"]:not([type=radio])');return el?el.value:""};
   const btn=document.getElementById("finish");btn.disabled=true;
   try{if(signupId)await post("/api/waitlist/"+signupId+"/details",{instagram:v("instagram"),country:v("country"),size:v("size"),spend:v("spend")})}catch(x){}
-  document.getElementById("step2").style.display="none";document.getElementById("done").style.display="block";
-});
-document.getElementById("skip").addEventListener("click",()=>{
   document.getElementById("step2").style.display="none";document.getElementById("done").style.display="block";
 });
 const zb=[...document.querySelectorAll(".zoom")],lb=document.getElementById("lb"),li=document.getElementById("lbimg"),lc=document.getElementById("lbcap");let zi=0,lastFocus=null;

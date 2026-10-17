@@ -186,7 +186,8 @@ async function load(){
   document.getElementById("sub").textContent=signups.length+(signups.length===1?" sign up":" sign ups");
   document.getElementById("stats").innerHTML=
     '<div class="stat"><b>'+signups.length+'</b>on the list</div>'+
-    '<div class="stat"><b>'+signups.filter(s=>s.team_size).length+'</b>answered step two</div>'+
+    '<div class="stat"><b>'+signups.filter(s=>s.updated_at).length+'</b>answered step two</div>'+
+    '<div class="stat"><b>'+signups.filter(s=>!s.updated_at).length+'</b>email only</div>'+
     '<div class="stat"><b>'+withSpend+'</b>spend $500+ a month</div>';
   document.getElementById("rows").innerHTML=signups.length?signups.map(s=>'<tr><td>'+esc(new Date(s.created_at).toLocaleString())+'</td><td>'+esc(s.email)+'</td><td>'+(s.instagram?'<a href="https://instagram.com/'+esc(s.instagram)+'" target="_blank" rel="noopener">@'+esc(s.instagram)+'</a>':esc(s.business))+'</td><td>'+esc(s.country)+'</td><td>'+esc(SIZE[s.team_size])+'</td><td>'+esc(SPEND[s.monthly_spend])+'</td><td>'+esc([s.source,s.ref].filter(Boolean).join(", "))+'</td><td class="del"><button data-id="'+esc(s.id)+'">Remove</button></td></tr>').join(""):'<tr><td colspan="8" class="empty muted">No sign ups yet.</td></tr>';
 }
