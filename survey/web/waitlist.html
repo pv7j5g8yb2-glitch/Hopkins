@@ -94,7 +94,24 @@ button.a1{border:0;font-size:13px}button.a2{background:none;font-size:13px}
 .acts button.pressed{transform:scale(.95);filter:brightness(1.35)}
 .acts button:disabled{cursor:default}.acts button:disabled:not(.pressed){opacity:.45}
 .okt{width:16px;height:16px;fill:none;stroke:var(--bronze);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:6px}
-.pjoin{display:inline-block;margin-top:8px;background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--bronze);text-decoration:underline;cursor:pointer}
+.pjoin,.pfaq{display:inline-block;margin:8px 14px 0 0;background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--bronze);text-decoration:underline;cursor:pointer}
+/* the Hopkins mark: spins with the two pebbles taking turns while thinking, then the gold one rises */
+.bot.think>svg{animation:mkspin 1.5s cubic-bezier(.6,0,.4,1) infinite}
+.bot.think>svg path{transform-box:fill-box;transform-origin:center;animation:mkswap 1.5s ease-in-out infinite}
+.bot.think>svg path:last-child{animation-delay:-.75s}
+@keyframes mkspin{to{transform:rotate(360deg)}}
+@keyframes mkswap{0%,100%{transform:scale(1)}50%{transform:scale(.55)}}
+.bot.settle>svg path{transform-box:fill-box;transform-origin:center}
+.bot.settle>svg path:last-child{animation:mkrise .7s cubic-bezier(.3,1.6,.5,1) both}
+.bot.settle>svg path:first-child{animation:mkpop .45s ease-out both}
+@keyframes mkrise{from{transform:translate(-70%,85%) scale(.55)}}
+@keyframes mkpop{from{transform:scale(.5)}}
+nav .logo svg path,.lockup svg path{transform-box:fill-box;transform-origin:center}
+nav .logo svg path:last-child{animation:mkrise .9s .25s cubic-bezier(.3,1.6,.5,1) both}
+nav .logo svg path:first-child{animation:mkpop .5s .1s ease-out both}
+nav .logo:hover svg path:last-child,.lockup:hover svg path:last-child{animation:mkhop .55s cubic-bezier(.3,1.6,.5,1)}
+@keyframes mkhop{40%{transform:translateY(-22%) rotate(-8deg)}}
+@media (prefers-reduced-motion:reduce){.bot.think>svg,.bot.think>svg path,.bot.settle>svg path,nav .logo svg path{animation:none!important}}
 .pchips{display:flex;gap:7px;flex-wrap:wrap}
 .pchips button{font:inherit;font-size:12.5px;color:var(--ox);background:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 11px;cursor:pointer;transition:border-color .2s,background .2s}
 .pchips button:hover{border-color:#CDB9A0;background:#FFFDF8}
@@ -479,19 +496,25 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   const MARK=document.getElementById("t-mark").innerHTML;
   const TEXT={leads:"Get me more seller leads in Oak Hill this month",report:"How did last week go?"};
   const LIVE={leads:"Live. I'll tell you which one wins on Monday.",report:"Done. Both new ideas are live next to the video. Results on Monday."};
+  const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  let awaitingChange=false;
+  const LINKS=on=>(on?"":'<button type="button" class="pjoin">Join the waitlist</button>')+'<button type="button" class="pfaq">See the FAQ</button>';
+  function pulseSend(){if(reduce)return;const b=form.querySelector("button"),a=b.querySelector("svg");
+    b.animate([{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(215,174,98,.55)"},{transform:"scale(.8)",offset:.3},{transform:"scale(1.1)",offset:.65},{transform:"scale(1)",boxShadow:"0 0 0 12px rgba(215,174,98,0)"}],{duration:480,easing:"cubic-bezier(.3,.7,.4,1)"});
+    a.animate([{transform:"translateY(0)",opacity:1},{transform:"translateY(-18px)",opacity:0,offset:.42},{transform:"translateY(16px)",opacity:0,offset:.43},{transform:"translateY(0)",opacity:1}],{duration:560,easing:"ease-in-out"})}
   const OK='<svg class="okt" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   let run=0,auto=!reduce,started=false;
   const wait=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
   const add=n=>{log.appendChild(n);log.scrollTo({top:log.scrollHeight,behavior:reduce?"auto":"smooth"});return n};
   const me=t=>{const d=document.createElement("div");d.className="me msg";d.textContent=t;return add(d)};
-  const bot=h=>{const d=document.createElement("div");d.className="bot msg";d.innerHTML=MARK+"<div>"+h+"</div>";return add(d)};
-  const tpl=name=>{const n=document.getElementById("t-"+name).content.firstElementChild.cloneNode(true);n.classList.add("msg");n.dataset.s=name;return add(n)};
-  async function thinking(id){const d=bot('<span class="dots"><i></i><i></i><i></i></span>');await wait(1100);d.remove();return id===run}
+  const bot=h=>{const d=document.createElement("div");d.className="bot msg settle";d.innerHTML=MARK+"<div>"+h+"</div>";return add(d)};
+  const tpl=name=>{const n=document.getElementById("t-"+name).content.firstElementChild.cloneNode(true);n.classList.add("msg","settle");n.dataset.s=name;return add(n)};
+  async function thinking(id){const d=bot("");d.classList.remove("settle");d.classList.add("think");await wait(1300);d.remove();return id===run}
   async function typeOut(text,id){ask.value="";for(const ch of text){if(id!==run)return false;ask.value+=ch;await wait(36)}await wait(380);return id===run}
   async function play(name,{typed=false,said}={}){
     const id=++run;log.innerHTML="";cur.classList.remove("on");
     if(typed&&!(await typeOut(TEXT[name],id)))return 0;
-    ask.value="";me(said||TEXT[name]);await wait(350);if(id!==run)return 0;
+    if(typed||!said)pulseSend();ask.value="";me(said||TEXT[name]);await wait(350);if(id!==run)return 0;
     if(!(await thinking(id)))return 0;tpl(name);return id;
   }
   async function yes(btn,id){
@@ -520,18 +543,23 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   chips.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;stopAuto();play(b.dataset.s)});
   log.addEventListener("click",async e=>{
     const b=e.target.closest(".acts button");
-    if(b&&!b.disabled){stopAuto();if(b.dataset.a==="yes"){yes(b,run)}else{b.closest(".acts").querySelectorAll("button").forEach(x=>x.disabled=true);const id=run;if(await thinking(id)){bot("Sure. What should I change? Type it below.");ask.focus()}}}
+    if(b&&!b.disabled){stopAuto();if(b.dataset.a==="yes"){yes(b,run)}else{b.closest(".acts").querySelectorAll("button").forEach(x=>x.disabled=true);const id=run;if(await thinking(id)){bot("Sure. What should I change? The budget, the area, an ad? Type it below.");awaitingChange=true;ask.focus()}}}
+    if(e.target.closest(".pfaq")){document.querySelector(".faq").scrollIntoView({behavior:"smooth",block:"start"})}
     const j=e.target.closest(".pjoin");
     if(j){const join=document.getElementById("join");join.scrollIntoView({behavior:"smooth",block:"start"});const em=join.querySelector('input[type="email"]');if(em&&em.offsetParent)setTimeout(()=>em.focus({preventScroll:true}),600)}
   });
   form.addEventListener("submit",async e=>{
-    e.preventDefault();stopAuto();const t=ask.value.trim();if(!t)return;
+    e.preventDefault();stopAuto();const t=ask.value.trim();if(!t)return;pulseSend();
+    if(awaitingChange){awaitingChange=false;const id=++run;ask.value="";me(t);await wait(300);if(!(await thinking(id)))return;
+      const onList=document.getElementById("join").classList.contains("sent");
+      bot("Got it: \u201c"+esc(t)+"\u201d. Once early access opens, I'll make that change and show you the ads again before anything runs. This is a preview, so nothing changes here yet.<br>"+LINKS(onList));return}
     if(/last week|report|how did/i.test(t)){play("report",{said:t});return}
     if(/lead|seller|valuation/i.test(t)&&!/change|instead|different/i.test(t)){play("leads",{said:t});return}
     const id=++run;ask.value="";me(t);await wait(300);if(!(await thinking(id)))return;
     const onList=document.getElementById("join").classList.contains("sent");
-    bot(onList?"This is a preview, so I can't do that yet. You're on the waitlist, so I'll do it for real when early access opens."
-      :'This is a preview, so I can\'t do that yet. Join the waitlist and I\'ll do it for real when early access opens.<br><button type="button" class="pjoin">Join the waitlist</button>');
+    bot((onList?"This is a preview, so I can't do that yet. You're on the waitlist, so I'll do it for real when early access opens."
+      :"This is a preview, so I can't do that yet. Join the waitlist and I'll do it for real when early access opens.")
+      +" If it's a question, the FAQ at the bottom may already answer it.<br>"+LINKS(onList));
   });
   if(reduce){tpl("report");return}
   const io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)&&!started){started=true;io.disconnect();loop()}},{threshold:.35});
