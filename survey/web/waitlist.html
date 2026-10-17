@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hopkins — Early access</title>
-<meta name="description" content="One chat that makes your ads, runs them and reports back every Monday. Nothing goes live without your yes. Join the waitlist.">
+<meta name="description" content="Like ChatGPT, but for your real estate ads. Hopkins makes them, runs them on Instagram and Facebook and reports back every week. Join the waitlist.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Hopkins">
 <meta property="og:url" content="https://waitlist.kirmistudio.com/">
@@ -277,7 +277,7 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
     <div class="hero">
       <div id="join">
         <h1>Real estate ads,<br class="dbr"> run from <span class="serif">one chat.</span></h1>
-        <p class="sub">Type what you need, like you would in ChatGPT. Hopkins makes the ads, runs them on Instagram and Facebook and reports back every Monday. Nothing goes live without your yes.</p>
+        <p class="sub">Like ChatGPT, but for your real estate ads. Hopkins makes them from your photos or from scratch, runs them on Instagram and Facebook and reports back every week. Approve each one, or put it on autopilot.</p>
         <form class="form" data-step="1" action="#" method="post">
           <input type="email" name="email" placeholder="Your email" required aria-label="Your email" autocomplete="email">
           <button class="btn" type="submit">Join the waitlist</button>
@@ -338,8 +338,8 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
   <div class="wrap">
     <h2>You ask. You approve. It runs.</h2>
     <div class="steps">
-      <div class="step"><b><span class="serif">1</span>You ask</b><p>Seller leads, a listing launch, an open house. In plain words, like texting the person who runs your marketing.</p></div>
-      <div class="step"><b><span class="serif">2</span>You approve</b><p>Hopkins makes the ads and shows you them with the budget and the area. Nothing spends until you say yes.</p></div>
+      <div class="step"><b><span class="serif">1</span>You ask</b><p>Seller leads, a listing launch, an open house. In plain words, with your own photos or none at all.</p></div>
+      <div class="step"><b><span class="serif">2</span>You approve</b><p>Hopkins makes the ads and shows you them with the budget and the area. Nothing spends until you say yes, unless you switch on autopilot.</p></div>
       <div class="step"><b><span class="serif">3</span>It runs</b><p>From your own ad account on Instagram and Facebook. Weaker ads get switched off, winners get more budget, and you get a plain report every Monday.</p></div>
     </div>
   </div>
@@ -364,6 +364,8 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
       <details><summary>How much will it cost?</summary><p>From $299 a month for smaller teams. Larger teams and brokerages pay more, based on how many agents use it. Teams on the waitlist get 30% off their first year.</p></details>
       <details><summary>When does it open?</summary><p>No date yet. Teams on the waitlist get early access, and you'll get one email on launch day.</p></details>
       <details><summary>Which countries?</summary><p>Tell us where you are when you join, and we'll prioritise the places most people are waiting.</p></details>
+      <details><summary>Can it run on autopilot?</summary><p>Yes. Set a monthly budget and what you want, and Hopkins makes, tests and runs the ads within it. You still get the Monday report and can pause it any time. Or keep it on approving every ad yourself.</p></details>
+      <details><summary>Do I need my own photos?</summary><p>No. Use your own listing photos and videos, or Hopkins makes the ads from scratch.</p></details>
       <details><summary>Do I need a Meta ad account?</summary><p>Yes. Ads run from your own account, so you own them and see every cent spent.</p></details>
       <details><summary>Is it for single agents or brokerages?</summary><p>Both can join. It's built for teams and brokerages that already spend on marketing and want it run properly.</p></details>
     </div>
@@ -566,7 +568,7 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
     meta:"Yes, ads run from your own Meta ad account, so you own them and see every cent. If you don't have one yet, it takes a few minutes to set up in Meta Business.",
     other:"Instagram and Facebook to start. If you need another platform, mention it when you join the waitlist so we know.",
     who:"Both can join. Hopkins is built for teams and brokerages that already spend on marketing and want it run properly.",
-    how:"You tell me what you need in plain words. I make a few different ads, show you them with the budget and the area, and nothing runs until you say yes. Then I switch off the weak ones, give the winner more budget and report every Monday.",
+    how:"You tell me what you need in plain words. I make a few different ads, show you them with the budget and the area, and nothing runs until you say yes, unless you put me on autopilot. Then I switch off the weak ones, give the winner more budget and report every Monday.",
     agency:"I'm software, not an agency. No retainer, no waiting on emails. You type, I make the ads, you approve, and they run from your own ad account.",
     fair:"In the US, real estate ads run under Meta's housing rules, which limit how ads can be targeted. Hopkins is being built around those rules, and nothing runs without your yes.",
     listing:"In the full version you'd send me the listing and I'd make a few versions to test against each other, then show you them before anything runs.",
@@ -577,6 +579,8 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   };
   // First match wins, so the specific questions sit above the broad ones.
   const INTENTS=[
+    [/(auto ?pilot|automatic|hands off|on its own|without (me|approv))/,"Yes. Set a monthly budget and what you want, and I make, test and run the ads within it. You still get the Monday report and can pause any time. Or approve every ad yourself, your choice."],
+    [/(my (own )?(photos|pictures|images|videos)|from scratch|don'?t have (photos|pictures|images))/,"Either works. Send me your listing photos and videos, or I'll make the ads from scratch."],
     [/budget/,"Type the new amount, like “$600” or “$1,000 over 14 days”."],
     [/(what('?s| is)|who('?s| is)|tell me about) (hopkins|this|it|you)\b|^hopkins\??$|who are you|what are you/,"Hopkins is software that runs your real estate ads from one chat. You type what you need, I make the ads, you approve them, and I run them on Instagram and Facebook from your own ad account. Every Monday you get a plain report."],
     [/(why|where).*(name|called)|claude hopkins|who('?s| is| was) hopkins|named after/,"Named after Claude Hopkins, who wrote Scientific Advertising in 1923. He tested every ad against another and kept only what worked. That's how I run your ads."],
