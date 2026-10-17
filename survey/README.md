@@ -123,3 +123,21 @@ Hosting's free tiers shift often (Fly.io dropped its free tier entirely in the p
 year, for one), so if Render's terms have changed by the time you read this, Koyeb is
 the other option worth a look, same idea: free web service, no domain needed, confirm
 the current card policy on their pricing page before committing.
+
+## Hopkins waitlist
+
+The Hopkins landing page and its sign ups also live in this server, so they use the same
+database and phone notifications as the survey.
+
+- The page is `web/waitlist.html`, with its ad images in `web/waitlist/`. It answers at
+  `/` on any host starting with `waitlist.` (point `waitlist.kirmistudio.com` at this
+  service and add it as a custom domain on the host), and at `/waitlist` everywhere.
+- Step one saves the email (`POST /api/waitlist`). The optional step two adds business
+  name, country, team size and monthly marketing spend to the same sign up
+  (`POST /api/waitlist/:id/details`). A repeat email is not stored twice.
+- `?ref=` or `utm_source` / `utm_campaign` on the link are saved with the sign up, so
+  you can tell the Instagram bio link from a story link.
+- A hidden field and a per minute limit keep scripted sign ups out. Visitors' IP addresses
+  are never stored.
+- Each new sign up sends a notification with the running total, never the email
+  itself. See them all at `/admin/waitlist`, with an Export CSV button.
