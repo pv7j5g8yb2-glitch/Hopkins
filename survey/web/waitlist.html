@@ -539,7 +539,9 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
     }
   }
   function stopAuto(){if(!auto)return;auto=false;run++;cur.classList.remove("on");ask.value=""}
-  pv.addEventListener("pointerdown",stopAuto);ask.addEventListener("focus",stopAuto);
+  // Only a deliberate action takes over: the text box, a suggestion or a button. Scrolling past
+  // or touching the window on a phone leaves the demo playing.
+  ask.addEventListener("focus",stopAuto);
   chips.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;stopAuto();play(b.dataset.s)});
   log.addEventListener("click",async e=>{
     const b=e.target.closest(".acts button");
