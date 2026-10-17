@@ -111,6 +111,8 @@ examples of what's winning, add the learning to its log with the date.
 * **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.
+* **Solo plan:** there will be one for single agents, priced below the team plans. No
+  price set yet. Teams and brokerages get early access first.
 * **Waitlist offer:** 30% off the first year.
 * **Autopilot:** optional. The owner sets a monthly budget and goal once, Hopkins makes,
   tests and runs ads within it, reports every Monday, and can be paused any time. The
