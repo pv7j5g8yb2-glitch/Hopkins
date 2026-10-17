@@ -112,5 +112,8 @@ examples of what's winning, add the learning to its log with the date.
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.
 * **Waitlist offer:** 30% off the first year.
+* **Autopilot:** optional. The owner sets a monthly budget and goal once, Hopkins makes,
+  tests and runs ads within it, reports every Monday, and can be paused any time. The
+  default stays approving every ad.
 * **Agency offer:** don't ask teams to fire their agency. Run Hopkins next to it on one
   listing for a month, compare cost per lead, keep whichever wins.
