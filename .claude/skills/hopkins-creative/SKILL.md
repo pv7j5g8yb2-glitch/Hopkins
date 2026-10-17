@@ -66,6 +66,23 @@ send this to a colleague or a friend?", not by how pretty it is.
 16. **A footer strip on every carousel slide:** a short rotating line on the left, the
     wordmark on the right. The brand repeats without the slide feeling like an ad.
 17. **Last slide sells, the rest give.** Value on slides 1 to 9, the offer only at the end.
+18. **One image, one fixed line, a rotating punchline.** The same photo on every slide,
+    the same line on one side ("Let us handle your socials"), and only the other side
+    changes, each one a pain the reader knows ("Film a reel and never edit it",
+    "Call posting once a month consistency"). Cheap to make, very shareable: 1,256 likes,
+    1,308 shares. The reader sees themselves in the joke and sends it on.
+19. **Weak vs strong, labelled with the outcome.** Two creatives side by side, each
+    labelled by what it causes, not by "bad" and "good": "this gets scrolled past" vs
+    "this gets an 'is it still available?'", "this raises red flags" vs "this books the
+    showing". One short line underneath gives the reason ("a lower price makes buyers ask
+    why, a lifestyle perk makes them ask when"). This is the natural format for Ad teardown.
+20. **Vary the visuals, never the type.** A carousel can change background on every slide
+    (photo, flat colour, grid paper, a pinboard) and still feel like one brand when the
+    type and a small signature mark stay identical. Tight bold grotesk, centred, with one
+    italic word to land the line.
+21. **A personal process hook.** "When I get a new project, I close my laptop", with small
+    side notes "I know it sounds weird, but hear me out". Admitting something unusual
+    makes people swipe to find out why.
 
 ## Look
 
@@ -108,6 +125,10 @@ gold, per CLAUDE.md. Free licence photos only (Unsplash, Pexels), never listing 
 - Copy another account's post or template word for word. Learn the pattern, make our own.
 
 ## Log
+
+- 2026-10-17 (later): Added 18 to 21 from @femmebrandsocial (rock paper scissors
+  carousel), @claunicornios (designer process carousel) and a @coffeecontracts weak vs
+  strong price drop carousel (431 likes, 322 comments, 233 shares).
 
 - 2026-10-17: First version, from Coffee & Contracts' site, feed and a 10 slide
   "what's working right now" carousel, and @heyalyssamichelle's hooks carousel.
