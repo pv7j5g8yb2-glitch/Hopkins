@@ -575,6 +575,38 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
     thanks:"Any time.",
     rude:"Fair. I'm a preview, so I only know a few things for now. Try a new budget like “$600”, “how does it work” or “how much is it”."
   };
+  // First match wins, so the specific questions sit above the broad ones.
+  const INTENTS=[
+    [/budget/,"Type the new amount, like “$600” or “$1,000 over 14 days”."],
+    [/(what('?s| is)|who('?s| is)|tell me about) (hopkins|this|it|you)\b|^hopkins\??$|who are you|what are you/,"Hopkins is software that runs your real estate ads from one chat. You type what you need, I make the ads, you approve them, and I run them on Instagram and Facebook from your own ad account. Every Monday you get a plain report."],
+    [/(why|where).*(name|called)|claude hopkins|who('?s| is| was) hopkins|named after/,"Named after Claude Hopkins, who wrote Scientific Advertising in 1923. He tested every ad against another and kept only what worked. That's how I run your ads."],
+    [/(who (built|made|runs|owns|is behind)|founder|company|team behind)/,"Hopkins is a new product, built in Silicon Valley. Early access opens first to the teams on the waitlist."],
+    [/monday/,A.monday],
+    [/(chatgpt|chat gpt|openai|gemini|claude\b|canva)/,"ChatGPT or Canva can help write or design an ad. Hopkins does the whole job: makes the ads, runs them from your ad account, tests them against each other and reports back."],
+    [/(free|trial|try it|demo)/,"The plan is that you can try it free: I make up to 3 ads for you to see before you pay anything. Billing only starts when your first ad goes live."],
+    [/(cancel|contract|commit|lock(ed)? in)/,"Month to month, cancel any time. No contract and no cut of your ad spend."],
+    [/(price|cost|how much|pricing|\$299|expensive|cheap|subscription|per month|a month)/,A.price],
+    [/(how does|how do|what do you|what can you|help me|explain|how it works)/,A.how],
+    [/\b(ai|artificial intelligence)\b/,"Yes, Hopkins is AI software built only for real estate ads. You stay in charge: nothing runs without your yes."],
+    [/(post|posts|posting)\b.*\b(page|feed|instagram|profile)|my (feed|grid)|organic/,"Hopkins runs ads, not your everyday posts. The ads run on Instagram and Facebook from your own ad account, so they show under your page's name."],
+    [/(guarantee|results|(does|will|would) it (actually |really )?work|roi|proof|case stud)/,"No promises on numbers. Every ad is tested against others, and you see exactly what each one costs and what it brings in, so you're never guessing."],
+    [/(open house|just listed|just sold|new listing|listing ad|my listing)/,A.listing],
+    [/(when|launch|release|available|date|does it open|will it open|opening|how long)/,A.when],
+    [/(countr|\buk\b|ireland|canada|australia|dubai|\buae\b|\busa?\b|europe|where)/,A.where],
+    [/(meta|facebook account|ad account|business manager|page)/,A.meta],
+    [/(tiktok|google|youtube|linkedin|snapchat|pinterest|email|sms|text message)/,A.other],
+    [/(solo|single agent|just me|brokerage|team|agent)/,A.who],
+    [/(fair housing|compliance|legal|rules|housing category)/,A.fair],
+    [/(privacy|data|secure|safe|password|access to my)/,"Ads run from your own account, so you stay in control and can see everything. Your waitlist email is only used for Hopkins early access, never sold or shared."],
+    [/(video|photo|image|carousel|design|creative|brand|logo|(kind|type|sort)s? of ads?|what ads)/,"Images, carousels and short videos, made in your brand, and you approve each one before it runs."],
+    [/(agency|human|real person|robot|\bbot\b)/,A.agency],
+    [/help/,A.how],
+    [/buyer/,A.buyer],
+    [/(contact|talk to|speak to|call|phone|email you)/,"The waitlist is the way in for now. You'll get one email on launch day, and you can reply to it."],
+    [/^(hi|hey|hello|yo|sup|hiya)\b/,A.hi],
+    [/(thank|cheers|nice|cool|great|love it)/,A.thanks],
+    [/(stupid|dumb|useless|smart|bad|trash|rubbish|wtf|shit)/,A.rude]
+  ];
   const FALL=["I'm only a preview, so I can't do that one yet. I can show you seller leads, last week's report, or change the budget on the ads.",
     "That's beyond this preview, sorry.",
     "Not in the preview, sorry. Try “how does it work”, a new budget, or the FAQ below."];
@@ -595,16 +627,7 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
     if(mode==="change"){mode=null;return say(t,()=>bot("Got it: “"+esc(t)+"”. In the full version I'd make that change and show you the ads again before anything runs."))}
     if(/last week|report|how did|results|how('?s| is) it going/.test(L)){play("report",{said:t});return}
     if(/(seller|valuation|listing leads|more leads|get me leads)/.test(L)&&!/change|instead|different/.test(L)){play("leads",{said:t});return}
-    const r=/budget/.test(L)?"Type the new amount, like “$600” or “$1,000 over 14 days”.":
-      /monday/.test(L)?A.monday:/(price|cost|how much|pricing|\$299|expensive|cheap)/.test(L)?A.price:
-      /(open house|just listed|just sold|new listing|listing ad|my listing)/.test(L)?A.listing:
-      /(when|launch|release|available|date|does it open|will it open|opening)/.test(L)?A.when:/(countr|uk|ireland|canada|australia|dubai|uae|usa|europe|where)/.test(L)?A.where:
-      /(meta|facebook account|ad account|business manager)/.test(L)?A.meta:/(tiktok|google|youtube|linkedin|snapchat|pinterest|email|sms|text message)/.test(L)?A.other:
-      /(solo|single agent|just me|brokerage|team)/.test(L)?A.who:/(fair housing|compliance|legal|rules|housing category)/.test(L)?A.fair:
-      /(agency|human|real person|are you (a|an) )/.test(L)?A.agency:/(how does|how do|what do you|what can you|what are you|help|explain)/.test(L)?A.how:
-      /buyer/.test(L)?A.buyer:
-      /^(hi|hey|hello|yo|sup)\b/.test(L)?A.hi:/(thank|cheers|nice|cool|great)/.test(L)?A.thanks:
-      /(stupid|dumb|useless|smart|bad|trash|rubbish|wtf)/.test(L)?A.rude:null;
+    const r=(INTENTS.find(([re])=>re.test(L))||[])[1];
     if(r)return say(t,()=>bot(r));
     const f=FALL[miss++%FALL.length];
     say(t,()=>bot(f+(onList()?"":" Join the waitlist and I'll do it for real when early access opens.")+"<br>"+LINKS(onList())));
