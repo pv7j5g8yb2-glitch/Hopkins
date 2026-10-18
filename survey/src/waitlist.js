@@ -25,7 +25,7 @@ const SIZE_LABELS = { "1": "just them", "2-5": "2 to 5 agents", "6-20": "6 to 20
 const SPEND_LABELS = { "<500": "under $500", "500-2000": "$500 to $2,000", "2000-5000": "$2,000 to $5,000", "5000+": "$5,000 or more" };
 const FILMS = ["film-phone", "film-laptop", "film-desktop"];
 const ASSETS = new Set(["ad1.jpg", "ad2.jpg", "ad3.jpg", "favicon-32.png", "apple-touch-icon.png", "favicon.ico", "og.jpg",
-  ...FILMS.flatMap((f) => [f + ".mp4", f + ".jpg"])]);
+  ...FILMS.flatMap((f) => [f + ".mp4", f + ".f.mp4", f + ".jpg"])]);
 const TYPES = { jpg: "image/jpeg", png: "image/png", ico: "image/x-icon", mp4: "video/mp4" };
 // Files are small enough to keep in memory after the first request.
 const fileCache = new Map();
@@ -122,6 +122,25 @@ export function registerWaitlist(app, webDir) {
     );
     return reply.code(204).send();
   });
+
+  // How the product film loaded in each browser: the browser name, which loading step worked and
+  // the player's events. Kept in memory only (the last 100), never the IP address, so a film that
+  // fails on some browser shows up here without anyone sending screenshots.
+  const filmLog = [];
+  app.post("/api/waitlist/film", async (request, reply) => {
+    const b = request.body ?? {};
+    filmLog.push({
+      at: new Date().toISOString(),
+      ua: clean(b.ua, 200),
+      outcome: clean(b.outcome, 20),
+      step: clean(b.step, 40),
+      seconds: Number(b.seconds) || 0,
+      log: Array.isArray(b.log) ? b.log.slice(-20).map((l) => clean(l, 120)) : [],
+    });
+    if (filmLog.length > 100) filmLog.shift();
+    return reply.code(204).send();
+  });
+  app.get("/api/waitlist/film", async () => filmLog);
 
   app.post("/api/waitlist", async (request, reply) => {
     const { email, source, ref, website } = request.body ?? {};
