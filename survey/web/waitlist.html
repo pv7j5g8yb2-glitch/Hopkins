@@ -84,10 +84,11 @@ h1 .serif{font-weight:400}
 .snd:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(244,235,221,.12);z-index:2}
 .prog i{display:block;height:100%;background:var(--gold);transform-origin:0 50%;transform:scaleX(0)}
-.pv-note{display:block;font-size:12px;color:var(--mut);text-align:center;padding:11px 14px 12px;background:var(--paper);border-top:1px solid var(--line)}
-.pv-note .live{display:inline-block;vertical-align:1px;margin-right:8px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 0 rgba(215,174,98,.6);animation:pulse 2.4s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(215,174,98,0)}100%{box-shadow:0 0 0 0 rgba(215,174,98,0)}}
-@media (prefers-reduced-motion:reduce){.pv-note .live{animation:none}}
+@supports not (aspect-ratio:1/1){.film{height:0;padding-top:62.5%}.film[data-f="desktop"]{padding-top:56.25%}.film[data-f="phone"]{padding-top:177.78%}}
+.fplay{position:absolute;left:50%;top:50%;z-index:3;width:76px;height:76px;margin:-38px 0 0 -38px;border:0;border-radius:50%;background:var(--gold);color:var(--ox);display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 12px 34px rgba(0,0,0,.4)}
+.fplay svg{width:28px;height:28px;margin-left:4px}
+.fplay:focus-visible{outline:2px solid var(--cream);outline-offset:3px}
+.film.blocked .fplay{display:flex}
 /* the Hopkins mark: the gold pebble rises, as in the film */
 @keyframes mkrise{from{transform:translate(-70%,85%) scale(.55)}}
 @keyframes mkpop{from{transform:scale(.5)}}
@@ -276,10 +277,11 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 </div>
         <div class="film" id="film" data-f="laptop">
           <video id="fv" muted autoplay loop playsinline preload="auto" disablepictureinpicture aria-label="Hopkins product film: a listing goes from photos to tested ads, approved on a phone, with a weekly report"></video>
+          <script>/* Picks the cut on its own, apart from the main script, so nothing else on the page can stop the film loading. */(function(){var w=window.innerWidth,k=w<700?"phone":w<1600?"laptop":"desktop",v=document.getElementById("fv");document.getElementById("film").setAttribute("data-f",k);v.poster="/waitlist-assets/film-"+k+".jpg";v.src="/waitlist-assets/film-"+k+".mp4"})();</script>
+          <button class="fplay" id="fplay" type="button" aria-label="Play the film"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg></button>
           <button class="snd" id="snd" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w1" d="M16 9.2a4 4 0 0 1 0 5.6"/><path class="w2" d="M18.8 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mx" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg><span>Sound on</span></button>
           <div class="prog" aria-hidden="true"><i id="fprog"></i></div>
         </div>
-        <p class="pv-note"><span class="live"></span>Product film · 0:46. Hopkins is in the works, so the numbers in it are examples.</p>
       </div>
     </div>
   </div>
@@ -423,20 +425,32 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   });
 })();
 // The product film. Phones get the tall cut, laptops 16:10 and big screens 16:9, each in its
-// own aspect ratio inside the browser frame. It plays muted on its own (browsers only allow
-// that), pauses while off screen to save battery, and the button turns the sound on.
+// own aspect ratio inside the browser frame. It starts with sound. Browsers refuse sound before
+// the visitor has clicked, tapped or typed on the page, so then it plays muted and the sound
+// comes on with that first click or tap. If a phone refuses to play at all (iPhone Low Power
+// Mode does), a play button shows instead of a still frame. It pauses while off screen.
 (function(){
-  const box=document.getElementById("film"),v=document.getElementById("fv"),snd=document.getElementById("snd"),bar=document.getElementById("fprog");if(!v)return;
+  const box=document.getElementById("film"),v=document.getElementById("fv"),snd=document.getElementById("snd"),fp=document.getElementById("fplay"),bar=document.getElementById("fprog");if(!v)return;
   const A="/waitlist-assets/film-",pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";
-  let cut=null,seen=true;
+  let cut=box.dataset.f,seen=true,held=false,chose=false,woke=0;// held: muted only because the browser asked
+  const ui=()=>{snd.setAttribute("aria-pressed",String(!v.muted));snd.classList.toggle("on",!v.muted);snd.querySelector("span").textContent=v.muted?"Sound on":"Sound off"};
+  const ok=()=>box.classList.remove("blocked"),block=()=>box.classList.add("blocked");
+  const muted=()=>{v.muted=true;ui();return v.play().then(ok).catch(block)};
+  function start(){if(!seen)return;
+    if(held||(chose&&v.muted))return v.play().then(ok).catch(block);
+    v.muted=false;ui();v.play().then(()=>{held=false;ok()}).catch(()=>{held=true;muted()})}
   function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=A+k+".jpg";v.src=A+k+".mp4";
-    v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});if(seen)v.play().catch(()=>{})}
-  v.muted=true;load();
+    v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});start()}
   let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(load,250)});
-  if("IntersectionObserver" in window)new IntersectionObserver(es=>{seen=es[0].isIntersecting;if(seen)v.play().catch(()=>{});else v.pause()},{threshold:.2}).observe(box);
-  snd.addEventListener("click",()=>{v.muted=!v.muted;if(!v.muted){if(v.currentTime>v.duration-2)v.currentTime=0;v.play().catch(()=>{})}
-    snd.setAttribute("aria-pressed",String(!v.muted));snd.classList.toggle("on",!v.muted);snd.querySelector("span").textContent=v.muted?"Sound on":"Sound off"});
-  v.addEventListener("click",()=>{v.paused?v.play():v.pause()});
+  if("IntersectionObserver" in window)new IntersectionObserver(es=>{seen=es[0].isIntersecting;if(seen)start();else v.pause()},{threshold:.2}).observe(box);else start();
+  // The first click, tap or key press anywhere turns the sound on.
+  function wake(e){if(!held||chose||snd.contains(e.target)||fp.contains(e.target))return;
+    if(navigator.userActivation&&!navigator.userActivation.isActive)return;
+    held=false;woke=Date.now();v.muted=false;ui();if(seen)v.play().then(ok).catch(()=>{held=true;muted()})}
+  ["pointerdown","pointerup","touchend","keydown","click"].forEach(t=>addEventListener(t,wake,{capture:true,passive:true}));
+  snd.addEventListener("click",()=>{chose=true;held=false;v.muted=!v.muted;ui();if(seen)v.play().then(ok).catch(()=>{if(!v.muted)muted()})});
+  fp.addEventListener("click",()=>{held=false;v.muted=false;ui();v.play().then(ok).catch(()=>muted())});
+  v.addEventListener("click",()=>{if(Date.now()-woke<800)return;v.paused?v.play().catch(()=>{}):v.pause()});
   (function tick(){if(v.duration)bar.style.transform="scaleX("+(v.currentTime/v.duration)+")";requestAnimationFrame(tick)})();
 })();
 // Count the visit (by link source only) so the admin page can show the sign up rate.

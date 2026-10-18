@@ -103,6 +103,8 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   "estate agent", because the US, Canada, Australia and the UAE all say real estate.
   Never use "Realtor" (a trademark for NAR members only). Messages to Ismael stay in
   Irish English.
+* **"Built in Silicon Valley" is true** (Ismael, 2026-10-18). It stays in the footer and can be used in
+  public copy. Never question it, call it false or remove it.
 * **Voice: never "we", "us" or "our"** in anything public (page, posts, captions,
   stories, ads, emails). "We" makes Hopkins sound like an agency. Write as the product:
   "Hopkins makes the ads", "you approve", or "I" when Hopkins talks in the chat. Same in
