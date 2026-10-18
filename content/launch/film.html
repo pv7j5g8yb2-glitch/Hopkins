@@ -482,7 +482,7 @@ window.render=(T)=>{let t=T;
 };
 // measure the layout once fonts and images are in
 Promise.all([document.fonts.ready,...$$("img").map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r}))]).then(()=>{
- $("#lk").style.top=(CY-160)+"px";$("#soon").style.top=(CY+130)+"px";$("#cta").style.top=(CY+220)+"px";$("#k1").style.top=(CY-180)+"px";
+ $("#lk").style.top=(CY-160)+"px";$("#soon").style.top=(CY+130)+"px";$("#cta").style.top=(CY+220)+"px";if(Q.get("cta"))$("#cta span").textContent=Q.get("cta");$("#k1").style.top=(CY-180)+"px";
  if(LAND)for(const [id,top] of [["#c1",H-150],["#c2",40],["#c3",34],["#c5",40],["#c4",34]])$(id).style.top=top+"px";
  $$(".sc").forEach(s=>s.style.display="block");["#m1","#m2","#vers","#m3","#m4"].forEach(s=>$(s).style.display="");
  const A=$("#app");F={comp:pos($("#comp"),A),sbtn:pos($("#sbtn"),A),v2:pos($("#v2"),A),pv:pos($(".stage"),A),story:pos($$("#seg span")[1],A),ta:pos($("#ta"),A),nvl:pos($("#nvl"),A),wd:(()=>{$("#logo").style.display="block";const w=$("#wd").offsetWidth;$("#logo").style.display="none";return w-.14*156})(),ad:$("#adpost").offsetTop-60,

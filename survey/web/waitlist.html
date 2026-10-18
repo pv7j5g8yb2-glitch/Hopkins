@@ -73,47 +73,22 @@ h1 .serif{font-weight:400}
 .fine{font-size:13px;color:#A58A83;margin-top:12px}
 /* product preview */
 .preview{background:var(--paper);color:var(--ox);border-radius:12px;border:1px solid var(--oxl);box-shadow:0 30px 70px rgba(0,0,0,.35);overflow:hidden}
-.pv-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mut)}
-.pv-bar .dots{display:flex;gap:6px}.pv-bar .dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
-.pv{padding:22px 22px 18px;display:flex;flex-direction:column;gap:16px}
-.me{align-self:flex-end;background:#F1E9DC;padding:9px 14px;border-radius:16px;font-size:14.5px}
-.bot{display:flex;gap:11px;font-size:14.5px;line-height:1.55}
-.bot>svg{width:22px;height:22px;flex:none;margin-top:2px}
-.thumbs{display:flex;gap:8px;margin:10px 0 12px}
-.th{flex:1;min-width:0;margin:0}
-.zoom{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;border-radius:9px;transition:transform .15s}
-.zoom:hover{transform:translateY(-2px)}
-.zoom:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.th img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:9px;box-shadow:0 1px 4px rgba(42,15,20,.2)}
-.th figcaption{margin-top:6px;line-height:1}
-.th em{font-style:normal;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:99px;background:#EFE6D8;color:var(--mut)}
-.th em.w{background:var(--gold);color:var(--ox)}
-.acts{display:flex;gap:7px;margin-top:10px}
-.a1{background:var(--ox);color:var(--cream);font-size:13px;font-weight:600;padding:8px 12px;border-radius:9px}
-.a2{border:1.5px solid rgba(42,15,20,.45);color:var(--ox);font-weight:600;font-size:13px;padding:7.5px 12px;border-radius:9px}
-.pv{position:relative}
-.log{height:470px;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:16px;padding-bottom:4px}
-.log::-webkit-scrollbar{display:none}
-.msg{animation:msgin .35s cubic-bezier(.2,.7,.2,1) both}
-@keyframes msgin{from{opacity:0;transform:translateY(8px)}}
-.dots{display:inline-flex;gap:4px;padding:8px 0}.dots i{width:7px;height:7px;border-radius:50%;background:#B9A79F;animation:dot 1s infinite}
-.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
-@keyframes dot{0%,60%,100%{opacity:.35;transform:none}30%{opacity:1;transform:translateY(-3px)}}
-.acts button{font:inherit;cursor:pointer;transition:transform .12s,filter .2s,opacity .2s}
-button.a1{border:0;font-size:13px}button.a2{background:none;font-size:13px}
-.acts button.pressed{transform:scale(.95);filter:brightness(1.35)}
-.acts button:disabled{cursor:default}.acts button:disabled:not(.pressed){opacity:.45}
-.okt{width:16px;height:16px;fill:none;stroke:var(--bronze);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-right:6px}
-.pjoin,.pfaq{display:inline-block;margin:8px 14px 0 0;background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--bronze);text-decoration:underline;cursor:pointer}
-/* the Hopkins mark: spins with the two pebbles taking turns while thinking, then the gold one rises */
-.bot.think>svg{animation:mkspin 1.5s cubic-bezier(.6,0,.4,1) infinite}
-.bot.think>svg path{transform-box:fill-box;transform-origin:center;animation:mkswap 1.5s ease-in-out infinite}
-.bot.think>svg path:last-child{animation-delay:-.75s}
-@keyframes mkspin{to{transform:rotate(360deg)}}
-@keyframes mkswap{0%,100%{transform:scale(1)}50%{transform:scale(.55)}}
-.bot.settle>svg path{transform-box:fill-box;transform-origin:center}
-.bot.settle>svg path:last-child{animation:mkrise .7s cubic-bezier(.3,1.6,.5,1) both}
-.bot.settle>svg path:first-child{animation:mkpop .45s ease-out both}
+/* product film */
+.film{position:relative;background:#1c080c;aspect-ratio:16/10;overflow:hidden}
+.film[data-f="desktop"]{aspect-ratio:16/9}
+.film[data-f="phone"]{aspect-ratio:9/16}
+.film video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;background:#1c080c}
+.snd{position:absolute;right:12px;bottom:14px;z-index:2;display:flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:600;color:var(--cream);background:rgba(28,8,12,.55);border:1px solid rgba(244,235,221,.18);border-radius:99px;padding:7px 12px 7px 10px;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:background .2s,border-color .2s}
+.snd:hover{background:rgba(28,8,12,.75);border-color:rgba(244,235,221,.3)}
+.snd svg{width:16px;height:16px}.snd .w1,.snd .w2{display:none}.snd.on .w1,.snd.on .w2{display:inline}.snd.on .mx{display:none}
+.snd:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(244,235,221,.12);z-index:2}
+.prog i{display:block;height:100%;background:var(--gold);transform-origin:0 50%;transform:scaleX(0)}
+.pv-note{display:block;font-size:12px;color:var(--mut);text-align:center;padding:11px 14px 12px;background:var(--paper);border-top:1px solid var(--line)}
+.pv-note .live{display:inline-block;vertical-align:1px;margin-right:8px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 0 rgba(215,174,98,.6);animation:pulse 2.4s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(215,174,98,0)}100%{box-shadow:0 0 0 0 rgba(215,174,98,0)}}
+@media (prefers-reduced-motion:reduce){.pv-note .live{animation:none}}
+/* the Hopkins mark: the gold pebble rises, as in the film */
 @keyframes mkrise{from{transform:translate(-70%,85%) scale(.55)}}
 @keyframes mkpop{from{transform:scale(.5)}}
 nav .logo svg path,.lockup svg path{transform-box:fill-box;transform-origin:center}
@@ -121,21 +96,7 @@ nav .logo svg path:last-child{animation:mkrise .9s .25s cubic-bezier(.3,1.6,.5,1
 nav .logo svg path:first-child{animation:mkpop .5s .1s ease-out both}
 nav .logo:hover svg path:last-child,.lockup:hover svg path:last-child{animation:mkhop .55s cubic-bezier(.3,1.6,.5,1)}
 @keyframes mkhop{40%{transform:translateY(-22%) rotate(-8deg)}}
-@media (prefers-reduced-motion:reduce){.bot.think>svg,.bot.think>svg path,.bot.settle>svg path,nav .logo svg path{animation:none!important}}
-.pchips{display:flex;gap:7px;flex-wrap:wrap}
-.pchips button{font:inherit;font-size:12.5px;color:var(--ox);background:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 11px;cursor:pointer;transition:border-color .2s,background .2s}
-.pchips button:hover{border-color:#CDB9A0;background:#FFFDF8}
-.composer{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px}
-.composer input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:14.5px;color:var(--ox);padding:6px 0;outline:none}
-.composer input::placeholder{color:#A8958D}
-.composer button{width:32px;height:32px;flex:none;border-radius:50%;border:0;background:var(--ox);color:var(--cream);display:flex;align-items:center;justify-content:center;cursor:pointer}
-.composer button svg{width:16px;height:16px}
-.composer:focus-within{border-color:#CDB9A0}
-.cur{position:absolute;left:0;top:0;width:22px;height:22px;pointer-events:none;opacity:0;transition:transform .95s cubic-bezier(.45,.05,.25,1),opacity .25s;z-index:5;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
-.cur.on{opacity:1}.cur.click{scale:.82}
-@media (max-width:600px){.log{height:450px}.pchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -22px;padding:0 22px}.pchips::-webkit-scrollbar{display:none}.pchips button{flex:none}}
-@media (min-width:1280px){.log{height:540px}}
-.pv-note{font-size:11.5px;color:#A58A83;text-align:center;padding:0 0 14px}
+@media (prefers-reduced-motion:reduce){nav .logo svg path{animation:none!important}}
 .chrome{display:flex;align-items:flex-end;gap:12px;background:#E9DFCF;padding:10px 12px 0;}
 .lights{display:flex;gap:7px;align-self:center;padding:0 6px 8px 2px}.lights i{width:12px;height:12px;border-radius:50%;display:block}
 .tab{display:flex;align-items:center;gap:8px;background:var(--paper);border-radius:10px 10px 0 0;padding:8px 12px 9px;min-width:170px;font-size:12.5px;color:var(--ox);position:relative}
@@ -230,16 +191,6 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 .ig:hover{color:var(--cream)}
 .ig:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .ig svg{width:22px;height:22px}
-.lb{position:fixed;inset:0;z-index:50;background:rgba(20,6,9,.92);display:flex;align-items:center;justify-content:center;padding:56px 16px 40px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.lb[hidden]{display:none}
-.lb-fig{margin:0;display:flex;flex-direction:column;align-items:center;gap:14px;max-height:100%}
-.lb-fig img{max-width:min(92vw,560px);max-height:calc(100vh - 150px);width:auto;height:auto;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
-.lb-fig figcaption{color:var(--cream);font-size:14px;display:flex;gap:10px;align-items:center}
-.lb-fig figcaption em{font-style:normal;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:#4A222A;color:var(--cream)}
-.lb-fig figcaption em.w{background:var(--gold);color:var(--ox)}
-.lb-x{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:50%;border:1px solid var(--oxl);background:var(--ox2);color:var(--cream);font-size:24px;line-height:1;cursor:pointer}
-.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:1px solid var(--oxl);background:var(--ox2);color:var(--cream);font-size:28px;line-height:1;cursor:pointer}
-.lb-prev{left:16px}.lb-next{right:16px}
 @media (max-width:600px){.lb-nav{top:auto;bottom:22px;transform:none}.lb-prev{left:calc(50% - 58px)}.lb-next{right:calc(50% - 58px)}.lb-fig img{max-height:calc(100vh - 190px)}}
 .lockup{display:flex;align-items:center;gap:12px}
 .lockup svg{width:40px;height:40px;flex:none}
@@ -323,21 +274,12 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
  <span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#9AA0A6"/><circle cx="12" cy="9.4" r="4.2" fill="#fff"/><path d="M4.1 20.1C5.5 16.9 8.5 15 12 15s6.5 1.9 7.9 5.1A11.9 11.9 0 0 1 12 24a11.9 11.9 0 0 1-7.9-3.9Z" fill="#fff"/></svg></span><span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></span>
 </div>
 </div>
-        <div class="pv">
-          <div class="log" id="log" aria-live="polite"></div>
-          <div class="pchips" id="pchips"><button type="button" data-s="leads">Seller leads in Oak Hill</button><button type="button" data-s="report">How did last week go?</button></div>
-          <form class="composer" id="composer" autocomplete="off"><input id="ask" placeholder="Ask Hopkins anything" maxlength="140" aria-label="Ask Hopkins anything"><button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button></form>
-          <svg class="cur" id="cur" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v15.2l4.1-3.9 2.7 6.1 2.6-1.1-2.6-6h5.6z" fill="#fff" stroke="#2A0F14" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <div class="film" id="film" data-f="laptop">
+          <video id="fv" muted autoplay loop playsinline preload="auto" disablepictureinpicture aria-label="Hopkins product film: a listing goes from photos to tested ads, approved on a phone, with a weekly report"></video>
+          <button class="snd" id="snd" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w1" d="M16 9.2a4 4 0 0 1 0 5.6"/><path class="w2" d="M18.8 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mx" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg><span>Sound on</span></button>
+          <div class="prog" aria-hidden="true"><i id="fprog"></i></div>
         </div>
-        <template id="t-leads"><div class="bot"><svg class="" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg><div>On it. Three ads for homeowners in Oak Hill, each a different idea. They run against each other and the winner gets the budget.
-            <div class="thumbs"><figure class="th"><button class="zoom" type="button" aria-label="See this ad full size"><img src="/waitlist-assets/ad1.jpg" alt="Story ad: agent video, If you own a home in Oak Hill, here's what it's worth right now."></button><figcaption><em>Test</em></figcaption></figure><figure class="th"><button class="zoom" type="button" aria-label="See this ad full size"><img src="/waitlist-assets/ad2.jpg" alt="Carousel ad: Just sold near you, three recent sales."></button><figcaption><em>Test</em></figcaption></figure><figure class="th"><button class="zoom" type="button" aria-label="See this ad full size"><img src="/waitlist-assets/ad3.jpg" alt="Ad: Oak Hill median sale price, what's yours worth?"></button><figcaption><em>Test</em></figcaption></figure></div>
-            $400 over 7 days, from your own ad account. Run them?
-            <div class="acts"><button type="button" class="a1" data-a="yes">Yes, run them</button><button type="button" class="a2" data-a="change">Change something</button></div></div></div></template>
-        <template id="t-report"><div class="bot"><svg class="" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg><div>Good week. <b>9 valuations booked</b> from $380, up from 5. Your Oak Hill video did most of the work, so I've made two new ideas to test against it.
-            <div class="thumbs"><figure class="th"><button class="zoom" type="button" aria-label="See this ad full size"><img src="/waitlist-assets/ad1.jpg" alt="Story ad: agent video, If you own a home in Oak Hill, here's what it's worth right now."></button><figcaption><em class="w">Winner</em></figcaption></figure><figure class="th"><button class="zoom" type="button" aria-label="See this ad full size"><img src="/waitlist-assets/ad2.jpg" alt="Carousel ad: Just sold near you, three recent sales."></button><figcaption><em>Test</em></figcaption></figure><figure class="th"><button class="zoom" type="button" aria-label="See this ad full size"><img src="/waitlist-assets/ad3.jpg" alt="Ad: Oak Hill median sale price, what's yours worth?"></button><figcaption><em>Test</em></figcaption></figure></div>
-            Run both next to it this week? $400 over 7 days.
-            <div class="acts"><button type="button" class="a1" data-a="yes">Yes, run them</button><button type="button" class="a2" data-a="change">Change something</button></div></div></div></template>
-        <template id="t-mark"><svg class="" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg></template>
+        <p class="pv-note"><span class="live"></span>Product film · 0:46. Hopkins is in the works, so the numbers in it are examples.</p>
       </div>
     </div>
   </div>
@@ -395,12 +337,6 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 </section>
 
 
-<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Ad full size" hidden>
-  <button class="lb-x" id="lbx" type="button" aria-label="Close">×</button>
-  <button class="lb-nav lb-prev" id="lbp" type="button" aria-label="Previous ad">‹</button>
-  <figure class="lb-fig"><img id="lbimg" alt=""><figcaption id="lbcap"></figcaption></figure>
-  <button class="lb-nav lb-next" id="lbn" type="button" aria-label="Next ad">›</button>
-</div>
 <footer>
   <div class="wrap foot">
     <div class="lockup"><svg class="" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg><div><span class="lname">Hopkins</span><span class="made">Built in Silicon Valley.</span></div></div>
@@ -444,16 +380,6 @@ document.getElementById("finish").addEventListener("click",async()=>{
   try{if(signupId)await post("/api/waitlist/"+signupId+"/details",{instagram:v("instagram"),country:v("country"),size:v("size"),spend:v("spend")})}catch(x){}
   document.getElementById("step2").style.display="none";document.getElementById("done").style.display="block";
 });
-let zb=[];const lb=document.getElementById("lb"),li=document.getElementById("lbimg"),lc=document.getElementById("lbcap");let zi=0,lastFocus=null;
-const caps={ad1:"The agent's video",ad2:"Just sold near you",ad3:"Local market data"};
-function showAd(i){zi=(i+zb.length)%zb.length;const im=zb[zi].querySelector("img");li.src=im.src;li.alt=im.alt;const tag=zb[zi].parentElement.querySelector("em");lc.innerHTML=(tag?tag.outerHTML:"")+"<span>"+(caps[im.src.split("/").pop().split(".")[0]]||"")+"</span>"}
-function openAd(i){lastFocus=document.activeElement;showAd(i);lb.hidden=false;document.body.style.overflow="hidden";document.getElementById("lbx").focus()}
-function closeAd(){lb.hidden=true;document.body.style.overflow="";if(lastFocus)lastFocus.focus()}
-document.addEventListener("click",e=>{const z=e.target.closest(".log .zoom");if(!z)return;const set=z.closest(".thumbs");zb=[...set.querySelectorAll(".zoom")];openAd(zb.indexOf(z))});
-document.getElementById("lbx").onclick=closeAd;document.getElementById("lbp").onclick=e=>{e.stopPropagation();showAd(zi-1)};document.getElementById("lbn").onclick=e=>{e.stopPropagation();showAd(zi+1)};
-lb.addEventListener("click",e=>{if(e.target===lb||e.target.classList.contains("lb-fig"))closeAd()});
-document.addEventListener("keydown",e=>{if(lb.hidden)return;if(e.key==="Escape")closeAd();if(e.key==="ArrowRight")showAd(zi+1);if(e.key==="ArrowLeft")showAd(zi-1)});
-let tx=null;lb.addEventListener("touchstart",e=>{tx=e.touches[0].clientX},{passive:true});lb.addEventListener("touchend",e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)showAd(zi+(dx<0?1:-1));tx=null});
 // FAQ: the answer slides open and closed instead of jumping. Without JS, or with reduced
 // motion, the native open and close still works.
 if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelectorAll(".faq details").forEach(d=>{
@@ -496,157 +422,22 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
     if(input&&input.offsetParent)setTimeout(()=>input.focus({preventScroll:true}),600);
   });
 })();
-// The preview chat. It plays two scripted conversations on its own until the visitor
-// touches it; the suggestions and the box work too. Anything else typed gets an honest
-// "this is a preview" reply, since the product isn't live yet.
+// The product film. Phones get the tall cut, laptops 16:10 and big screens 16:9, each in its
+// own aspect ratio inside the browser frame. It plays muted on its own (browsers only allow
+// that), pauses while off screen to save battery, and the button turns the sound on.
 (function(){
-  const log=document.getElementById("log");if(!log)return;
-  const ask=document.getElementById("ask"),form=document.getElementById("composer"),chips=document.getElementById("pchips"),cur=document.getElementById("cur"),pv=log.parentElement;
-  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const MARK=document.getElementById("t-mark").innerHTML;
-  const TEXT={leads:"Get me more seller leads in Oak Hill this month",report:"How did last week go?"};
-  const LIVE={custom:"Live. I'll tell you which one wins on Monday.",leads:"Live. I'll tell you which one wins on Monday.",report:"Done. Both new ideas are live next to the video. Results on Monday."};
-  const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const LINKS=on=>(on?"":'<button type="button" class="pjoin">Join the waitlist</button>')+'<button type="button" class="pfaq">See the FAQ</button>';
-  function pulseSend(){if(reduce)return;const b=form.querySelector("button"),a=b.querySelector("svg");
-    b.animate([{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(215,174,98,.55)"},{transform:"scale(.8)",offset:.3},{transform:"scale(1.1)",offset:.65},{transform:"scale(1)",boxShadow:"0 0 0 12px rgba(215,174,98,0)"}],{duration:480,easing:"cubic-bezier(.3,.7,.4,1)"});
-    a.animate([{transform:"translateY(0)",opacity:1},{transform:"translateY(-18px)",opacity:0,offset:.42},{transform:"translateY(16px)",opacity:0,offset:.43},{transform:"translateY(0)",opacity:1}],{duration:560,easing:"ease-in-out"})}
-  const OK='<svg class="okt" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-  let run=0,auto=!reduce,started=false;
-  const wait=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
-  const add=n=>{log.appendChild(n);log.scrollTo({top:log.scrollHeight,behavior:reduce?"auto":"smooth"});return n};
-  const me=t=>{const d=document.createElement("div");d.className="me msg";d.textContent=t;return add(d)};
-  const bot=h=>{const d=document.createElement("div");d.className="bot msg settle";d.innerHTML=MARK+"<div>"+h+"</div>";return add(d)};
-  const tpl=name=>{const n=document.getElementById("t-"+name).content.firstElementChild.cloneNode(true);n.classList.add("msg","settle");n.dataset.s=name;return add(n)};
-  async function thinking(id){const d=bot("");d.classList.remove("settle");d.classList.add("think");await wait(1300);d.remove();return id===run}
-  async function typeOut(text,id){ask.value="";for(const ch of text){if(id!==run)return false;ask.value+=ch;await wait(36)}await wait(380);return id===run}
-  async function play(name,{typed=false,said}={}){
-    const id=++run;log.innerHTML="";cur.classList.remove("on");
-    if(typed&&!(await typeOut(TEXT[name],id)))return 0;
-    if(typed||!said)pulseSend();ask.value="";me(said||TEXT[name]);await wait(350);if(id!==run)return 0;
-    if(!(await thinking(id)))return 0;tpl(name);return id;
-  }
-  async function yes(btn,id){
-    const acts=btn.closest(".acts"),name=btn.closest("[data-s]").dataset.s;
-    btn.classList.add("pressed");acts.querySelectorAll("button").forEach(b=>b.disabled=true);
-    await wait(250);if(id!==run||!(await thinking(id)))return;bot(OK+LIVE[name]);
-  }
-  async function cursorYes(id){
-    const btn=[...log.querySelectorAll('[data-a="yes"]')].pop();if(!btn)return;
-    const P=pv.getBoundingClientRect(),B=btn.getBoundingClientRect();
-    cur.style.transition="none";cur.style.transform=`translate(${P.width-40}px,${P.height-30}px)`;void cur.offsetWidth;
-    cur.style.transition="";cur.classList.add("on");
-    cur.style.transform=`translate(${B.left-P.left+B.width*.55}px,${B.top-P.top+B.height*.5}px)`;
-    await wait(1050);if(id!==run){cur.classList.remove("on");return}
-    cur.classList.add("click");await wait(170);cur.classList.remove("click");
-    await yes(btn,id);await wait(700);cur.classList.remove("on");
-  }
-  async function loop(){
-    while(auto){
-      let id=await play("leads",{typed:true});if(!id||!auto)return;await wait(1200);await cursorYes(id);if(!auto)return;await wait(5200);if(!auto)return;
-      id=await play("report",{typed:true});if(!id||!auto)return;await wait(1200);await cursorYes(id);if(!auto)return;await wait(6200);
-    }
-  }
-  function stopAuto(){if(!auto)return;auto=false;run++;cur.classList.remove("on");ask.value=""}
-  // Only a deliberate action takes over: the text box, a suggestion or a button. Scrolling past
-  // or touching the window on a phone leaves the demo playing.
-  ask.addEventListener("focus",stopAuto);
-  chips.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;stopAuto();play(b.dataset.s)});
-  log.addEventListener("click",async e=>{
-    const b=e.target.closest(".acts button");
-    if(b&&!b.disabled){stopAuto();if(b.dataset.a==="yes"){yes(b,run)}else{b.closest(".acts").querySelectorAll("button").forEach(x=>x.disabled=true);const id=run;if(await thinking(id)){bot("Sure. What should I change? The budget, the area, an ad? Type it below.");mode="change";ask.focus()}}}
-    if(e.target.closest(".pfaq")){document.querySelector(".faq").scrollIntoView({behavior:"smooth",block:"start"})}
-    const j=e.target.closest(".pjoin");
-    if(j){const join=document.getElementById("join");join.scrollIntoView({behavior:"smooth",block:"start"});const em=join.querySelector('input[type="email"]');if(em&&em.offsetParent)setTimeout(()=>em.focus({preventScroll:true}),600)}
-  });
-  // Scripted replies. The preview recognises the questions people actually ask and remembers
-  // the ads on screen, but never pretends to do something Hopkins can't do yet.
-  let mode=null,miss=0;
-  const ACTS='<div class="acts"><button type="button" class="a1" data-a="yes">Yes, run them</button><button type="button" class="a2" data-a="change">Change something</button></div>';
-  const onList=()=>document.getElementById("join").classList.contains("sent");
-  const pending=()=>[...log.querySelectorAll('.acts button[data-a="yes"]:not(:disabled)')].pop();
-  const hasAds=()=>!!log.querySelector(".thumbs");
-  function money(t){const c=t.replace(/,/g,"").trim(),m=c.match(/\$\s?(\d+(?:\.\d+)?)\s*(k)?|(\d+(?:\.\d+)?)\s*(k\b|thousand)?\s*(?:dollars|usd|bucks)|(\d+(?:\.\d+)?)\s*(k)\b|^(\d{2,6})$/i);if(m&&(m[5]||m[7])){const v=parseFloat(m[5]||m[7]);return Math.round(m[6]?v*1000:v)}if(!m)return null;let v=parseFloat(m[1]||m[3]);if(m[2]||m[4])v*=1000;return Math.round(v)}
-  function days(t){const m=t.match(/(\d+)\s*(day|week)s?/i);if(!m)return null;return m[2].toLowerCase()==="week"?+m[1]*7:+m[1]}
-  const A={
-    monday:"Monday is when most teams plan the week, so that's when the report lands: what ran, what it cost and what it brought in. You can ask me how things are going any other day too.",
-    price:"From $299 a month for smaller teams. Larger teams and brokerages pay more, based on team size and monthly ad spend. Solo agents will have a lower priced plan. Teams on the waitlist get 30% off their first year.",
-    when:"No date yet. Teams on the waitlist get early access, and you'll get one email on launch day.",
-    where:"Anywhere Instagram and Facebook ads run.",
-    meta:"Yes, ads run from your own Meta ad account, so you own them and see every cent. If you don't have one yet, it takes a few minutes to set up in Meta Business.",
-    other:"Instagram and Facebook to start. Need another platform? Mention it when you join the waitlist.",
-    who:"Yes. There will be a plan for solo agents, priced below the team plans. Teams and brokerages that already spend on ads get early access first.",
-    how:"You tell me what you need in plain words. I make a few different ads, show you them with the budget and the area, and nothing runs until you say yes, unless you put me on autopilot. Then I switch off the weak ones, give the winner more budget and report every Monday.",
-    agency:"I'm software, not an agency. No retainer, no waiting on emails. You type, I make the ads, you approve, and they run from your own ad account.",
-    fair:"In the US, real estate ads run under Meta's housing rules, which limit how ads can be targeted. Hopkins is being built around those rules, and nothing runs without your yes.",
-    listing:"In the full version you'd send me the listing and I'd make a few versions to test against each other, then show you them before anything runs.",
-    buyer:"Buyer leads work the same way: new listings, open houses, homes in an area under a price. You'd ask just like that, and approve the ads first.",
-    hi:"Hi. Ask me for seller leads, last week's report, or give me a new budget for the ads above.",
-    thanks:"Any time.",
-    rude:"Fair. I'm a preview, so I only know a few things for now. Try a new budget like “$600”, “how does it work” or “how much is it”."
-  };
-  // First match wins, so the specific questions sit above the broad ones.
-  const INTENTS=[
-    [/(auto ?pilot|automatic|hands off|on its own|without (me|approv))/,"Yes. Set a monthly budget and what you want, and I make, test and run the ads within it. You still get the Monday report and can pause any time. Or approve every ad yourself, your choice."],
-    [/(my (own )?(photos|pictures|images|videos)|from scratch|don'?t have (photos|pictures|images))/,"Either works. Send me your listing photos and videos, or I'll make the ads from scratch."],
-    [/budget/,"Type the new amount, like “$600” or “$1,000 over 14 days”."],
-    [/(what('?s| is)|who('?s| is)|tell me about) (hopkins|this|it|you)\b|^hopkins\??$|who are you|what are you/,"Hopkins is software that runs your real estate ads from one chat. You type what you need, I make the ads, you approve them, and I run them on Instagram and Facebook from your own ad account. Every Monday you get a plain report."],
-    [/(why|where).*(name|called)|claude hopkins|who('?s| is| was) hopkins|named after/,"Named after Claude Hopkins, who wrote Scientific Advertising in 1923. He tested every ad against another and kept only what worked. That's how I run your ads."],
-    [/(who (built|made|runs|owns|is behind)|founder|company|team behind)/,"Hopkins is a new product, built in Silicon Valley. Early access opens first to the teams on the waitlist."],
-    [/monday/,A.monday],
-    [/(chatgpt|chat gpt|openai|gemini|claude\b|canva)/,"ChatGPT or Canva can help write or design an ad. Hopkins does the whole job: makes the ads, runs them from your ad account, tests them against each other and reports back."],
-    [/(free|trial|try it|demo)/,"The plan is that you can try it free: I make up to 3 ads for you to see before you pay anything. Billing only starts when your first ad goes live."],
-    [/(cancel|contract|commit|lock(ed)? in)/,"Month to month, cancel any time. No contract and no cut of your ad spend."],
-    [/(price|cost|how much|pricing|\$299|expensive|cheap|subscription|per month|a month)/,A.price],
-    [/(how does|how do|what do you|what can you|help me|explain|how it works)/,A.how],
-    [/\b(ai|artificial intelligence)\b/,"Yes, Hopkins is AI software built only for real estate ads. You stay in charge: nothing runs without your yes."],
-    [/(post|posts|posting)\b.*\b(page|feed|instagram|profile)|my (feed|grid)|organic/,"Hopkins runs ads, not your everyday posts. The ads run on Instagram and Facebook from your own ad account, so they show under your page's name."],
-    [/(guarantee|results|(does|will|would) it (actually |really )?work|roi|proof|case stud)/,"No promises on numbers. Every ad is tested against others, and you see exactly what each one costs and what it brings in, so you're never guessing."],
-    [/(open house|just listed|just sold|new listing|listing ad|my listing)/,A.listing],
-    [/(when|launch|release|available|date|does it open|will it open|opening|how long)/,A.when],
-    [/(countr|\buk\b|ireland|canada|australia|dubai|\buae\b|\busa?\b|europe|where)/,A.where],
-    [/(meta|facebook account|ad account|business manager|page)/,A.meta],
-    [/(tiktok|google|youtube|linkedin|snapchat|pinterest|email|sms|text message)/,A.other],
-    [/(solo|single agent|just me|brokerage|team|agent)/,A.who],
-    [/(fair housing|compliance|legal|rules|housing category)/,A.fair],
-    [/(privacy|data|secure|safe|password|access to my)/,"Ads run from your own account, so you stay in control and can see everything. Your waitlist email is only used for Hopkins early access, never sold or shared."],
-    [/(video|photo|image|carousel|design|creative|brand|logo|(kind|type|sort)s? of ads?|what ads)/,"Images, carousels and short videos, made in your brand, and you approve each one before it runs."],
-    [/(agency|human|real person|robot|\bbot\b)/,A.agency],
-    [/help/,A.how],
-    [/buyer/,A.buyer],
-    [/(contact|talk to|speak to|call|phone|email you)/,"The waitlist is the way in for now. You'll get one email on launch day, and you can reply to it."],
-    [/^(hi|hey|hello|yo|sup|hiya)\b/,A.hi],
-    [/(thank|cheers|nice|cool|great|love it)/,A.thanks],
-    [/(stupid|dumb|useless|smart|bad|trash|rubbish|wtf|shit)/,A.rude]
-  ];
-  const FALL=["I'm only a preview, so I can't do that one yet. I can show you seller leads, last week's report, or change the budget on the ads.",
-    "That's beyond this preview, sorry.",
-    "Not in the preview, sorry. Try “how does it work”, a new budget, or the FAQ below."];
-  async function say(t,fn){const id=++run;ask.value="";me(t);await wait(300);if(!(await thinking(id)))return;fn()}
-  form.addEventListener("submit",async e=>{
-    e.preventDefault();stopAuto();const t=ask.value.trim();if(!t)return;pulseSend();
-    const L=t.toLowerCase(),amt=money(t),d=days(t),pend=pending();
-    if(mode==="area"&&!amt){mode=null;const place=esc(t.replace(/^(in|to|for)\s+/i,"").slice(0,40));
-      return say(t,()=>bot("Got it, "+place+". In the full version I'd remake all three ads for homeowners in "+place+" and show you them before anything runs."))}
-    if(amt!==null&&(hasAds()||mode==="change")){mode=null;
-      if(amt<50)return say(t,()=>bot("That's too little to test three ads properly. Try $100 or more for the week."));
-      if(amt>50000)return say(t,()=>bot("That's a lot for one test. Start under $50,000 and give the winner more once it's clear which one it is."));
-      const dd=d||7;return say(t,()=>{log.querySelectorAll(".acts button").forEach(x=>x.disabled=true);const m=bot("Done. Same three ads, $"+amt.toLocaleString("en-US")+" over "+dd+" days. Run them?"+ACTS);m.dataset.s="custom"})}
-    if(pend&&/^(yes|yeah|yep|yup|sure|ok|okay|go|do it|run (it|them)|sounds good|let'?s go)\b/i.test(L)){const id=run;me(t);ask.value="";yes(pend,id);return}
-    if(pend&&/^(no|nope|nah|not yet|wait|hold on)\b/i.test(L)){mode="change";return say(t,()=>bot("No problem, nothing runs until you say so. What would you change: the budget, the area or an ad?"))}
-    if(!pend&&/^(no|nope|nah|not yet)\b/i.test(L)&&amt===null)return say(t,()=>bot("No problem. Ask me anything else, or give the ads a new budget."));
-    if(/\b(area|neighbou?rhood|zip|postcode|town|suburb|location)\b/.test(L)){mode="area";return say(t,()=>bot("Which area? Type the neighbourhood or town."))}
-    if(mode==="change"){mode=null;return say(t,()=>bot("Got it: “"+esc(t)+"”. In the full version I'd make that change and show you the ads again before anything runs."))}
-    if(/last week|report|how did|results|how('?s| is) it going/.test(L)){play("report",{said:t});return}
-    if(/(seller|valuation|listing leads|more leads|get me leads)/.test(L)&&!/change|instead|different/.test(L)){play("leads",{said:t});return}
-    const r=(INTENTS.find(([re])=>re.test(L))||[])[1];
-    if(r)return say(t,()=>bot(r));
-    const f=FALL[miss++%FALL.length];
-    say(t,()=>bot(f+(onList()?"":" Join the waitlist and I'll do it for real when early access opens.")+"<br>"+LINKS(onList())));
-  });
-  if(reduce){tpl("report");return}
-  const io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)&&!started){started=true;io.disconnect();loop()}},{threshold:.35});
-  io.observe(pv);
+  const box=document.getElementById("film"),v=document.getElementById("fv"),snd=document.getElementById("snd"),bar=document.getElementById("fprog");if(!v)return;
+  const A="/waitlist-assets/film-",pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";
+  let cut=null,seen=true;
+  function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=A+k+".jpg";v.src=A+k+".mp4";
+    v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});if(seen)v.play().catch(()=>{})}
+  v.muted=true;load();
+  let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(load,250)});
+  if("IntersectionObserver" in window)new IntersectionObserver(es=>{seen=es[0].isIntersecting;if(seen)v.play().catch(()=>{});else v.pause()},{threshold:.2}).observe(box);
+  snd.addEventListener("click",()=>{v.muted=!v.muted;if(!v.muted){if(v.currentTime>v.duration-2)v.currentTime=0;v.play().catch(()=>{})}
+    snd.setAttribute("aria-pressed",String(!v.muted));snd.classList.toggle("on",!v.muted);snd.querySelector("span").textContent=v.muted?"Sound on":"Sound off"});
+  v.addEventListener("click",()=>{v.paused?v.play():v.pause()});
+  (function tick(){if(v.duration)bar.style.transform="scaleX("+(v.currentTime/v.duration)+")";requestAnimationFrame(tick)})();
 })();
 // Count the visit (by link source only) so the admin page can show the sign up rate.
 try{if(!sessionStorage.getItem("hv")){sessionStorage.setItem("hv","1");fetch("/api/waitlist/visit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ref}),keepalive:true}).catch(()=>{})}}catch(x){}

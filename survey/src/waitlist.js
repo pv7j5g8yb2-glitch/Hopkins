@@ -23,8 +23,13 @@ const COUNTRIES = new Set([
 ]);
 const SIZE_LABELS = { "1": "just them", "2-5": "2 to 5 agents", "6-20": "6 to 20 agents", "21+": "21 or more agents" };
 const SPEND_LABELS = { "<500": "under $500", "500-2000": "$500 to $2,000", "2000-5000": "$2,000 to $5,000", "5000+": "$5,000 or more" };
-const ASSETS = new Set(["ad1.jpg", "ad2.jpg", "ad3.jpg", "favicon-32.png", "apple-touch-icon.png", "favicon.ico", "og.jpg"]);
-const TYPES = { jpg: "image/jpeg", png: "image/png", ico: "image/x-icon" };
+const FILMS = ["film-phone", "film-laptop", "film-desktop"];
+const ASSETS = new Set(["ad1.jpg", "ad2.jpg", "ad3.jpg", "favicon-32.png", "apple-touch-icon.png", "favicon.ico", "og.jpg",
+  ...FILMS.flatMap((f) => [f + ".mp4", f + ".jpg"])]);
+const TYPES = { jpg: "image/jpeg", png: "image/png", ico: "image/x-icon", mp4: "video/mp4" };
+// Files are small enough to keep in memory after the first request.
+const fileCache = new Map();
+const readAsset = (path) => { if (!fileCache.has(path)) fileCache.set(path, readFileSync(path)); return fileCache.get(path); };
 
 // A light brake on scripted sign ups. Kept in memory only: addresses are never stored.
 const WINDOW_MS = 10 * 60 * 1000;
@@ -87,7 +92,16 @@ export function registerWaitlist(app, webDir) {
     const file = request.params.file;
     const path = join(assetDir, file);
     if (!ASSETS.has(file) || !existsSync(path)) return reply.code(404).send("Not found");
-    reply.type(TYPES[file.split(".").pop()]).header("Cache-Control", "public, max-age=604800").send(readFileSync(path));
+    const body = readAsset(path);
+    reply.type(TYPES[file.split(".").pop()]).header("Cache-Control", "public, max-age=604800").header("Accept-Ranges", "bytes");
+    // Safari only plays video served in byte ranges, so answer Range requests with a 206.
+    const m = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range || "");
+    if (!m) return reply.send(body);
+    let start = m[1] === "" ? body.length - Number(m[2]) : Number(m[1]);
+    let end = m[1] !== "" && m[2] !== "" ? Number(m[2]) : body.length - 1;
+    start = Math.max(0, start); end = Math.min(end, body.length - 1);
+    if (Number.isNaN(start) || start > end) return reply.code(416).header("Content-Range", `bytes */${body.length}`).send();
+    return reply.code(206).header("Content-Range", `bytes ${start}-${end}/${body.length}`).send(body.subarray(start, end + 1));
   });
 
   // One count per visit, sent by the page itself so crawlers that don't run scripts aren't

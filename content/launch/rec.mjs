@@ -1,6 +1,7 @@
 // Renders film.html to MP4 with real motion blur: frames are drawn at 90 fps across parallel
 // browsers, then every 3 frames are blended into one 30 fps frame.
 //   node rec.mjs out.mp4 [audio.wav]          stills: node rec.mjs --stills dir 2.5 9.8
+//   env: W, H, DSF for size; QS for extra page params (QS="cta=Join the waitlist" for the web cut)
 import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
 import { mkdirSync, existsSync, readFileSync } from "node:fs"; import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:http"; import { join, extname } from "node:path";
@@ -14,7 +15,7 @@ async function open(){
  const b=await chromium.launch();
  const p=await b.newPage({viewport:{width:VW,height:VH},deviceScaleFactor:+(process.env.DSF||1)});
  p.on("pageerror",e=>console.log("ERR",e.message));
- await p.goto(`http://127.0.0.1:${srv.address().port}/launch/${PAGE}?notiming&w=${VW}&h=${VH}`);await p.waitForFunction(()=>window.READY,null,{timeout:120000});
+ await p.goto(`http://127.0.0.1:${srv.address().port}/launch/${PAGE}?notiming&w=${VW}&h=${VH}${process.env.QS?"&"+process.env.QS:""}`);await p.waitForFunction(()=>window.READY,null,{timeout:120000});
  return {p,close:async()=>{await b.close();srv.close()}};
 }
 if(args[0]==="--stills"){const [,dir,...ts]=args;mkdirSync(dir,{recursive:true});const {p,close}=await open();
