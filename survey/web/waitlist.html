@@ -428,52 +428,70 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
 // own aspect ratio inside the browser frame. Browsers refuse sound until the visitor clicks, taps
 // or types, so the film starts muted and the sound comes on with that first click or tap. Chrome
 // is asked for sound straight away, since it simply says no when it can't. Safari is never asked
-// before a click, because it pauses the film when a page tries. A watchdog makes sure the film
-// either plays or shows a play button, never a frozen frame. It pauses while off screen.
+// before a click, because it pauses the film when a page tries. It pauses while off screen.
+// Loading has three steps. 1: the player streams the file from jsDelivr. 2: if that stalls, the
+// page downloads the file itself (as it loads everything else) and hands it to the player, which
+// gets around a browser whose video loader is blocked. 3: the player streams it from this server.
+// After that, the play button; a click on it starts loading again from step 1.
 // Add ?filmdebug to the address to see what the browser is doing with the video.
 (function(){
   const box=document.getElementById("film"),v=document.getElementById("fv"),snd=document.getElementById("snd"),fp=document.getElementById("fplay"),bar=document.getElementById("fprog");if(!v)return;
-  const SRC=window.FILM||["/waitlist-assets/film-"],pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";let si=0;
-  const dbg=/[?&]filmdebug/.test(location.search),log=[],note=m=>{if(dbg){log.push((performance.now()/1000).toFixed(1)+"s "+m);if(log.length>12)log.shift()}};
+  const SRC=window.FILM||["/waitlist-assets/film-"],pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";
+  const dbg=/[?&]filmdebug/.test(location.search),log=[],note=m=>{if(dbg){log.push((performance.now()/1000).toFixed(1)+"s "+m);if(log.length>14)log.shift()}};
   const trySound=navigator.getAutoplayPolicy?navigator.getAutoplayPolicy(v)==="allowed":!!window.chrome;
   // held: muted only until the visitor's first click or tap. chose: the visitor used the sound button.
-  // stopped: the visitor paused it. seen: the film is on screen.
-  let cut=box.dataset.f,seen=true,held=!trySound,chose=false,stopped=false,woke=0,last=-1,still=0;
+  // stopped: the visitor paused it. seen: the film is on screen. step: which loading step is running.
+  let cut=box.dataset.f,seen=true,held=!trySound,chose=false,stopped=false,woke=0,last=-1,still=0,step=1,busy=false,got=0,total=0,blob="";
   const ui=()=>{snd.setAttribute("aria-pressed",String(!v.muted));snd.classList.toggle("on",!v.muted);snd.querySelector("span").textContent=v.muted?"Sound on":"Sound off"};
-  const ok=()=>box.classList.remove("blocked"),block=()=>{box.classList.add("blocked");note("play button shown")};
-  function go(){if(!seen||stopped)return;const p=v.play();if(!p||!p.then)return;
+  const ok=()=>box.classList.remove("blocked"),block=()=>{if(!box.classList.contains("blocked"))note("play button shown");box.classList.add("blocked")};
+  function go(){if(!seen||stopped||busy)return;const p=v.play();if(!p||!p.then)return;
     p.then(()=>{ok();note("playing")}).catch(e=>{note("play refused, "+e.name+(v.muted?" (muted)":" (sound)"));
       if(e.name==="AbortError")return;if(!v.muted){v.muted=true;held=true;ui();go()}else block()})}
-  // A file that errors or stalls is fetched again from the next source; after the last one, the play button.
-  function next(){if(si>=SRC.length-1)return block();si++;note("switching to "+SRC[si]);const at=v.currentTime||0;v.poster=SRC[si]+cut+".jpg";v.src=SRC[si]+cut+".mp4";
-    if(at)v.addEventListener("loadedmetadata",()=>{v.currentTime=at},{once:true});ok();go()}
-  function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=SRC[si]+k+".jpg";v.src=SRC[si]+k+".mp4";
-    v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});go()}
+  async function download(){busy=true;
+    for(const base of SRC){const from=base.startsWith("http")?"jsDelivr":"this server";note("downloading in the page from "+from);
+      // A download that receives nothing for 8 seconds is given up on.
+      const ac=new AbortController();let tm=setTimeout(()=>ac.abort(),8000);
+      try{const r=await fetch(base+cut+".mp4",{signal:ac.signal});if(!r.ok)throw new Error("HTTP "+r.status);
+        total=+r.headers.get("content-length")||0;got=0;const rd=r.body.getReader(),parts=[];
+        for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;clearTimeout(tm);tm=setTimeout(()=>ac.abort(),8000)}
+        clearTimeout(tm);
+        note("downloaded "+(got/1048576).toFixed(1)+" MB");if(blob)URL.revokeObjectURL(blob);
+        blob=URL.createObjectURL(new Blob(parts,{type:"video/mp4"}));busy=false;v.src=blob;ok();go();return true}
+      catch(e){clearTimeout(tm);note("download failed, "+(e.name==="AbortError"?"nothing arrived":e.message))}}
+    busy=false;return false}
+  function stream(base){note("streaming from "+(base.startsWith("http")?"jsDelivr":"this server"));v.src=base+cut+".mp4";ok();go()}
+  function run(){still=0;if(step===1)stream(SRC[0]);else if(step===2)download().then(d=>{if(!d)next()});else if(step===3&&SRC.length>1)stream(SRC[SRC.length-1]);else block()}
+  function next(){if(busy)return;step++;run()}
+  function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=SRC[0]+k+".jpg";
+    v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});run()}
   v.muted=!trySound;ui();check();go();
   let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(load,250)});
   // Off screen means fully scrolled past, checked directly rather than trusting an observer.
   function check(){const r=box.getBoundingClientRect(),s=r.bottom>40&&r.top<innerHeight-40;if(s===seen)return;seen=s;if(s)go();else v.pause()}
   addEventListener("scroll",()=>requestAnimationFrame(check),{passive:true});
-  // The first click, tap or key press anywhere turns the sound on.
-  function wake(e){if(!held||chose||snd.contains(e.target)||fp.contains(e.target))return;
+  // The first click, tap or key press anywhere turns the sound on, and restarts a load that is stuck.
+  function wake(e){if(snd.contains(e.target)||fp.contains(e.target))return;
     if(navigator.userActivation&&!navigator.userActivation.isActive)return;
-    held=false;woke=Date.now();v.muted=false;ui();note("sound on after a click");go()}
+    if(v.readyState===0&&!busy&&e.type==="click"){note("click, loading again");step=1;run()}
+    if(!held||chose)return;held=false;woke=Date.now();v.muted=false;ui();note("sound on after a click");go()}
   ["pointerdown","pointerup","touchend","keydown","click"].forEach(t=>addEventListener(t,wake,{capture:true,passive:true}));
   snd.addEventListener("click",()=>{chose=true;held=false;stopped=false;v.muted=!v.muted;ui();go()});
-  fp.addEventListener("click",()=>{held=false;stopped=false;v.muted=false;ui();go()});
-  v.addEventListener("click",()=>{if(Date.now()-woke<800)return;if(v.paused){stopped=false;go()}else{stopped=true;v.pause()}});
-  v.addEventListener("error",()=>{note("error "+(v.error?v.error.code:""));next()});
-  ["loadstart","loadedmetadata","canplay","playing","pause","waiting","stalled","suspend","abort"].forEach(t=>v.addEventListener(t,()=>note(t)));
-  // Watchdog: a film meant to be playing that hasn't moved for 4 seconds moves to the next source.
+  fp.addEventListener("click",()=>{held=false;stopped=false;v.muted=false;ui();if(v.readyState===0&&!busy){note("play button, loading again");step=1;run()}else go()});
+  v.addEventListener("click",()=>{if(Date.now()-woke<800||v.readyState===0)return;if(v.paused){stopped=false;go()}else{stopped=true;v.pause()}});
+  v.addEventListener("error",()=>{note("error "+(v.error?v.error.code:""));if(!busy)next()});
+  v.addEventListener("stalled",()=>{note("stalled");if(v.readyState===0&&!busy)next()});
+  ["loadstart","loadedmetadata","canplay","playing","pause","waiting","suspend","abort"].forEach(t=>v.addEventListener(t,()=>note(t)));
+  // Watchdog: a film meant to be playing that hasn't moved for 4 seconds moves to the next step.
   let pre;setInterval(()=>{
-    if(seen&&!stopped&&!document.hidden){
+    if(seen&&!stopped&&!busy&&!document.hidden){
       if(v.paused&&!box.classList.contains("blocked"))go();
-      if(!v.paused&&v.currentTime===last&&v.readyState<3){if(++still>=8){still=0;next()}}else still=0;
+      if(!v.paused&&v.currentTime===last&&v.readyState<3){if(++still>=8)next()}else still=0;
       last=v.currentTime}
     if(!dbg)return;
     if(!pre){pre=document.createElement("pre");pre.style.cssText="position:absolute;left:8px;top:8px;right:8px;z-index:5;margin:0;padding:8px 10px;font:11px/1.4 ui-monospace,Menlo,monospace;color:#F4EBDD;background:rgba(0,0,0,.75);border-radius:8px;white-space:pre-wrap;pointer-events:none";box.appendChild(pre)}
     const b=v.buffered.length?v.buffered.end(v.buffered.length-1).toFixed(1):"0";
-    pre.textContent=[navigator.userAgent,"file "+(v.currentSrc||"none"),"ready "+v.readyState+", network "+v.networkState+", error "+(v.error?v.error.code+" "+(v.error.message||""):"none"),
+    pre.textContent=[navigator.userAgent,"step "+step+(busy?", downloading "+(got/1048576).toFixed(1)+" of "+(total/1048576).toFixed(1)+" MB":"")+", file "+(v.currentSrc||"none").slice(0,90),
+      "ready "+v.readyState+", network "+v.networkState+", error "+(v.error?v.error.code+" "+(v.error.message||""):"none"),
       "paused "+v.paused+", muted "+v.muted+", time "+v.currentTime.toFixed(1)+", loaded to "+b+"s","on screen "+seen+", waiting for a click "+held+", play button "+box.classList.contains("blocked")].concat(log).join("\n")},500);
   (function tick(){if(v.duration)bar.style.transform="scaleX("+(v.currentTime/v.duration)+")";requestAnimationFrame(tick)})();
 })();
