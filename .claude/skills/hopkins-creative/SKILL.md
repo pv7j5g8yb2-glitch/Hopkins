@@ -84,6 +84,21 @@ send this to a colleague or a friend?", not by how pretty it is.
     side notes "I know it sounds weird, but hear me out". Admitting something unusual
     makes people swipe to find out why.
 
+## Every reel ships with a hook cover
+
+Ismael's standing rule (2026-10-18): every reel, always, comes with its own cover image, made at the
+same time as the reel. The cover is the hook in big type, written to make people tap, but it must be
+true and the reel must pay it off. Curiosity, a named mistake or a number, never a promise the reel
+doesn't keep and never an invented result. Hopkins is "tested, not guessed", so bait and switch hurts
+the brand.
+
+* 1080x1920, all text and the visual inside the 3:4 grid crop (y 240 to 1680), since the profile
+  grid shows the middle 3:4.
+* Small audience line on top ("Real estate teams:"), a huge Inter Tight hook with one Instrument
+  Serif gold word, one simple visual from the reel, @gethopkins bottom left, a short teaser bottom
+  right ("Number 3 is the boost button", "Here's what to write").
+* Made from `content/reels/covers.html` (`node covers.mjs out_dir`). Add the new reel's entry there.
+
 ## Look
 
 Bold grotesk word mixed with an italic serif word, cream text over warm real photos
