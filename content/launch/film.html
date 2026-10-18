@@ -5,7 +5,7 @@
 @font-face{font-family:"Instrument Serif";font-style:italic;src:url(../fonts/Instrument_Serif_400_italic.woff2)}
 :root{--ox:#2A0F14;--ox2:#36151C;--cream:#F4EBDD;--paper:#FBF6EE;--side:#EEE4D4;--gold:#D7AE62;--bronze:#8E6B2C;--plum:#5B4873;--lilac:#B79DC2;--rose:#C3A9A2;--ink:#2A0F14;--quiet:#86726b;--line:rgba(42,15,20,.09);--green:#3f8f62}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ox)}
+html,body{width:var(--W,1080px);height:var(--H,1920px);overflow:hidden;background:var(--ox)}
 body{font-family:"Inter Tight",sans-serif;-webkit-font-smoothing:antialiased;color:var(--cream);position:relative;letter-spacing:-.01em}
 #bg{position:absolute;inset:0;background:radial-gradient(ellipse 90% 60% at 50% 42%,#3d1a22 0%,#2A0F14 62%,#1c080c 100%)}
 #light{position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,rgba(215,174,98,.16),transparent 50%);opacity:0}
@@ -179,13 +179,13 @@ img{display:block;object-fit:cover}
 .tile>img{width:100%;height:100%}
 .tile .cap{position:absolute;left:14px;right:14px;bottom:14px;background:rgba(251,246,238,.94);border-radius:16px;padding:12px 14px;font-size:15px;font-weight:700}
 .tile .cap span{display:block;font-size:12px;color:var(--quiet);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
-.kt{position:absolute;left:0;width:1080px;text-align:center;font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--cream);display:none}
+.kt{position:absolute;left:0;width:100%;text-align:center;font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--cream);display:none}
 .kt .ln{display:block;overflow:hidden;padding:0 0 .08em}.kt .ln span{display:inline-block}
 .kt .g{color:var(--gold)}
-.sup{position:absolute;left:0;width:1080px;text-align:center;font-size:64px;font-weight:700;letter-spacing:-.045em;line-height:1.04;color:var(--cream);opacity:0;z-index:30;text-shadow:0 8px 30px rgba(15,3,6,.6)}.sup .g{color:var(--gold)}
+.sup{position:absolute;left:0;width:100%;text-align:center;font-size:64px;font-weight:700;letter-spacing:-.045em;line-height:1.04;color:var(--cream);opacity:0;z-index:30;text-shadow:0 8px 30px rgba(15,3,6,.6)}.sup .g{color:var(--gold)}
 /* ---------- logo ---------- */
 #logo{position:absolute;inset:0;display:none;z-index:40}
-#lk{position:absolute;left:0;top:800px;width:1080px;height:240px}
+#lk{position:absolute;left:0;top:800px;width:100%;height:240px}
 #mkw{position:absolute;top:0;width:240px;height:240px;transform-origin:50% 50%}
 #mkw svg{position:absolute;inset:0;width:240px;height:240px;overflow:visible}
 #mkw svg path{transform-box:fill-box;transform-origin:center}
@@ -213,10 +213,14 @@ img{display:block;object-fit:cover}
 <div class="sup" id="c4" style="top:290px">Every Monday, the <span class="g">numbers.</span></div>
 <div id="logo"><div id="lk"><div id="mkw"><i id="ringg"></i><svg class="tr" viewBox="0 0 120 120"></svg><svg class="tr" viewBox="0 0 120 120"></svg><svg class="tr" viewBox="0 0 120 120"></svg><svg id="mk" viewBox="0 0 120 120"></svg></div><div id="wd"><i>H</i><i>o</i><i>p</i><i>k</i><i>i</i><i>n</i><i>s</i></div></div><div id="soon">Coming soon</div><div id="cta"><span>Join the waitlist · link in bio</span></div></div>
 <div id="vig"></div>
-<svg id="grain" width="1080" height="1920"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<svg id="grain" width="100%" height="100%"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 <div id="fade"></div>
 <script src="../reels/engine.js"></script>
 <script>
+const Q=new URLSearchParams(location.search),W=+(Q.get("w")||1080),H=+(Q.get("h")||1920),LAND=W>H,CX=W/2,CY=H/2;
+document.documentElement.style.setProperty("--W",W+"px");document.documentElement.style.setProperty("--H",H+"px");
+// wide frames: each scene gets its own zoom so the interface fills the frame instead of floating small
+const ZL={app:1.1,ph:.62,caps:.95,rp:1.2,fin:.8},Z=k=>LAND?ZL[k]*Math.min(H/1080,W/1920*1.2):1,LS=(p,l)=>LAND?l:p;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const cl=v=>Math.max(0,Math.min(1,v)),P=(t,a,b)=>cl((t-a)/(b-a)),lerp=(a,b,k)=>a+(b-a)*k;
 // css style cubic bezier easing
@@ -321,8 +325,8 @@ $$("#mkw svg").forEach(e=>e.innerHTML=MARK);
 // keys: [t, fx, fy, scale, rx, ry, rz, dz, ease]
 function cam(keys,t){let i=0;while(i<keys.length-1&&t>keys[i+1][0])i++;const a=keys[i],b=keys[Math.min(i+1,keys.length-1)];
  const pad=k=>[...k.slice(1,8),...[0,0,0,0,0,0,0].slice(k.slice(1,8).length)].slice(0,7);if(a===b||t<=a[0])return pad(a);const k=(b[8]||SM)(P(t,a[0],b[0]));const A=pad(a),B=pad(b);return A.map((v,j)=>lerp(v,B[j],k))}
-function put(el,keys,t){const [fx,fy,s,rx,ry,rz,dz]=cam(keys,t);
- el.style.transform=`translate3d(540px,960px,${dz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s}) translate(${-fx}px,${-fy}px)`}
+function put(el,keys,t,z=1){const [fx,fy,s,rx,ry,rz,dz]=cam(keys,t);
+ el.style.transform=`translate3d(${CX}px,${CY}px,${dz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s*z}) translate(${-fx}px,${-fy}px)`}
 const show=(el,v)=>{el.style.display=v?"block":"none";return v};
 const pos=(el,root)=>{let x=el.offsetWidth/2,y=el.offsetHeight/2;while(el&&el!==root){x+=el.offsetLeft;y+=el.offsetTop;el=el.offsetParent}return [x,y]};
 let F={};
@@ -343,10 +347,10 @@ window.render=(T)=>{let t=T;
  // ---------------- APP (0 to 21.8) ----------------
  if(show(app,t<22.4&&!(t>13.55&&t<19.8))){
   const c=F.comp,v2=F.v2,pv=F.pv,sg=F.seg,ms=F.m3;
-  put(app,[[0,c[0],c[1]-260,1.05,10,-8,0,-420],[2.2,c[0],c[1]-120,1.22,4,-3,0,-60],[TE1,c[0],c[1]-10,1.3,0,0,0,0],[SEND1+.15,c[0],c[1]-10,1.3,0,0,0,0],
+  put(app,[[0,c[0],c[1]-LS(260,330),1.05,10,-8,0,-420],[2.2,c[0],c[1]-LS(120,200),1.22,4,-3,0,-60],[TE1,c[0],c[1]-10,1.3,0,0,0,0],[SEND1+.15,c[0],c[1]-10,1.3,0,0,0,0],
    [SEND1+1.25,800,520,.66,9,-17,0,0,OUT],[7.7,800,500,.7,6,-10,0,0],[8.5,v2[0],v2[1]-90,1.5,3,-4,0,0],[9.2,v2[0]+80,v2[1]-100,1.5,2,-2,0,0],
    [9.85,pv[0]-10,pv[1]-20,1.55,2,4,0,0],[10.55,pv[0]-10,pv[1]-20,1.55,1,3,0,0],[11.2,1010,640,1.0,3,-4,0,0],[13.55,1010,640,1.0,2,-2,0,0],
-   [19.8,931,420,.7,6,10,0,-200],[20.5,931,330,.86,4,6,0,0,OUT],[22.4,931,330,.9,2,3,0,0]],t);
+   [19.8,931,420,.7,6,10,0,-200],[20.5,931,330,.86,4,6,0,0,OUT],[22.4,931,330,.9,2,3,0,0]],t,Z("app"));
   // window fades up around the composer at the start
   const wf=P(t,SEND1+.1,SEND1+.8);$("#win .side").style.opacity=$("#win .pv").style.opacity=$("#win .ch").style.opacity=$("#win .tb").style.opacity=wf;
   $("#win").style.background=wf<1?`rgba(244,235,221,${.0+wf})`:"var(--cream)";$("#win").style.boxShadow=wf<.05?"none":"";
@@ -402,7 +406,7 @@ window.render=(T)=>{let t=T;
  t=T-SH;
  // ---------------- PHONE (12.5 to 19.6) ----------------
  if(show(ph,t>=12.5&&t<19.6)){
-  put(ph,[[12.5,215,1000,.95,24,-30,6,-500],[13.4,215,470,1.35,8,-12,2,0,OUT],[14.4,215,460,1.45,4,-6,1,0],[15.0,215,470,1.5,2,4,0,0],[17.2,215,470,1.5,3,6,-1,0],[17.6,215,470,1.42,6,-8,1,0],[19.0,215,470,1.45,3,-4,0,0],[19.6,180,520,1.0,10,24,-4,-300,IN]],t);
+  put(ph,[[12.5,215,1000,.95,24,-30,6,-500],[13.4,215,470,1.35,8,-12,2,0,OUT],[14.4,215,460,1.45,4,-6,1,0],[15.0,215,470,1.5,2,4,0,0],[17.2,215,470,1.5,3,6,-1,0],[17.6,215,470,1.42,6,-8,1,0],[19.0,215,470,1.45,3,-4,0,0],[19.6,180,520,1.0,10,24,-4,-300,IN]],t,Z("ph"));
   ph.style.opacity=OUT(P(t,12.5,12.9))*(1-P(t,19.3,19.6));
   const nk=spring(P(t,13.35,14.0));$("#note").style.opacity=cl(nk*2);$("#note").style.transform=`translateY(${(1-nk)*-40}px) scale(${.92+.08*nk})`;
   const open=OUT(P(t,14.55,15.0));$("#lock").style.opacity=1-open;$("#pa2").style.opacity=open;$("#pa2").style.transform=`scale(${.9+.1*open})`;$("#pa2").style.borderRadius=(1-open)*60+"px";
@@ -420,7 +424,7 @@ window.render=(T)=>{let t=T;
  }
  // ---------------- CAPABILITIES (21.6 to 30.6) ----------------
  if(show(caps,t>=21.6&&t<30.7)){
-  put(caps,[[21.6,540,820,.8,14,0,0,-600],[22.3,540,780,1,0,0,0,0,OUT],[30.0,540,770,1.02,1,0,0,0],[30.7,540,770,1.3,0,0,0,300,IN]],t);
+  put(caps,[[21.6,540,820,.8,14,0,0,-600],[22.3,540,780,1,0,0,0,0,OUT],[30.0,540,770,1.02,1,0,0,0],[30.7,540,770,1.3,0,0,0,300,IN]],t,Z("caps"));
   caps.style.opacity=OUT(P(t,21.6,22.0))*(1-P(t,30.4,30.7));
   $("#wall").style.transform=`perspective(1400px) rotateX(58deg) translateY(${-((t-21.6)*120)}px)`;
   $("#bigc").style.top="340px";
@@ -437,7 +441,7 @@ window.render=(T)=>{let t=T;
  }
  // ---------------- REPORT (30.4 to 34.8) ----------------
  if(show(rp,t>=30.4&&t<34.9)){
-  put(rp,[[30.4,470,260,1.25,16,-14,0,-500],[31.2,470,330,1.05,6,-6,0,0,OUT],[33.4,470,380,1.08,3,4,0,0],[34.9,470,380,.9,10,16,0,-400,IN]],t);
+  put(rp,[[30.4,470,260,1.25,16,-14,0,-500],[31.2,470,330,1.05,6,-6,0,0,OUT],[33.4,470,380,1.08,3,4,0,0],[34.9,470,380,.9,10,16,0,-400,IN]],t,Z("rp"));
   rp.style.opacity=OUT(P(t,30.4,30.8))*(1-P(t,34.5,34.9));
   const k=OUT(P(t,30.9,32.1));$("#kl").textContent=Math.round(14*k);$("#kc").textContent="$"+Math.round(lerp(38,21,k));$("#ks").textContent="$"+Math.round(296*k);
   const d=SM(P(t,31.1,32.6));$("#cl").style.strokeDashoffset=1-d;const pt=$("#cl").getPointAtLength($("#cl").getTotalLength()*d);$("#cdot").setAttribute("cx",pt.x);$("#cdot").setAttribute("cy",pt.y);
@@ -445,7 +449,7 @@ window.render=(T)=>{let t=T;
  }
  // ---------------- FINALE WALL (34.6 to 38.6) ----------------
  if(show(fin,t>=34.6&&t<38.7)){
-  put(fin,[[34.6,500,640,1.6,0,0,0,0],[37.6,500,640,.62,28,-22,10,-300,cb(.3,0,.2,1)],[38.7,500,640,.5,34,-26,12,-700]],t);
+  put(fin,[[34.6,500,640,1.6,0,0,0,0],[37.6,500,640,.62,28,-22,10,-300,cb(.3,0,.2,1)],[38.7,500,640,.5,34,-26,12,-700]],t,Z("fin"));
   fin.style.opacity=OUT(P(t,34.6,34.9))*(1-P(t,38.2,38.7))*(1-.55*OUT(P(t,35.9,36.5)));
   TILES.forEach((_,i)=>{const c=i%3,r=Math.floor(i/3);const e=$("#t"+i);const z=[40,-60,0,-120,80,-40,20,-90,60][i];const k=OUT(P(t,34.6+i*.05,35.4+i*.05));
    e.style.transform=`translate3d(${c*340}px,${r*430+(c%2?60:0)}px,${z*k}px)`;e.style.opacity=k});
@@ -466,7 +470,7 @@ window.render=(T)=>{let t=T;
   const vel=(720*SM(P(t+.01,S0,S1))-ang)/.01;pose($("#mk"),0);
   $$("#mkw .tr").forEach((e,i)=>{pose(e,vel*.011*(i+1));e.style.opacity=(t<S1?w:0)*[.22,.12,.06][i]});
   const lk=SM(P(t,41.1,41.75)),word=$("#wd"),ww=F.wd,base=t<S1?lerp(.7,1.9,OUT(P(t,39.0,39.8))):lerp(1.9,1.3,SM(P(t,S1,S1+.6))),mS=lerp(base,.84,lk),gap=26,tot=240*.84+gap+ww;
-  const mx=lerp(540,(1080-tot)/2+120*.84,lk);const mw=$("#mkw");mw.style.left=(mx-120)+"px";
+  const mx=lerp(CX,(W-tot)/2+120*.84,lk);const mw=$("#mkw");mw.style.left=(mx-120)+"px";
   mw.style.transform=`rotate(${ang}deg) scale(${mS})`;mw.style.opacity=OUT(P(t,39.0,39.25));
   const rg=$("#ringg"),rk=OUT(P(t,40.65,41.6));rg.style.transform=`translate(-50%,-50%) scale(${1+rk*42})`;rg.style.opacity=rk>0?(1-rk)*.5:0;rg.style.borderWidth=(3/(1+rk*42)*3)+"px";
   word.style.left=(mx+120*.84+gap)+"px";$$("#wd i").forEach((c,i)=>{const k=OUT(P(t,41.25+i*.045,41.85+i*.045));c.style.transform=`translateY(${(1-k)*112}%)`;c.style.opacity=k});
@@ -478,6 +482,8 @@ window.render=(T)=>{let t=T;
 };
 // measure the layout once fonts and images are in
 Promise.all([document.fonts.ready,...$$("img").map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r}))]).then(()=>{
+ $("#lk").style.top=(CY-160)+"px";$("#soon").style.top=(CY+130)+"px";$("#cta").style.top=(CY+220)+"px";$("#k1").style.top=(CY-180)+"px";
+ if(LAND)for(const [id,top] of [["#c1",H-150],["#c2",40],["#c3",34],["#c5",40],["#c4",34]])$(id).style.top=top+"px";
  $$(".sc").forEach(s=>s.style.display="block");["#m1","#m2","#vers","#m3","#m4"].forEach(s=>$(s).style.display="");
  const A=$("#app");F={comp:pos($("#comp"),A),sbtn:pos($("#sbtn"),A),v2:pos($("#v2"),A),pv:pos($(".stage"),A),story:pos($$("#seg span")[1],A),ta:pos($("#ta"),A),nvl:pos($("#nvl"),A),wd:(()=>{$("#logo").style.display="block";const w=$("#wd").offsetWidth;$("#logo").style.display="none";return w-.14*156})(),ad:$("#adpost").offsetTop-60,
   att:$$("#att i").map((e,i)=>{const cp=$("#comp"),[x,y]=pos(cp,A),h0=cp.offsetHeight;return [x-cp.offsetWidth/2+18+43+i*94,y+h0/2-(h0+74)+14+32]})};

@@ -5,16 +5,16 @@ import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
 import { mkdirSync, existsSync, readFileSync } from "node:fs"; import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:http"; import { join, extname } from "node:path";
 const FFMPEG="/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2";
-const PAGE=process.env.PAGE||"film.html",SUB=3,FPS=30,WORKERS=+(process.env.WORKERS||4);
+const PAGE=process.env.PAGE||"film.html",SUB=3,FPS=30,WORKERS=+(process.env.WORKERS||4),VW=+(process.env.W||1080),VH=+(process.env.H||1920);
 const args=process.argv.slice(2);
 async function open(){
  // module scripts and fonts load over http, so serve content/ on a local port
  const ROOT=join(process.cwd(),".."),MT={".html":"text/html",".js":"text/javascript",".woff2":"font/woff2",".png":"image/png",".jpg":"image/jpeg"};
  const srv=createServer((q,r)=>{const f=join(ROOT,decodeURIComponent(q.url.split("?")[0]));if(!f.startsWith(ROOT)||!existsSync(f)){r.writeHead(404);return r.end()}r.writeHead(200,{"Content-Type":MT[extname(f)]||"application/octet-stream"});r.end(readFileSync(f))}).listen(0);
- const b=await chromium.launch({args:["--use-gl=angle","--use-angle=swiftshader","--enable-unsafe-swiftshader"]});
- const p=await b.newPage({viewport:{width:1080,height:1920}});
+ const b=await chromium.launch();
+ const p=await b.newPage({viewport:{width:VW,height:VH},deviceScaleFactor:+(process.env.DSF||1)});
  p.on("pageerror",e=>console.log("ERR",e.message));
- await p.goto(`http://127.0.0.1:${srv.address().port}/launch/${PAGE}?notiming`);await p.waitForFunction(()=>window.READY,null,{timeout:120000});
+ await p.goto(`http://127.0.0.1:${srv.address().port}/launch/${PAGE}?notiming&w=${VW}&h=${VH}`);await p.waitForFunction(()=>window.READY,null,{timeout:120000});
  return {p,close:async()=>{await b.close();srv.close()}};
 }
 if(args[0]==="--stills"){const [,dir,...ts]=args;mkdirSync(dir,{recursive:true});const {p,close}=await open();
