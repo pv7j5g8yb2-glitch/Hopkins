@@ -149,7 +149,7 @@ E.boot=(R)=>{
   const spoken=R.script.map(ph=>typeof ph==="string"?ph:ph.t).join("|");
   let TIM=null;if(window.TIMING){if(window.TIMING.text===spoken)TIM=window.TIMING.phrases;else console.warn("timing is stale, run vo.py again")}
   const {phrases,cues,end}=parse(R.script,R.rate||.9,TIM);
-  window.SPOKEN={tail:R.tail??.3,text:spoken,phrases:phrases.map(p=>({toks:p.toks.map(k=>k.txt),say:p.say||null,pause:p.pause??null}))};window.TIMED=!!TIM;
+  window.SPOKEN={tail:R.tail??.3,signoff:!!R.signoff,text:spoken,phrases:phrases.map(p=>({toks:p.toks.map(k=>k.txt),say:p.say||null,pause:p.pause??null}))};window.TIMED=!!TIM;
   const C=new Proxy(cues,{get:(o,k)=>{if(!(k in o))throw new Error("no cue "+String(k));return o[k]}});
   const endAt=end+(R.tail??.3), D=endAt+3.4;
   window.CUES=cues;window.END_AT=endAt;window.DURATION=D;

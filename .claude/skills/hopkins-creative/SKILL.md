@@ -101,10 +101,12 @@ the brand.
 
 ## Every reel ends the same way
 
-The end card is the mark, "Hopkins" beside it, and one gold pill under it ("Follow @gethopkins", or
-"Join the waitlist · link in bio" on launch reels). No slogan. The voice says "Get Hopkins." as the
-name lands, on every reel (Ismael, 2026-10-18). Both are built into `content/reels/engine.js` and
-`vo.py`, so new reels get them automatically.
+The end card is the mark, "Hopkins" beside it, and one gold pill under it. No slogan. One call to
+action, never two (Ismael, 2026-10-18):
+* Teaching reels with no self promotion: pill "Follow @gethopkins", no spoken sign off.
+* Launch or self promotion reels: the voice says "Get Hopkins." as the name lands (set
+  `signoff:true` in the reel), and the pill carries the next step ("Join the waitlist · link in bio").
+Built into `content/reels/engine.js` and `vo.py`.
 
 ## Look
 
