@@ -167,6 +167,12 @@ two versions when unsure (clean and messy) and let Ismael pick.
 
 ## Log
 
+- 2026-10-18 (reels, pace): Captions read at 135 words a minute felt far too slow; the reference
+  reels run at about 195. Reels now have a voiceover at about 180 words a minute and the captions
+  follow the voice word by word (`content/reels/vo.py`). At that pace a 60s teaching reel needs
+  about 175 spoken words, so plan five to eight real points, not three. Voice is AI made, so turn
+  on Instagram's AI label when posting.
+
 - 2026-10-17 (reels): Ismael's pick for reels is the animated explainer format (references:
   @adilet.fndr "if you vibe coded an app" and @peterstewiestartup "5 tools"). What makes it work:
   captions that build word by word with the key word boxed, one small piece of moving UI per

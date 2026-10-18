@@ -15,6 +15,8 @@ script:[
  "You ^approve every one.",
  "They run on [Instagram and Facebook,]",
  "and every ^Monday, you get the numbers.",
+ "One [flat monthly price.]",
+ "No cut of your ^ad spend. Cancel any ^time.",
  "Nothing goes live without your _yes._",
  "Early access is ^open.",
  "Teams on the waitlist get [30% off]",
@@ -44,6 +46,8 @@ css:`
 #rep h3{font-size:30px;display:flex;justify-content:space-between;align-items:center}#rep h3 span{font-size:21px;color:var(--quiet);font-weight:400}
 .rr{display:flex;justify-content:space-between;align-items:baseline;padding:22px 0;border-top:1px solid rgba(42,15,20,.1);font-size:24px;color:var(--quiet)}
 .rr b{font-size:46px;color:var(--ink);letter-spacing:-.03em}#cplv{color:var(--bronze)!important}
+#pr{left:150px;top:620px;width:780px;padding:36px 40px}#pr h3{font-size:30px;margin-bottom:10px}
+.pr{display:flex;align-items:center;gap:22px;padding:26px 0;border-top:1px solid rgba(42,15,20,.1);font-size:32px;font-weight:700}
 #tog{position:absolute;left:0;width:1080px;top:700px;display:flex;flex-direction:column;align-items:center;gap:34px}
 #sw{width:240px;height:130px;border-radius:70px;background:var(--ox2);position:relative;border:3px solid rgba(244,235,221,.15)}
 #sw i{position:absolute;top:12px;left:12px;width:100px;height:100px;border-radius:50%;background:var(--rose)}
@@ -70,12 +74,15 @@ scenes:`
  <div class="card" id="rep"><h3>Monday report <span>14 Oak Street</span></h3>
   <div class="rr"><span>Leads this week</span><b id="lv">0</b></div><div class="rr"><span>Cost per lead</span><b id="cplv">$0</b></div><div class="rr"><span>Winning version</span><b style="font-size:34px">Dusk photo</b></div></div>
  <div class="src" style="top:1330px">Preview with example numbers</div></div>
+<div class="scene" id="sP"><div class="card" id="pr"><h3>Pricing</h3>
+ <div class="pr" id="pr1">${icon("check",40,"#8E6B2C",2.6)}One flat monthly price</div><div class="pr" id="pr2">${icon("check",40,"#8E6B2C",2.6)}No cut of your ad spend</div>
+ <div class="pr" id="pr3">${icon("check",40,"#8E6B2C",2.6)}Month to month, cancel any time</div></div></div>
 <div class="scene" id="s5"><div id="tog"><div id="sw"><i></i></div><div class="t">Approve every ad</div></div></div>
 <div class="scene" id="s6"><div class="card" id="ea"><div class="lbl k">Early access</div><div class="o">30% off</div><div class="y">your first year, for teams on the waitlist</div><div class="u">waitlist.kirmistudio.com</div></div></div>
 `,
 update(t,C,endAt){
  vis("#s1",t,0,C.e3);
- [["#oa",C.agency],["#of",C.freelancer],["#os",C.sunday]].forEach(([o,a])=>{vis(o,t,a-.1,null,{dy:50});draw(o+" svg *",P(t,a,a+.7))});
+ [["#oa",C.agency],["#of",C.freelancer],["#os",C.sunday]].forEach(([o,a],i)=>{const k=vis(o,t,.15+i*.15,null,{dy:50});$(o).style.opacity=k*(.25+.75*ease(P(t,a-.15,a+.2)));draw(o+" svg *",P(t,a,a+.7))});
  vis("#s2",t,C.p4,C.e4);const r=ease(P(t,C.hopkins,C.hopkins+.9));$("#bm .gd").style.transform=`translate(${(1-r)*-8}px,${(1-r)*18}px)`;
  vis("#s3",t,C.p5,C.e8);vis("#chat",t,C.p5,null);
  vis("#m1",t,C.p5+.5,null,{dy:30});E.type("#m1t",P(t,C.p5+.6,C.listing+.6),"Ads for 14 Oak Street. $600 over two weeks.");
@@ -88,9 +95,10 @@ update(t,C,endAt){
  $("#yb").style.transform=`scale(${1-.08*Math.sin(P(t,C.approve+.3,C.approve+.55)*Math.PI)})`;
  vis("#s4",t,C.p9,C.e10);pop("#l1",P(t,C.instagramandfacebook,C.instagramandfacebook+.35));pop("#l2",P(t,C.instagramandfacebook+.2,C.instagramandfacebook+.55));
  vis("#rep",t,C.monday,null);count("#lv",P(t,C.monday+.3,C.e10),0,14);count("#cplv",P(t,C.monday+.3,C.e10),0,21,v=>"$"+Math.round(v));
- vis("#s5",t,C.p11,C.e11);const sw=ease(P(t,C.yes,C.yes+.3));$("#sw i").style.left=(12+110*sw)+"px";$("#sw i").style.background=sw>.5?"var(--gold)":"var(--rose)";
+ vis("#sP",t,C.p11,C.e12);vis("#pr",t,C.p11,null);[["#pr1",C.flatmonthlyprice],["#pr2",C.ad],["#pr3",C.time]].forEach(([r,a])=>{vis(r,t,a-.1,null,{dy:16,blur:6});draw(r+" svg *",P(t,a,a+.4))});
+ vis("#s5",t,C.p13,C.e13);const sw=ease(P(t,C.yes,C.yes+.3));$("#sw i").style.left=(12+110*sw)+"px";$("#sw i").style.background=sw>.5?"var(--gold)":"var(--rose)";
  $("#sw").style.background=sw>.5?"rgba(215,174,98,.25)":"";
- vis("#s6",t,C.p12,endAt);vis("#ea",t,C.open,null);pop("#ea .o",P(t,C.p13+.3,C.p13+.7));
+ vis("#s6",t,C.p14,endAt);vis("#ea",t,C.open,null);pop("#ea .o",P(t,C.p15+.3,C.p15+.7));
 }};
 E.boot(R);E.dusk("x2");["x1","x2","x3"].forEach(id=>draw("#"+id+" .ln",1));
 render(0);

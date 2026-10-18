@@ -25,9 +25,11 @@ script:[
  "Switch it to [Higher intent.]",
  "It adds one ^review screen,",
  "so fewer ^accidental taps get through.",
+ "Fewer leads, but [real ones.]",
  "Five. In the early 1900s, ^Claude Hopkins",
  "tested his ads against each other,",
  "with ^coupons that showed which one sold.",
+ "Today, the ^lead form is your coupon.",
  "Most teams still run one ad and _guess._",
  "Send this to whoever runs your ads.",
  "Following Hopkins costs less than one wasted ad.",
@@ -92,6 +94,7 @@ css:`
 .clip .hdl{font-size:52px;line-height:1;font-style:italic}.clip .bdy{font-size:22px;line-height:1.35;margin-top:16px;font-family:"Inter Tight";color:#5b4636}
 .coupon{position:absolute;left:28px;right:28px;bottom:28px;height:150px;border:3px dashed #5b4636;border-radius:6px;padding:16px;font-family:"Inter Tight";font-size:20px;color:#3b2a20}
 .coupon b{display:block;font-size:30px;margin-top:6px}
+.coupon span{position:absolute;inset:16px}.coupon .c2{opacity:0;color:var(--plum)}
 #clA{left:110px;transform:rotate(-2deg)}#clB{left:570px;transform:rotate(1.5deg)}
 .tally{position:absolute;top:1230px;width:400px;text-align:center}
 .tally .n{font-size:110px;font-weight:700;letter-spacing:-.04em}.tally .l{font-size:24px;color:var(--rose)}
@@ -159,8 +162,8 @@ scenes:`
  <div class="src" style="top:1640px">Meta Instant Forms: “More volume” or “Higher intent”</div>
 </div>
 <div class="scene" id="sG">
- <div class="clip" id="clA"><div class="hdl">A home that runs itself.</div><div class="bdy">Send for the free booklet.</div><div class="coupon">Mail this coupon<b>Key A · Dept. 12</b></div></div>
- <div class="clip" id="clB"><div class="hdl">Coffee on the porch by seven.</div><div class="bdy">Send for the free booklet.</div><div class="coupon">Mail this coupon<b>Key B · Dept. 14</b></div></div>
+ <div class="clip" id="clA"><div class="hdl">A home that runs itself.</div><div class="bdy">Send for the free booklet.</div><div class="coupon"><span class="c1">Mail this coupon<b>Key A · Dept. 12</b></span><span class="c2">Lead form<b>Ad A · Form 1</b></span></div></div>
+ <div class="clip" id="clB"><div class="hdl">Coffee on the porch by seven.</div><div class="bdy">Send for the free booklet.</div><div class="coupon"><span class="c1">Mail this coupon<b>Key B · Dept. 14</b></span><span class="c2">Lead form<b>Ad B · Form 2</b></span></div></div>
  <div id="scis" style="position:absolute;left:150px;top:1010px">${icon("scissors",70,"#D7AE62",1.8)}</div>
  <div class="tally" id="tA"><div class="n" id="nA">0</div><div class="l">coupons back, Key A</div></div>
  <div class="tally" id="tB"><div class="n" id="nB">0</div><div class="l">coupons back, Key B</div></div>
@@ -212,7 +215,7 @@ update(t,C,endAt){
  count("#cA",P(t,C.numbers,C.numbers+1.1),0,41,v=>"$"+Math.round(v));count("#cB",P(t,C.numbers,C.numbers+1.1),0,26,v=>"$"+Math.round(v));
  const wk=P(t,C.numbers+1.1,C.numbers+1.4);pop("#win",wk);$("#abB").style.boxShadow=wk>0?`0 0 0 ${5*ease(wk)}px #D7AE62,0 40px 90px rgba(0,0,0,.45)`:"";
  // F: lead form
- vis("#sF",t,C.p16,C.e20);
+ vis("#sF",t,C.p16,C.e21);
  const sw=ease(P(t,C.higherintent,C.higherintent+.3));$("#r1").style.opacity=1-sw;$("#r2").style.opacity=sw;
  vis("#phone",t,C.review-.3,C.accidental-.3);const ps=ease(P(t,C.review+.3,C.review+.8));$("#sc1").style.transform=`translateX(${-ps*110}%)`;$("#sc2").style.transform=`translateX(${(1-ps)*110}%)`;
 
@@ -220,19 +223,21 @@ update(t,C,endAt){
  R.taps.forEach(p=>{const q=E.clamp((t-C.accidental-p.d)/1.3);let y=1000+q*600;if(p.bad&&y>1225)y=1225-Math.min(40,(y-1225))*.5;
    p.el.style.opacity=q>0&&q<1?(p.bad&&q>.6?Math.max(0,1-(q-.6)*3):1):0;p.el.style.transform=`translate(${p.x}px,${y}px)`;p.el.style.background=p.bad?"#5B4873":"#D7AE62"});
  // G: Hopkins coupons
- vis("#sG",t,C.p21,C.e24);
- vis("#clA",t,C.p21,C.p24,{dy:50});vis("#clB",t,C.p21+.2,C.p24,{dy:50});
+ vis("#sG",t,C.p22,C.e26);
+ vis("#clA",t,C.p22,C.p26,{dy:50});vis("#clB",t,C.p22+.2,C.p26,{dy:50});
  const ct=P(t,C.coupons,C.coupons+.9);$("#scis").style.opacity=ct>0&&ct<1?1:0;$("#scis").style.transform=`translateX(${ct*740}px)`;
- vis("#tA",t,C.coupons+.5,C.p24,{dy:30});vis("#tB",t,C.coupons+.6,C.p24,{dy:30});
+ vis("#tA",t,C.coupons+.5,C.p26,{dy:30});vis("#tB",t,C.coupons+.6,C.p26,{dy:30});
  count("#nA",P(t,C.coupons+.6,C.coupons+1.9),0,37);count("#nB",P(t,C.coupons+.6,C.coupons+1.9),0,112);
- $("#sG .src").style.opacity=1-ease(P(t,C.p24,C.p24+.3));
- vis("#oneW",t,C.p24+.2,null);draw("#hO .ln",1);$("#qm").style.opacity=ease(P(t,C.guess,C.guess+.3));$("#qm").style.transform=`scale(${.6+.4*E.back(P(t,C.guess,C.guess+.4))})`;
+ {const lf=ease(P(t,C.lead,C.lead+.4));$$(".coupon .c1").forEach(e=>e.style.opacity=1-lf);$$(".coupon .c2").forEach(e=>e.style.opacity=lf);
+  $$(".coupon").forEach(e=>{e.style.borderStyle=lf>.5?"solid":"dashed";e.style.borderColor=lf>.5?"var(--plum)":"#5b4636";e.style.background=lf>.5?"var(--paper)":""})}
+ $("#sG .src").style.opacity=1-ease(P(t,C.p26,C.p26+.3));
+ vis("#oneW",t,C.p26+.2,null);draw("#hO .ln",1);$("#qm").style.opacity=ease(P(t,C.guess,C.guess+.3));$("#qm").style.transform=`scale(${.6+.4*E.back(P(t,C.guess,C.guess+.4))})`;
  // H: share + follow
- vis("#sH",t,C.p25,endAt);
- vis("#share",t,C.p25,null);[0,1].forEach(i=>{pop($$("#share u")[i],P(t,C.p25+.8+i*.3,C.p25+1.1+i*.3))});
- vis("#prof",t,C.p26,null);const fk=P(t,C.p26+1.3,C.p26+1.5);
+ vis("#sH",t,C.p27,endAt);
+ vis("#share",t,C.p27,null);[0,1].forEach(i=>{pop($$("#share u")[i],P(t,C.p27+.8+i*.3,C.p27+1.1+i*.3))});
+ vis("#prof",t,C.p28,null);const fk=P(t,C.p28+1.3,C.p28+1.5);
  $("#fol").textContent=fk>.5?"Following":"Follow";$("#fol").style.background=fk>.5?"transparent":"var(--gold)";$("#fol").style.color=fk>.5?"var(--ink)":"var(--ox)";$("#fol").style.border=fk>.5?"2px solid rgba(42,15,20,.25)":"2px solid transparent";
- $("#fol").style.transform=`scale(${1-.08*Math.sin(P(t,C.p26+1.2,C.p26+1.5)*Math.PI)})`;
+ $("#fol").style.transform=`scale(${1-.08*Math.sin(P(t,C.p28+1.2,C.p28+1.5)*Math.PI)})`;
 }};
 E.boot(R);
 // particles, dots, taps

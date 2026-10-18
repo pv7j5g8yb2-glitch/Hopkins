@@ -78,6 +78,8 @@ const I={
  train:'<rect x="5" y="3" width="14" height="14" rx="3" pathLength="1"/><path d="M5 10h14M8 21l2-4M16 21l-2-4" pathLength="1"/><circle cx="9" cy="13.5" r=".8" pathLength="1"/><circle cx="15" cy="13.5" r=".8" pathLength="1"/>',
  tree:'<path d="M12 21v-5M7 16h10l-5-13Z" pathLength="1"/>',
  fence:'<path d="M4 20V8l2-2 2 2v12M10 20V8l2-2 2 2v12M16 20V8l2-2 2 2v12M3 11h18M3 16h18" pathLength="1"/>',
+ plan:'<rect x="3.5" y="3.5" width="17" height="17" rx="1.5" pathLength="1"/><path d="M3.5 12h7v8.5M10.5 3.5v5M14.5 12h6M14.5 12v3" pathLength="1"/>',
+ key:'<circle cx="8" cy="15" r="4.5" pathLength="1"/><path d="M11.2 11.8 20 3M16.5 6.5l2.5 2.5M14 9l2 2" pathLength="1"/>',
  home:'<path d="M3 11 12 4l9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5" pathLength="1"/>',
  alert:'<path d="M12 3 2 20h20Z" pathLength="1"/><path d="M12 10v4.5M12 17.2v.3" pathLength="1"/>',
 };
@@ -105,7 +107,7 @@ E.house=(id,w=760,h=470)=>`<svg id="${id}" width="${w}" height="${h}" viewBox="0
  </g>
 </svg>`;
 // captions: phrase strings. [a b] = highlight group, _x_ = serif accent, ^x = cue name
-function parse(script,RATE=1){
+function parse(script,RATE=1,TIM=null){
   const out=[];let t=.15;const cues={};
   script.forEach((ph,pi)=>{
     const o=typeof ph==="string"?{t:ph}:ph; if(o.at!=null)t=o.at;
@@ -114,15 +116,20 @@ function parse(script,RATE=1){
       if(m[1]){txt=m[1];kind="h"}else{txt=m[2];if(/^_.*_[.,!?]?$/.test(txt)){kind="s";txt=txt.replace(/_/g,"")}}
       let cue=null;if(txt.startsWith("^")){txt=txt.slice(1);cue=txt.replace(/[^A-Za-z0-9]/g,"").toLowerCase()}
       toks.push({txt,kind,cue});}
-    const start=t;
-    const nm=n=>{let q=n,i=2;while(q in cues)q=n+(i++);cues[q]=t};toks.forEach(k=>{k.t=t;if(k.cue)nm(k.cue);else if(k.kind)nm(k.txt.replace(/[^A-Za-z0-9]/g,"").toLowerCase());
-      const words=k.txt.split(" ").length;t+=(.27+.022*k.txt.length/words)*words*(o.rate||1)*RATE;
-      if(/[,;]$/.test(k.txt))t+=.12;if(/[.?!:]$/.test(k.txt))t+=.22;});
-    const end=t+(o.hold??.35);cues["p"+pi]=start;cues["e"+pi]=end;
-    out.push({start,end,toks});t=end+.05;
+    let start=t,end;
+    if(TIM){const T=TIM[pi];start=T.s;end=T.e;toks.forEach((k,i)=>k.t=T.w[i])}
+    else{toks.forEach(k=>{k.t=t;const words=k.txt.split(" ").length;t+=(.27+.022*k.txt.length/words)*words*(o.rate||1)*RATE;
+      if(/[,;]$/.test(k.txt))t+=.12;if(/[.?!:]$/.test(k.txt))t+=.22;});end=t+(o.hold??.35)}
+    const nm=(n,v)=>{let q=n,i=2;while(q in cues)q=n+(i++);cues[q]=v};
+    toks.forEach(k=>{if(k.cue)nm(k.cue,k.t);else if(k.kind)nm(k.txt.replace(/[^A-Za-z0-9]/g,"").toLowerCase(),k.t)});
+    cues["p"+pi]=start;cues["e"+pi]=end;
+    out.push({start,end,toks,say:o.say,pause:o.pause});t=end+.05;
   });
-  return {phrases:out,cues,end:t};
+  return {phrases:out,cues,end:TIM?out[out.length-1].end:t};
 }
+// voiceover timing: rN.timing.js sets window.TIMING={text,phrases}. ?notiming skips it.
+const REEL=location.pathname.split("/").pop().replace(".html","");
+if(!/notiming/.test(location.search))document.write(`<script src="${REEL}.timing.js"><\/script>`);
 function caption(t,P){
   const el=E.$("#cap");const p=P.find(p=>t>=p.start&&t<p.end);if(!p){el.innerHTML="";return}
   const fo=1-E.P(t,p.end-.12,p.end);let last=-1;p.toks.forEach((w,i)=>{if(t>=w.t)last=i});
@@ -141,7 +148,10 @@ E.boot=(R)=>{
   ${R.scenes}
   <div id="end"><div class="lock"><svg id="endmark" width="150" height="150" viewBox="0 0 120 120">${MARK}</svg><div class="nm">Hopkins</div></div>
   <div class="tg">Tested, not <em>guessed.</em></div><div class="cta">${R.cta||"Follow @gethopkins"}</div></div><div id="fade"></div>`;
-  const {phrases,cues,end}=parse(R.script,R.rate||.9);
+  const spoken=R.script.map(ph=>typeof ph==="string"?ph:ph.t).join("|");
+  let TIM=null;if(window.TIMING){if(window.TIMING.text===spoken)TIM=window.TIMING.phrases;else console.warn("timing is stale, run vo.py again")}
+  const {phrases,cues,end}=parse(R.script,R.rate||.9,TIM);
+  window.SPOKEN={text:spoken,phrases:phrases.map(p=>({toks:p.toks.map(k=>k.txt),say:p.say||null,pause:p.pause??null}))};window.TIMED=!!TIM;
   const C=new Proxy(cues,{get:(o,k)=>{if(!(k in o))throw new Error("no cue "+String(k));return o[k]}});
   const endAt=end+(R.tail??.3), D=endAt+3.4;
   window.CUES=cues;window.DURATION=D;

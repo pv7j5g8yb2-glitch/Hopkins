@@ -21,9 +21,15 @@ script:[
  "“Young professionals” becomes",
  "a ^ten minute walk to the train.",
  "“Adults only” just gets [deleted.]",
+ {t:"HUD's own guidance says facts are fine:",say:"H U D's own guidance says facts are fine:"},
+ "[walk-in closets,] a ^great view,",
+ "^jogging trails, a walk to the ^bus stop.",
  "Housing ads can't target by ^age anyway,",
  "so the details _are_ your targeting.",
  "The right buyer sees ^themselves in them.",
+ "It's not just the ^caption.",
+ "^Hashtags count too.",
+ {t:"[#perfectforfamilies] says the same thing.",say:"Hashtag perfect for families says the same thing."},
  "Quick ^check before you post:",
  "does each line describe a [place,]",
  "or a [person?]",
@@ -34,9 +40,9 @@ css:`
 #ed{left:130px;top:580px;width:820px;padding:30px 36px 36px}
 #ed .top{display:flex;justify-content:space-between;align-items:center;font-size:22px;color:var(--quiet);margin-bottom:22px}
 #ed .top b{color:var(--ink);font-size:28px}
-#ed .field{min-height:250px;border-radius:16px;background:var(--paper);border:2px solid rgba(42,15,20,.12);padding:24px;font-size:32px;line-height:1.4;font-weight:700;letter-spacing:-.01em;position:relative}
+#ed .field{min-height:250px;padding-right:90px!important;border-radius:16px;background:var(--paper);border:2px solid rgba(42,15,20,.12);padding:24px;font-size:32px;line-height:1.4;font-weight:700;letter-spacing:-.01em;position:relative}
 #ed .caret{display:inline-block;width:3px;height:36px;background:var(--plum);vertical-align:-6px;margin-left:2px}
-#bad{position:relative}#sq{position:absolute;left:0;right:0;bottom:-6px;height:8px}
+#bad{position:relative;display:inline-block}#sq{position:absolute;left:0;right:0;bottom:-6px;height:8px}
 #alert{position:absolute;right:30px;top:24px}
 #warn{margin-top:20px;display:flex;gap:14px;align-items:center;font-size:23px;font-weight:700;color:var(--plum);opacity:0}
 .ph3{position:absolute;left:140px;width:800px;padding:30px 34px;display:flex;align-items:center;gap:24px;font-size:38px;font-weight:700;letter-spacing:-.02em}
@@ -66,6 +72,14 @@ css:`
 #chk{left:120px;top:600px;width:840px;padding:34px 38px}#chk h3{font-size:30px;margin-bottom:10px}
 .cr{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:26px 0;border-top:1px solid rgba(42,15,20,.1);font-size:28px;font-weight:700}
 .tg{font-size:21px;padding:8px 16px;border-radius:24px;opacity:0}.pl{background:var(--gold);color:var(--ox)}.pe{background:var(--plum);color:var(--cream)}
+#fine{left:150px;top:580px;width:780px;padding:34px 38px}
+#fine h3{font-size:30px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}#fine h3 span{font-size:21px;color:var(--quiet);font-weight:400}
+.fr{display:flex;gap:20px;align-items:center;padding:24px 0;border-top:1px solid rgba(42,15,20,.1);font-size:31px;font-weight:700}
+#igc{left:150px;top:600px;width:780px;padding:30px 34px}
+.hd2{display:flex;gap:14px;align-items:center;font-size:24px;margin-bottom:20px}.av2{width:54px;height:54px;border-radius:50%;background:var(--plum);color:var(--cream);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px}
+.ct{font-size:29px;line-height:1.4}.tags{margin-top:22px;font-size:29px;font-weight:700;color:var(--plum);display:flex;flex-wrap:wrap;gap:8px 16px}
+#badtag{position:relative;padding:2px 8px;border-radius:8px}#badtag i{position:absolute;left:0;top:52%;height:5px;background:var(--plum);border-radius:3px;width:0}
+#goodtag{display:none;padding:2px 8px;border-radius:8px;background:rgba(183,157,194,.35)}
 #save{position:absolute;left:0;width:1080px;top:680px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:34px;font-weight:700;color:var(--rose)}
 `,
 scenes:`
@@ -88,9 +102,17 @@ scenes:`
  <div class="rw" id="w2"><div class="o">Young professionals<i></i></div><div class="a">→</div><div class="nw">${icon("train",54,"#5B4873",1.6)}<span id="n2"></span></div></div>
  <div class="rw" id="w3"><div class="o">Adults only<i></i></div><div class="a">→</div><div class="nw" style="background:transparent;border:3px dashed var(--rose);color:var(--rose)">${icon("x",54,"#C3A9A2",1.8)}<span>Deleted</span></div></div>
  <div class="src" style="top:1330px">Describe features and places, never people</div></div>
+<div class="scene" id="sF"><div class="card" id="fine"><h3>Fine to say <span>HUD's examples</span></h3>
+ <div class="fr" id="g1">${icon("check",38,"#8E6B2C",2.6)}Walk-in closets</div><div class="fr" id="g2">${icon("check",38,"#8E6B2C",2.6)}Great view</div>
+ <div class="fr" id="g3">${icon("check",38,"#8E6B2C",2.6)}Jogging trails</div><div class="fr" id="g4">${icon("check",38,"#8E6B2C",2.6)}Walk to bus stop</div></div>
+ <div class="src" style="top:1120px">HUD guidance on Fair Housing Act ads, 1995. Not legal advice</div></div>
 <div class="scene" id="s6"><svg id="map" viewBox="0 0 900 760"><g id="dots"></g><circle cx="450" cy="380" r="330" fill="rgba(215,174,98,.05)" stroke="#D7AE62" stroke-width="3" stroke-dasharray="10 10"/></svg>
  <div class="dch" id="d1">${icon("fence",30,"#5B4873",1.8)}Fenced yard</div><div class="dch" id="d2">${icon("tree",30,"#5B4873",1.8)}Park two blocks away</div><div class="dch" id="d3">${icon("train",30,"#5B4873",1.8)}10 min to the train</div>
  <div class="src" style="top:1360px">Housing ads reach everyone in the area. The words decide who stops</div></div>
+<div class="scene" id="sH"><div class="card" id="igc"><div class="hd2"><div class="av2">ER</div><b>elleryrealty</b></div>
+ <div class="ct" id="ctx">Just listed. Fenced yard, park two blocks away. Open Saturday, 11 to 1.</div>
+ <div class="tags" id="tgs"><span>#justlisted</span><span>#austinhomes</span><span id="badtag">#perfectforfamilies<i></i></span><span id="goodtag">#fencedyard</span></div></div>
+ <div class="src" style="top:1060px">Example post</div></div>
 <div class="scene" id="s8"><div class="card" id="chk"><h3>Before you post</h3>
  <div class="cr" id="k1"><span>Fenced yard. Park two blocks away.</span><b class="tg pl">Place</b></div>
  <div class="cr" id="k2"><span id="k2t">Perfect for young couples.</span><b class="tg pe">Person</b></div>
@@ -118,16 +140,23 @@ update(t,C,endAt){
    vis(w,t,a,null,{dx:-80,dy:0});$(w+" .o i").style.width=(ease(P(t,a+.5,a+.9))*290)+"px";E.type(n,P(t,b,e),txt);draw(w+" .nw path,"+w+" .nw rect,"+w+" .nw circle",P(t,b,b+.7));
    $(w+" .nw").style.opacity=P(t,b-.1,b)>0?1:0});
  vis("#w3",t,C.p16,null,{dx:-80,dy:0});$("#w3 .o i").style.width=(ease(P(t,C.deleted,C.deleted+.3))*170)+"px";$("#w3 .nw").style.opacity=ease(P(t,C.deleted,C.deleted+.3));
- vis("#s6",t,C.p17,C.e19);
+ vis("#s6",t,C.p20,C.e22);
  const dk=[C.are,C.are+.35,C.are+.7];
  R.dots.forEach(d=>{let o=.55;const near=R.near.indexOf(d);if(near>=0){const k=ease(P(t,dk[R.grp[near]]+.3,dk[R.grp[near]]+.7));d.ci.style.fill=k>.5?"#D7AE62":"#F4EBDD";d.ci.setAttribute("r",5+5*k);o=.55+.45*k}
    else{o=.55*(1-.6*ease(P(t,C.themselves,C.themselves+.4)))}d.ci.style.opacity=o});
  [["#d1",120,700],["#d2",560,640],["#d3",360,1170]].forEach(([d,x,y],i)=>{const k=P(t,dk[i],dk[i]+.4);pop(d,k);$(d).style.left=x+"px";$(d).style.top=y+"px"});
- vis("#s8",t,C.p20,C.e23);vis("#chk",t,C.p20,null);
+ vis("#sF",t,C.p17,C.e19);vis("#fine",t,C.p17,null);
+ [["#g1",C.walkinclosets],["#g2",C.great],["#g3",C.jogging],["#g4",C.bus]].forEach(([g,a])=>{vis(g,t,a-.1,null,{dy:16,blur:6});draw(g+" svg *",P(t,a,a+.4))});
+ vis("#sH",t,C.p23,C.e25);vis("#igc",t,C.p23,null);
+ const ck=ease(P(t,C.caption,C.caption+.4));$("#ctx").style.background=`rgba(183,157,194,${.3*ck*(1-ease(P(t,C.hashtags,C.hashtags+.3)))})`;
+ const hk=ease(P(t,C.hashtags,C.hashtags+.3));$("#tgs").style.opacity=.35+.65*hk;
+ const bk=ease(P(t,C.perfectforfamilies,C.perfectforfamilies+.3));$("#badtag").style.background=`rgba(91,72,115,${.18*bk})`;$("#badtag").style.transform=`translateX(${E.shake(P(t,C.perfectforfamilies,C.perfectforfamilies+.4))}px)`;
+ const xk=ease(P(t,C.e25-.9,C.e25-.6));$("#badtag i").style.width=(xk*100)+"%";$("#badtag").style.opacity=1-.5*xk;$("#goodtag").style.display=xk>.99?"inline":"none";
+ vis("#s8",t,C.p26,C.e29);vis("#chk",t,C.p26,null);
  [["#k1",C.place],["#k3",C.place+.3],["#k2",C.person]].forEach(([k,a])=>pop(k+" .tg",P(t,a,a+.3)));
  const rw=ease(P(t,C.rewrite,C.rewrite+.4));$("#k2t").textContent=rw>.5?"Quiet street, mature trees.":"Perfect for young couples.";
  $("#k2 .tg").textContent=rw>.5?"Place":"Person";$("#k2 .tg").className="tg "+(rw>.5?"pl":"pe");$("#k2").style.transform=`translateX(${E.shake(P(t,C.person,C.person+.4))}px)`;
- vis("#s7",t,C.p24,endAt);draw("#bm",P(t,C.p24,C.p24+.7));$("#bm").setAttribute("fill",P(t,C.p24+.7,C.p24+.9)>.5?"#D7AE62":"none");
+ vis("#s7",t,C.p30,endAt);draw("#bm",P(t,C.p30,C.p30+.7));$("#bm").setAttribute("fill",P(t,C.p30+.7,C.p30+.9)>.5?"#D7AE62":"none");
 }};
 E.boot(R);
 R.dots=[];{const g=$("#dots");for(let r=0;r<17;r++)for(let c=0;c<20;c++){const x=22+c*45+(r%2)*22,y=22+r*45;if(x>890||Math.hypot(x-450,y-380)>325)continue;const ci=document.createElementNS("http://www.w3.org/2000/svg","circle");ci.setAttribute("cx",x);ci.setAttribute("cy",y);ci.setAttribute("r",5);ci.style.fill="#F4EBDD";g.appendChild(ci);R.dots.push({ci,x,y})}}

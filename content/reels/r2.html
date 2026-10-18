@@ -14,8 +14,15 @@ script:[
  "Every ad got a ^coupon with its own code.",
  "Count the coupons that come back,",
  "and you know [which ad sold.]",
+ "Hopkins put it ^plainly:",
+ "“Almost any questions can be answered,",
+ "cheaply, quickly and finally,",
+ "by a [test campaign.]”",
  "You can run the same test on Meta today.",
  "In Ads Manager, open [A/B test.]",
+ "Meta splits your audience into ^random groups",
+ "that [don't overlap,]",
+ "so each version gets a ^fair test.",
  "Change [one thing] only.",
  "The ^photo, the ^first line, or the ^offer.",
  "Never all three at ^once,",
@@ -26,6 +33,9 @@ script:[
  "not by ^likes.",
  "Keep the ^winner.",
  "Test it against a ^new idea.",
+ "Keep a ^log of every test:",
+ "what you changed, and [which one won.]",
+ "After a few months, that log is your [playbook.]",
  "Repeat until you find _your_ half.",
  "Save this for your next listing.",
 ],
@@ -77,6 +87,22 @@ css:`
 .lp .q{font-weight:700;font-size:24px;margin-top:14px}
 #lW{left:130px}#lN{left:570px}
 #ref{position:absolute;left:490px;top:1110px}
+#pg{left:150px;top:560px;width:780px;padding:46px 54px;background:#f3ead8;border-radius:6px;transform:rotate(-1.2deg)}
+.pgh{font-size:18px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--quiet);text-align:center;margin-bottom:26px}
+.gl{height:14px;border-radius:7px;background:rgba(42,15,20,.09);margin:20px 0}
+.qt{font-size:42px;font-weight:700;line-height:1.28;letter-spacing:-.02em;margin:30px 0}.qt span{opacity:.15}
+#hlm{background:linear-gradient(transparent 52%,rgba(183,157,194,.75) 52%) no-repeat;background-size:0% 100%;color:inherit;padding:0 4px}
+.pgf{text-align:right;font-size:21px;color:var(--quiet);margin-top:26px}
+.grp{position:absolute;top:900px;width:400px;height:420px;border-radius:30px;border:3px solid rgba(244,235,221,.12)}#gA{left:110px}#gB{left:570px}
+.grp span{position:absolute;top:24px;left:0;right:0;text-align:center;font-size:30px;font-weight:700}
+.cd{position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%}
+#eq{position:absolute;left:510px;top:1050px;width:60px;text-align:center;font-size:90px;font-weight:700;color:var(--rose)}
+#lg{left:110px;top:580px;width:860px;padding:34px 38px}
+#lg h3{font-size:30px;display:flex;justify-content:space-between;align-items:baseline}#lg h3 span{font-size:21px;color:var(--quiet);font-weight:400}
+.lr{display:grid;grid-template-columns:170px 1fr 150px;gap:12px;padding:24px 0;border-top:1px solid rgba(42,15,20,.1);font-size:25px;align-items:baseline}
+.lr.lh{font-size:18px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);margin-top:16px}
+.lr b{text-align:right;color:var(--bronze)}.lr.lh span:last-child{text-align:right}
+#pbk{position:absolute;left:0;width:1080px;top:1210px;text-align:center}
 #save{position:absolute;left:0;width:1080px;top:680px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:34px;font-weight:700;color:var(--rose)}
 `,
 scenes:`
@@ -91,12 +117,19 @@ scenes:`
  <div class="tally" id="tA"><div class="n" id="nA">0</div><div class="l">came back, Key A</div></div>
  <div class="tally" id="tB"><div class="n" id="nB">0</div><div class="l">came back, Key B</div></div>
  <div class="src" style="top:1440px">Illustration. Hopkins keyed each coupon so he could count which ad brought replies</div></div>
+<div class="scene" id="sQ"><div class="card" id="pg"><div class="pgh">Scientific Advertising</div>
+ <div class="gl" style="width:94%"></div><div class="gl" style="width:86%"></div><div class="gl" style="width:90%"></div>
+ <div class="qt"><span id="q1t">Almost any questions can be answered,</span> <span id="q2t">cheaply, quickly and finally,</span> <span id="q3t">by a <mark id="hlm">test campaign.</mark></span></div>
+ <div class="gl" style="width:92%"></div><div class="gl" style="width:64%"></div><div class="pgf">Claude C. Hopkins, 1923</div></div>
+ <div class="src" style="top:1460px">From Scientific Advertising, 1923, now in the public domain</div></div>
 <div class="scene" id="s3">
  <div class="card" id="am"><div class="bar"><span class="bt">+ Create</span><span class="bt">Duplicate</span><span class="bt" id="abt">A/B test</span></div>
   <div class="rows"><div class="rw"><span>Campaign</span><b>Listing, Oak Street</b></div><div class="rw"><span>Objective</span><b>Leads</b></div><div class="rw"><span>Budget</span><b>$1,000</b></div></div></div>
  <svg id="cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.5L10 19Z" fill="#F4EBDD" stroke="#2A0F14" stroke-width="1.4"/></svg>
  <div class="card" id="abp"><h3>New A/B test</h3><div class="vv"><div>Version A</div><div>Version B</div></div></div>
 </div>
+<div class="scene" id="sR"><div class="grp" id="gA"><span>Version A</span></div><div class="grp" id="gB"><span>Version B</span></div><div id="crowd"></div><div id="eq">=</div>
+ <div class="src" style="top:1400px">Meta's A/B test splits the audience into random groups that don't overlap</div></div>
 <div class="scene" id="s4">
  <div class="chips"><div class="ch" id="c1">Photo</div><div class="ch" id="c2">First line</div><div class="ch" id="c3">Offer</div></div>
  <div class="card pair" id="pA"><div class="ph">${house("q1",400,247)}</div><div class="q">Morning sun on the porch.</div><div class="s">Version A · day photo</div></div>
@@ -116,6 +149,13 @@ scenes:`
  <div class="card lp" id="lW"><div class="ph">${house("w1",380,235)}</div><div class="q">B · dusk photo</div><div class="lbl" style="color:var(--bronze);margin-top:8px">Winner</div></div>
  <div class="card lp" id="lN"><div class="ph">${house("w2",380,235)}</div><div class="q">C · new first line</div><div class="lbl" style="color:var(--quiet);margin-top:8px">Challenger</div></div>
  <div id="ref">${icon("refresh",100,"#D7AE62",1.6)}</div></div>
+<div class="scene" id="sL"><div class="card" id="lg"><h3>Test log <span>14 Oak Street</span></h3>
+ <div class="lr lh"><span>Changed</span><span>Versions</span><span>Winner</span></div>
+ <div class="lr" id="lr1"><span>Photo</span><span>Day vs dusk</span><b>Dusk</b></div>
+ <div class="lr" id="lr2"><span>First line</span><span>Price vs porch</span><b>Porch</b></div>
+ <div class="lr" id="lr3"><span>Offer</span><span>Open house vs private tour</span><b style="color:var(--quiet)">Running</b></div></div>
+ <div id="pbk"><span class="pill" style="background:var(--cream);color:var(--ink);font-size:30px;padding:16px 30px" id="pbp">${icon("check",30,"#8E6B2C",3)} Your playbook</span></div>
+ <div class="src" style="top:1320px">Example log</div></div>
 <div class="scene" id="s8"><div id="save"><svg width="170" height="170" viewBox="0 0 24 24" fill="none" stroke="#D7AE62" stroke-width="1.5" stroke-linejoin="round"><path id="bm" d="M6 3h12v18l-6-4.5L6 21Z" pathLength="1"/></svg>Save this</div></div>
 `,
 update(t,C,endAt){
@@ -136,13 +176,13 @@ update(t,C,endAt){
  count("#nA",P(t,C.p7+.3,C.p8+.6),0,37);count("#nB",P(t,C.p7+.3,C.p8+.6),0,112);
  const sb=ease(P(t,C.whichadsold,C.whichadsold+.4));$("#clB").style.boxShadow=`0 0 0 ${6*sb}px #D7AE62,0 30px 70px rgba(0,0,0,.45)`;
  // 3 Ads Manager
- vis("#s3",t,C.p9,C.e10);vis("#am",t,C.p9,null);
- const cm=inout(P(t,C.p10,C.abtest));$("#cur").style.opacity=E.clamp(P(t,C.p10-.2,C.p10)*3);$("#cur").style.transform=`translate(${880-260*cm}px,${1000-330*cm}px) scale(${1-.15*Math.sin(P(t,C.abtest,C.abtest+.25)*Math.PI)})`;
+ vis("#s3",t,C.p13,C.e14);vis("#am",t,C.p13,null);
+ const cm=inout(P(t,C.p14,C.abtest));$("#cur").style.opacity=E.clamp(P(t,C.p14-.2,C.p14)*3);$("#cur").style.transform=`translate(${880-260*cm}px,${1000-330*cm}px) scale(${1-.15*Math.sin(P(t,C.abtest,C.abtest+.25)*Math.PI)})`;
  $("#abt").style.transform=`scale(${1-.08*Math.sin(P(t,C.abtest,C.abtest+.25)*Math.PI)})`;
  vis("#abp",t,C.abtest+.25,null,{dy:40});
  // 4 one thing
- vis("#s4",t,C.p11,C.e14);
- ["#c1","#c2","#c3"].forEach((c,i)=>{vis(c,t,C.p11+i*.12,null,{dy:20,blur:8});const sel=i===0?ease(P(t,C.onething,C.onething+.3)):0;
+ vis("#s4",t,C.p18,C.e21);
+ ["#c1","#c2","#c3"].forEach((c,i)=>{vis(c,t,C.p18+i*.12,null,{dy:20,blur:8});const sel=i===0?ease(P(t,C.onething,C.onething+.3)):0;
    const all=ease(P(t,C.once,C.once+.3));const k=Math.max(sel,all*(i===0?1:1));
    $(c).style.background=k>.5?(all>.5?"var(--plum)":"var(--gold)"):"transparent";$(c).style.color=k>.5&&all<.5?"var(--ox)":"var(--cream)";$(c).style.borderColor=k>.5?(all>.5?"var(--plum)":"var(--gold)"):"var(--rose)";
    if(i===0&&sel>.5&&all<.5)$(c).style.boxShadow="0 0 40px rgba(215,174,98,.5)";else $(c).style.boxShadow="none"});
@@ -153,24 +193,41 @@ update(t,C,endAt){
  $("#pB .s").textContent=ms>.5?"Version B · dusk photo, new line, new offer":"Version B · dusk photo";
  vis("#mess",t,C.whatworked,null,{dy:30,blur:10});
  // 5 a week
- vis("#s5",t,C.p15,C.e16);vis("#cal",t,C.p15,null);
+ vis("#s5",t,C.p22,C.e23);vis("#cal",t,C.p22,null);
  [...Array(7)].forEach((_,i)=>{$("#d"+i+" i").style.height=(100*ease(P(t,C.atleastaweek+i*.18,C.atleastaweek+.25+i*.18)))+"%";$("#d"+i).style.color=P(t,C.atleastaweek+i*.18,C.atleastaweek+.25+i*.18)>.5?"var(--ox)":""});
  vis("#hands",t,C.touch,null,{dy:30});draw("#lockI path,#lockI rect",P(t,C.touch,C.touch+.6));
  // 6 scoreboard
- vis("#s6",t,C.p17,C.e18);vis("#sb",t,C.p17,null);
- const sk=P(t,C.p17+.3,C.p17+1.4);count("#lA",sk,0,412);count("#lB",sk,0,128);count("#pA2",sk,0,48,v=>"$"+Math.round(v));count("#pB2",sk,0,22,v=>"$"+Math.round(v));
+ vis("#s6",t,C.p24,C.e25);vis("#sb",t,C.p24,null);
+ const sk=P(t,C.p24+.3,C.p24+1.4);count("#lA",sk,0,412);count("#lB",sk,0,128);count("#pA2",sk,0,48,v=>"$"+Math.round(v));count("#pB2",sk,0,22,v=>"$"+Math.round(v));
  const lk=ease(P(t,C.likes,C.likes+.3));$("#lA").style.color=`color-mix(in srgb,var(--quiet) ${lk*100}%,var(--ink))`;$("#lB").style.color=$("#lA").style.color;
  $("#pB2").style.color=lk>.5?"var(--bronze)":"";vis("#wtag",t,C.likes+.3,null,{dy:20});
  // 7 loop
- vis("#s7",t,C.p19,C.e21);vis("#lW",t,C.p19,null);draw("#w1 .ln",1);
+ vis("#s7",t,C.p26,C.e27);vis("#lW",t,C.p26,null);draw("#w1 .ln",1);
  $("#lW").style.boxShadow=`0 0 0 5px #D7AE62,0 40px 90px rgba(0,0,0,.45)`;
  vis("#lN",t,C.new,null,{dx:200,dy:0});draw("#w2 .ln",1);
- const rr=P(t,C.p21,C.e21);vis("#ref",t,C.p20+.3,null,{dy:0});draw("#ref path",P(t,C.p20+.3,C.p20+1));$("#ref").style.transform+=` rotate(${rr*360}deg)`;
+ const rr=P(t,C.p27,C.e27);vis("#ref",t,C.p27+.3,null,{dy:0});draw("#ref path",P(t,C.p27+.3,C.p27+1));$("#ref").style.transform+=` rotate(${rr*360}deg)`;
+ // quote
+ vis("#sQ",t,C.p9,C.e12);vis("#pg",t,C.p9,null,{dy:50});
+ [["#q1t",C.p10],["#q2t",C.p11],["#q3t",C.p12]].forEach(([q,a])=>$(q).style.opacity=.15+.85*ease(P(t,a,a+.3)));
+ $("#hlm").style.backgroundSize=(100*ease(P(t,C.testcampaign,C.testcampaign+.5)))+"% 100%";
+ // random split
+ vis("#sR",t,C.p15,C.e17);vis("#gA",t,C.p15,null);vis("#gB",t,C.p15+.1,null);
+ const sep=ease(P(t,C.dontoverlap,C.dontoverlap+.4));$("#gA").style.borderColor=`rgba(244,235,221,${.12+.5*sep})`;$("#gB").style.borderColor=`rgba(183,157,194,${.12+.7*sep})`;
+ R.cr.forEach(d=>{const k=ease(P(t,C.random+d.d*.7,C.random+.5+d.d*.7));d.el.style.transform=`translate(${d.x+(d.tx-d.x)*k}px,${d.y+(d.ty-d.y)*k-60*Math.sin(k*Math.PI)}px)`;
+   d.el.style.background=k>.5?(d.g?"#B79DC2":"#F4EBDD"):"rgba(244,235,221,.45)";d.el.style.opacity=E.clamp(P(t,C.p15,C.p15+.4)*2)});
+ vis("#eq",t,C.fair,null,{dy:0});
+ // log
+ vis("#sL",t,C.p28,C.e31);vis("#lg",t,C.p28,null);
+ ["#lr1","#lr2","#lr3"].forEach((r,i)=>vis(r,t,C.p29+i*.3,null,{dy:20,blur:6}));
+ $$("#lg b").forEach((b,i)=>{if(i<2)b.style.transform=`scale(${1+.25*Math.sin(P(t,C.whichonewon+i*.2,C.whichonewon+.3+i*.2)*Math.PI)})`});
+ pop("#pbp",P(t,C.playbook,C.playbook+.35));
  // 8 save
- vis("#s8",t,C.p22,endAt);draw("#bm",P(t,C.p22,C.p22+.7));$("#bm").setAttribute("fill",P(t,C.p22+.7,C.p22+.9)>.5?"#D7AE62":"none");
+ vis("#s8",t,C.p32,endAt);draw("#bm",P(t,C.p32,C.p32+.7));$("#bm").setAttribute("fill",P(t,C.p32+.7,C.p32+.9)>.5?"#D7AE62":"none");
 }};
 E.boot(R);E.dusk('q2');E.dusk('w1');
 R.notes=[...Array(10)].map((_,i)=>({el:$("#no"+i),x:(i%5)*160+10,y:Math.floor(i/5)*130+90,r:(E.rnd()-.5)*8}));
 R.envs=[...Array(18)].map((_,i)=>{const el=document.createElement("div");el.className="env";el.innerHTML=`<svg width="60" height="44" viewBox="0 0 60 44"><rect x="2" y="2" width="56" height="40" rx="4" fill="#F4EBDD" stroke="#5B4873" stroke-width="3"/><path d="M4 5l26 20L56 5" fill="none" stroke="#5B4873" stroke-width="3"/></svg>`;$("#envs").appendChild(el);return {el,d:E.rnd()*1.6,b:i%3!==0}});
+R.cr=[];{const ix=[...Array(60).keys()].sort(()=>E.rnd()-.5);ix.forEach((n,k)=>{const el=document.createElement("div");el.className="cd";$("#crowd").appendChild(el);
+ const g=k%2,j=Math.floor(k/2),c=j%5,r=Math.floor(j/5);R.cr.push({el,g,d:E.rnd(),x:150+(n%15)*52+E.rnd()*20,y:640+Math.floor(n/15)*52+E.rnd()*16,tx:(g?620:160)+c*66,ty:990+r*50})})}
 render(0);
 </script></body></html>
