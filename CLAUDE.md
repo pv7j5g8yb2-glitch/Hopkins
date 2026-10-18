@@ -3,6 +3,12 @@
 The clinic agency model is dropped for good. Do not suggest it, reference it, or use
 it as a fit check for new ideas.
 
+## Git
+
+Push work to the session branch without asking (Ismael, 2026-10-18). A push redeploys the waitlist
+on Render, which is fine. Only ask first when a change would alter the live site in a way he hasn't
+already agreed to.
+
 ## Writing for Ismael
 
 These are hard rules. They come from repeated correction, not preference.
