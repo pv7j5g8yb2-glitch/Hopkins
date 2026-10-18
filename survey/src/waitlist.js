@@ -51,6 +51,13 @@ function clean(value, max) {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
 }
 
+// The waitlist is one page, so the sitemap is one URL. Search Console reads it from robots.txt too.
+const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://waitlist.kirmistudio.com/</loc><changefreq>weekly</changefreq></url>
+</urlset>
+`;
+
 export function registerWaitlist(app, webDir) {
   const pageHtml = readFileSync(join(webDir, "waitlist.html"), "utf8");
   const assetDir = join(webDir, "waitlist");
@@ -63,7 +70,10 @@ export function registerWaitlist(app, webDir) {
       return sendPage(reply);
     }
     if (request.hostname.startsWith("waitlist.") && request.method === "GET" && request.url.split("?")[0] === "/robots.txt") {
-      return reply.type("text/plain").send("User-agent: *\nAllow: /\n");
+      return reply.type("text/plain").send("User-agent: *\nAllow: /\n\nSitemap: https://waitlist.kirmistudio.com/sitemap.xml\n");
+    }
+    if (request.hostname.startsWith("waitlist.") && (request.method === "GET" || request.method === "HEAD") && request.url.split("?")[0] === "/sitemap.xml") {
+      return reply.type("application/xml").send(SITEMAP);
     }
     // Browsers ask for /favicon.ico on their own; desktop Safari ignores the inline SVG icon.
     if (request.hostname.startsWith("waitlist.") && (request.method === "GET" || request.method === "HEAD") && request.url.split("?")[0] === "/favicon.ico") {
