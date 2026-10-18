@@ -425,32 +425,54 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   });
 })();
 // The product film. Phones get the tall cut, laptops 16:10 and big screens 16:9, each in its
-// own aspect ratio inside the browser frame. It starts with sound. Browsers refuse sound before
-// the visitor has clicked, tapped or typed on the page, so then it plays muted and the sound
-// comes on with that first click or tap. If a phone refuses to play at all (iPhone Low Power
-// Mode does), a play button shows instead of a still frame. It pauses while off screen.
+// own aspect ratio inside the browser frame. Browsers refuse sound until the visitor clicks, taps
+// or types, so the film starts muted and the sound comes on with that first click or tap. Chrome
+// is asked for sound straight away, since it simply says no when it can't. Safari is never asked
+// before a click, because it pauses the film when a page tries. A watchdog makes sure the film
+// either plays or shows a play button, never a frozen frame. It pauses while off screen.
+// Add ?filmdebug to the address to see what the browser is doing with the video.
 (function(){
   const box=document.getElementById("film"),v=document.getElementById("fv"),snd=document.getElementById("snd"),fp=document.getElementById("fplay"),bar=document.getElementById("fprog");if(!v)return;
   const A="/waitlist-assets/film-",pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";
-  let cut=box.dataset.f,seen=true,held=false,chose=false,woke=0;// held: muted only because the browser asked
+  const dbg=/[?&]filmdebug/.test(location.search),log=[],note=m=>{if(dbg){log.push((performance.now()/1000).toFixed(1)+"s "+m);if(log.length>12)log.shift()}};
+  const trySound=navigator.getAutoplayPolicy?navigator.getAutoplayPolicy(v)==="allowed":!!window.chrome;
+  // held: muted only until the visitor's first click or tap. chose: the visitor used the sound button.
+  // stopped: the visitor paused it. seen: the film is on screen.
+  let cut=box.dataset.f,seen=true,held=!trySound,chose=false,stopped=false,woke=0,tries=0,last=-1,still=0;
   const ui=()=>{snd.setAttribute("aria-pressed",String(!v.muted));snd.classList.toggle("on",!v.muted);snd.querySelector("span").textContent=v.muted?"Sound on":"Sound off"};
-  const ok=()=>box.classList.remove("blocked"),block=()=>box.classList.add("blocked");
-  const muted=()=>{v.muted=true;ui();return v.play().then(ok).catch(block)};
-  function start(){if(!seen)return;
-    if(held||(chose&&v.muted))return v.play().then(ok).catch(block);
-    v.muted=false;ui();v.play().then(()=>{held=false;ok()}).catch(()=>{held=true;muted()})}
+  const ok=()=>box.classList.remove("blocked"),block=()=>{box.classList.add("blocked");note("play button shown")};
+  function go(){if(!seen||stopped)return;const p=v.play();if(!p||!p.then)return;
+    p.then(()=>{ok();note("playing")}).catch(e=>{note("play refused, "+e.name+(v.muted?" (muted)":" (sound)"));
+      if(e.name==="AbortError")return;if(!v.muted){v.muted=true;held=true;ui();go()}else block()})}
+  function reload(){tries++;note("reloading the file");v.src=A+cut+".mp4?r="+Date.now();go()}
   function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=A+k+".jpg";v.src=A+k+".mp4";
-    v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});start()}
+    v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});go()}
+  v.muted=!trySound;ui();check();go();
   let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(load,250)});
-  if("IntersectionObserver" in window)new IntersectionObserver(es=>{seen=es[0].isIntersecting;if(seen)start();else v.pause()},{threshold:.2}).observe(box);else start();
+  // Off screen means fully scrolled past, checked directly rather than trusting an observer.
+  function check(){const r=box.getBoundingClientRect(),s=r.bottom>40&&r.top<innerHeight-40;if(s===seen)return;seen=s;if(s)go();else v.pause()}
+  addEventListener("scroll",()=>requestAnimationFrame(check),{passive:true});
   // The first click, tap or key press anywhere turns the sound on.
   function wake(e){if(!held||chose||snd.contains(e.target)||fp.contains(e.target))return;
     if(navigator.userActivation&&!navigator.userActivation.isActive)return;
-    held=false;woke=Date.now();v.muted=false;ui();if(seen)v.play().then(ok).catch(()=>{held=true;muted()})}
+    held=false;woke=Date.now();v.muted=false;ui();note("sound on after a click");go()}
   ["pointerdown","pointerup","touchend","keydown","click"].forEach(t=>addEventListener(t,wake,{capture:true,passive:true}));
-  snd.addEventListener("click",()=>{chose=true;held=false;v.muted=!v.muted;ui();if(seen)v.play().then(ok).catch(()=>{if(!v.muted)muted()})});
-  fp.addEventListener("click",()=>{held=false;v.muted=false;ui();v.play().then(ok).catch(()=>muted())});
-  v.addEventListener("click",()=>{if(Date.now()-woke<800)return;v.paused?v.play().catch(()=>{}):v.pause()});
+  snd.addEventListener("click",()=>{chose=true;held=false;stopped=false;v.muted=!v.muted;ui();go()});
+  fp.addEventListener("click",()=>{held=false;stopped=false;v.muted=false;ui();go()});
+  v.addEventListener("click",()=>{if(Date.now()-woke<800)return;if(v.paused){stopped=false;go()}else{stopped=true;v.pause()}});
+  v.addEventListener("error",()=>{note("error "+(v.error?v.error.code:""));if(tries<1)reload();else block()});
+  ["loadstart","loadedmetadata","canplay","playing","pause","waiting","stalled","suspend","abort"].forEach(t=>v.addEventListener(t,()=>note(t)));
+  // Watchdog: a film meant to be playing that hasn't moved for 4 seconds gets one reload, then the play button.
+  let pre;setInterval(()=>{
+    if(seen&&!stopped&&!document.hidden){
+      if(v.paused&&!box.classList.contains("blocked"))go();
+      if(!v.paused&&v.currentTime===last&&v.readyState<3){if(++still>=8){still=0;if(tries<1)reload();else block()}}else still=0;
+      last=v.currentTime}
+    if(!dbg)return;
+    if(!pre){pre=document.createElement("pre");pre.style.cssText="position:absolute;left:8px;top:8px;right:8px;z-index:5;margin:0;padding:8px 10px;font:11px/1.4 ui-monospace,Menlo,monospace;color:#F4EBDD;background:rgba(0,0,0,.75);border-radius:8px;white-space:pre-wrap;pointer-events:none";box.appendChild(pre)}
+    const b=v.buffered.length?v.buffered.end(v.buffered.length-1).toFixed(1):"0";
+    pre.textContent=[navigator.userAgent,"file "+(v.currentSrc||"none"),"ready "+v.readyState+", network "+v.networkState+", error "+(v.error?v.error.code+" "+(v.error.message||""):"none"),
+      "paused "+v.paused+", muted "+v.muted+", time "+v.currentTime.toFixed(1)+", loaded to "+b+"s","on screen "+seen+", waiting for a click "+held+", play button "+box.classList.contains("blocked")].concat(log).join("\n")},500);
   (function tick(){if(v.duration)bar.style.transform="scaleX("+(v.currentTime/v.duration)+")";requestAnimationFrame(tick)})();
 })();
 // Count the visit (by link source only) so the admin page can show the sign up rate.
