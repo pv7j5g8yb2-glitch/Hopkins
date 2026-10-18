@@ -5,7 +5,7 @@ import math, sys, glob, os
 import numpy as np, soundfile as sf
 
 KEN = sys.argv[1] if len(sys.argv) > 1 else "kenney/Audio"
-SR, D = 48000, 46.0
+SR, D = 48000, 46.5
 rng = np.random.default_rng(11)
 L = np.zeros(int(SR * D)); R = np.zeros(int(SR * D))
 
@@ -112,8 +112,12 @@ put(whoosh(1.8, 90, 1800, .3), P(34.5), .35)
 for i in range(9): put(S["tick_002"], P(34.6 + i * .05), .05)
 put(hit(110, .8), P(36.1), .22); put(hit(82, 1.0), P(36.55), .26)
 put(whoosh(1.0, 100, 1200, .7), P(38.3), .16)
-put(hit(70, 1.4), P(39.1), .3); put(S["glass_006"], P(39.35), .14)
-put(whoosh(.7, 400, 3000, .45), P(40.1), .1); put(S["pluck_001"], P(41.3), .16)
+# the logo: pebbles orbit (rising air), the gold one breaks out and rises, then the name
+put(whoosh(1.5, 150, 2600, .85), P(39.0), .26); put(S["pluck_001"], P(39.05), .12)
+put(hit(68, 1.6), P(40.45), .32); put(speed(S["pluck_002"], .85), P(40.47), .2); put(S["glass_006"], P(40.62), .18)
+put(whoosh(.8, 500, 4000, .4), P(41.15), .1)
+for i in range(7): put(speed(S["tick_004"], 1.2 + .05 * i), P(41.3 + i * .045), .05)
+put(S["pluck_001"], P(42.35), .16)
 
 # spoken sign off as the name lands (launch film rule)
 from kokoro import KPipeline
@@ -121,7 +125,7 @@ pipe = KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M")
 v = np.concatenate([r.audio.numpy() for r in pipe("Get Hopkins.", voice="af_heart", speed=1.0)])
 idx = np.where(np.abs(v) > .02)[0]; v = v[max(0, idx[0] - 600):idx[-1] + 2400]
 v = np.interp(np.arange(0, len(v), 24000 / SR), np.arange(len(v)), v)
-put(v / np.abs(v).max(), P(40.45), .62)
+put(v / np.abs(v).max(), P(41.5), .62)
 
 out = np.stack([L, R], axis=1)
 out = out / max(1, np.abs(out).max() / .9)
