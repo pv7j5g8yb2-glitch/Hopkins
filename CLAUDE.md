@@ -76,6 +76,9 @@ copy. Second style: italic serif headings with soft highlighter marks on grid pa
 ## Hopkins brand (locked)
 
 The product: one chat that runs a real estate business's marketing like an agency would.
+**Positioning (Ismael, 2026-10-18):** Hopkins is a chat, like ChatGPT or Claude, for running real
+estate marketing. Always lead with the chat. Never word it like a service that does the work for
+them ("made for you", "done for you"), because that reads as a digital marketing agency.
 Name **Hopkins**, after Claude Hopkins, who wrote *Scientific Advertising* in 1923 and
 tested every ad against another. Instagram **@gethopkins**. Domain gethopkins.com is
 not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups prove it.
