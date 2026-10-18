@@ -99,6 +99,13 @@ the brand.
   right ("Number 3 is the boost button", "Here's what to write").
 * Made from `content/reels/covers.html` (`node covers.mjs out_dir`). Add the new reel's entry there.
 
+## Every reel ends the same way
+
+The end card is the mark, "Hopkins" beside it, and one gold pill under it ("Follow @gethopkins", or
+"Join the waitlist · link in bio" on launch reels). No slogan. The voice says "Get Hopkins." as the
+name lands, on every reel (Ismael, 2026-10-18). Both are built into `content/reels/engine.js` and
+`vo.py`, so new reels get them automatically.
+
 ## Look
 
 Bold grotesk word mixed with an italic serif word, cream text over warm real photos

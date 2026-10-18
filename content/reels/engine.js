@@ -25,11 +25,9 @@ body{font-family:"Inter Tight",sans-serif;-webkit-font-smoothing:antialiased;col
 .pill{display:inline-flex;align-items:center;gap:10px;border-radius:40px;padding:10px 20px;font-weight:700;font-size:22px}
 .ico{fill:none;stroke-linecap:round;stroke-linejoin:round}
 #end{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-#end .lock{display:flex;align-items:center;gap:26px}
-#end .nm{font-size:120px;font-weight:700;letter-spacing:-.045em}
-#end .tg{margin-top:36px;font-size:46px;color:var(--rose);font-weight:400}
-#end .tg em{font-family:"Instrument Serif",serif;font-size:1.25em;color:var(--gold)}
-#end .cta{margin-top:70px;font-size:30px;font-weight:700;color:var(--ox);background:var(--gold);padding:20px 38px;border-radius:50px}
+#end .lock{display:flex;align-items:center;gap:30px;margin-top:-60px}
+#end .nm{font-size:132px;font-weight:700;letter-spacing:-.05em;line-height:1}
+#end .cta{margin-top:84px;font-size:30px;font-weight:700;color:var(--ox);background:var(--gold);padding:20px 38px;border-radius:50px}
 #fade{position:absolute;inset:0;background:var(--ox);opacity:0;pointer-events:none}
 `;
 const E={};window.E=E;
@@ -146,15 +144,15 @@ E.boot=(R)=>{
   <svg id="grain" width="1080" height="1920"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
   <div id="wm"><svg width="44" height="44" viewBox="0 0 120 120">${MARK}</svg>@gethopkins</div><div id="cap"></div>
   ${R.scenes}
-  <div id="end"><div class="lock"><svg id="endmark" width="150" height="150" viewBox="0 0 120 120">${MARK}</svg><div class="nm">Hopkins</div></div>
-  <div class="tg">Tested, not <em>guessed.</em></div><div class="cta">${R.cta||"Follow @gethopkins"}</div></div><div id="fade"></div>`;
+  <div id="end"><div class="lock"><svg id="endmark" width="160" height="160" viewBox="0 0 120 120">${MARK}</svg><div class="nm">Hopkins</div></div>
+  <div class="cta">${R.cta||"Follow @gethopkins"}</div></div><div id="fade"></div>`;
   const spoken=R.script.map(ph=>typeof ph==="string"?ph:ph.t).join("|");
   let TIM=null;if(window.TIMING){if(window.TIMING.text===spoken)TIM=window.TIMING.phrases;else console.warn("timing is stale, run vo.py again")}
   const {phrases,cues,end}=parse(R.script,R.rate||.9,TIM);
-  window.SPOKEN={text:spoken,phrases:phrases.map(p=>({toks:p.toks.map(k=>k.txt),say:p.say||null,pause:p.pause??null}))};window.TIMED=!!TIM;
+  window.SPOKEN={tail:R.tail??.3,text:spoken,phrases:phrases.map(p=>({toks:p.toks.map(k=>k.txt),say:p.say||null,pause:p.pause??null}))};window.TIMED=!!TIM;
   const C=new Proxy(cues,{get:(o,k)=>{if(!(k in o))throw new Error("no cue "+String(k));return o[k]}});
   const endAt=end+(R.tail??.3), D=endAt+3.4;
-  window.CUES=cues;window.DURATION=D;
+  window.CUES=cues;window.END_AT=endAt;window.DURATION=D;
   window.render=t=>{
     caption(t,phrases);E.vis("#wm",t,0,endAt,{dy:0,blur:0});
     R.update(t,C,endAt);
@@ -162,7 +160,7 @@ E.boot=(R)=>{
     const ek=E.vis("#end",t,endAt+.15,null,{dy:40});
     const m=E.$("#endmark");const r=E.ease(E.P(t,endAt+.3,endAt+1.1));
     m.querySelector(".gd").style.transform=`translate(${(1-r)*-6}px,${(1-r)*14}px)`;
-    E.$("#end .tg").style.opacity=E.ease(E.P(t,endAt+.9,endAt+1.3));
+    const nk=E.ease(E.P(t,endAt+.45,endAt+1));E.$("#end .nm").style.opacity=nk;E.$("#end .nm").style.transform=`translateX(${(1-nk)*-24}px)`;
     E.$("#end .cta").style.opacity=E.ease(E.P(t,endAt+1.4,endAt+1.8));
     E.$("#end .cta").style.transform=`translateY(${(1-E.ease(E.P(t,endAt+1.4,endAt+1.8)))*20}px)`;
     E.$("#fade").style.opacity=E.ease(E.P(t,D-.4,D));

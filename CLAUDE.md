@@ -87,7 +87,8 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
 * **Where each ground goes:** oxblood outside (logo, posts, ads, the top of the
   landing page), cream inside (the product, long reading sections, forms). Fine
   grain on both.
-* **Tagline:** "Tested, not guessed." **Promise:** "Real estate marketing, run for
+* **Tagline:** none for now (Ismael, 2026-10-18). Don't use "Tested, not guessed." as a slogan on
+  end cards, ads or the page. **Promise:** "Real estate marketing, run for
   you. Nothing goes live without your yes."
 * **Wording in public copy:** say "real estate" (agents, teams, brokerages), never
   "estate agent", because the US, Canada, Australia and the UAE all say real estate.

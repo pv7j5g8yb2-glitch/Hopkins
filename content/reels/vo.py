@@ -76,7 +76,11 @@ for i, tm in enumerate(timing):
     s = tm["w"][0]
     e = timing[i + 1]["w"][0] - .02 if i + 1 < len(timing) else tm["last"] + TAIL
     out.append({"s": round(s, 3), "e": round(e, 3), "w": [round(x, 3) for x in tm["w"]]})
-track.append(np.zeros(int(TAIL * SR), np.float32))
+# sign off over the end card, the same words on every reel
+OUTRO, OUTRO_AT = "Get Hopkins.", out[-1]["e"] + sp["tail"] + .6
+oa, ow = speak(OUTRO)
+oa = oa[int(max(0, ow[0][1] - .03) * SR):int((ow[-1][2] + .25) * SR)]
+track.append(np.zeros(max(0, int((OUTRO_AT - t0) * SR)), np.float32)); track.append(oa)
 sf.write(reel + ".wav", np.concatenate(track), SR)
 with open(reel + ".timing.js", "w") as f:
     f.write("window.TIMING=" + json.dumps({"voice": VOICE, "speed": SPEED, "text": sp["text"], "phrases": out}) + ";\n")
