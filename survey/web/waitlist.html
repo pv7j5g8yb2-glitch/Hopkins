@@ -277,7 +277,7 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
 </div>
         <div class="film" id="film" data-f="laptop">
           <video id="fv" muted autoplay loop playsinline preload="auto" disablepictureinpicture aria-label="Hopkins product film: a listing goes from photos to tested ads, approved on a phone, with a weekly report"></video>
-          <script>/* Picks the cut on its own, apart from the main script, so nothing else on the page can stop the film loading. */(function(){var w=window.innerWidth,k=w<700?"phone":w<1600?"laptop":"desktop",v=document.getElementById("fv");document.getElementById("film").setAttribute("data-f",k);v.poster="/waitlist-assets/film-"+k+".jpg";v.src="/waitlist-assets/film-"+k+".mp4"})();</script>
+          <script>/* Picks the cut on its own, apart from the main script, so nothing else on the page can stop the film loading. The film comes from jsDelivr's CDN (served from this public repo, pinned to the commit that holds these exact files; update the commit when the films change), with this server as the fallback. */(function(){window.FILM=["https://cdn.jsdelivr.net/gh/pv7j5g8yb2-glitch/Kirmi-Studio@3346a6f33c27de321e512e48a80a1ad6b1239d0f/survey/web/waitlist/film-","/waitlist-assets/film-"];var w=window.innerWidth,k=w<700?"phone":w<1600?"laptop":"desktop",v=document.getElementById("fv");document.getElementById("film").setAttribute("data-f",k);v.poster=FILM[0]+k+".jpg";v.src=FILM[0]+k+".mp4"})();</script>
           <button class="fplay" id="fplay" type="button" aria-label="Play the film"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg></button>
           <button class="snd" id="snd" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w1" d="M16 9.2a4 4 0 0 1 0 5.6"/><path class="w2" d="M18.8 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mx" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg><span>Sound on</span></button>
           <div class="prog" aria-hidden="true"><i id="fprog"></i></div>
@@ -433,19 +433,21 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
 // Add ?filmdebug to the address to see what the browser is doing with the video.
 (function(){
   const box=document.getElementById("film"),v=document.getElementById("fv"),snd=document.getElementById("snd"),fp=document.getElementById("fplay"),bar=document.getElementById("fprog");if(!v)return;
-  const A="/waitlist-assets/film-",pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";
+  const SRC=window.FILM||["/waitlist-assets/film-"],pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";let si=0;
   const dbg=/[?&]filmdebug/.test(location.search),log=[],note=m=>{if(dbg){log.push((performance.now()/1000).toFixed(1)+"s "+m);if(log.length>12)log.shift()}};
   const trySound=navigator.getAutoplayPolicy?navigator.getAutoplayPolicy(v)==="allowed":!!window.chrome;
   // held: muted only until the visitor's first click or tap. chose: the visitor used the sound button.
   // stopped: the visitor paused it. seen: the film is on screen.
-  let cut=box.dataset.f,seen=true,held=!trySound,chose=false,stopped=false,woke=0,tries=0,last=-1,still=0;
+  let cut=box.dataset.f,seen=true,held=!trySound,chose=false,stopped=false,woke=0,last=-1,still=0;
   const ui=()=>{snd.setAttribute("aria-pressed",String(!v.muted));snd.classList.toggle("on",!v.muted);snd.querySelector("span").textContent=v.muted?"Sound on":"Sound off"};
   const ok=()=>box.classList.remove("blocked"),block=()=>{box.classList.add("blocked");note("play button shown")};
   function go(){if(!seen||stopped)return;const p=v.play();if(!p||!p.then)return;
     p.then(()=>{ok();note("playing")}).catch(e=>{note("play refused, "+e.name+(v.muted?" (muted)":" (sound)"));
       if(e.name==="AbortError")return;if(!v.muted){v.muted=true;held=true;ui();go()}else block()})}
-  function reload(){tries++;note("reloading the file");v.src=A+cut+".mp4?r="+Date.now();go()}
-  function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=A+k+".jpg";v.src=A+k+".mp4";
+  // A file that errors or stalls is fetched again from the next source; after the last one, the play button.
+  function next(){if(si>=SRC.length-1)return block();si++;note("switching to "+SRC[si]);const at=v.currentTime||0;v.poster=SRC[si]+cut+".jpg";v.src=SRC[si]+cut+".mp4";
+    if(at)v.addEventListener("loadedmetadata",()=>{v.currentTime=at},{once:true});ok();go()}
+  function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=SRC[si]+k+".jpg";v.src=SRC[si]+k+".mp4";
     v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});go()}
   v.muted=!trySound;ui();check();go();
   let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(load,250)});
@@ -460,13 +462,13 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   snd.addEventListener("click",()=>{chose=true;held=false;stopped=false;v.muted=!v.muted;ui();go()});
   fp.addEventListener("click",()=>{held=false;stopped=false;v.muted=false;ui();go()});
   v.addEventListener("click",()=>{if(Date.now()-woke<800)return;if(v.paused){stopped=false;go()}else{stopped=true;v.pause()}});
-  v.addEventListener("error",()=>{note("error "+(v.error?v.error.code:""));if(tries<1)reload();else block()});
+  v.addEventListener("error",()=>{note("error "+(v.error?v.error.code:""));next()});
   ["loadstart","loadedmetadata","canplay","playing","pause","waiting","stalled","suspend","abort"].forEach(t=>v.addEventListener(t,()=>note(t)));
-  // Watchdog: a film meant to be playing that hasn't moved for 4 seconds gets one reload, then the play button.
+  // Watchdog: a film meant to be playing that hasn't moved for 4 seconds moves to the next source.
   let pre;setInterval(()=>{
     if(seen&&!stopped&&!document.hidden){
       if(v.paused&&!box.classList.contains("blocked"))go();
-      if(!v.paused&&v.currentTime===last&&v.readyState<3){if(++still>=8){still=0;if(tries<1)reload();else block()}}else still=0;
+      if(!v.paused&&v.currentTime===last&&v.readyState<3){if(++still>=8){still=0;next()}}else still=0;
       last=v.currentTime}
     if(!dbg)return;
     if(!pre){pre=document.createElement("pre");pre.style.cssText="position:absolute;left:8px;top:8px;right:8px;z-index:5;margin:0;padding:8px 10px;font:11px/1.4 ui-monospace,Menlo,monospace;color:#F4EBDD;background:rgba(0,0,0,.75);border-radius:8px;white-space:pre-wrap;pointer-events:none";box.appendChild(pre)}
