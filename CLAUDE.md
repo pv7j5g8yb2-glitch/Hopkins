@@ -129,6 +129,10 @@ What content and ad creative actually works on Instagram for real estate lives i
 `.claude/skills/hopkins-creative/SKILL.md`. Use it for every post, carousel, reel and ad,
 for @gethopkins and for what the product makes for customers. When Ismael sends new
 examples of what's winning, add the learning to its log with the date.
+**Never boring (Ismael, 2026-10-19).** Every reel must be entertaining and educational at once, with a
+creative hook on screen and sound that makes people stay. The playbook's patterns and formulas are
+starting points, not rules to follow every time: break them when something more creative works. The
+hard writing rules above (no dashes, no "we", nothing invented, no "Realtor") never bend.
 
 ## Product decisions (Hopkins)
 

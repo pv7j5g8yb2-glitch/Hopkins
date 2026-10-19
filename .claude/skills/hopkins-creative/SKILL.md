@@ -114,6 +114,13 @@ answer, from judgement, not measured (nothing here shows live reach per hashtag)
   decide distribution. Keyword words in the caption help search more than tags do.
 * Check which tags bring views in Instagram Insights after a few reels and swap the weak ones out.
 
+## Entertaining first
+
+Ismael's rule (2026-10-19): never boring. Entertaining and educational together, with the hook shown on
+screen and heard in sound so people stay and listen. Treat every pattern, formula and structure in this
+file as a starting point. If a more creative idea beats the formula, use it. Ask of each reel: would
+someone watch this for fun even if they didn't need the tip? Hard writing rules in CLAUDE.md still hold.
+
 ## Story hooks and open loops
 
 Ismael's rule (2026-10-19): think deeper than topic plus tip. People stay for an open loop, a question
