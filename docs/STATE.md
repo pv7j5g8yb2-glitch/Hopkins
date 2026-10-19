@@ -103,6 +103,9 @@ personal in here.
   realtors & mortgage brokers") asked how the programme works. Possibly a partner (they make the videos,
   Hopkins could run them as ads) or an agency prospecting. Reply drafted in future tense, since nothing
   is built yet, ending with one question: for Keystone itself or for the agents they film for.
+  He answered "for the realtors" (his agent clients), so it's a possible channel: his videos, run as ads
+  through Hopkins, for his 65+ agents. Next ask: do his agents run his videos as paid ads now, or only
+  post them? Don't offer anything special or a call until that's known.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
