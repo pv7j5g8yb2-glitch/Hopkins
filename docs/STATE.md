@@ -38,6 +38,14 @@ personal in here.
 * Pinned launch film cover (2026-10-19): `content/reels/cover-meet.html`, rendered with `node covers.mjs out_dir`
   as `meet.png`. Mark and name, "Meet" in gold serif above, "Real estate marketing, from one chat."
   below, no call to action so it can stay pinned after launch.
+* Honest read (2026-10-19, after Ismael asked if the launch film can bring sign ups): the launch film is a
+  conversion asset (pinned, on the landing page, sent to someone who already cares), not a discovery
+  asset. A cold viewer has no reason to care about an unknown product's demo. Reel 1 (about 10 views)
+  and Reel 4 (about 84 views, 2s average watch, 92.7% skip) with only his own like is normal for a
+  zero follower account: Instagram shows a reel to a small cold test group, and the first second
+  decides whether it widens. Likes from strangers at that size aren't expected, retention is the
+  signal. Discovery should come from hook first problem reels (playbook), and early sign ups from him
+  showing it directly to real estate people he can reach, not from the algorithm.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
