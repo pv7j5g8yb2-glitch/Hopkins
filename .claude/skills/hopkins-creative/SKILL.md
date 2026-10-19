@@ -114,6 +114,23 @@ answer, from judgement, not measured (nothing here shows live reach per hashtag)
   decide distribution. Keyword words in the caption help search more than tags do.
 * Check which tags bring views in Instagram Insights after a few reels and swap the weak ones out.
 
+## Story hooks and open loops
+
+Ismael's rule (2026-10-19): think deeper than topic plus tip. People stay for an open loop, a question
+the reel only answers at the end, told like a story. Structures to rotate (each can carry a real tip):
+* **Confession:** "Let me tell you something nobody says out loud about listing ads."
+* **Mystery:** "Wanna know why your ad got a ton of views and zero enquiries?"
+* **Countdown with the best last:** "5 reasons your listing ad flops. Number 2 is the one everyone
+  skips, and I kept the best for last." Say the promise out loud, and the last point must be the best.
+* **I know you're tired of it:** empathy first, then the way out ("I know you hate Sunday nights in Ads
+  Manager, so here's what I'd do"). This is the one that can carry Hopkins.
+* **Real history:** Claude Hopkins, Wanamaker's half, Facebook being sued over housing ads in 2019.
+  True stories carry a lesson without selling.
+* **Unpopular opinion**, **the mistake**, **before and after**, **nobody tells you**.
+Rules: the loop must pay off honestly. Stories are true or clearly labelled ("Say an agent..." or
+"Example numbers"), never an invented result or a fake "I watched an agent lose $4,000". Arc: hook,
+context, conflict, turning point, resolution, then one share line. Check every fact before it is made.
+
 ## How reels talk
 
 Ismael's rule (2026-10-19): a reel talks like one person telling a friend or a colleague what they
