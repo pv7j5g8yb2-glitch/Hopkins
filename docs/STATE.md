@@ -134,9 +134,10 @@ personal in here.
 
 * Server: `survey/` (Fastify), deployed on Render from branch `claude/exciting-wright-8ml9uc` on
   every push. Page: `survey/web/waitlist.html`.
-* The scripted demo was replaced by the product film inside the Mac browser frame: autoplay,
-  muted until the visitor's first click (browsers block sound before that), sound button, gold
-  progress bar, no note under it, cut per screen size (phone 9:16, laptop 16:10, desktop 16:9).
+* The scripted demo was replaced by the product film inside the Mac browser frame: autoplay, always
+  silent (Ismael, 2026-10-19: no sound and no sound button, ever), a tap stops it and leaves a see-through
+  play button, a tap again carries on, gold progress bar, no note under it, cut per screen size (phone
+  9:16, laptop 16:10, desktop 16:9).
 * Film files load from jsDelivr pinned to commit `1106b7a75ceb8afae14a45da1455ccadcf9d12bc`, then
   fall back to this server, then to feeding the player in pieces (`.f.mp4`, Media Source
   Extensions), then a whole-file download, then a play button. When the films change, commit them

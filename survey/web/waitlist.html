@@ -78,10 +78,9 @@ h1 .serif{font-weight:400}
 .film[data-f="desktop"]{aspect-ratio:16/9}
 .film[data-f="phone"]{aspect-ratio:9/16}
 .film video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;background:#1c080c}
-.snd{position:absolute;right:12px;bottom:14px;z-index:2;display:flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:600;color:var(--cream);background:rgba(28,8,12,.55);border:1px solid rgba(244,235,221,.18);border-radius:99px;padding:7px 12px 7px 10px;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:background .2s,border-color .2s}
-.snd:hover{background:rgba(28,8,12,.75);border-color:rgba(244,235,221,.3)}
-.snd svg{width:16px;height:16px}.snd .w1,.snd .w2{display:none}.snd.on .w1,.snd.on .w2{display:inline}.snd.on .mx{display:none}
-.snd:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.fstop{position:absolute;left:50%;top:50%;z-index:2;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--cream);background:rgba(28,8,12,.28);border:1px solid rgba(244,235,221,.3);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);pointer-events:none;opacity:0;transform:scale(.9);transition:opacity .25s,transform .25s}
+.fstop svg{width:24px;height:24px}.fstop .pl{margin-left:3px}.fstop .pl,.film.stopped .fstop .pa{display:none}.film.stopped .fstop .pl{display:block}
+.film.stopped .fstop,.film.flash .fstop{opacity:1;transform:none}
 .prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(244,235,221,.12);z-index:2}
 .prog i{display:block;height:100%;background:var(--gold);transform-origin:0 50%;transform:scaleX(0)}
 @supports not (aspect-ratio:1/1){.film{height:0;padding-top:62.5%}.film[data-f="desktop"]{padding-top:56.25%}.film[data-f="phone"]{padding-top:177.78%}}
@@ -279,7 +278,7 @@ footer{background:var(--ox);color:var(--rose);font-size:13.5px;padding:28px 0 40
           <video id="fv" muted autoplay loop playsinline preload="auto" disablepictureinpicture aria-label="Hopkins product film: a listing goes from photos to tested ads, approved on a phone, with a weekly report"></video>
           <script>/* Picks the cut on its own, apart from the main script, so nothing else on the page can stop the film loading. The film comes from jsDelivr's CDN (served from this public repo, pinned to the commit that holds these exact files; update the commit when the films change), with this server as the fallback. */(function(){window.FILM=["https://cdn.jsdelivr.net/gh/pv7j5g8yb2-glitch/Kirmi-Studio@1106b7a75ceb8afae14a45da1455ccadcf9d12bc/survey/web/waitlist/film-","/waitlist-assets/film-"];var w=window.innerWidth,k=w<700?"phone":w<1600?"laptop":"desktop",v=document.getElementById("fv");document.getElementById("film").setAttribute("data-f",k);v.poster=FILM[0]+k+".jpg";v.src=FILM[0]+k+".mp4"})();</script>
           <button class="fplay" id="fplay" type="button" aria-label="Play the film"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg></button>
-          <button class="snd" id="snd" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w1" d="M16 9.2a4 4 0 0 1 0 5.6"/><path class="w2" d="M18.8 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mx" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg><span>Sound on</span></button>
+          <span class="fstop" aria-hidden="true"><svg class="pa" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg><svg class="pl" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5z"/></svg></span>
           <div class="prog" aria-hidden="true"><i id="fprog"></i></div>
         </div>
       </div>
@@ -425,10 +424,9 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   });
 })();
 // The product film. Phones get the tall cut, laptops 16:10 and big screens 16:9, each in its
-// own aspect ratio inside the browser frame. Browsers refuse sound until the visitor clicks, taps
-// or types, so the film starts muted and the sound comes on with that first click or tap. Chrome
-// is asked for sound straight away, since it simply says no when it can't. Safari is never asked
-// before a click, because it pauses the film when a page tries. It pauses while off screen.
+// own aspect ratio inside the browser frame. It always plays without sound (Ismael, 2026-10-19) and
+// starts on its own. A tap stops it and leaves a see-through play button; another tap carries on.
+// It pauses while off screen.
 // Loading has three steps, each tried when the one before stalls or fails:
 //   1. the player streams the file from jsDelivr (how nearly every browser plays it);
 //   2. the page downloads a copy split into pieces and feeds them to the player itself (Media
@@ -438,23 +436,20 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
 // After that, the play button; a click restarts from step 1. Each visit reports how the film
 // loaded to /api/waitlist/film. Add ?filmdebug to the address to watch it happen.
 (function(){
-  const box=document.getElementById("film"),v=document.getElementById("fv"),snd=document.getElementById("snd"),fp=document.getElementById("fplay"),bar=document.getElementById("fprog");if(!v)return;
+  const box=document.getElementById("film"),v=document.getElementById("fv"),fp=document.getElementById("fplay"),bar=document.getElementById("fprog");if(!v)return;
   const SRC=window.FILM||["/waitlist-assets/film-"],pick=()=>innerWidth<700?"phone":innerWidth<1600?"laptop":"desktop";
   const CODEC={phone:"avc1.64001f",laptop:"avc1.640020",desktop:"avc1.64001f"},STEPS=["","streamed","in pieces","downloaded"];
   const t0=performance.now(),secs=()=>+((performance.now()-t0)/1000).toFixed(1),mb=n=>(n/1048576).toFixed(1);
   const dbg=/[?&]filmdebug/.test(location.search),log=[],note=m=>{log.push(secs()+"s "+m);if(log.length>40)log.shift()};
-  const trySound=navigator.getAutoplayPolicy?navigator.getAutoplayPolicy(v)==="allowed":!!window.chrome;
-  // held: muted only until the visitor's first click or tap. chose: the visitor used the sound button.
   // stopped: the visitor paused it. seen: the film is on screen. step: which loading step is running.
-  let cut=box.dataset.f,seen=true,held=!trySound,chose=false,stopped=false,woke=0,last=-1,still=0,step=1,busy=false,got=0,total=0,blob="",reported=false;
-  const ui=()=>{snd.setAttribute("aria-pressed",String(!v.muted));snd.classList.toggle("on",!v.muted);snd.querySelector("span").textContent=v.muted?"Sound on":"Sound off"};
+  let cut=box.dataset.f,seen=true,stopped=false,last=-1,still=0,step=1,busy=false,got=0,total=0,blob="",reported=false;
   function report(outcome){if(reported)return;reported=true;
     const body=JSON.stringify({ua:navigator.userAgent,outcome,step:STEPS[step]||"",seconds:secs(),log:log.slice(-20)});
     try{if(!(navigator.sendBeacon&&navigator.sendBeacon("/api/waitlist/film",new Blob([body],{type:"application/json"}))))fetch("/api/waitlist/film",{method:"POST",headers:{"Content-Type":"application/json"},body,keepalive:true}).catch(()=>{})}catch(e){}}
   const ok=()=>box.classList.remove("blocked"),block=()=>{if(!box.classList.contains("blocked"))note("play button shown");box.classList.add("blocked");report("failed")};
   function go(){if(!seen||stopped||busy)return;const p=v.play();if(!p||!p.then)return;
-    p.then(()=>{ok();note("play started")}).catch(e=>{note("play refused, "+e.name+(v.muted?" (muted)":" (sound)"));
-      if(e.name==="AbortError")return;if(!v.muted){v.muted=true;held=true;ui();go()}else block()})}
+    p.then(()=>{ok();note("play started")}).catch(e=>{note("play refused, "+e.name);
+      if(e.name!=="AbortError")block()})}
   // Downloads a file in the page, from jsDelivr and then this server. Gives up on a source that
   // sends nothing for 8 seconds.
   async function grab(name){
@@ -483,20 +478,18 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
   function next(){if(busy)return;if(step<3){step++;run()}else block()}
   function load(){const k=pick();if(k===cut)return;const at=v.currentTime||0;cut=k;box.dataset.f=k;v.poster=SRC[0]+k+".jpg";
     v.addEventListener("loadedmetadata",()=>{if(at)v.currentTime=at},{once:true});if(!busy)run()}
-  v.muted=!trySound;ui();check();go();
+  v.muted=v.defaultMuted=true;check();go();
   let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(load,250)});
   // Off screen means fully scrolled past, checked directly rather than trusting an observer.
   function check(){const r=box.getBoundingClientRect(),s=r.bottom>40&&r.top<innerHeight-40;if(s===seen)return;seen=s;if(s)go();else v.pause()}
   addEventListener("scroll",()=>requestAnimationFrame(check),{passive:true});
-  // The first click, tap or key press anywhere turns the sound on, and restarts a load that is stuck.
-  function wake(e){if(snd.contains(e.target)||fp.contains(e.target))return;
-    if(navigator.userActivation&&!navigator.userActivation.isActive)return;
-    if(v.readyState===0&&!busy&&e.type==="click"){note("click, loading again");step=1;run()}
-    if(!held||chose)return;held=false;woke=Date.now();v.muted=false;ui();note("sound on after a click");go()}
-  ["pointerdown","pointerup","touchend","keydown","click"].forEach(t=>addEventListener(t,wake,{capture:true,passive:true}));
-  snd.addEventListener("click",()=>{chose=true;held=false;stopped=false;v.muted=!v.muted;ui();go()});
-  fp.addEventListener("click",()=>{held=false;stopped=false;v.muted=false;ui();if(v.readyState===0&&!busy){note("play button, loading again");step=1;run()}else go()});
-  v.addEventListener("click",()=>{if(Date.now()-woke<800||v.readyState===0)return;if(v.paused){stopped=false;go()}else{stopped=true;v.pause()}});
+  // A click anywhere restarts a load that is stuck.
+  addEventListener("click",e=>{if(fp.contains(e.target))return;if(v.readyState===0&&!busy){note("click, loading again");step=1;run()}},{capture:true});
+  fp.addEventListener("click",()=>{stopped=false;box.classList.remove("stopped");if(v.readyState===0&&!busy){note("play button, loading again");step=1;run()}else go()});
+  // A tap stops the film and leaves the see-through play button; a tap again carries on.
+  let ft;v.addEventListener("click",()=>{if(v.readyState===0)return;clearTimeout(ft);
+    if(v.paused){stopped=false;box.classList.remove("stopped");box.classList.add("flash");ft=setTimeout(()=>box.classList.remove("flash"),500);go()}
+    else{stopped=true;v.pause();box.classList.remove("flash");box.classList.add("stopped")}});
   v.addEventListener("error",()=>{note("error "+(v.error?v.error.code+" "+(v.error.message||""):""));if(!busy)next()});
   v.addEventListener("stalled",()=>{note("stalled");if(v.readyState===0&&!busy)next()});
   v.addEventListener("timeupdate",()=>{if(v.currentTime>0.5&&!reported){note("playing");report("played")}});
@@ -513,7 +506,7 @@ if(!matchMedia("(prefers-reduced-motion: reduce)").matches)document.querySelecto
     const b=v.buffered.length?v.buffered.end(v.buffered.length-1).toFixed(1):"0";
     pre.textContent=[navigator.userAgent,"step "+step+" ("+STEPS[step]+")"+(busy?", downloading "+mb(got)+" of "+mb(total)+" MB":"")+", file "+(v.currentSrc||"none").slice(0,80),
       "ready "+v.readyState+", network "+v.networkState+", error "+(v.error?v.error.code+" "+(v.error.message||""):"none"),
-      "paused "+v.paused+", muted "+v.muted+", time "+v.currentTime.toFixed(1)+", loaded to "+b+"s","on screen "+seen+", waiting for a click "+held+", play button "+box.classList.contains("blocked")].concat(log.slice(-14)).join("\n")},500);
+      "paused "+v.paused+", muted "+v.muted+", time "+v.currentTime.toFixed(1)+", loaded to "+b+"s","on screen "+seen+", stopped "+stopped+", play button "+box.classList.contains("blocked")].concat(log.slice(-14)).join("\n")},500);
   (function tick(){if(v.duration&&isFinite(v.duration))bar.style.transform="scaleX("+(v.currentTime/v.duration)+")";requestAnimationFrame(tick)})();
 })();
 // Count the visit (by link source only) so the admin page can show the sign up rate.
