@@ -1,5 +1,5 @@
 import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
-import { mkdirSync, existsSync } from "node:fs"; import { execFileSync } from "node:child_process";
+import { mkdirSync, existsSync, rmSync } from "node:fs"; import { execFileSync } from "node:child_process";
 const [file,out]=process.argv.slice(2); const FPS=30, dir="fr_"+file.replace(".html","")+"_"+Date.now(); mkdirSync(dir);
 const b=await chromium.launch(); const p=await b.newPage({viewport:{width:1080,height:1920}});
 p.on("pageerror",e=>console.log("ERR",e.message));
@@ -11,4 +11,5 @@ const FFMPEG="/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ff
 // voiceover from vo.py, levelled for Instagram, if the reel has one
 const wav=file.replace(".html",".wav"), audio=existsSync(wav)?["-i",wav,"-af","loudnorm=I=-14:TP=-1.5:LRA=11","-c:a","aac","-b:a","192k","-ar","48000"]:[];
 execFileSync(FFMPEG,["-hide_banner","-loglevel","error","-y","-framerate","30","-i",`${dir}/f%05d.jpg`,...audio.slice(0,2),"-map","0:v",...(audio.length?["-map","1:a"]:[]),...audio.slice(2),"-c:v","libx264","-pix_fmt","yuv420p","-crf","18","-preset","slow","-movflags","+faststart",out]);
+rmSync(dir,{recursive:true,force:true});
 console.log("done",out,N,"frames",D.toFixed(1)+"s");
