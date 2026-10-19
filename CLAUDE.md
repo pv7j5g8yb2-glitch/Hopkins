@@ -3,6 +3,11 @@
 The clinic agency model is dropped for good. Do not suggest it, reference it, or use
 it as a fit check for new ideas.
 
+## Start here
+
+Read `docs/STATE.md` at the start of every session: it has the current state, what's in flight,
+and the small details from earlier sessions. Keep it up to date when anything in it changes.
+
 ## Git
 
 Push work to the session branch without asking (Ismael, 2026-10-18). A push redeploys the waitlist

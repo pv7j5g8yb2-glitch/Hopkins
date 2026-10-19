@@ -183,6 +183,26 @@ at least two of these, and it should still look deliberate, not broken:
 The real photos matter most, and they come from Ismael's phone, not from stock. Make
 two versions when unsure (clean and messy) and let Ismael pick.
 
+## Finding posts to rebuild
+
+Ismael sends posts that are working; each becomes a Hopkins animated reel (the idea, never the
+wording or layout). What to look for:
+* **Outliers, not big accounts.** A post doing 5 to 10 times the account's usual views or likes.
+  A small account with a huge post means the format did it, not the fame.
+* **Shares and saves over likes.** Shares about equal to likes or higher means people use it
+  (TikTok shows saves and shares on every video; Instagram shows shares on many posts).
+* **Comment for the freebie posts with thousands of comments**: proof the topic pulls.
+* **Recent**, ideally the last 30 days.
+* **The right topic**: ads, leads, cost per lead, listing marketing, money and teams. Skip
+  lifestyle, mindset, B-roll and posting tips; they bring the wrong followers.
+* **Adjacent niches count**: Meta ads for local businesses, mortgage brokers, home services. The
+  format transfers to real estate.
+* Where: Instagram and TikTok search for "real estate marketing", "real estate ads", "facebook ads
+  real estate", "listing ads", "real estate lead generation", "team leader", "brokerage"; TikTok's
+  filters for this week and most liked; Instagram Explore once the account engages with the niche.
+* Note the hook, the structure (list, myth vs truth, "if I were", teardown, before and after) and
+  why people share it. That pattern goes in the trend library.
+
 ## For the @gethopkins account
 
 - Audience line: "real estate teams:" or "team leaders:". Speak to team leaders and
