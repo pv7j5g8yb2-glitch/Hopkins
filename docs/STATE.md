@@ -58,8 +58,11 @@ personal in here.
   eligibility, features and removals all green, only an irrelevant monetisation warning). The post
   showed "The Weeknd, Timeless" attached as its audio, so the film's own sound (sfx and the spoken
   "Get Hopkins") was probably replaced by a licensed track that a business account shouldn't use for a
-  product promo. Rule: post every reel with its own original audio, never add a library or licensed
-  track. If a reel is stuck at 0, delete and repost with original audio. Also: feed posts and stories
+  product promo. Ismael prefers the music (it makes the film feel better than the sfx alone, and it is
+  the Timeless instrumental, no lyrics; an instrumental is still licensed). Agreed test: leave it
+  up until tomorrow. If still near 0, repost with original audio, and consider a royalty free music
+  bed mixed into the film itself (`sfx2.py`) so the feel stays without the rights risk. Licensed
+  tracks can never go in Hopkins ads, so the film's sound should work without them. Also: feed posts and stories
   (carousels like "Join the waitlist", "What you get") get 0 views at zero followers, since they only
   reach followers. Reels are the only discovery route right now.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
