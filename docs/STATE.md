@@ -85,6 +85,10 @@ personal in here.
      wants, weak vs strong, labelled by outcome).
   5. "You don't have an ad problem, you have a one ad problem" (run three different ads, compare cost
      per lead, Wanamaker).
+  Fact check done for idea 1 (2026-10-19): the March 2019 settlement (NFHA, ACLU, Communications Workers
+  of America) removed age, gender and ZIP targeting for housing, employment and credit ads, and housing
+  ads need a location radius of at least 15 miles. Age and ZIP details come partly from press and law
+  firm summaries, not the settlement text, so keep the reel's wording simple and not legal.
   Recommended order: 1, 2, 3. Trial Reels are locked at his follower count; following the account from
   his own two personal accounts is fine but changes nothing for reach.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.

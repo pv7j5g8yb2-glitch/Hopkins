@@ -133,6 +133,8 @@ examples of what's winning, add the learning to its log with the date.
 creative hook on screen and sound that makes people stay. The playbook's patterns and formulas are
 starting points, not rules to follow every time: break them when something more creative works. The
 hard writing rules above (no dashes, no "we", nothing invented, no "Realtor") never bend.
+**Keep it simple (Ismael, 2026-10-19).** Straightforward, like a creator talking to a friend and giving
+real value. Never confusing or complex: one point, plain words, a clear tip.
 
 ## Product decisions (Hopkins)
 
