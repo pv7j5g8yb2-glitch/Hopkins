@@ -100,6 +100,21 @@ the brand.
 * Each reel's cover text lives in `content/reels/hooks.js`; `covers.html` makes the cover from it
   (`node covers.mjs out_dir`). The cover is only ever the cover, never the reel's opening.
 
+## How reels talk
+
+Ismael's rule (2026-10-19): a reel talks like one person telling a friend or a colleague what they
+actually think, not like a narrator or a brand. Everyday words, contractions, short sentences.
+Swearing is fine where it's natural ("that shit gets deleted", "don't touch the damn thing"), one or
+two per reel, never forced. From @jessijeanhome's reel on talking to camera (5.6k comments):
+* Talk to one person. Never "hey guys" or "hey everyone".
+* Calm beats hyped. Amped up energy reads as performing.
+* Say what others won't: a hot take, the thing people think but don't say.
+* Less formal than feels safe, even for professionals. People are over stiff.
+* A simple story: hook (why should I care), context, conflict (what wasn't working), turning point
+  (what changed), resolution (so what, the takeaway).
+* Clear beats impressive. One clear point per video.
+Facts, sources and "Example numbers" labels stay exactly as strict as before, and still never "we".
+
 ## The first second
 
 Ismael's rule (2026-10-19): the reel's own first second has to be loud and fast, not a title card.
@@ -204,6 +219,10 @@ two versions when unsure (clean and messy) and let Ismael pick.
 - Copy another account's post or template word for word. Learn the pattern, make our own.
 
 ## Log
+
+- 2026-10-19 (reels, voice): Reels 2, 3 and 5 rewritten from narrator voice into talking to a friend
+  ("Be honest, does your listing ad say this?", "This department store guy, John Wanamaker",
+  "or you, on a Sunday night in Ads Manager"). See "How reels talk".
 
 - 2026-10-19 (reels, the first second): Reel 4 reached 84 people, 98.8% of them non-followers from the
   Reels tab, but the average watch was 2 seconds and the skip rate 92.7%, with the watch graph down to

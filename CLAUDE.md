@@ -109,7 +109,9 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   stories, ads, emails). "We" makes Hopkins sound like an agency. Write as the product:
   "Hopkins makes the ads", "you approve", or "I" when Hopkins talks in the chat. Same in
   plans and drafts for Ismael: say what Hopkins does or what to post, not what "we" do.
-* **Personality:** a quiet expert. Plain, precise, shows the numbers, never hype.
+* **Personality:** a quiet expert. Plain, precise, shows the numbers, never hype. In reels it talks
+  like one person telling a friend or colleague what they think: everyday words, swearing is fine
+  where natural (Ismael, 2026-10-19). Facts stay exact.
 * **Recurring stories:** Wanamaker's half, tested not guessed, the empty Monday.
 
 ## Creative playbook
