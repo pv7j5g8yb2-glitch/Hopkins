@@ -1,0 +1,123 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 7: stop touching your ad. Meta's learning phase: an ad set needs about 50 optimisation
+// events within 7 days of its last significant edit, and a significant edit restarts learning.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const DAYS=["Mon","Tue","Wed","Thu","Fri"];
+const R={
+hook:2,
+sfx:[{s:"hit",at:.02,shake:14},{s:"stamp",at:"handsoff",shake:18},
+ {s:"pop",at:"monday"},{s:"pop",at:"tuesday"},{s:"tick",at:"panic"},
+ {s:"select",at:"photo"},{s:"hit",at:"photo",d:.35,shake:8},{s:"pop",at:"wednesday"},{s:"select",at:"headline"},{s:"hit",at:"headline",d:.35,shake:8},
+ {s:"pop",at:"thursday"},{s:"select",at:"budget"},{s:"hit",at:"budget",d:.35,shake:8},{s:"pop",at:"friday"},{s:"stamp",at:"work",shake:10},
+ {s:"whoosh",at:"p8",d:-.1},{s:"hit",at:"squareone",shake:14},{s:"tick",at:"fifty"},{s:"pop2",at:"times"},
+ {s:"whoosh",at:"p13",d:-.1},{s:"ding",at:"days"},{s:"ding",at:"one"},{s:"ding",at:"works"}],
+script:[
+ "Stop touching your ad.",
+ "Seriously. [Hands off.]",
+ "You launch it ^Monday.",
+ "^Tuesday, two clicks. You ^panic.",
+ "So you change the ^photo.",
+ "^Wednesday, you change the ^headline.",
+ "^Thursday, you bump the ^budget.",
+ "And ^Friday you're like, ads don't [work.]",
+ "Here's what actually happened.",
+ "Every big edit sends it back to [square one.]",
+ "Meta calls it the ^learning phase.",
+ "It needs about ^fifty results in a week to work out who to show it to.",
+ "And you reset it three ^times.",
+ "So here's the rule.",
+ "Give it a few ^days.",
+ "Change ^one thing, then wait.",
+ "Boring? Yeah. But that's how you find out what [works.]",
+ "Send this to the friend who can't stop tweaking.",
+],
+css:`
+#am{left:110px;top:700px;width:860px;padding:0;overflow:hidden}
+#am .bar{display:flex;align-items:center;gap:16px;padding:26px 34px;border-bottom:1px solid rgba(42,15,20,.1);font-size:30px;font-weight:700}
+#am .bar .st{margin-left:auto;font-size:22px;padding:8px 16px;border-radius:20px;background:rgba(215,174,98,.3);color:var(--bronze)}
+#am .bd{display:flex;gap:28px;padding:30px 34px 36px}#am .im{width:300px;height:200px;border-radius:14px;overflow:hidden;flex:none}#am .im svg{width:320px;height:200px;margin-left:-10px}
+#am .tx{flex:1}#am .tx .l{height:16px;border-radius:8px;background:rgba(42,15,20,.1);margin-bottom:16px}
+#edit{display:inline-flex;align-items:center;gap:12px;margin-top:14px;font-size:30px;font-weight:700;background:var(--gold);color:var(--ox);padding:16px 30px;border-radius:16px}
+#cur{position:absolute;left:0;top:0;width:140px;height:140px}
+#hands{position:absolute;left:470px;top:1110px;opacity:0}
+#hands span{display:inline-flex;align-items:center;gap:12px;background:var(--plum);color:var(--cream);font-size:52px;font-weight:700;padding:18px 34px;border-radius:16px;border:5px solid var(--cream);transform:rotate(-8deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#wk{position:absolute;left:70px;top:620px;width:940px;display:flex;gap:16px}
+.dy{flex:1;height:280px;border-radius:22px;background:var(--ox2);border:2px solid rgba(244,235,221,.08);display:flex;flex-direction:column;align-items:center;padding-top:22px;gap:14px;position:relative}
+.dy b{font-size:32px;color:var(--rose)}.dy.on{background:var(--cream)}.dy.on b{color:var(--ink)}
+.dy .ch{font-size:22px;font-weight:700;padding:8px 10px;border-radius:12px;background:var(--plum);color:var(--cream);text-align:center;line-height:1.2;opacity:0;width:164px}
+.dy .ic{opacity:0}
+#lp{left:110px;top:990px;width:860px;padding:34px 38px}
+#lp .h{display:flex;justify-content:space-between;align-items:baseline;font-size:30px;font-weight:700}#lp .h span{font-size:24px;color:var(--quiet);font-weight:400}
+#lp .tr{margin-top:22px;height:40px;border-radius:20px;background:rgba(42,15,20,.08);overflow:hidden}#lp .tr i{display:block;height:100%;width:0;background:var(--gold);border-radius:20px}
+#lp .rs{margin-top:18px;font-size:26px;font-weight:700;color:var(--plum);height:34px}
+#bub{position:absolute;left:470px;top:1330px;background:var(--cream);color:var(--ink);font-size:40px;font-weight:700;padding:24px 34px;border-radius:30px 30px 6px 30px;opacity:0;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+#big{position:absolute;left:0;width:1080px;top:700px;text-align:center}
+#big .n{font-size:300px;font-weight:700;letter-spacing:-.06em;line-height:1;color:var(--cream)}
+#big .s{font-size:36px;color:var(--rose);font-weight:700;margin-top:10px}
+#cnt{position:absolute;left:0;width:1080px;top:1200px;display:flex;justify-content:center;flex-wrap:wrap;gap:12px;padding:0 160px}
+#cnt i{width:44px;height:44px;border-radius:50%;background:rgba(244,235,221,.12)}
+#rst{position:absolute;left:0;width:1080px;top:1520px;display:flex;justify-content:center;gap:24px}
+#rst span{font-size:28px;font-weight:700;padding:12px 22px;border-radius:14px;background:var(--plum);color:var(--cream);opacity:0}
+#rule{left:120px;top:720px;width:840px;padding:40px 44px}
+#rule .h{font-family:"Instrument Serif";font-style:italic;font-size:70px;line-height:1;margin-bottom:18px}
+.rr{display:flex;align-items:center;gap:22px;padding:30px 0;border-top:1px solid rgba(42,15,20,.1);font-size:40px;font-weight:700}
+#done{left:110px;top:1260px;width:860px;padding:30px 36px}
+#done .tr{height:40px;border-radius:20px;background:rgba(42,15,20,.08);overflow:hidden}#done .tr i{display:block;height:100%;width:0;background:var(--gold)}
+#done .h{display:flex;justify-content:space-between;font-size:28px;font-weight:700;margin-bottom:18px}#done .h b{color:var(--bronze);opacity:0}
+#snd{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:36px;font-weight:700;color:var(--rose)}
+`,
+scenes:`
+<div class="scene" id="s1"><div class="card" id="am"><div class="bar">${icon("target",36,"#2A0F14",2)}Listing ad, 14 Oak St<span class="st">Active</span></div>
+ <div class="bd"><div class="im">${house("a1",320,200)}</div><div class="tx"><div class="l" style="width:90%"></div><div class="l" style="width:70%"></div><div class="l" style="width:80%"></div>
+ <div id="edit">${icon("scissors",30,"#2A0F14",2)}Edit</div></div></div></div>
+ <svg id="cur" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.5L10 19Z" fill="#F4EBDD" stroke="#2A0F14" stroke-width="1.2" stroke-linejoin="round"/></svg>
+ <div id="hands"><span>${icon("x",48,"#F4EBDD",3)}Hands off</span></div></div>
+<div class="scene" id="s2"><div id="wk">${DAYS.map((d,i)=>`<div class="dy" id="d${i}"><b>${d}</b><span class="ic">${icon(["rocket","eye","refresh","refresh","alert"][i],50,i?"#5B4873":"#8E6B2C",2)}</span><span class="ch"></span></div>`).join("")}</div>
+ <div class="card" id="lp"><div class="h">Learning<span id="lpn">0 of 50</span></div><div class="tr"><i></i></div><div class="rs"></div></div>
+ <div id="bub">Ads don't work.</div></div>
+<div class="scene" id="s3"><div id="big"><div class="n" id="bn">0</div><div class="s" id="bs">Back to square one</div></div>
+ <div id="cnt">${Array(50).fill(0).map(()=>"<i></i>").join("")}</div>
+ <div id="rst"><span>Reset 1</span><span>Reset 2</span><span>Reset 3</span></div></div>
+<div class="scene" id="s4"><div class="card" id="rule"><div class="h">The rule</div>
+ <div class="rr" id="r1">${icon("calendar",50,"#8E6B2C",2)}Give it a few days</div>
+ <div class="rr" id="r2">${icon("check",50,"#8E6B2C",2.4)}One change, then wait</div></div>
+ <div class="card" id="done"><div class="h">Learning<b>Done</b></div><div class="tr"><i></i></div></div></div>
+<div class="scene" id="s5"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>
+`,
+update(t,C,endAt){
+ // hook: the ad card slams in at frame one with the cursor already going for Edit, then a
+ // stamp slams over the button at "hands off"
+ vis("#s1",t,-1,C.e1);E.slam("#am",t,-.1,{s:1.3,r:-3});
+ const ck=inout(P(t,.1,C.handsoff-.1)),cx=900-280*ck,cy=1500-360*ck;$("#cur").style.transform=`translate(${cx}px,${cy}px) rotate(-10deg)`;
+ $("#cur").style.opacity=1-ease(P(t,C.handsoff,C.handsoff+.2));
+ E.slam("#hands",t,C.handsoff,{s:2.1,r:-18});
+ // the week: each edit knocks the learning bar back to zero
+ vis("#s2",t,C.p2,C.e8);
+ const on=[C.monday,C.tuesday,C.wednesday,C.thursday,C.friday];
+ on.forEach((a,i)=>{const k=ease(P(t,a,a+.25));$(`#d${i}`).classList.toggle("on",k>.5);pop(`#d${i} .ic`,P(t,a,a+.3));$(`#d${i}`).style.transform=`translateY(${-14*Math.sin(Math.PI*E.clamp(P(t,a,a+.3)))}px)`});
+ const edits=[[1,C.photo,"Photo changed"],[2,C.headline,"Headline changed"],[3,C.budget,"Budget up 50%"]];
+ edits.forEach(([d,a,txt])=>{const c=$(`#d${d} .ch`);c.textContent=txt;pop(c,P(t,a,a+.3))});
+ // learning progress: grows between edits, drops to zero at each one
+ const marks=[C.monday,...edits.map(e=>e[1]+.35),C.e7];let prog=0;
+ for(let i=0;i<marks.length-1;i++){if(t>=marks[i]){const span=Math.min(t,marks[i+1])-marks[i];prog=Math.min(.22,span*.07);if(t>=marks[i+1]&&i<marks.length-2)prog=0}}
+ $("#lp .tr i").style.width=(prog*100)+"%";$("#lpn").textContent=Math.round(prog*50)+" of 50";
+ const lastReset=edits.filter(e=>t>=e[1]+.35).length;$("#lp .rs").textContent=lastReset?`Edit made. Learning started over (${lastReset})`:"";
+ $("#lp").style.transform=`translateX(${edits.reduce((s,e)=>s+E.shake(P(t,e[1]+.35,e[1]+.75)),0)}px)`;
+ pop("#bub",P(t,C.friday+.3,C.friday+.6));
+ // square one
+ vis("#s3",t,C.p8,C.e12);
+ const fk=P(t,C.fifty,C.fifty+1.6);$$("#cnt i").forEach((d,i)=>{const on2=fk*50>i;d.style.background=on2?"var(--gold)":"rgba(244,235,221,.12)"});
+ $("#bn").textContent=t<C.fifty?"0":String(Math.min(50,Math.round(fk*50)));$("#bs").textContent=t<C.p10?"Back to square one":t<C.fifty?"The learning phase":"Results it needs in a week";
+ E.slam("#bn",t,C.squareone,{s:1.8,r:-6});
+ $$("#rst span").forEach((s,i)=>pop(s,P(t,C.times+i*.15,C.times+i*.15+.3)));
+ // the rule
+ vis("#s4",t,C.p13,C.e16);vis("#rule",t,C.p13,null);vis("#r1",t,C.days-.1,null,{dy:20,blur:6});vis("#r2",t,C.one-.1,null,{dy:20,blur:6});
+ draw("#r1 svg *",P(t,C.days,C.days+.5));draw("#r2 svg *",P(t,C.one,C.one+.5));
+ vis("#done",t,C.p16,null,{dy:30});const dk=inout(P(t,C.p16,C.works));$("#done .tr i").style.width=(dk*100)+"%";pop("#done .h b",P(t,C.works,C.works+.3));
+ vis("#s5",t,C.p17,endAt);draw("#snd path",P(t,C.p17,C.p17+.7));
+}};
+E.boot(R);
+render(0);
+</script></body></html>
