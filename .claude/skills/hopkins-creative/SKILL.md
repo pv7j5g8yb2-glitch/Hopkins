@@ -176,12 +176,18 @@ and "you" more than "I". Hopkins versions, all needing true content:
 * **Unpopular opinion / I hate to admit it / please stop doing this / this will make you rethink.**
 Not usable as written: "I tried this so you don't have to", "my customers swear by", "I should be
 charging for this", "here's what happened when I dedicated a week" (only after Hopkins really has
-done it, with the real result), invented results like "7X ROAS" or "$200k", and "feels illegal to
-know" or "I'm about to expose" (clickbait the reel can't pay off).
-The sales course pages Ismael also sent (hijack their mind, NLP, yes ladders, buying frenzy, manufactured
-urgency) are manipulation and partly pseudoscience. They clash with a quiet expert brand and with
-"nothing goes live without your yes". Keep only the sound parts: the five attention triggers,
-information gaps, the customer's own language, and storytelling.
+done it, with the real result), and invented results like "7X ROAS" or "$200k".
+Strong, dramatic hooks are fine and wanted ("This feels illegal to know", "I'm about to expose
+what...", "unpopular opinion"), as long as the reel pays them off with something real and the claim
+isn't a false statement of fact about a named person or company (Ismael, 2026-10-19: these are not
+clickbait, use them).
+Persuasion is normal and allowed: curiosity gaps, pattern breaks, emotion, humour, storytelling, fear
+of a real loss, real urgency (a real deadline such as the waitlist offer), the customer's own words.
+The line is deception, not intensity: no invented results, no fake scarcity or fake countdowns, and no
+"hijack their mind" or NLP claims, which are pseudoscience that doesn't work as sold. Reasons are
+practical and Ismael's own rules: "never claim anything untested or untrue", deceptive claims and fake
+urgency can get ads rejected or an ad account restricted, and the brand promise is delivering the
+same thing every time.
 
 ## How reels talk
 
