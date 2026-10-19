@@ -189,6 +189,11 @@ practical and Ismael's own rules: "never claim anything untested or untrue", dec
 urgency can get ads rejected or an ad account restricted, and the brand promise is delivering the
 same thing every time.
 
+Hook lesson (Ismael, 2026-10-19): a hook that states the fact ("Facebook won't let you target a ZIP code")
+is flat. Hook the stake or the gap instead: what the viewer lost, or the question only the end answers
+("Facebook took away your targeting. So who sees your listing ad?"). Put the dramatic phrase on the
+thing they care about, not on the trivia.
+
 ## How reels talk
 
 Ismael's rule (2026-10-19): a reel talks like one person telling a friend or a colleague what they
