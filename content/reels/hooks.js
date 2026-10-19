@@ -30,6 +30,8 @@ r8:{aud:"Your Just Listed ad:",hook:`Would you stop for <em>this?</em>`,tag:"Rou
   <div style="padding:24px 28px;font-size:30px;font-weight:700;line-height:1.3">JUST LISTED! 4 bed, 3 bath, 2,400 sq ft. Call today!</div>
   <div style="height:300px;overflow:hidden">${house("cv8",720,445)}</div></div>
   <span style="position:absolute;left:580px;top:330px;background:var(--plum);color:var(--cream);font-size:38px;font-weight:700;padding:14px 26px;border-radius:14px;border:4px solid var(--cream);transform:rotate(8deg)">Scrolled past</span></div>`},
+r9:{aud:"Real estate teams:",hook:`You don’t have an ad problem. You have a <em>one ad</em> problem.`,tag:"Run three, keep the winner",
+ vis:`<div class="vis" style="top:1080px;gap:26px">${["The kitchen","The backyard","The price"].map((l,i)=>`<div class="card" style="width:260px;overflow:hidden;${i===1?"box-shadow:0 0 0 6px var(--gold),0 40px 90px rgba(0,0,0,.45);transform:scale(1.08)":"opacity:.75"}"><div style="height:150px;overflow:hidden">${house("cv9"+i,260,161)}</div><div style="padding:14px 18px;font-size:24px;font-weight:700">${l}</div></div>`).join("")}</div>`},
 launch:{aud:"Coming soon:",hook:`Every listing ad, from <em>one</em> chat.`,tag:"Meet Hopkins",
  vis:`<div class="vis" style="top:1030px"><div class="card" style="width:840px;padding:30px 34px">
   <div style="display:flex;justify-content:flex-end"><span style="background:var(--plum);color:var(--cream);font-weight:700;font-size:28px;padding:18px 24px;border-radius:24px 24px 6px 24px">Ads for 14 Oak Street.</span></div>

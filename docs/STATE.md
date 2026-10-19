@@ -91,6 +91,14 @@ personal in here.
   firm summaries, not the settlement text, so keep the reel's wording simple and not legal.
   Recommended order: 1, 2, 3. Trial Reels are locked at his follower count; following the account from
   his own two personal accounts is fine but changes nothing for reach.
+* New batch (2026-10-19, talking to a friend style, hook on screen and in sound, second person stories):
+  Reel 6 "You can't pick who sees your listing ad anymore" (2019 settlement), Reel 7 "Stop touching
+  your ad" (learning phase, about 50 results in 7 days), Reel 8 "Would you stop for this ad?" (specs vs
+  the life), Reel 9 "You have a one ad problem" (run three, compare cost per lead). Renders and covers
+  in `reports/hopkins-brand/reels/`. Voice af_heart at 1.0 (0.95 for r9), about 185 wpm, every reel
+  checked with faster-whisper before rendering. Still to make from the idea queue: words that get an ad
+  flagged (needs a careful fact check: HUD's 1995 guidance says "walking distance" style words are fine),
+  Boost vs Ads Manager showdown (check what Boost offers today), red flags checklist.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
@@ -109,8 +117,10 @@ personal in here.
   about 0.15s of the voice. Ismael found the old voice's pronunciation and timing bad; this is the fix.
 * Open question to Ismael: voice future reels with ElevenLabs (connected to his account, about
   1,000 characters a reel, free plan about 10,000 a month) instead of Kokoro. No answer yet.
-* Setup in a fresh container: `pip install kokoro soundfile transformers faster-whisper`, plus
-  `espeak-ng`. ffmpeg is at
+* Setup in a fresh container (2026-10-19): system Python may be 3.13, where Kokoro won't build. Use
+  `uv venv -p /usr/bin/python3.11 /home/user/vo-env`, then `VIRTUAL_ENV=/home/user/vo-env uv pip install
+  kokoro soundfile transformers faster-whisper pip` and `/home/user/vo-env/bin/python -m spacy download
+  en_core_web_sm`; run vo.py and rec.mjs with `PATH=/home/user/vo-env/bin:$PATH`. espeak-ng isn't needed. ffmpeg is at
   `/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2`.
   Playwright's Chromium can't decode H.264, so check videos by extracting frames with ffmpeg.
 * Rendered mp4s and covers live in `reports/hopkins-brand/reels/`, which is not in git. A new

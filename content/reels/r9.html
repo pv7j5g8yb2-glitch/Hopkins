@@ -1,0 +1,112 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 9: you don't have an ad problem, you have a one ad problem. Run three, compare cost per
+// lead, move the money to the winner. The numbers are a "say" scenario in the voice.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const V=[["kitchen","The kitchen","#5B4873",42],["backyard","The backyard","#8E6B2C",21],["price","The price","#5B4873",39]];
+const MINI=(id,lbl,ic)=>`<div class="card mini" id="${id}"><div class="mh">${house(id+"h",300,186)}</div><div class="ml">${icon(ic,32,"#2A0F14",2)}${lbl}</div></div>`;
+const R={
+hook:2,
+sfx:[{s:"hit",at:.02,shake:14},{s:"stamp",at:"onead",shake:18},
+ {s:"pop",at:"four"},{s:"pop2",at:"good"},{s:"pop2",at:"bad"},{s:"tick",at:"nothing"},
+ {s:"hit",at:"three",shake:10},{s:"whoosh",at:"p6"},{s:"pop",at:"kitchen"},{s:"pop",at:"backyard"},{s:"pop",at:"price"},
+ {s:"tick",at:"few"},{s:"tick",at:"few",d:.3},{s:"tick",at:"few",d:.6},{s:"select",at:"costperlead"},
+ {s:"ding",at:"half"},{s:"hit",at:"boom",shake:12},{s:"whoosh",at:"winner"},{s:"pop2",at:"kill"},{s:"ding",at:"smarter"}],
+script:[
+ "You don't have an ad problem.",
+ "You have a [one ad] problem.",
+ "You run one ad. ^Four leads.",
+ "Is that ^good? ^Bad? No idea.",
+ "Because there's ^nothing to compare it to.",
+ "So next time, run ^three.",
+ "Same budget, split three ways.",
+ "One with the ^kitchen. One with the ^backyard. One with the ^price.",
+ "Give them a ^few days.",
+ "Then check one number. [Cost per lead.]",
+ "Say the backyard one comes in at about ^half what the others cost.",
+ "^Boom. Now you know what buyers on that street actually care about.",
+ "Move the money to the ^winner. ^Kill the rest.",
+ "And your next listing starts [smarter.]",
+ "Send this to whoever runs one ad and calls it a strategy.",
+],
+css:`
+.mini{width:300px;padding:0;overflow:hidden}.mini .mh{height:170px;overflow:hidden}.mini .mh svg{margin-top:-8px}
+.mini .ml{display:flex;align-items:center;gap:12px;padding:18px 20px;font-size:28px;font-weight:700}
+#one{position:absolute;left:290px;top:700px;transform-origin:center}#one .mini{position:relative;width:500px}#one .mh{height:280px}#one .mh svg{width:500px;height:310px}
+#x1{position:absolute;left:600px;top:640px;opacity:0}
+#x1 span{display:inline-block;background:var(--plum);color:var(--cream);font-size:64px;font-weight:700;padding:12px 34px;border-radius:18px;border:5px solid var(--cream);transform:rotate(10deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#leads{position:absolute;left:0;width:1080px;top:1230px;text-align:center;opacity:0}
+#leads b{font-size:120px;letter-spacing:-.05em}#leads span{display:block;font-size:34px;color:var(--rose);font-weight:700}
+.q{position:absolute;font-family:"Instrument Serif";font-style:italic;font-size:150px;color:var(--lilac);opacity:0}
+.slot{position:absolute;top:760px;width:250px;height:360px;border-radius:24px;border:3px dashed rgba(244,235,221,.25);opacity:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--rose);font-weight:700}
+#trio{position:absolute;left:0;width:1080px;top:640px;display:flex;justify-content:center;gap:24px}
+#trio .mini{position:relative}
+#bud{position:absolute;left:90px;top:1120px;width:900px}
+#bud .h{display:flex;justify-content:space-between;font-size:28px;font-weight:700;color:var(--rose);margin-bottom:14px}
+#bud .tr{display:flex;gap:8px;height:56px}#bud .tr i{flex:1;border-radius:14px;background:var(--gold)}
+#days{position:absolute;left:0;width:1080px;top:1340px;display:flex;justify-content:center;gap:40px}
+#days span{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:26px;font-weight:700;color:var(--rose);opacity:0}
+#cpl{left:110px;top:700px;width:860px;padding:38px 42px}
+#cpl .h{display:flex;justify-content:space-between;align-items:baseline;font-size:34px;font-weight:700;margin-bottom:18px}#cpl .h span{font-size:24px;color:var(--quiet);font-weight:400}
+.cr{display:flex;align-items:center;gap:22px;padding:24px 0;border-top:1px solid rgba(42,15,20,.1);font-size:32px;font-weight:700}
+.cr .nm{width:230px}.cr .bt{flex:1;height:40px;border-radius:12px;background:rgba(42,15,20,.07);overflow:hidden}.cr .bt i{display:block;height:100%;width:0;border-radius:12px;background:var(--plum)}
+.cr .v{width:110px;text-align:right}
+#w2 .bt i{background:var(--gold)}
+#crown{position:absolute;right:-30px;top:-34px;opacity:0}
+#crown span{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:var(--ox);font-size:38px;font-weight:700;padding:14px 26px;border-radius:16px;border:4px solid var(--ox);transform:rotate(8deg)}
+#move{position:absolute;left:0;width:1080px;top:700px;display:flex;justify-content:center;gap:24px}
+#move .mini{position:relative}
+.kx{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(42,15,20,.55);opacity:0}
+#flow{position:absolute;left:90px;top:1150px;width:900px}
+#flow .tr{display:flex;height:56px;border-radius:14px;overflow:hidden;gap:0}#flow .tr i{display:block;height:100%}
+#note{left:150px;top:760px;width:780px;padding:40px 44px;transform:rotate(-2deg)}
+#note .h{font-family:"Instrument Serif";font-style:italic;font-size:60px;line-height:1;margin-bottom:20px}
+#note .ln{font-size:36px;font-weight:700;padding:20px 0;border-top:1px solid rgba(42,15,20,.1);display:flex;gap:18px;align-items:center}
+#snd{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:36px;font-weight:700;color:var(--rose)}
+`,
+scenes:`
+<div class="scene" id="s1"><div id="one">${MINI("o1","Your one ad","home")}</div><div id="x1"><span>×1</span></div>
+ <div id="leads"><b id="ln">0</b><span>leads</span></div>
+ <div class="q" id="q1" style="left:120px;top:1080px">?</div><div class="q" id="q2" style="left:880px;top:1000px">?</div>
+ <div class="slot" id="sl1" style="left:30px">?</div><div class="slot" id="sl2" style="left:800px">?</div></div>
+<div class="scene" id="s2"><div id="trio">${V.map(([id,l],i)=>MINI("m_"+id,l,["form","tree","coin"][i])).join("")}</div>
+ <div id="bud"><div class="h"><span>Same budget</span><span>split three ways</span></div><div class="tr"><i></i><i></i><i></i></div></div>
+ <div id="days">${["Day 1","Day 2","Day 3"].map(d=>`<span>${icon("sun",54,"#D7AE62",1.8)}${d}</span>`).join("")}</div></div>
+<div class="scene" id="s3"><div class="card" id="cpl"><div class="h">Cost per lead<span>lower wins</span></div>
+ ${V.map(([id,l,c,v],i)=>`<div class="cr" id="w${i+1}"><span class="nm">${l}</span><span class="bt"><i></i></span><span class="v">$${v}</span></div>`).join("")}
+ <div id="crown"><span>${icon("check",34,"#2A0F14",3)}Winner</span></div></div></div>
+<div class="scene" id="s4"><div id="move">${V.map(([id,l],i)=>MINI("k_"+id,l,["form","tree","coin"][i])).join("")}</div>
+ <div id="flow"><div class="tr"><i id="f1" style="background:var(--plum)"></i><i id="f2" style="background:var(--gold)"></i><i id="f3" style="background:var(--plum)"></i></div></div></div>
+<div class="scene" id="s5"><div class="card" id="note"><div class="h">14 Oak Street</div>
+ <div class="ln">${icon("check",40,"#8E6B2C",2.6)}The backyard wins here</div><div class="ln">${icon("refresh",40,"#8E6B2C",2)}Next listing: start there</div></div></div>
+<div class="scene" id="s6"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>
+`,
+update(t,C,endAt){
+ // hook: one lonely ad slams in at frame one, then a ×1 stamp at "one ad"
+ vis("#s1",t,-1,C.e4);E.slam("#one",t,-.1,{s:1.35,r:-4});E.slam("#x1",t,C.onead,{s:2.2,r:18});
+ const lk=P(t,C.four,C.four+.5);pop("#leads",lk);$("#ln").textContent=Math.round(4*ease(lk));
+ pop("#q1",P(t,C.good,C.good+.3));pop("#q2",P(t,C.bad,C.bad+.3));
+ [["#sl1",C.nothing],["#sl2",C.nothing+.15]].forEach(([s,a])=>{$(s).style.opacity=ease(P(t,a,a+.3))});
+ // three ads, one budget split three ways, a few days
+ vis("#s2",t,C.p5,C.e8);
+ V.forEach(([id],i)=>{const a=[C.kitchen,C.backyard,C.price][i];E.slam("#m_"+id,t,Math.min(a,C.three+.15*(i+1)),{s:1.3,r:[-6,3,7][i]});
+   $("#m_"+id).style.boxShadow=t>=a&&t<a+.6?"0 0 0 6px var(--gold),0 40px 90px rgba(0,0,0,.45)":""});
+ vis("#bud",t,C.p6,null,{dy:30});const bk=ease(P(t,C.p6+.3,C.p6+.9));$$("#bud .tr i").forEach((b,i)=>{b.style.flex=i===0?1+2*(1-bk):String(bk)});
+ $$("#days span").forEach((d,i)=>pop(d,P(t,C.few+i*.3,C.few+i*.3+.3)));
+ // cost per lead
+ vis("#s3",t,C.p9,C.e11);vis("#cpl",t,C.p9,null);
+ V.forEach(([,, ,v],i)=>{const a=C.costperlead+.2+i*.15;$(`#w${i+1} .bt i`).style.width=(ease(P(t,a,a+.5))*v/42*100)+"%";$(`#w${i+1} .v`).style.opacity=ease(P(t,a+.3,a+.5))});
+ const hk=ease(P(t,C.half,C.half+.3));$("#w2").style.background=`rgba(215,174,98,${.22*hk})`;
+ E.slam("#crown",t,C.boom,{s:2,r:14});
+ // move the money, kill the rest
+ vis("#s4",t,C.p12,C.e12+.2);
+ const wk=inout(P(t,C.winner,C.winner+.8));$("#f1").style.width=(33.3*(1-wk))+"%";$("#f3").style.width=(33.3*(1-wk))+"%";$("#f2").style.width=(33.4+66.6*wk)+"%";
+ V.forEach(([id],i)=>{const m=$("#k_"+id);if(i===1){m.style.transform=`scale(${1+.12*wk})`;m.style.boxShadow=`0 0 0 ${6*wk}px var(--gold),0 40px 90px rgba(0,0,0,.45)`}
+   else{const kk=ease(P(t,C.kill+i*.06,C.kill+i*.06+.3));m.style.opacity=1-.6*kk;m.style.transform=`scale(${1-.12*kk}) rotate(${(i?6:-6)*kk}deg)`}});
+ vis("#s5",t,C.p13,C.e13+.1);vis("#note",t,C.p13,null,{dy:40});
+ vis("#s6",t,C.p14,endAt);draw("#snd path",P(t,C.p14,C.p14+.7));
+}};
+E.boot(R);
+render(0);
+</script></body></html>
