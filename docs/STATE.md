@@ -72,6 +72,21 @@ personal in here.
   then compare average watch time in Insights and make more of what holds people. Old reels get
   reposted only if re-edited with a new hook, not as exact copies. Test Trial Reels (shown to
   non followers first) for hook testing.
+* Reel idea queue (2026-10-19, Ismael wants a creative hook plus a real tip, helpful, not
+  self promoting; end with "Follow @gethopkins" only). Each tip needs a fact check before it is made:
+  1. "Meta won't let you target a ZIP code for homes" and what to do instead (Housing special ad
+     category: no age, gender or ZIP, a minimum location radius, so the ad's first line has to name the
+     neighbourhood; check the current radius figure).
+  2. "Three more words that get a listing ad flagged" (follow up to Reel 3: walking distance, safe
+     neighbourhood, master bedroom; check against current fair housing guidance).
+  3. "Stop touching your ad" (big edits restart Meta's learning, so give it a few days and change one
+     thing at a time; check the current wording of the learning phase).
+  4. "Your Just Listed ad is the most boring thing on the internet" (lead with the one thing one buyer
+     wants, weak vs strong, labelled by outcome).
+  5. "You don't have an ad problem, you have a one ad problem" (run three different ads, compare cost
+     per lead, Wanamaker).
+  Recommended order: 1, 2, 3. Trial Reels are locked at his follower count; following the account from
+  his own two personal accounts is fine but changes nothing for reach.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
