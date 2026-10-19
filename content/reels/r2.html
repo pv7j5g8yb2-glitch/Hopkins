@@ -4,7 +4,11 @@
 const {$,$$,P,ease,inout,vis,pop,draw,count,icon,house}=E;
 const notes=[...Array(10)].map((_,i)=>`<div class="note" id="no${i}"><span>$</span><em>?</em></div>`).join("");
 const R={
+hook:1,
+sfx:[{s:"hit",at:.02,shake:12},...[...Array(10)].map((_,i)=>({s:"tick",at:-.02+i*.035,g:.8})),{s:"stamp",at:"wasted",shake:14},
+ {s:"select",at:"p1"},{s:"whoosh",at:"whichhalf"}],
 script:[
+ "Which half of your ad money is [wasted?]",
  "Around 1900, ^John Wanamaker",
  "is said to have admitted",
  "half his ad money was [wasted.]",
@@ -160,29 +164,30 @@ scenes:`
 `,
 update(t,C,endAt){
  // 1 store + notes
- vis("#s1",t,0,C.e3);draw("#store path,#store rect,#store circle",P(t,.2,1.4));
- R.notes.forEach((n,i)=>{const k=E.back(P(t,C.p1+i*.06,C.p1+.4+i*.06));let x=n.x,y=n.y;
+ vis("#s1",t,-1,C.e4);draw("#store path,#store rect,#store circle",P(t,C.p1,C.p1+1));$("#store").style.opacity=ease(P(t,C.p1-.1,C.p1+.3));
+ // hook: the notes rain in at frame one and half turn plum on "wasted"
+ R.notes.forEach((n,i)=>{const k=E.back(P(t,-.1+i*.035,.1+i*.035));let x=n.x,y=n.y;
    const w=ease(P(t,C.wasted,C.wasted+.4));const q=ease(P(t,C.whichhalf,C.whichhalf+.5));
    const sh=Math.sin((t-C.whichhalf)*6+i)*28*q;
-   n.el.style.opacity=E.clamp(k*2);n.el.style.transform=`translate(${x+sh}px,${y+(1-k)*60+Math.cos((t-C.whichhalf)*5+i)*16*q}px) rotate(${n.r}deg)`;
+   n.el.style.opacity=E.clamp(k*4);n.el.style.transform=`translate(${x+sh}px,${y+Math.cos((t-C.whichhalf)*5+i)*16*q}px) rotate(${n.r*(2.5-1.5*k)}deg) scale(${1.6-.6*k})`;
    const bad=i%2===0;n.el.style.background=`color-mix(in srgb,var(--plum) ${(bad?w*(1-q):0)*100}%,var(--cream))`;
    n.el.querySelector("span").style.opacity=1-q;n.el.querySelector("em").style.opacity=q});
  // 2 Hopkins coupons
- vis("#s2",t,C.p4,C.e8);vis("#book",t,C.p4,C.p6);
- vis("#clips",t,C.p6,null);
- R.envs.forEach(e=>{const q=E.clamp((t-C.p7-e.d)/.9);const tx=e.b?760:320,ty=1180;const sx=e.b?760:320,sy=960;
+ vis("#s2",t,C.p5,C.e9);vis("#book",t,C.p5,C.p7);
+ vis("#clips",t,C.p7,null);
+ R.envs.forEach(e=>{const q=E.clamp((t-C.p8-e.d)/.9);const tx=e.b?760:320,ty=1180;const sx=e.b?760:320,sy=960;
    e.el.style.opacity=q>0&&q<1?1:0;e.el.style.transform=`translate(${sx+(tx-sx)*q-30}px,${sy+(ty-sy)*q-40*Math.sin(q*Math.PI)}px) scale(${1-.4*q})`});
- vis("#tA",t,C.p7+.2,null,{dy:30});vis("#tB",t,C.p7+.3,null,{dy:30});
- count("#nA",P(t,C.p7+.3,C.p8+.6),0,37);count("#nB",P(t,C.p7+.3,C.p8+.6),0,112);
+ vis("#tA",t,C.p8+.2,null,{dy:30});vis("#tB",t,C.p8+.3,null,{dy:30});
+ count("#nA",P(t,C.p8+.3,C.p9+.6),0,37);count("#nB",P(t,C.p8+.3,C.p9+.6),0,112);
  const sb=ease(P(t,C.whichadsold,C.whichadsold+.4));$("#clB").style.boxShadow=`0 0 0 ${6*sb}px #D7AE62,0 30px 70px rgba(0,0,0,.45)`;
  // 3 Ads Manager
- vis("#s3",t,C.p13,C.e14);vis("#am",t,C.p13,null);
- const cm=inout(P(t,C.p14,C.abtest));$("#cur").style.opacity=E.clamp(P(t,C.p14-.2,C.p14)*3);$("#cur").style.transform=`translate(${880-260*cm}px,${1000-330*cm}px) scale(${1-.15*Math.sin(P(t,C.abtest,C.abtest+.25)*Math.PI)})`;
+ vis("#s3",t,C.p14,C.e15);vis("#am",t,C.p14,null);
+ const cm=inout(P(t,C.p15,C.abtest));$("#cur").style.opacity=E.clamp(P(t,C.p15-.2,C.p15)*3);$("#cur").style.transform=`translate(${880-260*cm}px,${1000-330*cm}px) scale(${1-.15*Math.sin(P(t,C.abtest,C.abtest+.25)*Math.PI)})`;
  $("#abt").style.transform=`scale(${1-.08*Math.sin(P(t,C.abtest,C.abtest+.25)*Math.PI)})`;
  vis("#abp",t,C.abtest+.25,null,{dy:40});
  // 4 one thing
- vis("#s4",t,C.p18,C.e21);
- ["#c1","#c2","#c3"].forEach((c,i)=>{vis(c,t,C.p18+i*.12,null,{dy:20,blur:8});const sel=i===0?ease(P(t,C.onething,C.onething+.3)):0;
+ vis("#s4",t,C.p19,C.e22);
+ ["#c1","#c2","#c3"].forEach((c,i)=>{vis(c,t,C.p19+i*.12,null,{dy:20,blur:8});const sel=i===0?ease(P(t,C.onething,C.onething+.3)):0;
    const all=ease(P(t,C.once,C.once+.3));const k=Math.max(sel,all*(i===0?1:1));
    $(c).style.background=k>.5?(all>.5?"var(--plum)":"var(--gold)"):"transparent";$(c).style.color=k>.5&&all<.5?"var(--ox)":"var(--cream)";$(c).style.borderColor=k>.5?(all>.5?"var(--plum)":"var(--gold)"):"var(--rose)";
    if(i===0&&sel>.5&&all<.5)$(c).style.boxShadow="0 0 40px rgba(215,174,98,.5)";else $(c).style.boxShadow="none"});
@@ -193,36 +198,36 @@ update(t,C,endAt){
  $("#pB .s").textContent=ms>.5?"Version B · dusk photo, new line, new offer":"Version B · dusk photo";
  vis("#mess",t,C.whatworked,null,{dy:30,blur:10});
  // 5 a week
- vis("#s5",t,C.p22,C.e23);vis("#cal",t,C.p22,null);
+ vis("#s5",t,C.p23,C.e24);vis("#cal",t,C.p23,null);
  [...Array(7)].forEach((_,i)=>{$("#d"+i+" i").style.height=(100*ease(P(t,C.atleastaweek+i*.18,C.atleastaweek+.25+i*.18)))+"%";$("#d"+i).style.color=P(t,C.atleastaweek+i*.18,C.atleastaweek+.25+i*.18)>.5?"var(--ox)":""});
  vis("#hands",t,C.touch,null,{dy:30});draw("#lockI path,#lockI rect",P(t,C.touch,C.touch+.6));
  // 6 scoreboard
- vis("#s6",t,C.p24,C.e25);vis("#sb",t,C.p24,null);
- const sk=P(t,C.p24+.3,C.p24+1.4);count("#lA",sk,0,412);count("#lB",sk,0,128);count("#pA2",sk,0,48,v=>"$"+Math.round(v));count("#pB2",sk,0,22,v=>"$"+Math.round(v));
+ vis("#s6",t,C.p25,C.e26);vis("#sb",t,C.p25,null);
+ const sk=P(t,C.p25+.3,C.p25+1.4);count("#lA",sk,0,412);count("#lB",sk,0,128);count("#pA2",sk,0,48,v=>"$"+Math.round(v));count("#pB2",sk,0,22,v=>"$"+Math.round(v));
  const lk=ease(P(t,C.likes,C.likes+.3));$("#lA").style.color=`color-mix(in srgb,var(--quiet) ${lk*100}%,var(--ink))`;$("#lB").style.color=$("#lA").style.color;
  $("#pB2").style.color=lk>.5?"var(--bronze)":"";vis("#wtag",t,C.likes+.3,null,{dy:20});
  // 7 loop
- vis("#s7",t,C.p26,C.e27);vis("#lW",t,C.p26,null);draw("#w1 .ln",1);
+ vis("#s7",t,C.p27,C.e28);vis("#lW",t,C.p27,null);draw("#w1 .ln",1);
  $("#lW").style.boxShadow=`0 0 0 5px #D7AE62,0 40px 90px rgba(0,0,0,.45)`;
  vis("#lN",t,C.new,null,{dx:200,dy:0});draw("#w2 .ln",1);
- const rr=P(t,C.p27,C.e27);vis("#ref",t,C.p27+.3,null,{dy:0});draw("#ref path",P(t,C.p27+.3,C.p27+1));$("#ref").style.transform+=` rotate(${rr*360}deg)`;
+ const rr=P(t,C.p28,C.e28);vis("#ref",t,C.p28+.3,null,{dy:0});draw("#ref path",P(t,C.p28+.3,C.p28+1));$("#ref").style.transform+=` rotate(${rr*360}deg)`;
  // quote
- vis("#sQ",t,C.p9,C.e12);vis("#pg",t,C.p9,null,{dy:50});
- [["#q1t",C.p10],["#q2t",C.p11],["#q3t",C.p12]].forEach(([q,a])=>$(q).style.opacity=.15+.85*ease(P(t,a,a+.3)));
+ vis("#sQ",t,C.p10,C.e13);vis("#pg",t,C.p10,null,{dy:50});
+ [["#q1t",C.p11],["#q2t",C.p12],["#q3t",C.p13]].forEach(([q,a])=>$(q).style.opacity=.15+.85*ease(P(t,a,a+.3)));
  $("#hlm").style.backgroundSize=(100*ease(P(t,C.testcampaign,C.testcampaign+.5)))+"% 100%";
  // random split
- vis("#sR",t,C.p15,C.e17);vis("#gA",t,C.p15,null);vis("#gB",t,C.p15+.1,null);
+ vis("#sR",t,C.p16,C.e18);vis("#gA",t,C.p16,null);vis("#gB",t,C.p16+.1,null);
  const sep=ease(P(t,C.dontoverlap,C.dontoverlap+.4));$("#gA").style.borderColor=`rgba(244,235,221,${.12+.5*sep})`;$("#gB").style.borderColor=`rgba(183,157,194,${.12+.7*sep})`;
  R.cr.forEach(d=>{const k=ease(P(t,C.random+d.d*.7,C.random+.5+d.d*.7));d.el.style.transform=`translate(${d.x+(d.tx-d.x)*k}px,${d.y+(d.ty-d.y)*k-60*Math.sin(k*Math.PI)}px)`;
-   d.el.style.background=k>.5?(d.g?"#B79DC2":"#F4EBDD"):"rgba(244,235,221,.45)";d.el.style.opacity=E.clamp(P(t,C.p15,C.p15+.4)*2)});
+   d.el.style.background=k>.5?(d.g?"#B79DC2":"#F4EBDD"):"rgba(244,235,221,.45)";d.el.style.opacity=E.clamp(P(t,C.p16,C.p16+.4)*2)});
  vis("#eq",t,C.fair,null,{dy:0});
  // log
- vis("#sL",t,C.p28,C.e31);vis("#lg",t,C.p28,null);
- ["#lr1","#lr2","#lr3"].forEach((r,i)=>vis(r,t,C.p29+i*.3,null,{dy:20,blur:6}));
+ vis("#sL",t,C.p29,C.e32);vis("#lg",t,C.p29,null);
+ ["#lr1","#lr2","#lr3"].forEach((r,i)=>vis(r,t,C.p30+i*.3,null,{dy:20,blur:6}));
  $$("#lg b").forEach((b,i)=>{if(i<2)b.style.transform=`scale(${1+.25*Math.sin(P(t,C.whichonewon+i*.2,C.whichonewon+.3+i*.2)*Math.PI)})`});
  pop("#pbp",P(t,C.playbook,C.playbook+.35));
  // 8 save
- vis("#s8",t,C.p32,endAt);draw("#bm",P(t,C.p32,C.p32+.7));$("#bm").setAttribute("fill",P(t,C.p32+.7,C.p32+.9)>.5?"#D7AE62":"none");
+ vis("#s8",t,C.p33,endAt);draw("#bm",P(t,C.p33,C.p33+.7));$("#bm").setAttribute("fill",P(t,C.p33+.7,C.p33+.9)>.5?"#D7AE62":"none");
 }};
 E.boot(R);E.dusk('q2');E.dusk('w1');
 R.notes=[...Array(10)].map((_,i)=>({el:$("#no"+i),x:(i%5)*160+10,y:Math.floor(i/5)*130+90,r:(E.rnd()-.5)*8}));

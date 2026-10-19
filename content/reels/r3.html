@@ -3,6 +3,9 @@
 <script>
 const {$,$$,P,ease,inout,vis,pop,draw,count,icon,house}=E;
 const R={
+hook:2,
+sfx:[{s:"hit",at:.03,shake:14},{s:"whoosh",at:.35},{s:"pop",at:.55},{s:"stamp",at:"trouble",shake:16},
+ {s:"pop2",at:"perfect"},{s:"pop2",at:"ideal"},{s:"pop2",at:"adults"},{s:"whoosh",at:"e4",d:-.35}],
 script:[
  "Writing a listing ad?",
  "These words can get you in [trouble.]",
@@ -44,6 +47,8 @@ css:`
 #ed .caret{display:inline-block;width:3px;height:36px;background:var(--plum);vertical-align:-6px;margin-left:2px}
 #bad{position:relative;display:inline-block}#sq{position:absolute;left:0;right:0;bottom:-6px;height:8px}
 #alert{position:absolute;right:30px;top:24px}
+#rstamp{position:absolute;right:-34px;top:-46px;opacity:0}
+#rstamp span{display:inline-flex;align-items:center;gap:12px;background:var(--plum);color:var(--cream);font-size:34px;font-weight:700;padding:16px 26px;border-radius:14px;border:4px solid var(--cream);transform:rotate(-7deg);box-shadow:0 18px 40px rgba(0,0,0,.4)}
 #warn{margin-top:20px;display:flex;gap:14px;align-items:center;font-size:23px;font-weight:700;color:var(--plum);opacity:0}
 .ph3{position:absolute;left:140px;width:800px;padding:30px 34px;display:flex;align-items:center;gap:24px;font-size:38px;font-weight:700;letter-spacing:-.02em}
 .ph3 .x{margin-left:auto}
@@ -86,6 +91,7 @@ scenes:`
 <div class="scene" id="s1"><div class="card" id="ed"><div class="top"><b>New listing ad</b><span>Primary text</span></div>
  <div class="field"><span id="typ1"></span><span id="bad"><span id="typ2"></span><svg id="sq" viewBox="0 0 400 8" preserveAspectRatio="none"><path d="M0 4 Q5 0 10 4 T20 4 T30 4 T40 4 T50 4 T60 4 T70 4 T80 4 T90 4 T100 4 T110 4 T120 4 T130 4 T140 4 T150 4 T160 4 T170 4 T180 4 T190 4 T200 4 T210 4 T220 4 T230 4 T240 4 T250 4 T260 4 T270 4 T280 4 T290 4 T300 4 T310 4 T320 4 T330 4 T340 4 T350 4 T360 4 T370 4 T380 4 T390 4 T400 4" stroke="#5B4873" stroke-width="2.5" fill="none" pathLength="1"/></svg></span><span class="caret"></span>
  <span id="alert">${icon("alert",50,"#5B4873",2)}</span></div>
+ <div id="rstamp"><span>${icon("alert",34,"#F4EBDD",2.4)}Fair housing risk</span></div>
  <div id="warn">${icon("alert",30,"#5B4873",2.2)} Shows a preference for who should live there</div></div></div>
 <div class="scene" id="s2">
  <div class="card ph3" id="f1">${icon("alert",44,"#5B4873",2)}“Perfect for families.”<i class="strk"></i></div>
@@ -120,11 +126,13 @@ scenes:`
 <div class="scene" id="s7"><div id="save"><svg width="170" height="170" viewBox="0 0 24 24" fill="none" stroke="#D7AE62" stroke-width="1.5" stroke-linejoin="round"><path id="bm" d="M6 3h12v18l-6-4.5L6 21Z" pathLength="1"/></svg>Save this</div></div>
 `,
 update(t,C,endAt){
- vis("#s1",t,0,C.e1);
- const t1="Spacious 4 bed home on a quiet street, ",t2="perfect for families.";
- E.type("#typ1",P(t,.3,1.9),t1);E.type("#typ2",P(t,1.9,2.6),t2);
- $("#ed .caret").style.opacity=Math.floor(t*2.2)%2?1:.15;
- draw("#sq path",P(t,C.trouble,C.trouble+.4));const ak=P(t,C.trouble+.1,C.trouble+.5);pop("#alert",ak);draw("#alert path",ak);
+ // hook: the finished ad hits the screen at frame one, the risky words get flagged straight away,
+ // and a stamp slams on at "trouble"
+ vis("#s1",t,-1,C.e1);E.slam("#ed",t,-.1,{s:1.3,r:-4});
+ E.type("#typ1",1,"Spacious 4 bed home on a quiet street, ");E.type("#typ2",1,"perfect for families.");
+ $("#ed .caret").style.opacity=0;
+ draw("#sq path",P(t,.35,.6));const ak=P(t,.55,.8);pop("#alert",ak);draw("#alert path",ak);
+ E.slam("#rstamp",t,C.trouble,{s:1.9,r:-16});
  $("#warn").style.opacity=ease(P(t,C.trouble+.4,C.trouble+.8));
  vis("#s2",t,C.p2,C.e4);
  [["#f1",C.perfect],["#f2",C.ideal],["#f3",C.adults]].forEach(([f,a])=>{vis(f,t,a,null,{dx:-120,dy:0});draw(f+" path",P(t,a+.1,a+.6));$(f+" .strk").style.width=(ease(P(t,C.e4-.6,C.e4-.1))*720)+"px"});

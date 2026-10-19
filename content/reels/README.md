@@ -3,10 +3,13 @@
 Animated explainer reels for @gethopkins, built as HTML and rendered frame by frame to MP4.
 
 * `engine.js`: background, word by word captions, scene helpers, line icons, the line art house, end card.
-* `hooks.js`: each reel's hook (audience line, big hook, one visual, teaser). It is both the cover
-  (`covers.html`) and the reel's first frame: the engine's cold open shows it fully from frame one,
-  then lifts away once the first line is spoken. `R.openUntil:"e1"` holds it longer, `R.open:false`
-  leaves it out.
+* `hooks.js`: each reel's cover text (audience line, big hook, one visual, teaser), used by
+  `covers.html`.
+* The hook: `R.hook` is how many opening lines get the huge slam-in captions (default 2),
+  `E.slam(sel,t,at)` lands an element big and tilted with an overshoot, and `R.sfx` puts sounds on
+  cues, e.g. `{s:"stamp",at:"trouble",shake:16}` (sounds: hit, stamp, whoosh, pop, pop2, tick, ding,
+  select). `rec.mjs` mixes them under the voice with `sfx.py`. Sounds in `sfx/` are Kenney's
+  Interface Sounds (CC0).
 * `r1.html` to `r5.html`: one reel each. The script is the list of caption phrases at the top.
   `[words]` boxes a phrase, `_word_` makes it the serif accent, `^word` makes a timing cue.
 * Stills to check a reel: `node stills.mjs r1.html out_dir auto 24`

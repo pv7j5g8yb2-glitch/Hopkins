@@ -14,6 +14,7 @@ body{font-family:"Inter Tight",sans-serif;-webkit-font-smoothing:antialiased;col
 #grain{position:absolute;inset:0;opacity:.09;mix-blend-mode:overlay;pointer-events:none}
 #wm{position:absolute;top:150px;left:90px;display:flex;align-items:center;gap:14px;font-size:24px;font-weight:700;color:var(--rose)}
 #cap{position:absolute;top:232px;left:80px;width:920px;text-align:center;font-weight:700;font-size:64px;line-height:1.13;letter-spacing:-.025em}
+#cap.hookcap{top:196px;font-size:104px;line-height:1.02;letter-spacing:-.045em}
 .w{display:inline-block;margin:0 .12em}
 .hl{position:relative;padding:0 .16em;border-radius:8px}
 .hl i{position:absolute;width:15px;height:15px;border-radius:50%;background:var(--cream);border:3px solid var(--ox)}
@@ -24,17 +25,6 @@ body{font-family:"Inter Tight",sans-serif;-webkit-font-smoothing:antialiased;col
 .lbl{font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .pill{display:inline-flex;align-items:center;gap:10px;border-radius:40px;padding:10px 20px;font-weight:700;font-size:22px}
 .ico{fill:none;stroke-linecap:round;stroke-linejoin:round}
-#open{position:absolute;inset:0;background:var(--ox);overflow:hidden}
-#open .og{position:absolute;inset:0;background-image:linear-gradient(rgba(244,235,221,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(244,235,221,.035) 1px,transparent 1px);background-size:54px 54px}
-#open .ov{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 40%,rgba(10,2,4,.55) 100%)}
-#open .aud{position:absolute;left:90px;top:330px;font-size:34px;font-weight:700;color:var(--rose)}
-#open .hook{position:absolute;left:84px;top:390px;width:920px;font-size:128px;font-weight:700;line-height:.98;letter-spacing:-.05em;transform-origin:0 0}
-#open .hook em{font-family:"Instrument Serif",serif;font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--gold);font-size:1.12em}
-#open .hook s{text-decoration:none;color:var(--rose)}
-#open .vis{position:absolute;left:0;width:1080px;display:flex;justify-content:center;align-items:center}
-#open .card{position:relative}
-#open .sig{position:absolute;left:90px;top:1560px;display:flex;align-items:center;gap:14px;font-size:28px;font-weight:700;color:var(--rose)}
-#open .tag{position:absolute;right:90px;top:1562px;font-size:28px;color:var(--rose)}
 #end{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 #end .lock{display:flex;align-items:center;gap:30px;margin-top:-60px}
 #end .nm{font-size:132px;font-weight:700;letter-spacing:-.05em;line-height:1}
@@ -60,6 +50,12 @@ E.vis=(sel,t,a,b,o={})=>{const el=typeof sel==="string"?E.$(sel):sel;if(!el)retu
 E.pop=(sel,k)=>{const el=typeof sel==="string"?E.$(sel):sel;if(!el)return;const e=E.back(k);el.style.opacity=E.clamp(k*3);el.style.transform=`scale(${.4+.6*e})`};
 E.draw=(sel,k)=>{(typeof sel==="string"?E.$$(sel):[sel]).forEach(p=>{p.style.strokeDasharray="1 1";p.style.strokeDashoffset=1-E.clamp(k)})};
 E.count=(sel,k,a,b,f=v=>Math.round(v).toLocaleString("en-US"))=>{const el=E.$(sel);if(el)el.textContent=f(a+(b-a)*E.ease(k))};
+// The hook: in the first seconds things hit the screen instead of fading in. slam() lands an
+// element from big and tilted with an overshoot in about a fifth of a second; jolt() gives the
+// frame a short jolt after each time in a list.
+E.slam=(sel,t,a,o={})=>{const el=typeof sel==="string"?E.$(sel):sel;if(!el)return 0;const k=E.P(t,a,a+(o.dur||.22)),e=E.back(k),s=o.s??1.35;
+  el.style.opacity=E.clamp(k*5);el.style.filter="none";el.style.transform=`translate(${o.dx||0}px,${o.dy||0}px) scale(${s+(1-s)*e}) rotate(${(o.r||0)*(1-e)}deg)`;return k};
+E.jolt=(t,times,amp=12)=>{let x=0,y=0;times.forEach(([a,m])=>{const d=t-a;if(d>=0&&d<.3){const f=(m||amp)*(1-d/.3);x+=Math.sin(d*90)*f;y+=Math.cos(d*77)*f*.6}});return [x,y]};
 E.type=(sel,k,text)=>{const el=E.$(sel);if(el)el.textContent=text.slice(0,Math.round(text.length*E.clamp(k)))};
 E.dusk=id=>{const s=document.getElementById(id);if(!s)return;s.querySelector('rect').setAttribute('fill','#3a1f3c');s.querySelector('g').setAttribute('stroke','#F4EBDD');s.querySelector('.sun').setAttribute('fill','#F4EBDD');s.querySelector('.sun').setAttribute('r','26');s.querySelector('.sun').setAttribute('cx','150');s.querySelector('.sun').setAttribute('cy','110');s.querySelector('.sunglow').style.opacity=.25;s.querySelector('.win').setAttribute('stroke','#F4EBDD');s.querySelector('.win').style.filter='drop-shadow(0 0 12px rgba(215,174,98,.9))'};
 E.shake=(k)=>Math.sin(k*Math.PI*5)*10*(1-k)*(k>0&&k<1?1:0);
@@ -140,29 +136,26 @@ function parse(script,RATE=1,TIM=null){
 const REEL=location.pathname.split("/").pop().replace(".html","");
 if(!/notiming/.test(location.search))document.write(`<script src="${REEL}.timing.js"><\/script>`);
 document.write(`<script src="hooks.js"><\/script>`);
-function caption(t,P){
-  const el=E.$("#cap");const p=P.find(p=>t>=p.start&&t<p.end);if(!p){el.innerHTML="";return}
+// The first HOOK phrases are the hook: big, all cream, each word slamming in. The rest build
+// softly at the top.
+function caption(t,P,HOOK=0){
+  const el=E.$("#cap");const pi=P.findIndex(p=>t>=p.start&&t<p.end),p=P[pi];if(!p){el.innerHTML="";return}
+  const big=pi<HOOK;el.classList.toggle("hookcap",big);
   const fo=1-E.P(t,p.end-.12,p.end);let last=-1;p.toks.forEach((w,i)=>{if(t>=w.t)last=i});
   el.innerHTML=p.toks.map((w,i)=>{const e=E.ease(E.P(t,w.t,w.t+.2));
-    let st=`opacity:${e*fo};filter:blur(${(1-e)*10}px);transform:translateY(${(1-e)*14}px);color:${i===last||w.kind?"var(--cream)":"var(--rose)"}`;
+    let st;if(big){const k=E.P(t,w.t-.02,w.t+.12);st=`opacity:${E.clamp(k*6)*fo};transform:scale(${1.45-.45*E.back(k)});color:var(--cream)`}
+    else st=`opacity:${e*fo};filter:blur(${(1-e)*10}px);transform:translateY(${(1-e)*14}px);color:${i===last||w.kind?"var(--cream)":"var(--rose)"}`;
     if(w.kind==="h"){const b=E.ease(E.P(t,w.t,w.t+.25));st+=`;background:rgba(54,21,28,${b});box-shadow:0 0 0 ${3*b}px rgba(244,235,221,${b})`;
       return `<span class="w hl" style="${st}">${w.txt}${b>.05?`<i style="left:-8px;top:-8px;opacity:${b}"></i><i style="right:-8px;bottom:-8px;opacity:${b}"></i>`:""}</span>`}
     if(w.kind==="s")return `<span class="w serif" style="${st};color:var(--gold)">${w.txt}</span>`;
     return `<span class="w" style="${st}">${w.txt}</span>`}).join("");
 }
-// Cold open: the reel's hook from hooks.js, fully on screen from the first frame (no word by word
-// build, since the Reels tab is decided in under a second). It holds while the first line is
-// spoken, then lifts away into the reel. R.open=false leaves it out; R.openUntil picks the cue.
-const openHook=R=>R.open===false||!window.HOOKS?null:HOOKS[REEL]||null;
-function openHtml(R){const h=openHook(R);if(!h)return "";
-  return `<div id="open"><div class="og"></div><div class="ov"></div><div class="aud">${h.aud}</div><div class="hook">${h.hook}</div>${h.vis}
-  <div class="sig"><svg width="44" height="44" viewBox="0 0 120 120">${MARK}</svg>@gethopkins</div><div class="tag">${h.tag}</div></div>`}
 E.boot=(R)=>{
   const st=document.createElement("style");st.textContent=CSS+(R.css||"");document.head.appendChild(st);
   document.body.innerHTML=`<div id="grid"></div><div id="vig"></div>
   <svg id="grain" width="1080" height="1920"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
   <div id="wm"><svg width="44" height="44" viewBox="0 0 120 120">${MARK}</svg>@gethopkins</div><div id="cap"></div>
-  ${R.scenes}${openHtml(R)}
+  ${R.scenes}
   <div id="end"><div class="lock"><svg id="endmark" width="160" height="160" viewBox="0 0 120 120">${MARK}</svg><div class="nm">Hopkins</div></div>
   <div class="cta">${R.cta||"Follow @gethopkins"}</div></div><div id="fade"></div>`;
   const spoken=R.script.map(ph=>typeof ph==="string"?ph:ph.t).join("|");
@@ -171,17 +164,14 @@ E.boot=(R)=>{
   window.SPOKEN={tail:R.tail??.3,signoff:!!R.signoff,text:spoken,phrases:phrases.map(p=>({toks:p.toks.map(k=>k.txt),say:p.say||null,pause:p.pause??null}))};window.TIMED=!!TIM;
   const C=new Proxy(cues,{get:(o,k)=>{if(!(k in o))throw new Error("no cue "+String(k));return o[k]}});
   const endAt=end+(R.tail??.3), D=endAt+3.4;
-  const OH=openHook(R),OE=OH?C[R.openUntil||"e0"]:0;if(OH&&OH.dusk)E.dusk(OH.dusk);
-  const O=OH&&{el:E.$("#open"),hook:E.$("#open .hook"),vis:E.$("#open .vis"),strike:E.$("#open .strike")};
+  // Sound effects on the reel's own clock: R.sfx is a list of {s:sound, at:seconds or cue, d:offset,
+  // g:gain, shake:pixels}. rec.mjs mixes them under the voice with sfx.py.
+  const SFX=(R.sfx||[]).map(x=>({s:x.s,t:(typeof x.at==="string"?C[x.at]:x.at)+(x.d||0),g:x.g??1,shake:x.shake||0}));
+  window.SFX=SFX.map(({s,t,g})=>({s,t,g}));const SHAKES=SFX.filter(x=>x.shake).map(x=>[x.t,x.shake]);
   window.CUES=cues;window.END_AT=endAt;window.DURATION=D;
   window.render=t=>{
-    if(t>=OE)caption(t,phrases);else E.$("#cap").innerHTML="";E.vis("#wm",t,0,endAt,{dy:0,blur:0});
-    if(O){// readable at frame one; the hook settles from a slight push and keeps drifting, the visual
-      // rises, a strike line draws through in the first second, then it all lifts away
-      const k=E.ease(E.P(t,OE,OE+.35));O.el.style.display=t>OE+.4?"none":"block";O.el.style.opacity=1-k;
-      O.el.style.transform=`translateY(${-k*90}px)`;O.el.style.filter=k>0?`blur(${k*8}px)`:"none";
-      const s=E.ease(E.P(t,0,.7));O.hook.style.transform=`scale(${1.05-.05*s+.02*E.P(t,.7,OE)})`;
-      O.vis.style.transform=`translateY(${(1-s)*36}px)`;if(O.strike)O.strike.style.transform=`scaleX(${E.ease(E.P(t,.3,.75))})`}
+    caption(t,phrases,R.hook??2);E.vis("#wm",t,0,endAt,{dy:0,blur:0});
+    const [sx,sy]=E.jolt(t,SHAKES);document.body.style.transform=sx||sy?`translate(${sx}px,${sy}px)`:"none";
     R.update(t,C,endAt);
     // end card
     const ek=E.vis("#end",t,endAt+.15,null,{dy:40});

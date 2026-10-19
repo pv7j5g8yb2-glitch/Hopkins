@@ -97,16 +97,21 @@ the brand.
 * Small audience line on top ("Real estate teams:"), a huge Inter Tight hook with one Instrument
   Serif gold word, one simple visual from the reel, @gethopkins bottom left, a short teaser bottom
   right ("Number 3 is the boost button", "Here's what to write").
-* The hook lives in `content/reels/hooks.js`, one entry per reel. `covers.html` makes the cover
-  from it (`node covers.mjs out_dir`), and the engine shows the same hook as the reel's first frame.
+* Each reel's cover text lives in `content/reels/hooks.js`; `covers.html` makes the cover from it
+  (`node covers.mjs out_dir`). The cover is only ever the cover, never the reel's opening.
 
-## Every reel opens on its hook
+## The first second
 
-Learnt from the first two reels (2026-10-19): the Reels tab is decided in under a second, so frame
-one must already say the whole hook, big, with no word by word build. The engine's cold open shows
-the reel's `hooks.js` entry from frame one, moves something in the first half second (a push in, a
-line striking through), and lifts away into the reel once the first line is spoken
-(`openUntil` picks a later cue). Judge every reel first by skip rate and average watch time.
+Ismael's rule (2026-10-19): the reel's own first second has to be loud and fast, not a title card.
+* Something hits the screen on frame one (the ad, the dollar notes, the options): it lands big and
+  tilted with an overshoot, and a sound.
+* The hook line in huge type, each word slamming in as it's spoken. No soft fades in the hook.
+* A sound effect on every hit and a short jolt of the frame on the key word.
+* The first spoken line is the hook itself (a question or a problem), never background like
+  "Around 1900".
+In the engine: `E.slam`, `E.jolt`, `R.hook` (how many lines get the big type) and `R.sfx` (sounds
+on cues, mixed under the voice by `sfx.py`). Judge every reel first by skip rate and average watch
+time.
 
 ## Every reel ends the same way
 
@@ -203,9 +208,10 @@ two versions when unsure (clean and messy) and let Ismael pick.
 - 2026-10-19 (reels, the first second): Reel 4 reached 84 people, 98.8% of them non-followers from the
   Reels tab, but the average watch was 2 seconds and the skip rate 92.7%, with the watch graph down to
   about a quarter within the first second. Reel 1 got 11 views. The openings built the hook word by
-  word over a mostly empty dark screen, so there was nothing to read when people decided. Every reel
-  now opens on its full hook from frame one (see "Every reel opens on its hook"). The body of the
-  reels was never the issue being measured, since almost nobody reached it.
+  word over a mostly empty dark screen, so there was nothing to read when people decided. The body of the
+  reels was never the issue being measured, since almost nobody reached it. A first fix opened the
+  reels on the cover; Ismael rejected it (the cover stays a cover). The openings now slam the hook
+  in with objects, huge type and sound (see "The first second").
 
 - 2026-10-18 (reels, pace): Captions read at 135 words a minute felt far too slow; the reference
   reels run at about 195. Reels now have a voiceover at about 180 words a minute and the captions
