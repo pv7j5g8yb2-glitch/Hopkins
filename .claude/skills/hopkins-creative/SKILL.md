@@ -131,6 +131,26 @@ Rules: the loop must pay off honestly. Stories are true or clearly labelled ("Sa
 "Example numbers"), never an invented result or a fake "I watched an agent lose $4,000". Arc: hook,
 context, conflict, turning point, resolution, then one share line. Check every fact before it is made.
 
+## Hook formulas (from a generic hook template list Ismael sent, 2026-10-19)
+
+The list is niche agnostic and overused, and some lines ("shocking new data", "game changer", "I lost
+20 pounds") are clickbait or untrue. Use the structures only, never the wording, and only with true
+fill ins. Real estate versions for Hopkins:
+* **You're doing X wrong:** "Your listing ad is probably doing this wrong."
+* **Why it isn't working:** "This is why your listing ad gets views and no enquiries."
+* **Wrong solution:** "3 reasons boosting a post won't sell your listing."
+* **Feature you're not using:** "There's one Meta rule for home ads you're probably ignoring."
+* **Difference between:** "Boosting a post vs running an ad. Let me explain."
+* **Number list, best last:** "5 things I'd check before a listing ad goes live. Number 4 gets skipped."
+* **Authority or history:** "In 1923 a man wrote the rules of advertising. They still apply to your
+  listing ad." (Claude Hopkins.)
+* **Callout:** "Team leaders running listing ads, listen up."
+* **Relatable:** "Please tell me I'm not the only one who dreads Sunday night in Ads Manager."
+* **Reversal:** "More views doesn't mean more enquiries. Here's the one number that does."
+* **Challenge a belief:** "Stop writing 'perfect for families'. Here's what to write." (Reel 3.)
+Avoid: invented stats ("did you know most clicks..."), "I tested" until Hopkins has real tests,
+and attacking agencies (the agency offer is to run alongside one, not to knock it).
+
 ## How reels talk
 
 Ismael's rule (2026-10-19): a reel talks like one person telling a friend or a colleague what they
