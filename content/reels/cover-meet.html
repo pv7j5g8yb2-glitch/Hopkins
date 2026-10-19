@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Clean pinned cover for the launch film: the Hopkins mark and name, "Meet" above, one line below.
+// Everything sits inside the 3:4 grid crop (y 240 to 1680). No call to action, so it can stay pinned.
+const CSS=`
+@font-face{font-family:"Inter Tight";font-weight:400;src:url(../fonts/Inter_Tight_400_normal.woff2)}
+@font-face{font-family:"Inter Tight";font-weight:700;src:url(../fonts/Inter_Tight_700_normal.woff2)}
+@font-face{font-family:"Instrument Serif";font-style:italic;src:url(../fonts/Instrument_Serif_400_italic.woff2)}
+:root{--ox:#2A0F14;--cream:#F4EBDD;--gold:#D7AE62;--rose:#C3A9A2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--ox)}
+body{font-family:"Inter Tight",sans-serif;-webkit-font-smoothing:antialiased;color:var(--cream);position:relative}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 47%,transparent 38%,rgba(10,2,4,.5) 100%)}
+#grain{position:absolute;inset:0;opacity:.09;mix-blend-mode:overlay}
+.meet{position:absolute;left:0;right:0;top:760px;text-align:center;font-family:"Instrument Serif";font-style:italic;font-size:92px;color:var(--gold);letter-spacing:-.01em;line-height:1}
+.lock{position:absolute;left:0;right:0;top:870px;display:flex;justify-content:center;align-items:center;gap:26px}
+.lock .nm{font-size:168px;font-weight:700;letter-spacing:-.06em;line-height:1;padding-bottom:.1em}
+.line{position:absolute;left:0;right:0;top:1120px;text-align:center;font-size:38px;color:var(--rose);letter-spacing:-.01em}
+`;
+const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
+document.body.innerHTML=`<div id="vig"></div><svg id="grain" width="1080" height="1920"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="meet">Meet</div>
+<div class="lock"><svg width="190" height="162" viewBox="14 14 96 82">${E.MARK}</svg><div class="nm">Hopkins</div></div>
+<div class="line">Real estate marketing, from one chat.</div>`;
+</script></body></html>

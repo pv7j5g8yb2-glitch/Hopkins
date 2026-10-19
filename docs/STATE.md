@@ -35,6 +35,9 @@ personal in here.
 * Queue, in this order: Reel 3 (describe the home), Reel 2 (Wanamaker's half), Reel 5 (meet
   Hopkins, the launch reel). Latest versions have the slam-in hooks, the talking voice and the
   fixed voice timing. After those, pin Reel 5, with Reels 1 and 3 beside it.
+* Pinned launch film cover (2026-10-19): `content/reels/cover-meet.html`, rendered with `node covers.mjs out_dir`
+  as `meet.png`. Mark and name, "Meet" in gold serif above, "Real estate marketing, from one chat."
+  below, no call to action so it can stay pinned after launch.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
