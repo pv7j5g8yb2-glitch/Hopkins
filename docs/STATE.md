@@ -50,6 +50,10 @@ personal in here.
   Meta's reach boost claims aren't independently shown. Revisit once there is a registered business
   (it needs ID or business documents matching the account name) and some real traction. Price and
   requirements change, check them on Instagram before deciding.
+* Profile check (2026-10-19 evening): launch film posted and pinned (0 views just after posting), Reel 4 at
+  89 views, Reel 1 at 11, Reel 3 still in Drafts. Highlights set up: Meet, How it works, Breakdown, Story.
+  The grid reads as one brand. On the grid thumbnail only the big hook text is readable; the small
+  audience line, handle and teaser are too small to read, so the hook must carry each cover alone.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
