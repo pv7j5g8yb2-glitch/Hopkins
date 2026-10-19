@@ -25,6 +25,11 @@ r6:{aud:"Real estate teams:",hook:`You can’t pick who sees your listing ad <em
   <span style="position:absolute;right:-26px;top:-36px;background:var(--plum);color:var(--cream);font-size:32px;font-weight:700;padding:12px 22px;border-radius:12px;border:4px solid var(--cream);transform:rotate(-8deg)">Not for homes</span></div></div>`},
 r7:{aud:"Running a listing ad?",hook:`Stop touching your <em>ad.</em>`,tag:"Every edit starts it over",
  vis:`<div class="vis" style="top:1000px;gap:14px">${["Mon","Tue","Wed","Thu","Fri"].map((d,i)=>`<div class="card" style="width:160px;height:250px;display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:24px;${i===0?"":""}"><b style="font-size:30px">${d}</b>${i>0&&i<4?`<span style="font-size:19px;font-weight:700;background:var(--plum);color:var(--cream);padding:8px 10px;border-radius:12px;text-align:center;line-height:1.2;width:136px">${["Photo changed","Headline changed","Budget up"][i-1]}</span>`:""}${i===4?`<span style="font-size:22px;font-weight:700;color:var(--plum);text-align:center;padding:0 12px;line-height:1.2">Ads don’t work?</span>`:""}</div>`).join("")}</div>`},
+r8:{aud:"Your Just Listed ad:",hook:`Would you stop for <em>this?</em>`,tag:"Round 2 is the fix",
+ vis:`<div class="vis" style="top:900px"><div class="card" style="width:720px;overflow:hidden;filter:grayscale(.5);transform:rotate(-3deg)">
+  <div style="padding:24px 28px;font-size:30px;font-weight:700;line-height:1.3">JUST LISTED! 4 bed, 3 bath, 2,400 sq ft. Call today!</div>
+  <div style="height:300px;overflow:hidden">${house("cv8",720,445)}</div></div>
+  <span style="position:absolute;left:580px;top:330px;background:var(--plum);color:var(--cream);font-size:38px;font-weight:700;padding:14px 26px;border-radius:14px;border:4px solid var(--cream);transform:rotate(8deg)">Scrolled past</span></div>`},
 launch:{aud:"Coming soon:",hook:`Every listing ad, from <em>one</em> chat.`,tag:"Meet Hopkins",
  vis:`<div class="vis" style="top:1030px"><div class="card" style="width:840px;padding:30px 34px">
   <div style="display:flex;justify-content:flex-end"><span style="background:var(--plum);color:var(--cream);font-weight:700;font-size:28px;padding:18px 24px;border-radius:24px 24px 6px 24px">Ads for 14 Oak Street.</span></div>

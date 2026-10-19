@@ -1,0 +1,107 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 8: your Just Listed ad reads like a spreadsheet. Round 1 is the specs ad, round 2 the
+// same house sold as a Saturday morning, then three fixes.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const AD=(id,head,txt,cls="")=>`<div class="card ad ${cls}" id="${id}"><div class="hd"><div class="av">ER</div><div><b>elleryrealty</b><div class="sp">Sponsored</div></div></div>
+ <div class="tx">${txt}</div><div class="im">${house(id+"h",760,400)}</div><div class="ft"><b>${head}</b><span class="lm">Learn more</span></div></div>`;
+const R={
+hook:2,
+sfx:[{s:"hit",at:.02,shake:16},{s:"stamp",at:"else",shake:12},
+ {s:"pop2",at:"spreadsheet"},{s:"tick",at:"four"},{s:"tick",at:"three"},{s:"tick",at:"twenty"},
+ {s:"pop",at:"every"},{s:"pop",at:"every",d:.12},{s:"pop",at:"every",d:.24},{s:"pop",at:"every",d:.36},
+ {s:"ding",at:"life"},{s:"hit",at:"roundtwo",shake:14},{s:"whoosh",at:"saturday",d:-.15},{s:"ding",at:"yourself"},
+ {s:"pop",at:"feeling"},{s:"pop",at:"room"},{s:"pop",at:"specs"},{s:"stamp",at:"saturday2",shake:8}],
+script:[
+ "Be honest. Would you stop for this ad?",
+ "Yeah. Neither would anyone [else.]",
+ "Here's the problem.",
+ "It talks about the house like a ^spreadsheet.",
+ "^Four bed, ^three bath, ^twenty four hundred square feet.",
+ "^Every listing in town says that.",
+ "People don't buy square feet. They buy the [life.]",
+ "So, [round two.] Same house.",
+ {t:"^“Saturday mornings on the back porch. Coffee, sun, no traffic.”",pause:.35},
+ "Now you can see ^yourself there.",
+ "Three quick fixes.",
+ "One. Lead with a ^feeling, not the specs.",
+ "Two. Open on the best ^room, not the front door.",
+ "Three. Put the ^specs at the end. The people who care will read them.",
+ "The specs don't sell it. The ^Saturday morning does.",
+ "Send this to whoever writes your listings.",
+],
+css:`
+.ad{left:160px;width:760px;padding:0;overflow:hidden}
+.ad .hd{display:flex;align-items:center;gap:14px;padding:22px 26px;font-size:24px}.ad .av{width:50px;height:50px;border-radius:50%;background:var(--plum);color:var(--cream);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ad .sp{font-size:17px;color:var(--quiet)}
+.ad .tx{padding:0 26px 18px;font-size:29px;line-height:1.35;font-weight:700}
+.ad .im{height:330px;overflow:hidden}.ad .im svg{margin-top:-40px}
+.ad .ft{display:flex;justify-content:space-between;align-items:center;padding:20px 26px;background:var(--paper);font-size:24px}.ad .lm{font-size:20px;font-weight:700;padding:10px 16px;border-radius:10px;background:rgba(42,15,20,.08)}
+#a1{top:640px}
+#zz{position:absolute;left:600px;top:560px;opacity:0}
+#zz span{display:inline-block;background:var(--plum);color:var(--cream);font-size:46px;font-weight:700;padding:16px 28px;border-radius:16px;border:5px solid var(--cream);transform:rotate(8deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#sheet{position:absolute;left:90px;top:780px;width:900px;border-radius:20px;overflow:hidden;background:#fff;color:#222;box-shadow:0 40px 90px rgba(0,0,0,.45)}
+#sheet .r{display:flex}#sheet .c{flex:1;padding:34px 24px;border-right:1px solid #ddd;border-bottom:1px solid #ddd;font-size:44px;font-weight:700;font-family:ui-monospace,Menlo,monospace;opacity:0}
+#sheet .r:first-child .c{background:#eef0f3;font-size:22px;color:#666;opacity:1;font-family:"Inter Tight"}
+#clones{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.cl{position:absolute;width:300px;padding:18px;border-radius:18px;background:var(--cream);color:var(--ink);font-size:21px;font-weight:700;line-height:1.3;box-shadow:0 20px 50px rgba(0,0,0,.4);opacity:0}
+.cl .mi{height:120px;border-radius:10px;overflow:hidden;margin-top:10px}.cl .mi svg{width:300px;height:150px;margin:-15px 0 0 -18px}
+#life{position:absolute;left:0;width:1080px;top:1500px;text-align:center;opacity:0}
+#life b{font-family:"Instrument Serif";font-style:italic;font-weight:400;font-size:110px;color:var(--gold)}
+#rnd{position:absolute;left:0;width:1080px;top:600px;text-align:center;opacity:0}
+#rnd span{display:inline-block;font-size:60px;font-weight:700;padding:14px 36px;border-radius:50px;background:var(--gold);color:var(--ox)}
+#a2{top:720px}
+#a2 .tx{font-size:34px;line-height:1.3}
+#you{position:absolute;left:0;width:1080px;top:1560px;text-align:center;font-size:36px;font-weight:700;color:var(--gold);opacity:0}
+#fx{left:110px;top:680px;width:860px;padding:40px 44px}
+#fx .h{font-family:"Instrument Serif";font-style:italic;font-size:70px;line-height:1;margin-bottom:16px}
+.fr{display:flex;align-items:flex-start;gap:24px;padding:30px 0;border-top:1px solid rgba(42,15,20,.1);font-size:38px;font-weight:700;line-height:1.2}
+.fr .n{width:62px;height:62px;flex:none;border-radius:50%;background:var(--gold);color:var(--ox);display:flex;align-items:center;justify-content:center;font-size:32px}
+.fr small{display:block;font-size:26px;font-weight:400;color:var(--quiet);margin-top:6px}
+#vs{position:absolute;left:0;width:1080px;top:720px;display:flex;justify-content:center;gap:40px}
+.vb{width:420px;height:520px;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;font-size:40px;font-weight:700;text-align:center;padding:30px}
+#vl{border:3px dashed var(--rose);color:var(--rose)}#vw{background:var(--cream);color:var(--ink)}
+#snd{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:36px;font-weight:700;color:var(--rose)}
+`,
+scenes:`
+<div class="scene" id="s1">${AD("a1","4 bed, 3 bath, 2,400 sq ft","JUST LISTED! 4 bed, 3 bath, 2,400 sq ft. Call today!")}<div id="zz"><span>Scrolled past</span></div></div>
+<div class="scene" id="s2"><div id="sheet">
+ <div class="r"><div class="c">A</div><div class="c">B</div><div class="c">C</div></div>
+ <div class="r"><div class="c" id="v1">4 bed</div><div class="c" id="v2">3 bath</div><div class="c" id="v3">2,400 sq ft</div></div></div>
+ <div id="clones"></div><div id="life"><b>the life.</b></div></div>
+<div class="scene" id="s3"><div id="rnd"><span>Round 2</span></div>${AD("a2","Open Saturday, 11 to 1","Saturday mornings on the back porch. Coffee, sun, no traffic.")}<div id="you">That's the one you'd stop for</div></div>
+<div class="scene" id="s4"><div class="card" id="fx"><div class="h">Three quick fixes</div>
+ <div class="fr" id="x1"><span class="n">1</span><div>Lead with a feeling<small>not the specs</small></div></div>
+ <div class="fr" id="x2"><span class="n">2</span><div>Open on the best room<small>not the front door</small></div></div>
+ <div class="fr" id="x3"><span class="n">3</span><div>Specs at the end<small>the people who care will read them</small></div></div></div></div>
+<div class="scene" id="s5"><div id="vs"><div class="vb" id="vl">${icon("form",110,"#C3A9A2",1.4)}4 bed, 3 bath</div><div class="vb" id="vw">${icon("sun",110,"#8E6B2C",1.4)}Saturday morning</div></div></div>
+<div class="scene" id="s6"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>
+`,
+update(t,C,endAt){
+ // hook: the dull ad hits at frame one, then gets stamped as scrolled past
+ vis("#s1",t,-1,C.e1);E.slam("#a1",t,-.1,{s:1.3,r:4});E.slam("#zz",t,C.else,{s:2,r:16});
+ $("#a1").style.filter=`grayscale(${ease(P(t,C.else,C.else+.4))*.7})`;
+ // the spreadsheet, then every listing in town looking the same
+ vis("#s2",t,C.p2,C.e6);vis("#sheet",t,C.spreadsheet-.1,null,{dy:40});
+ [["#v1",C.four],["#v2",C.three],["#v3",C.twenty]].forEach(([v,a])=>pop(v,P(t,a,a+.25)));
+ $("#sheet").style.opacity=Math.min(+$("#sheet").style.opacity||0,1-ease(P(t,C.every-.1,C.every+.2))*.75);
+ R.cl.forEach((c,i)=>{const a=C.every+i*.12;pop(c,P(t,a,a+.3));c.style.transform+=` rotate(${c.dataset.r}deg)`});
+ pop("#life",P(t,C.life,C.life+.35));
+ // round two
+ vis("#s3",t,C.p7,C.e9);E.slam("#rnd",t,C.roundtwo,{s:1.8,r:-8});
+ vis("#a2",t,C.saturday-.15,null,{dy:160});E.dusk("a2h");pop("#you",P(t,C.yourself,C.yourself+.4));
+ const gk=ease(P(t,C.yourself,C.yourself+.3));$("#a2").style.boxShadow=`0 40px 90px rgba(0,0,0,.45),0 0 0 ${7*gk}px rgba(215,174,98,${gk})`;
+ // fixes
+ vis("#s4",t,C.p10,C.e13);vis("#fx",t,C.p10,null);
+ [["#x1",C.p11],["#x2",C.p12],["#x3",C.p13]].forEach(([x,a])=>vis(x,t,a,null,{dx:-60,dy:0,blur:6}));
+ vis("#s5",t,C.p14,C.e14+.1);vis("#vl",t,C.p14,null,{dx:-80,dy:0});vis("#vw",t,C.saturday2-.1,null,{dx:80,dy:0});
+ $("#vl").style.opacity=Math.min(+$("#vl").style.opacity,1-.6*ease(P(t,C.saturday2,C.saturday2+.3)));
+ $("#vw").style.boxShadow=`0 0 0 ${7*ease(P(t,C.saturday2,C.saturday2+.3))}px var(--gold)`;
+ vis("#s6",t,C.p15,endAt);draw("#snd path",P(t,C.p15,C.p15+.7));
+}};
+E.boot(R);
+R.cl=[];{const f=$("#clones");[[60,660,-6],[720,640,5],[390,900,-3],[50,1150,4],[730,1130,-5],[390,1380,3]].forEach(([x,y,r],i)=>{const el=document.createElement("div");el.className="cl";el.dataset.r=r;el.style.left=x+"px";el.style.top=y+"px";
+ el.innerHTML=`JUST LISTED! ${[4,3,5,4,3,4][i]} bed, ${[3,2,3,2,2,3][i]} bath. Call today!<div class="mi">${house("c"+i,300,186)}</div>`;f.appendChild(el);R.cl.push(el)})}
+render(0);
+</script></body></html>
