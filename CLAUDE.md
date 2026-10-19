@@ -7,6 +7,9 @@ it as a fit check for new ideas.
 
 Read `docs/STATE.md` at the start of every session: it has the current state, what's in flight,
 and the small details from earlier sessions. Keep it up to date when anything in it changes.
+Whenever something important or valuable comes up (a decision, a preference, a lesson, a plan,
+a finding), save it straight away without asking: rules go in this file, creative learnings in the
+playbook, state and plans in `docs/STATE.md`, then commit and push (Ismael, 2026-10-19).
 
 ## Git
 

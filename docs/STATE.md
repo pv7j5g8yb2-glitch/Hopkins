@@ -100,6 +100,25 @@ personal in here.
   photos and details in, three ad versions out, feed and story previews, changes made in the chat.
   The film's interface (sidebar, chat, three versions, preview panel, leads table, Monday report)
   is the design reference.
+* Design decisions for the build (2026-10-19, after an outside critique Ismael shared):
+  * **Hopkins messages first.** Agents forget to open apps, and that's the main churn risk. When
+    there's something to do (a new listing, an open house, a price change, a losing ad), Hopkins
+    sends the agent a message with the ads ready: "Your new listing on Oak Street is live. Here are
+    3 ads, $200 over 10 days. Run them?" One tap to approve. The chat stays for anything custom.
+    The first trigger can be the agent forwarding a listing link; MLS feeds come later (access
+    usually needs a broker or vendor agreement).
+  * **Leads first, not ad stats.** The Monday report leads with leads and cost per lead ("7 leads,
+    $21 each, 2 asked for a showing"), and new leads reach the agent's phone within seconds.
+  * **The moat is the testing record.** Store every test from day one: the listing type, city,
+    creative pattern, audience setting, spend, leads, cost per lead and the winner. Over time
+    Hopkins knows what wins for which listing where, and a copy of the chat screen can't match that.
+  * **Housing rules built in**: the Housing special ad category, no age, gender or ZIP targeting,
+    fair housing wording checks.
+  * **Later, carefully:** automatic texting of leads runs into US texting law (TCPA, heavy fines),
+    so it's not an early feature.
+  * Competitors doing parts of this: Ylopo, Lofty (formerly Chime) and Rechat, big all-in-one
+    platforms (CRM, website, lead generation, ads), mostly on long contracts. Hopkins' difference:
+    one chat, the agent's own ad account, a flat price with no cut of spend, testing first.
 * `platform/` is an older booking system from before Hopkins. It is not the Hopkins product.
 * Meta: running ads on other people's accounts needs App Review for advanced access
   (ads_management, ads_read, leads_retrieval, pages_show_list, pages_read_engagement,
