@@ -19,9 +19,13 @@ Animated explainer reels for @gethopkins, built as HTML and rendered frame by fr
 ## Voiceover
 
 * `python3 vo.py r1` speaks the caption phrases with Kokoro (free, open source, Apache 2.0; needs
-  `pip install kokoro soundfile` and `espeak-ng`). It writes `r1.wav` and `r1.timing.js`, and the
-  captions and every scene cue then follow the voice word by word. Default voice `af_heart` at
-  speed 1.2, about 180 words a minute. Other voices: `python3 vo.py r1 am_michael 1.2`.
+  `pip install kokoro soundfile transformers` and `espeak-ng`). It writes `r1.wav` and `r1.timing.js`.
+  Each sentence is spoken in one go, trimmed by its actual sound and followed by the same short
+  pause, so the rhythm stays even. Caption times come from forced alignment (wav2vec2, downloaded on
+  first run), which matches the script letter by letter against the audio. Default voice
+  `af_heart` at speed 1.1, about 190 words a minute. Other voices: `python3 vo.py r1 am_michael 1.1`.
+* Words the voice gets wrong are fixed in `FIXES` at the top of `vo.py` (years like 1900, ChatGPT,
+  A/B, HUD). The captions keep the written form. Add a fix there when a reel mispronounces something.
 * A phrase can be spoken differently from how it's shown: `{t:"[#perfectforfamilies] says...",
   say:"Hashtag perfect for families says..."}`.
 * Change a script, run `vo.py` again. A stale timing file is ignored and the reel falls back to
