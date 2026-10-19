@@ -158,6 +158,31 @@ fill ins. Real estate versions for Hopkins:
 Avoid: invented stats ("did you know most clicks..."), "I tested" until Hopkins has real tests,
 and attacking agencies (the agency offer is to run alongside one, not to knock it).
 
+### More hooks, and the psychology behind them (second batch from Ismael, 2026-10-19)
+
+People stop for five things: something that threatens their peace (pain, fear, loss), a benefit
+(money, status, ease), a broken pattern (unexpected, paradoxical), a feeling (laughter, anger, awe),
+and their own topic. People scan, so a hook has to make them think "wait, what?" or "that's me".
+Unfinished stories pull hardest, so open a gap and close it at the end. Use the viewer's own words
+and "you" more than "I". Hopkins versions, all needing true content:
+* **Showdown:** "Boost vs Ads Manager. The ultimate showdown." A fun two sided format, one point per
+  round, a winner at the end.
+* **Is it worth it?** "Boosting a listing post. Is it worth the effort?"
+* **Panic?** "Listing sat for three weeks? Here's what to check before you spend more."
+* **Don't be the last:** "Don't be the last team to find out what a listing ad costs per lead."
+* **Misconception:** "The biggest misconception about listing ads."
+* **Red flags:** "The biggest red flags in a listing ad", shown as a checklist that gets ticked.
+* **Why still:** "Why are you still doing Sunday nights in Ads Manager when it could be one message?"
+* **Unpopular opinion / I hate to admit it / please stop doing this / this will make you rethink.**
+Not usable as written: "I tried this so you don't have to", "my customers swear by", "I should be
+charging for this", "here's what happened when I dedicated a week" (only after Hopkins really has
+done it, with the real result), invented results like "7X ROAS" or "$200k", and "feels illegal to
+know" or "I'm about to expose" (clickbait the reel can't pay off).
+The sales course pages Ismael also sent (hijack their mind, NLP, yes ladders, buying frenzy, manufactured
+urgency) are manipulation and partly pseudoscience. They clash with a quiet expert brand and with
+"nothing goes live without your yes". Keep only the sound parts: the five attention triggers,
+information gaps, the customer's own language, and storytelling.
+
 ## How reels talk
 
 Ismael's rule (2026-10-19): a reel talks like one person telling a friend or a colleague what they
