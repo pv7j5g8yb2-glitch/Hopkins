@@ -5,6 +5,13 @@ in flight, and the small details that are easy to lose. Update it whenever somet
 The repo is public: never put passwords, keys, the admin password, the ntfy topic or anything
 personal in here.
 
+## Repo
+
+* Default branch (set by Ismael, 2026-10-19): `claude/exciting-wright-8ml9uc`. Everything Hopkins
+  lives here, and Render deploys the waitlist from it. Work and push on this branch.
+* Other branches are from before Hopkins. `claude/focused-hawking-caz4gv` holds the DEIZ booking
+  platform (the only copy); ask Ismael before deleting it.
+
 ## Working with Ismael
 
 * He posts 2 reels a day on @gethopkins, Irish morning and Irish afternoon (suggested 1pm and 6pm
