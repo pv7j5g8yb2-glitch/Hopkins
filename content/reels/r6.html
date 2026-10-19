@@ -1,0 +1,145 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 6: you can't pick who sees your listing ad. The 2019 settlement took age, gender and ZIP
+// targeting away from housing ads (checked 2026-10-19, see docs/STATE.md), so the first line does
+// the targeting now.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const ROWS=[["Age","25 to 45","age"],["Gender","Women","gender"],["ZIP code","78704","zip"],["Location","Austin, TX",""]];
+const R={
+hook:2,
+sfx:[{s:"hit",at:.02,shake:16},{s:"stamp",at:"anymore",shake:18},
+ {s:"pop2",at:"age"},{s:"pop2",at:"gender"},{s:"hit",at:"zipcode",shake:12},
+ {s:"whoosh",at:"p2",d:-.1},{s:"stamp",at:"sued",shake:14},{s:"pop",at:"never"},
+ {s:"tick",at:"p4",d:.25},{s:"tick",at:"p4",d:.5},{s:"tick",at:"p4",d:.75},{s:"whoosh",at:"out"},
+ {s:"whoosh",at:"fifteen",d:-.1},{s:"ding",at:"not"},
+ {s:"select",at:"stopsscrolling"},{s:"whoosh",at:"scrolls"},{s:"pop",at:"backyard"},{s:"ding",at:"stop"},
+ {s:"select",at:"first"}],
+script:[
+ "You can't pick who sees your listing ad [anymore.]",
+ "Not by ^age. Not by ^gender. Not even by [ZIP code.]",
+ "In 2019, Facebook got ^sued over housing ads.",
+ "Those settings let some people ^never see homes at all.",
+ "So Facebook ripped them [out.]",
+ "Now a housing ad has to cover at least ^fifteen miles.",
+ "Sounds like bad news, right? It's ^not.",
+ "Because your ad _is_ your targeting now.",
+ "The first line decides who [stops scrolling.]",
+ {t:"“Beautiful home, must ^see!”",pause:.3},
+ "Everyone ^scrolls. That could be any house, anywhere.",
+ {t:"“Walk to the Saturday market, big ^backyard, quiet street.”",pause:.3},
+ "Now the right people [stop.]",
+ "Put the area and the life in the ^first line.",
+ "Send this to whoever writes your ads.",
+],
+css:`
+#aud{left:110px;top:720px;width:860px;padding:40px 44px}
+#aud h3{display:flex;align-items:center;gap:16px;font-size:38px;margin-bottom:14px}
+#aud h3 span{margin-left:auto;font-size:20px;color:var(--quiet);font-weight:400}
+.ar{display:flex;align-items:center;gap:20px;padding:30px 0;border-top:1px solid rgba(42,15,20,.1);font-size:38px;font-weight:700;position:relative}
+.ar .k{width:250px;color:var(--quiet);font-weight:400}.ar .x{position:absolute;left:0;top:52%;height:6px;background:var(--plum);border-radius:3px;width:0}
+#rem{position:absolute;right:-30px;top:-50px;opacity:0}
+#rem span{display:inline-flex;align-items:center;gap:12px;background:var(--plum);color:var(--cream);font-size:40px;font-weight:700;padding:16px 28px;border-radius:14px;border:4px solid var(--cream);transform:rotate(-8deg);box-shadow:0 18px 40px rgba(0,0,0,.4)}
+#doc{left:130px;top:700px;width:820px;padding:44px 48px}
+#doc .d{font-size:21px;color:var(--quiet);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+#doc .h{font-family:"Instrument Serif";font-style:italic;font-size:72px;line-height:1.02;margin:14px 0 26px}
+#doc .ln{height:14px;border-radius:7px;background:rgba(42,15,20,.08);margin-top:14px}
+#sued{position:absolute;right:-40px;bottom:-40px;opacity:0}
+#sued span{display:inline-block;background:var(--gold);color:var(--ox);font-size:64px;font-weight:700;letter-spacing:-.02em;padding:14px 34px;border-radius:16px;border:5px solid var(--ox);transform:rotate(9deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#ppl{position:absolute;left:0;width:1080px;top:1330px;display:flex;justify-content:center;gap:26px}
+.pp{position:relative;width:140px;height:140px;border-radius:50%;background:var(--ox2);display:flex;align-items:center;justify-content:center}
+.pp .no{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0}
+#tog{left:120px;top:740px;width:840px;padding:40px 44px}
+#tog h3{font-size:36px;margin-bottom:10px}
+.tr{display:flex;align-items:center;justify-content:space-between;padding:34px 0;border-top:1px solid rgba(42,15,20,.1);font-size:40px;font-weight:700}
+.sw{width:96px;height:54px;border-radius:27px;background:var(--gold);position:relative;transition:none}
+.sw i{position:absolute;top:6px;left:48px;width:42px;height:42px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+#map{position:absolute;left:90px;top:660px;width:900px;height:900px}
+#mi{position:absolute;left:0;width:1080px;top:1080px;text-align:center}
+#mi b{display:inline-block;font-size:44px;font-weight:700;color:var(--ox);background:var(--gold);padding:12px 26px;border-radius:40px;opacity:0}
+.ph{position:absolute;left:250px;width:580px;height:1060px;border-radius:64px;background:#120507;border:10px solid #3a1d22;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.5)}
+#phone{top:640px}
+.post{position:absolute;left:0;right:0;background:#fff;color:#111;padding:22px 24px}
+.post .hd{display:flex;align-items:center;gap:12px;font-size:21px;font-weight:700}.post .av{width:44px;height:44px;border-radius:50%;background:var(--plum);color:var(--cream);font-size:16px;display:flex;align-items:center;justify-content:center}
+.post .sp{font-size:15px;color:#777;font-weight:400}
+.post .tx{font-size:23px;line-height:1.35;margin:14px 0 14px;position:relative}
+.post .tx b{position:relative;z-index:1}.post .tx .mk{position:absolute;left:-6px;right:-6px;top:-4px;bottom:-4px;border-radius:8px;background:rgba(215,174,98,.55);transform-origin:left;transform:scaleX(0)}
+.post .im{height:330px;border-radius:6px;overflow:hidden}.post .im svg{width:532px;height:330px}
+#tag{position:absolute;left:0;width:1080px;top:1730px;text-align:center;font-size:30px;font-weight:700;color:var(--gold);opacity:0}
+.duo{position:absolute;left:110px;width:860px;padding:28px 32px;display:flex;gap:26px;align-items:center}
+.duo .im2{width:200px;height:150px;border-radius:14px;overflow:hidden;flex:none}.duo .im2 svg{width:240px;height:150px;margin-left:-20px}
+.duo .q{font-size:36px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.duo .lb{position:absolute;right:-24px;top:-30px;font-size:26px;font-weight:700;padding:12px 20px;border-radius:14px;opacity:0;transform:rotate(6deg)}
+#weak{top:700px}#strong{top:1180px}
+#weak .lb{background:var(--plum);color:var(--cream)}#strong .lb{background:var(--gold);color:var(--ox)}
+#flow{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;pointer-events:none}
+.fd{position:absolute;width:64px;height:64px;border-radius:50%;background:rgba(244,235,221,.16);display:flex;align-items:center;justify-content:center}
+#fl{left:100px;top:760px;width:880px;padding:32px 36px}
+#fl .lb3{font-size:20px;color:var(--quiet);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+#fl .fi{min-height:220px;border-radius:16px;background:var(--paper);border:2px solid rgba(42,15,20,.12);padding:26px;font-size:42px;line-height:1.3;font-weight:700}
+#fl .caret{display:inline-block;width:3px;height:38px;background:var(--plum);vertical-align:-6px;margin-left:2px}
+#fl .chips{display:flex;gap:14px;margin-top:20px}#fl .chips span{font-size:24px;font-weight:700;padding:10px 18px;border-radius:24px;background:rgba(215,174,98,.25);color:var(--bronze);opacity:0}
+#snd{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:36px;font-weight:700;color:var(--rose)}
+`,
+scenes:`
+<div class="scene" id="s1"><div class="card" id="aud"><h3>${icon("target",40,"#2A0F14",2)}Audience<span>Listing ad, 14 Oak St</span></h3>
+ ${ROWS.map(([k,v,id])=>`<div class="ar" ${id?`id="r_${id}"`:""}><span class="k">${k}</span><span>${v}</span><i class="x"></i></div>`).join("")}
+ <div id="rem"><span>${icon("x",36,"#F4EBDD",3)}Not for homes</span></div></div></div>
+<div class="scene" id="s2"><div class="card" id="doc"><div class="d">March 2019</div><div class="h">Housing groups v. Facebook</div>
+ <div class="ln" style="width:92%"></div><div class="ln" style="width:80%"></div><div class="ln" style="width:86%"></div><div class="ln" style="width:55%"></div>
+ <div id="sued"><span>Sued</span></div></div>
+ <div id="ppl">${[0,1,2,3,4,5].map(i=>`<div class="pp" id="pp${i}">${icon("user",58,"#F4EBDD",1.7)}<div class="no">${icon("x",70,"#B79DC2",2.6)}</div></div>`).join("")}</div></div>
+<div class="scene" id="s3"><div class="card" id="tog"><h3>Housing ad targeting</h3>
+ ${["Age","Gender","ZIP code"].map((k,i)=>`<div class="tr" id="t${i}"><span>${k}</span><span class="sw"><i></i></span></div>`).join("")}</div></div>
+<div class="scene" id="s4"><svg id="map" viewBox="0 0 900 900"><g id="dots"></g>
+ <circle id="ring" cx="450" cy="450" r="10" fill="rgba(215,174,98,.08)" stroke="#D7AE62" stroke-width="4" stroke-dasharray="14 12"/>
+ <path id="pin" d="M450 455s-34-30-34-56a34 34 0 0 1 68 0c0 26-34 56-34 56Z" fill="#D7AE62"/><circle cx="450" cy="399" r="12" fill="#2A0F14"/></svg>
+ <div id="mi"><b>15 miles, at least</b></div></div>
+<div class="scene" id="s5"><div class="ph" id="phone">
+ <div class="post" style="top:260px"><div class="hd"><div class="av">ER</div><div>elleryrealty<div class="sp">Sponsored</div></div></div>
+ <div class="tx"><span class="mk" id="mk1"></span><b>Walk to the Saturday market, big backyard, quiet street.</b></div>
+ <div class="im">${house("ph1",532,330)}</div></div></div>
+ <div id="tag">The first line does the targeting</div></div>
+<div class="scene" id="s6"><div id="flow"></div>
+ <div class="card duo" id="weak"><div class="im2">${house("w1",240,150)}</div><div class="q">“Beautiful home, must see!”</div><div class="lb">Scrolled past</div></div>
+ <div class="card duo" id="strong"><div class="im2">${house("w2",240,150)}</div><div class="q">“Walk to the Saturday market, big backyard, quiet street.”</div><div class="lb">They stop</div></div></div>
+<div class="scene" id="s7"><div class="card" id="fl"><div class="lb3">First line</div><div class="fi"><span id="ty"></span><span class="caret"></span></div>
+ <div class="chips"><span id="c1">The area</span><span id="c2">The life</span></div></div></div>
+<div class="scene" id="s8"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>
+`,
+update(t,C,endAt){
+ // hook: the audience card hits the screen at frame one, a stamp slams on at "anymore", and the
+ // settings get struck off one by one as they're said
+ vis("#s1",t,-1,C.e1);E.slam("#aud",t,-.1,{s:1.3,r:-4});
+ E.slam("#rem",t,C.anymore,{s:2,r:-18});
+ [["age",C.age],["gender",C.gender],["zip",C.zipcode]].forEach(([id,a])=>{const k=ease(P(t,a,a+.25));
+   $(`#r_${id} .x`).style.width=(k*100)+"%";$(`#r_${id}`).style.opacity=1-.55*k;$(`#r_${id}`).style.transform=`translateX(${E.shake(P(t,a,a+.4))}px)`});
+ vis("#s2",t,C.p2,C.e3);E.slam("#sued",t,C.sued,{s:2.2,r:20});
+ $$(".pp").forEach((p,i)=>{vis(p,t,C.p3+i*.06,null,{dy:30,blur:6});
+   if(i%2){const k=P(t,C.never+.05*i,C.never+.05*i+.3);pop(p.querySelector(".no"),k);p.style.background=`rgba(54,21,28,${1-.6*ease(k)})`}});
+ vis("#s3",t,C.p4,C.e4+.1);
+ [0,1,2].forEach(i=>{const a=C.p4+.25*(i+1),k=ease(P(t,a,a+.18));const sw=$(`#t${i} .sw`);sw.style.background=k>.5?"rgba(42,15,20,.18)":"var(--gold)";sw.querySelector("i").style.left=(48-42*k)+"px";
+   const o=ease(P(t,C.out+i*.07,C.out+i*.07+.35));$(`#t${i}`).style.transform=`translateX(${o*900}px) rotate(${o*14}deg)`;$(`#t${i}`).style.opacity=1-o});
+ vis("#s4",t,C.p5,C.e6);
+ const rk=ease(P(t,C.fifteen-.1,C.fifteen+.9));$("#ring").setAttribute("r",10+400*rk);
+ R.dots.forEach(d=>{const k=ease(P(t,C.fifteen+d.r/400*.9-.1,C.fifteen+d.r/400*.9+.2));d.ci.style.opacity=.15+.7*k;d.ci.setAttribute("r",3+3*k)});
+ pop("#mi b",P(t,C.fifteen+.7,C.fifteen+1));
+ const nk=P(t,C.not,C.not+.4);$("#map").style.transform=`scale(${1+.06*Math.sin(nk*Math.PI)})`;
+ vis("#s5",t,C.p7,C.e8);vis("#phone",t,C.p7,null,{dy:120});
+ $("#mk1").style.transform=`scaleX(${ease(P(t,C.is,C.is+.5))})`;
+ $("#tag").style.opacity=ease(P(t,C.stopsscrolling,C.stopsscrolling+.4));
+ vis("#s6",t,C.p9,C.e12);vis("#weak",t,C.p9,null,{dx:-140,dy:0});
+ const sk=P(t,C.scrolls,C.scrolls+1.6);R.flow.forEach((f,i)=>{const y=1900-(sk*2600)+i*170;f.el.style.top=y+"px";f.el.style.left=f.x+"px";f.el.style.opacity=sk>0&&sk<1?.9:0});
+ pop("#weak .lb",P(t,C.scrolls+.2,C.scrolls+.5));$("#weak").style.opacity=Math.min(+$("#weak").style.opacity,1-.45*ease(P(t,C.p11,C.p11+.3)));
+ vis("#strong",t,C.p11,null,{dx:140,dy:0});pop("#strong .lb",P(t,C.stop,C.stop+.3));
+ const gk=ease(P(t,C.stop,C.stop+.3));$("#strong").style.boxShadow=`0 40px 90px rgba(0,0,0,.45),0 0 0 ${6*gk}px rgba(215,174,98,${gk})`;
+ vis("#s7",t,C.p13,C.e13+.1);E.type("#ty",P(t,C.p13+.1,C.first+.3),"Walk to the Saturday market, big backyard, quiet street.");
+ pop("#c1",P(t,C.p13+.5,C.p13+.8));pop("#c2",P(t,C.p13+.9,C.p13+1.2));
+ vis("#s8",t,C.p14,endAt);draw("#snd path",P(t,C.p14,C.p14+.7));
+}};
+E.boot(R);
+R.dots=[];{const g=$("#dots");for(let r=0;r<20;r++)for(let c=0;c<20;c++){const x=24+c*45+(r%2)*22,y=24+r*45,d=Math.hypot(x-450,y-450);if(x>880||d>410||d<60)continue;
+ const ci=document.createElementNS("http://www.w3.org/2000/svg","circle");ci.setAttribute("cx",x);ci.setAttribute("cy",y);ci.setAttribute("r",3);ci.style.fill="#F4EBDD";ci.style.opacity=.15;g.appendChild(ci);R.dots.push({ci,r:d})}}
+R.flow=[];{const f=$("#flow");for(let i=0;i<16;i++){const el=document.createElement("div");el.className="fd";el.innerHTML=icon("user",36,"#F4EBDD",1.6);f.appendChild(el);R.flow.push({el,x:[60,960,40,980,70,950][i%6]})}}
+render(0);
+</script></body></html>

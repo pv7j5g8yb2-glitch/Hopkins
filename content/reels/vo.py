@@ -30,6 +30,7 @@ def year(m):
     y = int(m.group(0)); return words_for(y // 100) + " hundred" if y % 100 == 0 else words_for(y // 100) + " " + words_for(y % 100)
 FIXES = [
     (r"\b1[1-9]\d\d\b", year),            # 1900 is "nineteen hundred", 1923 "nineteen twenty three"
+    (r"\b20([1-9]\d)\b", lambda m: "twenty " + words_for(int(m.group(1)))),   # 2019 is "twenty nineteen"
     (r"\bChatGPT\b", "Chat G P T"),
     (r"\bA/B\b", "A B"),
     (r"\bHUD\b", "H U D"),

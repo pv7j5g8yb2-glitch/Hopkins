@@ -7,7 +7,7 @@ await p.goto("file://"+process.cwd()+"/"+file); await p.waitForTimeout(1000);
 const D=await p.evaluate(()=>window.DURATION), SFX=await p.evaluate(()=>window.SFX||[]); const N=Math.round(D*FPS);
 for(let i=0;i<N;i++){await p.evaluate(t=>render(t),i/FPS);await p.screenshot({path:`${dir}/f${String(i).padStart(5,"0")}.jpg`,type:"jpeg",quality:93});}
 await b.close();
-const FFMPEG="/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2";
+const FFMPEG=["/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2","/usr/bin/ffmpeg"].find(f=>existsSync(f));
 // voiceover from vo.py, levelled for Instagram, if the reel has one
 // sound effects from the reel's R.sfx go under the voice (sfx.py writes rN.mix.wav)
 const reel=file.replace(".html","");let wav=reel+".wav";
