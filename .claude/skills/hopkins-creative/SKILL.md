@@ -100,6 +100,20 @@ the brand.
 * Each reel's cover text lives in `content/reels/hooks.js`; `covers.html` makes the cover from it
   (`node covers.mjs out_dir`). The cover is only ever the cover, never the reel's opening.
 
+## Captions and hashtags
+
+Ismael asked (2026-10-19): short caption, 5 or 6 hashtags, ones that work inside real estate. My
+answer, from judgement, not measured (nothing here shows live reach per hashtag):
+* Launch reel caption: "Meet Hopkins." and nothing else. The film does the explaining.
+* Use 5 hashtags, specific to the sector, not the giant ones. `#realestate` alone has tens of
+  millions of posts and buries a small account. Starting set: `#realestatemarketing`,
+  `#realestateagents`, `#realestatetech`, `#realestatesocialmedia`, `#realestatebroker`. Never
+  `#realtor` or `#realtorlife` (Realtor is a trademark, see CLAUDE.md).
+* Hashtags do little for reach on their own. Reel 4 got 98.8% of its views from non-followers, 83%
+  from the Reels tab, with no hashtag push: the reel's first second, watch time, shares and saves
+  decide distribution. Keyword words in the caption help search more than tags do.
+* Check which tags bring views in Instagram Insights after a few reels and swap the weak ones out.
+
 ## How reels talk
 
 Ismael's rule (2026-10-19): a reel talks like one person telling a friend or a colleague what they
