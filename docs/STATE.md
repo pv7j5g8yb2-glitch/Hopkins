@@ -147,6 +147,20 @@ personal in here.
     routing, SOC 2 prep) then autopilot, MLS feeds and texting.
   * Use Meta's Marketing API directly. Reporting connectors like Porter or Supermetrics are fine for
     analysis but should not sit in the path that spends money.
+* **Rough overhead (2026-10-19, estimates from list prices, not measured, check before relying):**
+  * Day 1 out of pocket is small, under about $100 a month: Render web and Postgres $15 to $40,
+    object storage pennies, Claude API $10 to $50 while testing (billed separately from Claude Pro),
+    error tracking and email on free tiers, domain about $15 a year (waits for sign ups). Meta's API,
+    App Review and business verification are free. Optional own test ad spend, say $5 to $20 a day.
+  * First Meta testers (5 to 20 teams): about $100 to $400 a month. Stripe fees about 3% of what is
+    charged, no monthly fee.
+  * 50 plus teams: about $1,000 to $4,000 a month, driven mostly by ads and video generated. At $299
+    a month that is roughly $15,000 revenue against that overhead.
+  * One-offs: registered business (needed for Meta verification and Stripe, else a parent's name),
+    privacy policy and terms (Meta requires them; lawyer review optional at first), Apple developer
+    $99 a year only for a native app, SOC 2 only when bigger customers ask.
+  * Unknown until the private build measures it: real cost per listing (model calls plus image and
+    video generation). Needed before setting higher tiers.
 * `platform/` is an older booking system from before Hopkins. It is not the Hopkins product.
 * Meta: running ads on other people's accounts needs App Review for advanced access
   (ads_management, ads_read, leads_retrieval, pages_show_list, pages_read_engagement,
