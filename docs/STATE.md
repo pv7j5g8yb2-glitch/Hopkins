@@ -65,6 +65,13 @@ personal in here.
   tracks can never go in Hopkins ads, so the film's sound should work without them. Also: feed posts and stories
   (carousels like "Join the waitlist", "What you get") get 0 views at zero followers, since they only
   reach followers. Reels are the only discovery route right now.
+* Volume question (2026-10-19, Ismael floated 5 reels a day plus reposting old ones): my read is more
+  shots helps a zero follower account, but 5 a day is not realistic on his Pro weekly limit (each
+  reel needs script, voice, stills check and render, so it is not minutes), and near identical or
+  reposted reels get less reach. Better: 2 to 3 a day, each a different first second on a real problem,
+  then compare average watch time in Insights and make more of what holds people. Old reels get
+  reposted only if re-edited with a new hook, not as exact copies. Test Trial Reels (shown to
+  non followers first) for hook testing.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
