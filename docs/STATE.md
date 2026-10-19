@@ -126,6 +126,27 @@ personal in here.
   * Competitors doing parts of this: Ylopo, Lofty (formerly Chime) and Rechat, big all-in-one
     platforms (CRM, website, lead generation, ads), mostly on long contracts. Hopkins' difference:
     one chat, the agent's own ad account, a flat price with no cut of spend, testing first.
+* **Backend stack decision (2026-10-19): start small, keep a few things fixed from day one.**
+  * Fixed from day one, because they are costly to change later: the testing record schema (the
+    moat), tenant isolation (every row belongs to a team), the approval gate, hard budget caps, Meta
+    tokens encrypted and never shown to the model, an append only audit log, and all Meta calls
+    behind one interface.
+  * Safety lives in code, not in prompts. The model only proposes actions as structured objects.
+    A separate ads gateway checks them (Housing category forced, no banned targeting, caps per ad
+    set, day and month, a single use approval token tied to the exact payload) and is the only thing
+    that talks to Meta. Ads are created paused and switched on only after the yes.
+  * Money: the agent's own card on their own ad account, so ad spend never passes through Hopkins.
+  * Answers: Claude through the API with tool use, strongest model for the chat and copy, a small
+    model for checks, prompt caching, a fixed test set for fair housing wording.
+  * Creatives: real listing photos are the hero, laid out by HTML templates rendered in headless
+    Chromium (same engine as the reels). Image models only for clean up, reframing, and staging
+    (always labelled). Video by Remotion or ffmpeg. An automated check runs before the agent sees it.
+  * Stages: private build (one TypeScript service on Fastify, Postgres, object storage, a simple
+    queue, Claude API) then first Meta testers (add the gateway module, Stripe, error tracking)
+    then 50 plus teams (own gateway service, durable workflows such as Temporal, a warehouse, model
+    routing, SOC 2 prep) then autopilot, MLS feeds and texting.
+  * Use Meta's Marketing API directly. Reporting connectors like Porter or Supermetrics are fine for
+    analysis but should not sit in the path that spends money.
 * `platform/` is an older booking system from before Hopkins. It is not the Hopkins product.
 * Meta: running ads on other people's accounts needs App Review for advanced access
   (ads_management, ads_read, leads_retrieval, pages_show_list, pages_read_engagement,
