@@ -46,6 +46,10 @@ personal in here.
   decides whether it widens. Likes from strangers at that size aren't expected, retention is the
   signal. Discovery should come from hook first problem reels (playbook), and early sign ups from him
   showing it directly to real estate people he can reach, not from the algorithm.
+* Meta Verified (paid blue badge), asked 2026-10-19: not now. It won't fix a 2 second average watch, and
+  Meta's reach boost claims aren't independently shown. Revisit once there is a registered business
+  (it needs ID or business documents matching the account name) and some real traction. Price and
+  requirements change, check them on Instagram before deciding.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
