@@ -122,6 +122,17 @@ personal in here.
   doesn't work. The pitch is testing and cost per lead, not "run ads". Don't claim Hopkins fixes
   results; claim it tests three versions and shows what each lead cost. Next: ask what they tried, then
   offer first access for two of his agents on one real listing each.
+* Outreach plan (2026-10-20): Ismael searched Meta Ad Library (US, housing) for agents running listing ads
+  right now, to follow from @gethopkins and offer a free test for feedback. Read of the results: lots of
+  agents do run paid ads. Many are platform made (Adwerx "RE/MAX powered by Adwerx", BackAtYou, AdFenix,
+  Listing4 style): plain "For Sale" with no copy, run by the brokerage tool, so the agent may not control
+  them. Others are lead magnet ads ("free list of homes", instant form) and a few agents already run
+  several variants (Reed Perry, Spokane, 7 versions of one concept), so they already test. Best targets:
+  independent agents or small teams running one or two weak manual ads for more than a week. Filter by
+  longer running ads, not the "started today" ones. Spanish language agents are common (Hopkins is English
+  only). Pace 10 to 15 contacts a day to stay clear of Instagram limits, one specific observation in each
+  first message, one yes or no ask. Expect a low reply rate. The free test must be something he can deliver
+  (manual test: three versions, they run them, he records leads and cost).
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
