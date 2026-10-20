@@ -109,6 +109,15 @@ personal in here.
   2026-10-20: he said his agents post "more organic". So paid ads are the gap. Next ask: why (hassle,
   cost, or tried and saw nothing), since that decides the pitch. After that, offer him and a few of his
   agents first access when it opens, with the real waitlist offer (30% off the first year).
+  Profile read (2026-10-20, from his highlights): Montreal area studio, bilingual, team of three on camera
+  (co-founder, creative director "pat_keystone", head videographer). Films talking head content and some
+  listing videos for RE/MAX, eXp, Royal LePage agents and mortgage brokers, a few in the US (Fort
+  Lauderdale, Fairway Mortgage). Sells by "Book a call". Linked to Sasha Bordonaro, a Montreal social
+  media coach (podcast guest on Les Courtiers du Québec) who runs a marketing bootcamp under "Sociable
+  Marketing Agency"; the REVIEWS highlight is mostly her bootcamp reviews. Every win shown is views,
+  followers or one "new client from the videos"; nothing about ads, leads or cost per lead. No web
+  presence found beyond Instagram. Fit: a channel (his videos as ad creative for his clients, Hopkins
+  measures leads), not a competitor. Watch: he could also want to resell ads management himself.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
