@@ -118,6 +118,10 @@ personal in here.
   followers or one "new client from the videos"; nothing about ads, leads or cost per lead. No web
   presence found beyond Instagram. Fit: a channel (his videos as ad creative for his clients, Hopkins
   measures leads), not a competitor. Watch: he could also want to resell ads management himself.
+  2026-10-20: asked why agents don't run ads, he said "Just no results". So they tried or assume it
+  doesn't work. The pitch is testing and cost per lead, not "run ads". Don't claim Hopkins fixes
+  results; claim it tests three versions and shows what each lead cost. Next: ask what they tried, then
+  offer first access for two of his agents on one real listing each.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
