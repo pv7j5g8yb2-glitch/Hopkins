@@ -106,6 +106,9 @@ personal in here.
   He answered "for the realtors" (his agent clients), so it's a possible channel: his videos, run as ads
   through Hopkins, for his 65+ agents. Next ask: do his agents run his videos as paid ads now, or only
   post them? Don't offer anything special or a call until that's known.
+  2026-10-20: he said his agents post "more organic". So paid ads are the gap. Next ask: why (hassle,
+  cost, or tried and saw nothing), since that decides the pitch. After that, offer him and a few of his
+  agents first access when it opens, with the real waitlist offer (30% off the first year).
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
