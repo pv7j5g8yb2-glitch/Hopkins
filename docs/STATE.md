@@ -273,3 +273,10 @@ personal in here.
 * Phone app: not first. Web app first (works in a phone browser), then push notifications for
   approvals and new leads once teams have live ads, a native app only when teams ask or approvals
   are being lost.
+
+## Ad Library outreach shortlist (2026-10-20)
+Source: Meta Ad Library, active ads, impressions 5 to 20 Oct 2026, keyword "realtor", sorted by impressions. Most top results are not targets (Realtor.com, NAR, boards, MLS, brokerage corporate pages, lenders, title, cash buyers). Names only, no phone numbers.
+* First tier, independent, long running or set and forget ads: Rodolfo Flores (AZ), Dillon Bout (Space Coast), Jennifer Scates, Christine Sparks, Andy Griesinger, Kimberly Thomason, Kathy Hayward, Rodney Brown, Eric Hatch, Don Shaffer, Matt Maloney, Chuck Vosburgh, Justin Grey.
+* Different offer: Sonia Toor (free list lead gen, already measures leads), Erin Ray (rentals).
+* Spanish language, park until Hopkins does Spanish: Zuly Gomez, Mayra Cisneros, Roger Lopez.
+* Before sending: open the ad card, check the start date and that it is a listing or lead ad, follow from @gethopkins first. Ask is one line: free test on one listing for honest feedback.
