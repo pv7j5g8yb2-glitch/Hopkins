@@ -19,11 +19,11 @@ css:`
 scenes:`<div class="scene" id="s1"><div class="card" id="ad"><b>JUST LISTED!</b></div><div id="xx"><span>Scrolled past</span></div></div>
 <div class="scene" id="s2"><div class="card" id="fx"><div class="fr" id="a1">${icon("home",70,"#8E6B2C",2)}<div>The street<small>Oak Street</small></div></div><div class="fr" id="a2">${icon("sun",70,"#8E6B2C",2)}<div>One feeling<small>Saturday mornings on the porch</small></div></div><div class="fr" id="a3">${icon("coin",70,"#8E6B2C",2)}<div>The price<small>$485,000</small></div></div></div></div><div class="scene" id="s3"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>`,
 update(t,C,endAt){
-E.slam("#ad",t,-.1,{s:1.3,r:-4});vis("#s1",t,-1,C.p3);E.slam("#xx",t,C.p2,{s:2,r:16});
- $("#ad").style.filter=`grayscale(${ease(P(t,C.p2,C.p2+.4))*.8})`;
- vis("#s2",t,C.p3,C.p8);vis("#fx",t,C.p3,null);
+E.slam("#ad",t,-.1,{s:1.3,r:-4});vis("#s1",t,-1,C.p2);E.slam("#xx",t,C.p1,{s:2,r:16});
+ $("#ad").style.filter=`grayscale(${ease(P(t,C.p1,C.p1+.4))*.8})`;
+ vis("#s2",t,C.p2,C.p7);vis("#fx",t,C.p2,null);
  [["#a1",C.street],["#a2",C.feeling],["#a3",C.price]].forEach(([x,a])=>vis(x,t,a-.1,null,{dx:-60,dy:0,blur:6}));
- vis("#s3",t,C.p8,endAt);draw("#snd path",P(t,C.p8,C.p8+.7));
+ vis("#s3",t,C.p7,endAt);draw("#snd path",P(t,C.p7,C.p7+.7));
 }};
 E.boot(R);
 render(0);
