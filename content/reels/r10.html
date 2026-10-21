@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 10: first line of a listing ad.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const R={
+hook:2,
+sfx:[{s:"hit",at:.02,shake:14},{s:"stamp",at:"justlisted",shake:12},{s:"pop",at:"street"},{s:"pop",at:"feeling"},{s:"pop",at:"price"},{s:"ding",at:"first"}],
+script:["Nobody stops for [Just Listed.]","You scroll right past it too.","So here's what to put in the first line instead.","One. The ^street. People look where they want to live.","Two. One ^feeling. Not four bedrooms. The Saturday morning.","Three. The ^price. It filters out the wrong people for you.","Street, feeling, price. That's the whole ^first line.","Send this to whoever writes your listings."],
+css:`
+.big{position:absolute;left:0;width:1080px;text-align:center;opacity:0}
+#ad{left:160px;top:640px;width:760px;padding:40px 44px}#ad b{font-size:70px;letter-spacing:-.03em}
+#xx{position:absolute;left:560px;top:600px;opacity:0}#xx span{display:inline-block;background:var(--plum);color:var(--cream);font-size:50px;font-weight:700;padding:14px 30px;border-radius:16px;border:5px solid var(--cream);transform:rotate(9deg)}
+#fx{left:110px;top:660px;width:860px;padding:40px 44px}
+.fr{display:flex;align-items:center;gap:26px;padding:34px 0;border-top:1px solid rgba(42,15,20,.1);font-size:40px;font-weight:700;opacity:0}
+.fr small{display:block;font-size:27px;font-weight:400;color:var(--quiet);margin-top:6px}
+#snd{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:36px;font-weight:700;color:var(--rose)}
+`,
+scenes:`<div class="scene" id="s1"><div class="card" id="ad"><b>JUST LISTED!</b></div><div id="xx"><span>Scrolled past</span></div></div>
+<div class="scene" id="s2"><div class="card" id="fx"><div class="fr" id="a1">${icon("home",70,"#8E6B2C",2)}<div>The street<small>Oak Street</small></div></div><div class="fr" id="a2">${icon("sun",70,"#8E6B2C",2)}<div>One feeling<small>Saturday mornings on the porch</small></div></div><div class="fr" id="a3">${icon("coin",70,"#8E6B2C",2)}<div>The price<small>$485,000</small></div></div></div></div><div class="scene" id="s3"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>`,
+update(t,C,endAt){
+E.slam("#ad",t,-.1,{s:1.3,r:-4});vis("#s1",t,-1,C.p3);E.slam("#xx",t,C.p2,{s:2,r:16});
+ $("#ad").style.filter=`grayscale(${ease(P(t,C.p2,C.p2+.4))*.8})`;
+ vis("#s2",t,C.p3,C.p8);vis("#fx",t,C.p3,null);
+ [["#a1",C.street],["#a2",C.feeling],["#a3",C.price]].forEach(([x,a])=>vis(x,t,a-.1,null,{dx:-60,dy:0,blur:6}));
+ vis("#s3",t,C.p8,endAt);draw("#snd path",P(t,C.p8,C.p8+.7));
+}};
+E.boot(R);
+render(0);
+</script></body></html>
