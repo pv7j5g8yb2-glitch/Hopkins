@@ -284,3 +284,6 @@ Source: Meta Ad Library, active ads, impressions 5 to 20 Oct 2026, keyword "real
 ## Grid views snapshot (2026-10-21, 09:09)
 Pinned launch film 21. "Stop touching your ad" 0. "You can't pick who sees your listing ad anymore" 1. "No more Sunday nights in Ads Manager" 29. "Every listing. One chat." 14. "Stop writing perfect for families" 7. "Thousands of views. Zero enquiries." 93. "5 settings wasting your listing ad budget" 13.
 Read: numbers are tiny, so only the 93 stands out, and it names a stake (views with nothing to show for it). Reels 6 to 9 not yet posted. Outreach DMs matter more than views right now.
+
+## Follow chip in every reel (2026-10-21)
+Ismael wants "Follow @gethopkins" on screen in every reel, silent (not in the voiceover). Done in `content/reels/engine.js`: a gold chip shows from the last spoken phrase to the end of the voice, and the end card button is bigger. Applies to every reel automatically. Reels 6 to 11 re-rendered. r1 to r5 not re-rendered.

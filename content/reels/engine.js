@@ -28,7 +28,9 @@ body{font-family:"Inter Tight",sans-serif;-webkit-font-smoothing:antialiased;col
 #end{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 #end .lock{display:flex;align-items:center;gap:30px;margin-top:-60px}
 #end .nm{font-size:132px;font-weight:700;letter-spacing:-.05em;line-height:1}
-#end .cta{margin-top:84px;font-size:30px;font-weight:700;color:var(--ox);background:var(--gold);padding:20px 38px;border-radius:50px}
+#end .cta{margin-top:84px;font-size:46px;font-weight:700;color:var(--ox);background:var(--gold);padding:28px 56px;border-radius:70px}
+#fol{position:absolute;left:0;width:1080px;top:1420px;display:flex;justify-content:center;opacity:0}
+#fol span{display:inline-flex;align-items:center;gap:16px;font-size:44px;font-weight:700;color:var(--ox);background:var(--gold);padding:24px 48px;border-radius:70px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
 #fade{position:absolute;inset:0;background:var(--ox);opacity:0;pointer-events:none}
 `;
 const E={};window.E=E;
@@ -154,7 +156,7 @@ E.boot=(R)=>{
   const st=document.createElement("style");st.textContent=CSS+(R.css||"");document.head.appendChild(st);
   document.body.innerHTML=`<div id="grid"></div><div id="vig"></div>
   <svg id="grain" width="1080" height="1920"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
-  <div id="wm"><svg width="44" height="44" viewBox="0 0 120 120">${MARK}</svg>@gethopkins</div><div id="cap"></div>
+  <div id="wm"><svg width="44" height="44" viewBox="0 0 120 120">${MARK}</svg>@gethopkins</div><div id="cap"></div><div id="fol"><span>${E.icon("user",40,"#2A0F14",2.4)}Follow @gethopkins</span></div>
   ${R.scenes}
   <div id="end"><div class="lock"><svg id="endmark" width="160" height="160" viewBox="0 0 120 120">${MARK}</svg><div class="nm">Hopkins</div></div>
   <div class="cta">${R.cta||"Follow @gethopkins"}</div></div><div id="fade"></div>`;
@@ -170,7 +172,7 @@ E.boot=(R)=>{
   window.SFX=SFX.map(({s,t,g})=>({s,t,g}));const SHAKES=SFX.filter(x=>x.shake).map(x=>[x.t,x.shake]);
   window.CUES=cues;window.END_AT=endAt;window.DURATION=D;
   window.render=t=>{
-    caption(t,phrases,R.hook??2);E.vis("#wm",t,0,endAt,{dy:0,blur:0});
+    caption(t,phrases,R.hook??2);E.vis("#wm",t,0,endAt,{dy:0,blur:0});E.vis("#fol",t,cues["p"+(phrases.length-1)]-.1,endAt,{dy:40});
     const [sx,sy]=E.jolt(t,SHAKES);document.body.style.transform=sx||sy?`translate(${sx}px,${sy}px)`:"none";
     R.update(t,C,endAt);
     // end card
