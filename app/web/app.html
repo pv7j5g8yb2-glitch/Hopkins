@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hopkins</title>
+<meta name="theme-color" content="#EEE4D4">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="shell" id="shell">
+  <aside class="side" id="side">
+    <a class="brand" href="#/today"><img src="/static/mark.svg" alt=""><span>Hopkins</span></a>
+    <a class="newc" href="#/new"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New listing</a>
+    <nav>
+      <a class="nv" data-nav="today" href="#/today"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Today<span class="badge" id="badge"></span></a>
+      <a class="nv" data-nav="leads" href="#/leads"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Leads</a>
+      <a class="nv" data-nav="report" href="#/report"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Monday report</a>
+      <a class="nv" data-nav="brand" href="#/brand"><svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="2.5"/><circle cx="15.5" cy="8" r="2.5"/><path d="M12 21a9 9 0 1 1 9-9c0 2.5-2 3-3.5 3H15a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 21z"/></svg>Brand</a>
+      <a class="nv hidden" data-nav="admin" id="adminNav" href="#/admin"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z"/></svg>Admin</a>
+    </nav>
+    <div class="lab">Listings</div>
+    <div class="lists" id="lists"></div>
+    <div class="planbox" id="planbox"></div>
+    <div class="team" id="team"></div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <main class="main" id="main"></main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/static/creative.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

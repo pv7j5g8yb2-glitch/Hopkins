@@ -131,6 +131,8 @@ examples of what's winning, add the learning to its log with the date.
 
 ## Product decisions (Hopkins)
 
+The product's code is in `app/` (its README says what works and how to run it).
+
 * **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name
   across the middle, no downloads. Changes to those 3 are included. Asking for a 4th, or
   pressing "run it" on any ad, brings up the upgrade message in the chat.

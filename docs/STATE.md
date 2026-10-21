@@ -1,6 +1,6 @@
 # Where things stand (read this at the start of every session)
 
-Last updated 2026-10-19. CLAUDE.md holds the rules; this file holds the current state, what is
+Last updated 2026-10-21. CLAUDE.md holds the rules; this file holds the current state, what is
 in flight, and the small details that are easy to lose. Update it whenever something here changes.
 The repo is public: never put passwords, keys, the admin password, the ntfy topic or anything
 personal in here.
@@ -102,11 +102,30 @@ personal in here.
 
 ## The product (Hopkins) and what's next
 
-* Next session after the weekly reset (Wednesday afternoon): start the first build, on high effort,
-  in a fresh session. Plan: a private version first, everything that needs no Meta access. Listing
-  photos and details in, three ad versions out, feed and story previews, changes made in the chat.
-  The film's interface (sidebar, chat, three versions, preview panel, leads table, Monday report)
-  is the design reference.
+* **First build done (2026-10-21), in `app/`** (README there lists exactly what works). Private,
+  invite only, everything that needs no Meta access: sign up, brand setup, listing in (photos plus
+  link or description), 3 ads out (The life, The standout, The facts) with feed and story previews
+  in the customer's brand, changes in the chat, free plan limits and watermark, paid plan run plan
+  then yes, fair housing checks, a lead page per listing with a link per ad version, leads (in the
+  chat, Leads page, phone via ntfy), the Monday report, the testing record, an admin page to switch
+  workspaces to paid. 13 automated tests, plus a full browser walkthrough on desktop and phone.
+* It's on branch `claude/amazing-noether-92ry61`, not yet on the default branch, and has no Render
+  service yet. To put it live: merge into the default branch, make a new Render web service (root
+  `app`, build `npm install`, start `npm start`), a new Turso database, and set `COOKIE_SECRET`,
+  `INVITE_CODES`, `ADMIN_EMAILS`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, `NTFY_TOPIC`, and
+  `ANTHROPIC_API_KEY` if Claude should write the ads. Suggested address: `app.kirmistudio.com`.
+* Works with no API key (built-in writer and chat rules). The Claude path (`app/src/brain.js`,
+  `claude-opus-5-5`) is tested only with a fake client so far; no key was available in the build
+  session. First live check: set the key, make one listing, read the ads.
+* Choices made in the build, change any of them: product copy uses US spelling (customers are
+  mostly US); the default run plan is $200 over 10 days split across the 3 versions; feed ads are
+  4:5; paid upgrades are requests that notify the founder (no Stripe until an ad can go live);
+  lead alerts use the free ntfy app.
+* Next, in order: (1) deploy it and use it on real listings from 2 or 3 waitlist teams (free plan,
+  invite codes); (2) the Meta app: Marketing API with the Housing category, lead ads, then App
+  Review (list below), tested first on Ismael's own ad account; (3) pull real spend and leads in,
+  so the Monday report and the testing record fill themselves; (4) Stripe, starting at the first
+  live ad; (5) push notifications for approvals once teams have live ads.
 * Design decisions for the build (2026-10-19, after an outside critique Ismael shared):
   * **Hopkins messages first.** Agents forget to open apps, and that's the main churn risk. When
     there's something to do (a new listing, an open house, a price change, a losing ad), Hopkins
