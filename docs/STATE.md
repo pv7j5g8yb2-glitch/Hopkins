@@ -294,3 +294,6 @@ Source: Housing ads filter, keyword "realtor", sorted by impressions, 5 to 20 Oc
 * Already tests many versions, good first conversation: Rudy Flores (AZ, has a team).
 * Free list lead ads that look like one vendor template, ask who makes them first: Mark Gonzalez, Jennifer Scates, Christine Sparks, Andy Griesinger, Kimberly Thomason, Albert Grothe, Ivan Cano.
 * Skip: American Dream TV promos (Melissa Jones, Charlotte Baker, Eddie Ferrell, Anne Whitney Gray, Ashlea Pflug, Eric Schultz, Samantha Mendoza, Tami Kramer), Canada (Sonia Toor, Jordan Sachi, Ammy Setia, Pinkjit Brar, Jane Heim), Spanish language until Hopkins supports it, brokerages, boards, lenders, title, cash buyers, Homebot, Realtor.com, NAR.
+
+## Build or wait decision (2026-10-21)
+Answer given: build the thinnest version now in parallel with outreach, do not wait for a signup. Replies take days and a yes needs something to hand over the same week. Build only the part a tester can use: listing in, three ad versions out as previews, edits in the chat, fair housing check, export plus a setup checklist. Do not build the Meta gateway, billing, Autopilot or accounts until one agent has used it and said what is wrong. Stop and rethink if after about 30 messages there are no replies at all.
