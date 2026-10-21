@@ -280,3 +280,7 @@ Source: Meta Ad Library, active ads, impressions 5 to 20 Oct 2026, keyword "real
 * Different offer: Sonia Toor (free list lead gen, already measures leads), Erin Ray (rentals).
 * Spanish language, park until Hopkins does Spanish: Zuly Gomez, Mayra Cisneros, Roger Lopez.
 * Before sending: open the ad card, check the start date and that it is a listing or lead ad, follow from @gethopkins first. Ask is one line: free test on one listing for honest feedback.
+
+## Grid views snapshot (2026-10-21, 09:09)
+Pinned launch film 21. "Stop touching your ad" 0. "You can't pick who sees your listing ad anymore" 1. "No more Sunday nights in Ads Manager" 29. "Every listing. One chat." 14. "Stop writing perfect for families" 7. "Thousands of views. Zero enquiries." 93. "5 settings wasting your listing ad budget" 13.
+Read: numbers are tiny, so only the 93 stands out, and it names a stake (views with nothing to show for it). Reels 6 to 9 not yet posted. Outreach DMs matter more than views right now.
