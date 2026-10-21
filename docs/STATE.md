@@ -287,3 +287,10 @@ Read: numbers are tiny, so only the 93 stands out, and it names a stake (views w
 
 ## Follow chip in every reel (2026-10-21)
 Ismael wants "Follow @gethopkins" on screen in every reel, silent (not in the voiceover). Done in `content/reels/engine.js`: a gold chip shows from the last spoken phrase to the end of the voice, and the end card button is bigger. Applies to every reel automatically. Reels 6 to 11 re-rendered. r1 to r5 not re-rendered.
+
+## Ad Library outreach shortlist, round 2 (2026-10-21)
+Source: Housing ads filter, keyword "realtor", sorted by impressions, 5 to 20 Oct 2026. Note: the start date filter did not hold, the page shows ads from 2020 onwards. Names only, no contact details.
+* First tier, one person, text heavy or listing ads, creative looks unchanged: Ginger McCallum (TX, new this month), Matt Maloney (IN, same listing ad since Feb), Chuck Vosburgh (FL, text only Just Listed), Kathy Hayward (LA, Just Listed since Nov 2024), Don Shaffer (OH), Justin Grey (CA), Liza McLean (MO), Dillon Bout (FL), Rodney Brown (NV), Steele Nash (AZ), Cody Meaux (LA).
+* Already tests many versions, good first conversation: Rudy Flores (AZ, has a team).
+* Free list lead ads that look like one vendor template, ask who makes them first: Mark Gonzalez, Jennifer Scates, Christine Sparks, Andy Griesinger, Kimberly Thomason, Albert Grothe, Ivan Cano.
+* Skip: American Dream TV promos (Melissa Jones, Charlotte Baker, Eddie Ferrell, Anne Whitney Gray, Ashlea Pflug, Eric Schultz, Samantha Mendoza, Tami Kramer), Canada (Sonia Toor, Jordan Sachi, Ammy Setia, Pinkjit Brar, Jane Heim), Spanish language until Hopkins supports it, brokerages, boards, lenders, title, cash buyers, Homebot, Realtor.com, NAR.
