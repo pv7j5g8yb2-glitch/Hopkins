@@ -406,9 +406,10 @@
       <div class="pvb">
         <div class="chk ${issues.length ? "bad" : ""}"><i class="dot"></i><div>${issues.length ? `Wording to look at: ${issues.map((i) => `"${esc(i.term)}" ${esc(i.why)}`).join("; ")}.` : "Fair housing wording check passed. Runs in Meta's Housing category: no age, gender or ZIP targeting."}</div></div>
         <button class="btn big" data-act="run">Run it</button>
-        <div style="display:flex;gap:8px">${paid()
-          ? `<button class="ghost" data-dl="feed">${ICON.down}Feed image</button><button class="ghost" data-dl="story">${ICON.down}Story image</button>`
-          : `<span class="small">Previews only on the free plan. Downloads and running come with the paid plan.</span>`}</div>
+        ${paid()
+          ? `<div class="sec">Post it yourself</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" data-dl="feed">${ICON.down}Feed image</button><button class="ghost" data-dl="story">${ICON.down}Story image</button><button class="ghost" data-copy="${esc(ad.primary_text)}" data-copied="Text copied">${ICON.link}Copy text</button></div>
+            <p class="small">Post or boost it from your own account any time. If you boost it, send people to the link below so the leads still count here.</p>`
+          : `<span class="small">Previews only on the free plan. Downloads and running come with the paid plan.</span>`}
         <div class="sec">Where the ad sends people</div>
         <div class="linkrow"><code>${esc(link)}</code><button class="ghost" data-copy="${esc(link)}">${ICON.link}Copy</button></div>
         <div class="sec">Photo for version ${ad.version}</div>
@@ -611,7 +612,7 @@
         await loadMe();
         t.textContent = "Requested";
         toast("Sent. You'll get an email when your seat is ready.");
-      } else if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); toast("Link copied"); }
+      } else if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); toast(t.dataset.copied || "Link copied"); }
       else if (t.dataset.dl) {
         const ad = adFor(S.selected[l.id]);
         const c = document.createElement("canvas");

@@ -29,8 +29,9 @@ them in the chat and says yes. Separate from `survey/` (the waitlist server) and
   downloads. A 4th ad or "Run it" brings up the upgrade message. Price changes still update
   the 3 free ads.
 * **Paid plan.** Switched on by an admin (`ADMIN_EMAILS`) on the Admin page. Run it shows the
-  plan first (budget, days, where, Housing category), then the yes. Downloads of the feed and
-  story images.
+  plan first (budget, days, where, Housing category), then the yes. Until Meta is connected,
+  paid accounts download the feed and story images and copy the text to post or boost it
+  themselves; each version's link still credits the leads.
 * **Lead pages.** Every listing gets a public page in the agent's brand (`/l/<slug>`), with the
   photos and a showing request form. Each ad version has its own link (`?v=<ad id>`), so every
   lead is credited to the version that brought it. Equal Housing Opportunity in the footer.

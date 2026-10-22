@@ -121,8 +121,15 @@ personal in here.
   mostly US); the default run plan is $200 over 10 days split across the 3 versions; feed ads are
   4:5; paid upgrades are requests that notify the founder (no Stripe until an ad can go live);
   lead alerts use the free ntfy app.
-* Next, in order: (1) deploy it and use it on real listings from 2 or 3 waitlist teams (free plan,
-  invite codes); (2) the Meta app: Marketing API with the Housing category, lead ads, then App
+* Paid accounts can download every ad (feed and story images, copy the text) and post or boost it
+  themselves while Meta isn't connected; the approval message says so. Each version's link still
+  credits the leads. Free accounts stay previews only (Ismael, 2026-10-22).
+* Open question: billing starts "when the first ad goes live". Does an ad the agent downloads and
+  posts themselves count as live?
+* The waitlist is small (no full teams on it yet, Ismael, 2026-10-22). Don't plan around a batch of
+  teams; the first users are whoever signs up, solo agents included.
+* Next, in order: (1) deploy it, run Ismael's own test listings through it, then invite whoever is
+  on the waitlist (free plan, invite codes); (2) the Meta app: Marketing API with the Housing category, lead ads, then App
   Review (list below), tested first on Ismael's own ad account; (3) pull real spend and leads in,
   so the Monday report and the testing record fill themselves; (4) Stripe, starting at the first
   live ad; (5) push notifications for approvals once teams have live ads.

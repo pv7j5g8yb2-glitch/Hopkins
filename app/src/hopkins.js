@@ -424,7 +424,7 @@ export async function confirmRun(ws, listingId, messageId) {
     );
   }
   await clearActions(listingId);
-  await say(ws, listingId, `Approved. ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live as soon as your Meta ad account is connected, and billing starts then, not before. Leads land here and on the Leads page.`);
+  await say(ws, listingId, `Approved. ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live as soon as your Meta ad account is connected, and billing starts then, not before. You don't have to wait: download them under the preview and post or boost them yourself. Each version has its own link, so leads still land here and on the Leads page.`);
   notifyFounder("Hopkins: ads approved", `A workspace approved ${ads.length} ads ($${plan.budget} over ${plan.days} days). Waiting on Meta.`);
   return { ok: true };
 }

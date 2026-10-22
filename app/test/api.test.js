@@ -92,6 +92,7 @@ test("paid: the plan first, then the yes, then the testing record and leads", as
   const yes = await c("POST", `/api/listings/${id}/run`, { confirm: planMsg.id });
   assert.ok(yes.json.ads.every((a) => a.status === "approved"));
   assert.match(yes.json.messages.at(-1).body, /Meta ad account is connected/);
+  assert.match(yes.json.messages.at(-1).body, /post or boost them yourself/);
   assert.equal((await all(`SELECT * FROM tests WHERE listing_id = ?`, [id])).length, 3);
 
   // A price change on the paid plan brings 3 new price ads.
