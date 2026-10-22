@@ -23,10 +23,12 @@ export async function verifyPassword(password, stored) {
 }
 
 // Sign ups are private while Hopkins is in early access: INVITE_CODES is a comma separated
-// list, and a sign up needs one of them. Leave it unset only on a local machine.
-export function inviteOk(code) {
+// list, and a sign up needs one of them. Admins (ADMIN_EMAILS) never need one. With no codes
+// set, a local machine is open to anyone, but production stays closed rather than open.
+export function inviteOk(code, email = "") {
+  if (isAdmin({ email })) return true;
   const list = (process.env.INVITE_CODES || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-  if (!list.length) return true;
+  if (!list.length) return process.env.NODE_ENV !== "production";
   return typeof code === "string" && list.includes(code.trim().toLowerCase());
 }
 

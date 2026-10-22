@@ -1,0 +1,29 @@
+# Render Blueprint for the Hopkins app (the product in app/). In Render: New, Blueprint,
+# pick this repository and branch, then fill in the values it asks for. The waitlist service
+# is set up separately in the dashboard and isn't touched by this file.
+services:
+  - type: web
+    name: hopkins-app
+    runtime: node
+    plan: free
+    rootDir: app
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: INVITE_CODES
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_AUTH_TOKEN
+        sync: false
+      - key: NTFY_TOPIC
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

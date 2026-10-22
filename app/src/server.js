@@ -66,7 +66,7 @@ const clean = (v, max = 200) => (typeof v === "string" && v.trim() ? v.trim().sl
 app.post("/api/signup", async (request, reply) => {
   if (tooMany(`signup:${request.ip}`)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   const { email, password, name, business, invite } = request.body || {};
-  if (!inviteOk(invite)) return reply.code(403).send({ error: "Hopkins is invite only for now. Check the code, or join the waitlist." });
+  if (!inviteOk(invite, typeof email === "string" ? email.trim() : "")) return reply.code(403).send({ error: "Hopkins is invite only for now. Check the code, or join the waitlist." });
   if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) return reply.code(400).send({ error: "That email doesn't look right." });
   if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the password." });
   if (await get(`SELECT id FROM users WHERE email = ?`, [email.trim().toLowerCase()])) return reply.code(409).send({ error: "There's already an account with that email. Sign in instead." });

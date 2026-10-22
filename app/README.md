@@ -75,9 +75,24 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 
 ## Deploy (Render)
 
-A new web service next to the waitlist: root directory `app`, build `npm install`, start
-`npm start`, the variables above. Use a separate Turso database from the waitlist's. Point a
-subdomain at it (for example `app.kirmistudio.com`) and add it as a custom domain on Render.
+`render.yaml` at the repo root is a Render Blueprint for this app (the waitlist service is
+separate and untouched).
+
+1. Turso: create a new database (not the waitlist's), copy its `libsql://` URL and make a token.
+2. Render: New, Blueprint, pick this repository and the branch this code is on. Render reads
+   `render.yaml` and creates `hopkins-app` (root `app`, `npm install`, `npm start`, free plan).
+3. Fill in what it asks for: `ADMIN_EMAILS` (your email), `INVITE_CODES` (one or more codes you
+   make up, comma separated), `DATABASE_URL` and `DATABASE_AUTH_TOKEN` from Turso, `NTFY_TOPIC`
+   (same as the waitlist's), `ANTHROPIC_API_KEY` (optional). `COOKIE_SECRET` is generated.
+4. Open `https://hopkins-app.onrender.com/signup` (or whatever address Render gives it) and sign
+   up with your admin email; admins don't need a code. Others sign up with
+   `/signup?invite=YOURCODE`.
+5. Optional: add `app.kirmistudio.com` as a custom domain on the service, and the CNAME record
+   Render shows at your DNS provider.
+
+In production, sign ups are closed when `INVITE_CODES` is empty (admins can still sign up).
+The free Render plan sleeps after 15 quiet minutes, so the first visit after that takes a few
+seconds.
 
 ## Where things are
 

@@ -110,10 +110,10 @@ personal in here.
   chat, Leads page, phone via ntfy), the Monday report, the testing record, an admin page to switch
   workspaces to paid. 13 automated tests, plus a full browser walkthrough on desktop and phone.
 * It's on branch `claude/amazing-noether-92ry61`, not yet on the default branch, and has no Render
-  service yet. To put it live: merge into the default branch, make a new Render web service (root
-  `app`, build `npm install`, start `npm start`), a new Turso database, and set `COOKIE_SECRET`,
-  `INVITE_CODES`, `ADMIN_EMAILS`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, `NTFY_TOPIC`, and
-  `ANTHROPIC_API_KEY` if Claude should write the ads. Suggested address: `app.kirmistudio.com`.
+  service yet. To put it live: `render.yaml` at the repo root is a Render Blueprint (New, Blueprint,
+  this repo and branch), plus a new Turso database. Step by step in `app/README.md` under Deploy.
+  Admin emails sign up without a code; production sign ups are closed if `INVITE_CODES` is empty.
+  Suggested address: `app.kirmistudio.com`.
 * Works with no API key (built-in writer and chat rules). The Claude path (`app/src/brain.js`,
   `claude-opus-5-5`) is tested only with a fake client so far; no key was available in the build
   session. First live check: set the key, make one listing, read the ads.

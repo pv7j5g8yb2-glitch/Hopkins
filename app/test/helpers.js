@@ -10,7 +10,7 @@ export async function boot(extraEnv = {}) {
     COOKIE_SECRET: "test-secret-test-secret-test-secret",
     DATABASE_URL: `file:${join(dir, "test.db")}`,
     INVITE_CODES: "EARLY1",
-    ADMIN_EMAILS: "boss@hopkins.test",
+    ADMIN_EMAILS: "boss@hopkins.test,owner@hopkins.test",
     NTFY_TOPIC: "",
     ...extraEnv,
   });

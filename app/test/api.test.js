@@ -17,6 +17,9 @@ async function signup(email, extra = {}) {
 test("sign ups need an invite, and passwords are checked", async () => {
   const bad = client(app);
   assert.equal((await bad("POST", "/api/signup", { email: "x@y.com", password: "password123", invite: "nope" })).status, 403);
+  // No code, no account, unless it's an admin's email.
+  assert.equal((await client(app)("POST", "/api/signup", { email: "someone@else.test", password: "password123" })).status, 403);
+  assert.equal((await client(app)("POST", "/api/signup", { email: "Owner@hopkins.test", password: "password123" })).status, 200);
   const { c, r } = await signup("sam@ellery.test");
   assert.equal(r.status, 200);
   assert.equal((await c("GET", "/api/me")).json.workspace.plan, "free");
