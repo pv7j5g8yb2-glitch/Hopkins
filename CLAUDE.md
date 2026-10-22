@@ -133,6 +133,11 @@ examples of what's winning, add the learning to its log with the date.
 
 The product's code is in `app/` (its README says what works and how to run it).
 
+* **Interface (Ismael, 2026-10-22):** extremely clean and straightforward, like any successful
+  software platform. Keep every feature, but hide the secondary ones: one main action per screen
+  (gold), everything else in a "more" menu or the account menu, hairlines instead of boxes, two
+  text weights, no extra explanations on screen. Check new screens against this before shipping.
+
 * **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name
   across the middle, no downloads. Changes to those 3 are included. Asking for a 4th, or
   pressing "run it" on any ad, brings up the upgrade message in the chat.
