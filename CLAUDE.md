@@ -142,7 +142,8 @@ real value. Never confusing or complex: one point, plain words, a clear tip.
 3. "Follow @gethopkins" on screen at the end, silent (the engine's gold chip plus the end card). Never in the voiceover.
 4. Pronunciation spot on: every reel is checked with faster-whisper against the script before it is rendered, and any misread word is fixed in `vo.py`.
 5. Human timing: varied pauses like a person talking, short silences in the middle of sentences where someone would think or let a point land, longer ones after a question, never one even rhythm.
-6. Send every finished reel in the chat as a file, not only a path.
+6. Every reel ships with its hook cover, made at the same time (entry in `content/reels/hooks.js`, rendered with `covers.mjs`), checked as an image, and sent with the reel. A reel without its cover is not finished.
+7. Send every finished reel and its cover in the chat as files, not only paths.
 
 ## Product decisions (Hopkins)
 
