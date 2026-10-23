@@ -26,6 +26,12 @@ personal in here.
 * Business accounts that need an adult or a registered business (Meta business verification,
   Stripe, Apple developer programme) go in a parent's or the registered business's name.
 
+## Brand files
+
+* `assets/brand/`: the icon (rounded and square, 1024px), the mark alone (PNG with a clear
+  background, and SVG), and the full logo (mark and name) on oxblood, on cream, and on clear
+  backgrounds in cream or oxblood, 2400x1000. Same proportions as the waitlist page's logo.
+
 ## @gethopkins on Instagram
 
 * Bio leads with the chat ("like ChatGPT, for real estate marketing"), never agency wording.
