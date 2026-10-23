@@ -63,7 +63,7 @@ update(t,C,endAt){
  // the timeline: best moments jump to the front, the logo drops to the end
  vis("#s2",t,C.p7,C.e11);
  const mv=inout(P(t,C.p8+.2,C.p8+1.2));
- CLIPS.forEach((c,i)=>{const el=$("#cl"+i);const y0=60+i*116;const target=60+[3,4,0,1,2][i]*116;
+ CLIPS.forEach((c,i)=>{const el=$("#cl"+i);const y0=60+i*116;const target=60+[3,4,2,0,1][i]*116;
    const y=y0+(target-y0)*mv;el.style.top=y+"px";
    const a=C.p7+.1+i*.08;el.style.opacity=ease(P(t,a,a+.3));
    const sc=Math.round((y-60)/116)*5;el.querySelector(".t").textContent=sc<10?"0:0"+sc:"0:"+sc;});

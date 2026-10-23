@@ -65,7 +65,8 @@ update(t,C,endAt){
  E.slam("#bc",t,C.p5,{s:2,r:12});
  vis("#s2",t,C.p6,C.e7);pop("#zero",P(t,C.nothing,C.nothing+.35));
  // pick one: buyer or seller, one button each
- vis("#s3",t,C.p8,C.e12);vis("#t1",t,C.p9,null,{dx:-80,dy:0});vis("#t2",t,C.p10,null,{dx:80,dy:0});
+ vis("#s3",t,C.p8,C.e12);vis("#t1",t,C.p8+.15,null,{dx:-80,dy:0});vis("#t2",t,C.p8+.35,null,{dx:80,dy:0});
+ $("#t1").style.boxShadow=`0 0 0 ${7*ease(P(t,C.p9,C.p9+.3))}px var(--gold),0 40px 90px rgba(0,0,0,.45)`;$("#t2").style.boxShadow=`0 0 0 ${7*ease(P(t,C.p10,C.p10+.3))}px var(--gold),0 40px 90px rgba(0,0,0,.45)`;
  pop("#one",P(t,C.p12,C.p12+.35));
  vis("#s4",t,C.p13,endAt);draw("#snd path",P(t,C.p13,C.p13+.7));
 }};

@@ -40,6 +40,8 @@ css:`
 .fp .who{font-size:18px;color:var(--quiet)}
 #exit{position:absolute;left:0;width:1080px;top:820px;text-align:center;opacity:0}
 #exit span{display:inline-flex;align-items:center;gap:18px;background:var(--plum);color:var(--cream);font-size:64px;font-weight:700;padding:22px 44px;border-radius:22px;border:6px solid var(--cream);transform:rotate(-5deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#ny{position:absolute;left:0;width:1080px;top:1500px;text-align:center;opacity:0}
+#ny span{display:inline-block;background:var(--plum);color:var(--cream);font-size:48px;font-weight:700;padding:14px 30px;border-radius:16px;border:5px solid var(--cream);transform:rotate(-4deg)}
 #paid{position:absolute;left:0;width:1080px;top:1080px;text-align:center;font-size:36px;font-weight:700;color:var(--rose);opacity:0}
 #cmp{position:absolute;left:0;width:1080px;top:700px;display:flex;justify-content:center;gap:36px}
 .cb{width:420px;height:440px;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;font-weight:700;text-align:center;padding:30px}
@@ -54,7 +56,7 @@ scenes:`
  <div class="tx">Open house Saturday on Oak Street. Come see it!</div>
  <div class="tg">${TAGS.map((g,i)=>`<span id="g${i}">${g}</span>`).join("")}</div>
  <div class="im">${house("h1",780,480)}</div><div class="ft"><b>Open Saturday, 11 to 1</b><span class="bt">Book a showing</span></div></div>
- <div id="feed"></div></div>
+ <div id="feed"></div><div id="ny"><span>Not yours</span></div></div>
 <div class="scene" id="s2"><div id="exit"><span>${icon("x",60,"#F4EBDD",3)}The exit</span></div><div id="paid">and you paid for the click</div></div>
 <div class="scene" id="s3"><div id="cmp"><div class="cb" id="cpost">${icon("eye",100,"#C3A9A2",1.5)}A post<small>needs finding</small></div>
  <div class="cb" id="cad">${icon("coin",100,"#8E6B2C",1.5)}An ad<small>already paid for</small></div></div></div>
@@ -66,13 +68,14 @@ scenes:`
 `,
 update(t,C,endAt){
  // hook: the ad with its hashtag pile slams in
- vis("#s1",t,-1,C.p5+.2);E.slam("#a1",t,-.1,{s:1.3,r:4});
+ vis("#s1",t,-1,C.p6);E.slam("#a1",t,-.1,{s:1.3,r:4});
  TAGS.forEach((g,i)=>{const a=C.link+i*.08;$("#g"+i).style.background=t>=a?`rgba(58,111,216,${.18*ease(P(t,a,a+.2))})`:"none"});
  // someone taps one and gets pulled into other agents' posts
  const tk=ease(P(t,C.p3,C.p3+.3));$("#g1").style.boxShadow=`0 0 0 ${5*tk}px #3a6fd8`;
  $("#a1").style.filter=`blur(${6*ease(P(t,C.p4,C.p4+.5))}px)`;
  R.fp.forEach((f,i)=>{const a=C.p4+.15+i*.12;pop(f,P(t,a,a+.3));f.style.transform+=` rotate(${f.dataset.r}deg)`});
- vis("#s2",t,C.p5+.2,C.e7);E.slam("#exit",t,C.theexit,{s:2,r:-10});vis("#paid",t,C.p6,null,{dy:30});
+ E.slam("#ny",t,C.p5,{s:1.8,r:-8});
+ vis("#s2",t,C.p6,C.e7);E.slam("#exit",t,C.theexit,{s:2,r:-10});vis("#paid",t,C.p6,null,{dy:30});
  vis("#s3",t,C.p8,C.e10);vis("#cpost",t,C.p8,null,{dx:-80,dy:0});vis("#cad",t,C.p9,null,{dx:80,dy:0});
  $("#cad").style.boxShadow=`0 0 0 ${6*ease(P(t,C.p10,C.p10+.3))}px var(--gold)`;
  // cut them all: the tags fall away, one button left
