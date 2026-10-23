@@ -1,0 +1,87 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 16: the ad works, then the link drops people on a homepage. Send them to that one listing.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const R={
+hook:2,
+sfx:[{s:"hit",at:.02,shake:12},{s:"stamp",at:"killed",shake:16},{s:"select",at:"p2"},{s:"whoosh",at:"p3"},
+ {s:"pop",at:"big"},{s:"pop",at:"search"},{s:"pop",at:"twelve"},{s:"tick",at:"p5"},{s:"whoosh",at:"leave"},
+ {s:"hit",at:"p7",shake:8},{s:"pop2",at:"p8"},{s:"ding",at:"p10"},{s:"select",at:"p11"}],
+script:[
+ "Your ad worked.",
+ {t:"Then your website ^killed it.",pause:.6},
+ "Someone taps your ad for the house on Oak Street.",
+ {t:"And lands on your homepage.",pause:.45},
+ "A ^big photo of you. A ^search bar. ^Twelve menu links.",
+ {t:"Where's the house?",pause:.7},
+ "They don't go looking. They just ^leave.",
+ "So send the ad to that one listing.",
+ "Same photos. The price. One button to book a showing.",
+ {t:"The page should feel like the ad,",pause:.3},
+ "just with more detail.",
+ "Tap your own ad tonight, and see where it goes.",
+],
+css:`
+.ad{left:190px;width:700px;padding:0;overflow:hidden}
+.ad .hd{display:flex;align-items:center;gap:14px;padding:20px 24px;font-size:23px}.ad .av{width:46px;height:46px;border-radius:50%;background:var(--plum);color:var(--cream);font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ad .sp{font-size:16px;color:var(--quiet)}
+.ad .tx{padding:0 24px 16px;font-size:28px;font-weight:700;line-height:1.35}
+.ad .im{height:300px;overflow:hidden}.ad .im svg{margin-top:-50px}
+.ad .ft{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:var(--paper);font-size:23px}.ad .bt{font-size:22px;font-weight:700;padding:12px 20px;border-radius:10px;background:var(--gold);color:var(--ox)}
+#a1{top:640px}
+#tapdot{position:absolute;width:90px;height:90px;border-radius:50%;border:6px solid var(--gold);left:740px;top:1210px;opacity:0}
+#hp{left:150px;top:600px;width:780px;padding:0;overflow:hidden}
+#hp .nav{display:flex;flex-wrap:wrap;gap:8px 18px;padding:20px 26px;font-size:20px;font-weight:700;color:var(--quiet);border-bottom:1px solid rgba(42,15,20,.1)}
+#hp .nav span{opacity:0}
+#hp .hero{height:330px;background:linear-gradient(135deg,#5B4873,#36151C);display:flex;align-items:center;justify-content:center;gap:30px;opacity:0}
+#hp .hero b{font-size:44px;color:var(--cream)}
+#hp .sr{margin:24px 26px;height:70px;border-radius:14px;border:3px solid rgba(42,15,20,.15);display:flex;align-items:center;gap:16px;padding:0 20px;font-size:26px;color:var(--quiet);opacity:0}
+#hp .mo{padding:0 26px 26px;font-size:24px;color:var(--quiet)}
+#q{position:absolute;left:0;width:1080px;top:1440px;text-align:center;font-family:"Instrument Serif";font-style:italic;font-size:110px;color:var(--lilac);opacity:0}
+#gone{position:absolute;left:580px;top:560px;opacity:0}
+#gone span{display:inline-block;background:var(--plum);color:var(--cream);font-size:44px;font-weight:700;padding:14px 28px;border-radius:16px;border:5px solid var(--cream);transform:rotate(8deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#lp{left:150px;top:600px;width:780px;padding:0;overflow:hidden}
+#lp .im{height:340px;overflow:hidden}#lp .im svg{margin-top:-40px}
+#lp .bd{padding:26px 30px}
+#lp .ad1{font-size:40px;font-weight:700}
+#lp .pr{font-size:52px;font-weight:700;color:var(--bronze);margin:6px 0 4px}
+#lp .sp2{font-size:26px;color:var(--quiet)}
+#lp .bt{margin-top:22px;text-align:center;font-size:34px;font-weight:700;padding:22px;border-radius:18px;background:var(--gold);color:var(--ox)}
+#same{position:absolute;left:0;width:1080px;top:1380px;text-align:center;opacity:0}
+#same span{display:inline-flex;align-items:center;gap:12px;font-size:36px;font-weight:700;color:var(--gold)}
+#tn{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:40px;font-weight:700}
+`,
+scenes:`
+<div class="scene" id="s1"><div class="card ad" id="a1"><div class="hd"><div class="av">ER</div><div><b>elleryrealty</b><div class="sp">Sponsored</div></div></div>
+ <div class="tx">Saturday mornings on the porch. 14 Oak Street.</div><div class="im">${house("h1",700,433)}</div>
+ <div class="ft"><b>Open Saturday</b><span class="bt">Learn more</span></div></div><div id="tapdot"></div></div>
+<div class="scene" id="s2"><div class="card" id="hp"><div class="nav">${["Home","About","Buy","Sell","Rent","Blog","Team","Reviews","Contact","Search","Areas","Careers"].map(n=>`<span>${n}</span>`).join("")}</div>
+ <div class="hero">${icon("user",120,"#F4EBDD",1.4)}<b>Your Realty Team</b></div>
+ <div class="sr">${icon("eye",34,"#7d6862",2)}Search all homes...</div><div class="mo">Welcome to our website!</div></div>
+ <div id="q">?</div><div id="gone"><span>Gone</span></div></div>
+<div class="scene" id="s3"><div class="card" id="lp"><div class="im">${house("h2",780,482)}</div>
+ <div class="bd"><div class="ad1">14 Oak Street</div><div class="pr">$485,000</div><div class="sp2">Saturday mornings on the porch.</div><div class="bt">Book a showing</div></div></div>
+ <div id="same"><span>${icon("check",40,"#D7AE62",3)}Feels like the ad</span></div></div>
+<div class="scene" id="s4"><div id="tn">${icon("bolt",170,"#D7AE62",1.4)}Tap your own ad</div></div>
+`,
+update(t,C,endAt){
+ // hook: the ad slams in, gets tapped
+ vis("#s1",t,-1,C.p3+.1);E.slam("#a1",t,-.1,{s:1.3,r:3});
+ const tk=P(t,C.p2+.8,C.p2+1.3);$("#tapdot").style.opacity=tk>0&&tk<1?1-tk:0;$("#tapdot").style.transform=`scale(${.4+tk})`;
+ $("#a1").style.filter=`grayscale(${ease(P(t,C.killed,C.killed+.4))*.6})`;
+ // the homepage builds itself: nav links, a big photo of the agent, a search bar
+ vis("#s2",t,C.p3,C.e6);vis("#hp",t,C.p3,null,{dy:60});
+ $("#hp .hero").style.opacity=ease(P(t,C.big,C.big+.3));$("#hp .sr").style.opacity=ease(P(t,C.search,C.search+.3));
+ $$("#hp .nav span").forEach((n,i)=>{const a=C.twelve+i*.06;n.style.opacity=ease(P(t,a,a+.2))});
+ pop("#q",P(t,C.p5,C.p5+.35));
+ E.slam("#gone",t,C.leave,{s:2,r:12});$("#hp").style.opacity=Math.min(+$("#hp").style.opacity,1-.6*ease(P(t,C.leave,C.leave+.4)));
+ // the listing page: same photos, the price, one button
+ vis("#s3",t,C.p7,C.e10);vis("#lp",t,C.p7,null,{dy:60});
+ $("#lp .bt").style.boxShadow=`0 0 0 ${7*ease(P(t,C.p8+1.2,C.p8+1.6))}px rgba(215,174,98,.45)`;
+ vis("#same",t,C.p9,null,{dy:30});
+ vis("#s4",t,C.p11,endAt);draw("#tn path",P(t,C.p11,C.p11+.7));
+}};
+E.boot(R);
+render(0);
+</script></body></html>

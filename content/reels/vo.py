@@ -15,7 +15,7 @@ reel = sys.argv[1]
 VOICE = sys.argv[2] if len(sys.argv) > 2 else "af_heart"
 SPEED = float(sys.argv[3]) if len(sys.argv) > 3 else 1.1
 SR = 24000
-LEAD, GAP, TAIL = .25, .24, .35
+LEAD, GAP, TAIL = .25, .28, .35
 AHEAD = .08   # captions start a beat before the word, so it is fully on screen as it is said
 
 # How words are said when the default reading is wrong. Captions keep the written form.
@@ -34,6 +34,7 @@ FIXES = [
     (r"\bChatGPT\b", "Chat G P T"),
     (r"\bA/B\b", "A B"),
     (r"\bHUD\b", "H U D"),
+    (r"\bDM\b", "D M"),
     (r"(\d)%", r"\1 percent"),
 ]
 def spoken(text):
@@ -117,7 +118,10 @@ for g in groups:
         timing[i]["last"] = max(timing[i]["last"], e)
     track.append(clip); t0 += len(clip) / SR
     last = phrases[g[-1]]
-    gap = last["pause"] if last["pause"] is not None else GAP
+    # a person doesn't pause evenly: longer after a question, a little variation elsewhere.
+    # A phrase's own pause (also mid sentence, after a comma) always wins.
+    end = last["toks"][-1]
+    gap = last["pause"] if last["pause"] is not None else (.5 if end.endswith("?") else GAP + .05 * ((len(track) * 7) % 3 - 1))
     track.append(np.zeros(int(gap * SR), np.float32)); t0 += gap
 norm = lambda w: re.sub(r"[^a-z0-9]", "", w.lower())
 for i, tm in enumerate(timing):   # spoken differently from the caption: match the words that agree

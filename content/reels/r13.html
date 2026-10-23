@@ -1,0 +1,88 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 13: hashtags in a paid ad are links out of it. Cut them, one ad, one place to tap.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const TAGS=["#DreamHome","#JustListed","#RealEstate","#HouseHunting","#NewHome","#HomeSweetHome"];
+const R={
+hook:1,
+sfx:[{s:"hit",at:.02,shake:14},{s:"tick",at:"p1"},{s:"pop",at:"link"},{s:"select",at:"p3"},
+ {s:"whoosh",at:"p4"},{s:"stamp",at:"p5",shake:10},{s:"hit",at:"theexit",shake:12},
+ {s:"tick",at:"p8"},{s:"pop2",at:"p10"},{s:"stamp",at:"cut",shake:14},{s:"ding",at:"p12"}],
+script:[
+ "Stop putting hashtags in your ads.",
+ {t:"I mean it.",pause:.55},
+ "On Facebook, every hashtag is a ^link.",
+ {t:"Someone taps one,",pause:.35},
+ "and now they're scrolling other agents' posts.",
+ {t:"Not yours.",pause:.6},
+ "You paid to get them there.",
+ {t:"Then you handed them [the exit.]",pause:.55},
+ "Hashtags help a post get found.",
+ {t:"But an ad doesn't need finding.",pause:.35},
+ "You already paid for that part.",
+ "So ^cut every single one.",
+ "One ad. One place to tap.",
+],
+css:`
+.ad{left:150px;width:780px;padding:0;overflow:hidden}
+.ad .hd{display:flex;align-items:center;gap:14px;padding:22px 26px;font-size:24px}.ad .av{width:50px;height:50px;border-radius:50%;background:var(--plum);color:var(--cream);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ad .sp{font-size:17px;color:var(--quiet)}
+.ad .tx{padding:0 26px 16px;font-size:29px;line-height:1.38;font-weight:700}
+.ad .tg{padding:0 26px 22px;display:flex;flex-wrap:wrap;gap:10px 16px;font-size:27px;font-weight:700;color:#3a6fd8}
+.ad .tg span{display:inline-block;border-radius:8px;padding:2px 6px;transition:none}
+.ad .im{height:280px;overflow:hidden}.ad .im svg{margin-top:-60px}
+.ad .ft{display:flex;justify-content:space-between;align-items:center;padding:18px 26px;background:var(--paper);font-size:24px}.ad .bt{font-size:22px;font-weight:700;padding:12px 20px;border-radius:10px;background:var(--gold);color:var(--ox)}
+#a1{top:600px}
+#feed{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.fp{position:absolute;width:300px;padding:18px;border-radius:18px;background:var(--cream);color:var(--ink);font-size:22px;font-weight:700;line-height:1.3;box-shadow:0 20px 50px rgba(0,0,0,.45);opacity:0}
+.fp .mi{height:120px;border-radius:10px;overflow:hidden;margin-top:10px}.fp .mi svg{width:300px;height:186px;margin:-30px 0 0 -18px}
+.fp .who{font-size:18px;color:var(--quiet)}
+#exit{position:absolute;left:0;width:1080px;top:820px;text-align:center;opacity:0}
+#exit span{display:inline-flex;align-items:center;gap:18px;background:var(--plum);color:var(--cream);font-size:64px;font-weight:700;padding:22px 44px;border-radius:22px;border:6px solid var(--cream);transform:rotate(-5deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#paid{position:absolute;left:0;width:1080px;top:1080px;text-align:center;font-size:36px;font-weight:700;color:var(--rose);opacity:0}
+#cmp{position:absolute;left:0;width:1080px;top:700px;display:flex;justify-content:center;gap:36px}
+.cb{width:420px;height:440px;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-size:40px;font-weight:700;text-align:center;padding:30px}
+#cpost{border:3px dashed var(--rose);color:var(--rose)}#cad{background:var(--cream);color:var(--ink)}
+.cb small{font-size:26px;font-weight:400;opacity:.8}
+#a2{top:660px}
+#one{position:absolute;left:0;width:1080px;top:1220px;text-align:center;opacity:0}
+#one span{display:inline-flex;align-items:center;gap:12px;font-size:40px;font-weight:700;color:var(--gold)}
+`,
+scenes:`
+<div class="scene" id="s1"><div class="card ad" id="a1"><div class="hd"><div class="av">ER</div><div><b>elleryrealty</b><div class="sp">Sponsored</div></div></div>
+ <div class="tx">Open house Saturday on Oak Street. Come see it!</div>
+ <div class="tg">${TAGS.map((g,i)=>`<span id="g${i}">${g}</span>`).join("")}</div>
+ <div class="im">${house("h1",780,480)}</div><div class="ft"><b>Open Saturday, 11 to 1</b><span class="bt">Book a showing</span></div></div>
+ <div id="feed"></div></div>
+<div class="scene" id="s2"><div id="exit"><span>${icon("x",60,"#F4EBDD",3)}The exit</span></div><div id="paid">and you paid for the click</div></div>
+<div class="scene" id="s3"><div id="cmp"><div class="cb" id="cpost">${icon("eye",100,"#C3A9A2",1.5)}A post<small>needs finding</small></div>
+ <div class="cb" id="cad">${icon("coin",100,"#8E6B2C",1.5)}An ad<small>already paid for</small></div></div></div>
+<div class="scene" id="s4"><div class="card ad" id="a2"><div class="hd"><div class="av">ER</div><div><b>elleryrealty</b><div class="sp">Sponsored</div></div></div>
+ <div class="tx">Open house Saturday on Oak Street. Come see it!</div>
+ <div class="tg" id="tg2">${TAGS.map((g,i)=>`<span class="t2">${g}</span>`).join("")}</div>
+ <div class="im">${house("h2",780,480)}</div><div class="ft"><b>Open Saturday, 11 to 1</b><span class="bt" id="bt2">Book a showing</span></div></div>
+ <div id="one"><span>${icon("check",44,"#D7AE62",3)}One place to tap</span></div></div>
+`,
+update(t,C,endAt){
+ // hook: the ad with its hashtag pile slams in
+ vis("#s1",t,-1,C.p5+.2);E.slam("#a1",t,-.1,{s:1.3,r:4});
+ TAGS.forEach((g,i)=>{const a=C.link+i*.08;$("#g"+i).style.background=t>=a?`rgba(58,111,216,${.18*ease(P(t,a,a+.2))})`:"none"});
+ // someone taps one and gets pulled into other agents' posts
+ const tk=ease(P(t,C.p3,C.p3+.3));$("#g1").style.boxShadow=`0 0 0 ${5*tk}px #3a6fd8`;
+ $("#a1").style.filter=`blur(${6*ease(P(t,C.p4,C.p4+.5))}px)`;
+ R.fp.forEach((f,i)=>{const a=C.p4+.15+i*.12;pop(f,P(t,a,a+.3));f.style.transform+=` rotate(${f.dataset.r}deg)`});
+ vis("#s2",t,C.p5+.2,C.e7);E.slam("#exit",t,C.theexit,{s:2,r:-10});vis("#paid",t,C.p6,null,{dy:30});
+ vis("#s3",t,C.p8,C.e10);vis("#cpost",t,C.p8,null,{dx:-80,dy:0});vis("#cad",t,C.p9,null,{dx:80,dy:0});
+ $("#cad").style.boxShadow=`0 0 0 ${6*ease(P(t,C.p10,C.p10+.3))}px var(--gold)`;
+ // cut them all: the tags fall away, one button left
+ vis("#s4",t,C.p11,endAt);vis("#a2",t,C.p11,null,{dy:40});
+ $$(".t2").forEach((g,i)=>{const a=C.cut+.15+i*.07,k=ease(P(t,a,a+.35));g.style.opacity=1-k;g.style.transform=`translateY(${k*90}px) rotate(${(i%2?1:-1)*k*20}deg)`;g.style.textDecoration=t>=C.cut?"line-through":"none"});
+ const hk=ease(P(t,C.cut+.8,C.cut+1.3));$("#tg2").style.height=hk>0?`${(1-hk)*110}px`:"";$("#tg2").style.overflow=hk>0?"hidden":"";
+ const ok=ease(P(t,C.p12,C.p12+.3));$("#bt2").style.boxShadow=`0 0 0 ${7*ok}px rgba(215,174,98,.5)`;vis("#one",t,C.p12,null,{dy:30});
+}};
+E.boot(R);
+R.fp=[];{const f=$("#feed");[[60,700,-6,"Another agent"],[720,660,5,"Another agent"],[390,960,-3,"Another agent"],[60,1230,4,"Another agent"],[720,1210,-5,"Another agent"]].forEach(([x,y,r,w],i)=>{const el=document.createElement("div");el.className="fp";el.dataset.r=r;el.style.left=x+"px";el.style.top=y+"px";
+ el.innerHTML=`<div class="who">${w}</div>#DreamHome<div class="mi">${house("f"+i,300,186)}</div>`;f.appendChild(el);R.fp.push(el)})}
+render(0);
+</script></body></html>

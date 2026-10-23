@@ -136,6 +136,14 @@ hard writing rules above (no dashes, no "we", nothing invented, no "Realtor") ne
 **Keep it simple (Ismael, 2026-10-19).** Straightforward, like a creator talking to a friend and giving
 real value. Never confusing or complex: one point, plain words, a clear tip.
 
+**Reel rules, every reel, always (Ismael, 2026-10-23).**
+1. A genuinely attracting hook: on screen and spoken in the first second, about a stake the viewer feels, never a slow title.
+2. Straightforward inside: one point, plain words, a tip someone can use today.
+3. "Follow @gethopkins" on screen at the end, silent (the engine's gold chip plus the end card). Never in the voiceover.
+4. Pronunciation spot on: every reel is checked with faster-whisper against the script before it is rendered, and any misread word is fixed in `vo.py`.
+5. Human timing: varied pauses like a person talking, short silences in the middle of sentences where someone would think or let a point land, longer ones after a question, never one even rhythm.
+6. Send every finished reel in the chat as a file, not only a path.
+
 ## Product decisions (Hopkins)
 
 * **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name

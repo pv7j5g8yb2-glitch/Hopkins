@@ -1,0 +1,74 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 14: an ad that asks for seven things gets none of them. One ad, one ask.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const ASKS=[["chat","Call me"],["chat","Text me"],["send","Email me"],["calendar","Book a consult"],["home","Check my website"],["coin","Get a home value"],["send","DM me READY"]];
+const R={
+hook:1,
+sfx:[{s:"hit",at:.02,shake:14},{s:"tick",at:"p1"},
+ {s:"pop",at:"call"},{s:"pop",at:"text"},{s:"pop",at:"email"},{s:"pop",at:"book"},{s:"pop",at:"check"},{s:"pop",at:"get"},{s:"pop",at:"dm"},
+ {s:"stamp",at:"p4",shake:10},{s:"hit",at:"nothing",shake:12},{s:"select",at:"p8"},{s:"pop2",at:"p9"},{s:"pop2",at:"p10"},{s:"ding",at:"p12"}],
+script:[
+ "Your ad has seven buttons.",
+ {t:"Count them.",pause:.5},
+ "^Call me. ^Text me. ^Email me. ^Book a consult.",
+ "^Check my website. ^Get a home value. ^DM me ready.",
+ {t:"That's not an ad.",pause:.45},
+ "That's a business card that won't shut up.",
+ {t:"Give people seven things to do,",pause:.35},
+ {t:"and most of them do ^nothing.",pause:.6},
+ {t:"Pick one.",pause:.45},
+ "For buyers? Book a showing.",
+ "For sellers? Get your home value.",
+ {t:"That's it.",pause:.4},
+ "One ad. One ask.",
+ "Send this to the agent whose ads read like a phone book.",
+],
+css:`
+#list{left:170px;top:600px;width:740px;padding:26px 34px}
+#list .hd{display:flex;align-items:center;gap:14px;font-size:24px;padding-bottom:14px;border-bottom:1px solid rgba(42,15,20,.1);margin-bottom:6px}
+#list .av{width:50px;height:50px;border-radius:50%;background:var(--plum);color:var(--cream);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center}
+#list .sp{font-size:17px;color:var(--quiet)}
+.ak{display:flex;align-items:center;gap:20px;padding:15px 6px;font-size:34px;font-weight:700;opacity:0;position:relative}
+.ak .n{margin-left:auto;width:52px;height:52px;border-radius:50%;background:var(--plum);color:var(--cream);font-size:26px;display:flex;align-items:center;justify-content:center}
+.ak .st{position:absolute;left:0;right:0;top:50%;height:5px;background:var(--plum);border-radius:3px;transform-origin:left;transform:scaleX(0)}
+#bc{position:absolute;left:600px;top:540px;opacity:0}
+#bc span{display:inline-block;background:var(--plum);color:var(--cream);font-size:40px;font-weight:700;padding:14px 26px;border-radius:16px;border:5px solid var(--cream);transform:rotate(8deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+#zero{position:absolute;left:0;width:1080px;top:760px;text-align:center;opacity:0}
+#zero b{display:block;font-size:260px;letter-spacing:-.05em;line-height:1}
+#zero span{font-size:36px;color:var(--rose);font-weight:700}
+#two{position:absolute;left:0;width:1080px;top:700px;display:flex;justify-content:center;gap:36px}
+.tw{width:420px;padding:36px 30px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;position:relative}
+.tw .k{font-size:24px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet)}
+.tw .b{font-size:34px;font-weight:700;padding:20px 30px;border-radius:18px;background:var(--gold);color:var(--ox)}
+#one{position:absolute;left:0;width:1080px;top:1180px;text-align:center;font-size:60px;font-weight:700;opacity:0}
+#one em{font-family:"Instrument Serif";font-weight:400;font-size:1.2em;color:var(--gold)}
+#snd{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:36px;font-weight:700;color:var(--rose)}
+`,
+scenes:`
+<div class="scene" id="s1"><div class="card" id="list"><div class="hd"><div class="av">ER</div><div><b>elleryrealty</b><div class="sp">Sponsored</div></div></div>
+ ${ASKS.map(([ic,l],i)=>`<div class="ak" id="k${i}">${icon(ic,40,"#8E6B2C",2)}${l}<span class="n">${i+1}</span><i class="st"></i></div>`).join("")}</div>
+ <div id="bc"><span>Business card</span></div></div>
+<div class="scene" id="s2"><div id="zero"><b>0</b><span>things done</span></div></div>
+<div class="scene" id="s3"><div id="two">
+ <div class="card tw" id="t1"><div class="k">Buyer ad</div>${icon("key",90,"#8E6B2C",1.6)}<div class="b">Book a showing</div></div>
+ <div class="card tw" id="t2"><div class="k">Seller ad</div>${icon("home",90,"#8E6B2C",1.6)}<div class="b">Get your home value</div></div></div>
+ <div id="one">One ad. One <em>ask.</em></div></div>
+<div class="scene" id="s4"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>
+`,
+update(t,C,endAt){
+ // hook: the ad slams in, then the asks pile up one by one as they're said
+ vis("#s1",t,-1,C.e5);E.slam("#list",t,-.1,{s:1.25,r:-3});
+ const at=[C.call,C.text,C.email,C.book,C.check,C.get,C.dm];
+ at.forEach((a,i)=>{const el=$("#k"+i);el.style.opacity=ease(P(t,a-.05,a+.15));el.style.transform=`translateX(${(1-ease(P(t,a-.05,a+.2)))*-60}px)`});
+ E.slam("#bc",t,C.p5,{s:2,r:12});
+ vis("#s2",t,C.p6,C.e7);pop("#zero",P(t,C.nothing,C.nothing+.35));
+ // pick one: buyer or seller, one button each
+ vis("#s3",t,C.p8,C.e12);vis("#t1",t,C.p9,null,{dx:-80,dy:0});vis("#t2",t,C.p10,null,{dx:80,dy:0});
+ pop("#one",P(t,C.p12,C.p12+.35));
+ vis("#s4",t,C.p13,endAt);draw("#snd path",P(t,C.p13,C.p13+.7));
+}};
+E.boot(R);
+render(0);
+</script></body></html>

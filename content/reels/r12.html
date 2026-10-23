@@ -1,0 +1,85 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+// Reel 12: on a phone the ad text is cut after a couple of lines, so the first line is the whole ad.
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house}=E;
+const R={
+hook:1,
+sfx:[{s:"hit",at:.02,shake:14},{s:"stamp",at:"seemore",shake:10},{s:"tick",at:"p5"},
+ {s:"whoosh",at:"p6"},{s:"pop2",at:"p8"},{s:"hit",at:"p9",shake:8},
+ {s:"pop",at:"street"},{s:"pop",at:"view"},{s:"pop",at:"price"},{s:"ding",at:"p12"},{s:"select",at:"p14"}],
+script:[
+ "Nobody reads past this line.",
+ {t:"No, seriously.",pause:.55},
+ "On a phone, your ad text gets cut after two or three lines.",
+ {t:"Everything after that,",pause:.35},
+ "hides behind [see more.]",
+ {t:"And most people just keep scrolling.",pause:.6},
+ "So look at your last ad.",
+ {t:"What's in the first line?",pause:.65},
+ "If it's Just Listed and a row of exclamation marks,",
+ {t:"that's all anyone saw.",pause:.5},
+ "Put the thing that makes someone stop right at the top.",
+ "The ^street. The ^view. The ^price.",
+ {t:"Then the details.",pause:.4},
+ "The people who care will tap.",
+ "Go check your last ad. Right now.",
+],
+css:`
+.ad{left:150px;width:780px;padding:0;overflow:hidden}
+.ad .hd{display:flex;align-items:center;gap:14px;padding:22px 26px;font-size:24px}.ad .av{width:50px;height:50px;border-radius:50%;background:var(--plum);color:var(--cream);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ad .sp{font-size:17px;color:var(--quiet)}
+.ad .tx{padding:0 26px 20px;font-size:30px;line-height:1.38}
+.ad .tx .l1{font-weight:700}.ad .tx .more{color:var(--quiet);font-weight:700}
+.ad .im{height:300px;overflow:hidden}.ad .im svg{margin-top:-60px}
+#a1{top:640px}
+#hide{position:absolute;left:150px;top:1300px;width:780px;padding:26px 30px;border-radius:22px;border:3px dashed rgba(244,235,221,.25);font-size:26px;line-height:1.45;color:var(--rose);opacity:0}
+#hide b{color:var(--cream)}
+#tap{position:absolute;left:640px;top:820px;opacity:0}
+#tap span{display:inline-block;background:var(--plum);color:var(--cream);font-size:42px;font-weight:700;padding:14px 28px;border-radius:16px;border:5px solid var(--cream);transform:rotate(8deg);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.fl{left:150px;width:780px;padding:32px 36px}
+.fl .k{font-size:22px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);margin-bottom:14px}
+.fl .v{font-size:40px;font-weight:700;line-height:1.25}
+#w1{top:660px}#w2{top:1010px}
+#w2{box-shadow:0 0 0 6px var(--gold),0 40px 90px rgba(0,0,0,.45)}
+#x2{position:absolute;right:-24px;top:-30px;opacity:0}
+#x2 span{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:var(--ox);font-size:32px;font-weight:700;padding:12px 22px;border-radius:14px;border:4px solid var(--ox);transform:rotate(7deg)}
+#three{position:absolute;left:0;width:1080px;top:720px;display:flex;justify-content:center;gap:28px}
+#three .c{width:290px;height:300px;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;font-size:38px;font-weight:700;position:relative}
+#det{position:absolute;left:0;width:1080px;top:1110px;text-align:center;font-size:34px;color:var(--rose);font-weight:700;opacity:0}
+#chk{position:absolute;left:0;width:1080px;top:760px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:40px;font-weight:700;color:var(--cream)}
+`,
+scenes:`
+<div class="scene" id="s1"><div class="card ad" id="a1"><div class="hd"><div class="av">ER</div><div><b>elleryrealty</b><div class="sp">Sponsored</div></div></div>
+ <div class="tx"><span class="l1">JUST LISTED!!! !!!</span><br>Gorgeous 4 bed home in a great area, call me today<span class="more"> ... more</span></div>
+ <div class="im">${house("h1",780,480)}</div></div>
+ <div id="tap"><span>Never tapped</span></div>
+ <div id="hide">Hidden: <b>Saturday mornings on the back porch, ten minutes to the beach, $485,000.</b> Open house Saturday.</div></div>
+<div class="scene" id="s2"><div class="card fl" id="w1"><div class="k">What they saw</div><div class="v">JUST LISTED!!! !!!</div></div>
+ <div class="card fl" id="w2"><div class="k">What should be up top</div><div class="v">Oak Street. Porch facing the sunrise. $485,000.</div><div id="x2"><span>${icon("check",30,"#2A0F14",3)}First line</span></div></div></div>
+<div class="scene" id="s3"><div id="three">
+ <div class="card c" id="c1">${icon("pin",90,"#8E6B2C",1.6)}The street</div>
+ <div class="card c" id="c2">${icon("sun",90,"#8E6B2C",1.6)}The view</div>
+ <div class="card c" id="c3">${icon("coin",90,"#8E6B2C",1.6)}The price</div></div>
+ <div id="det">then the details</div></div>
+<div class="scene" id="s4"><div id="chk">${icon("eye",170,"#D7AE62",1.4)}Your first line</div></div>
+`,
+update(t,C,endAt){
+ // hook: the ad slams in, its first lines visible, the rest cut behind "more"
+ vis("#s1",t,-1,C.p8);E.slam("#a1",t,-.1,{s:1.3,r:-4});
+  E.slam("#tap",t,C.p5,{s:1.9,r:14});
+ vis("#hide",t,C.p3,null,{dy:40});$("#hide").style.opacity=Math.min(+$("#hide").style.opacity||0,1-.65*ease(P(t,C.seemore,C.seemore+.5)));
+ $("#a1 .more").style.background=t>=C.seemore&&t<C.seemore+.8?"rgba(215,174,98,.45)":"none";
+ // what they saw vs what should be up top
+ vis("#s2",t,C.p8,C.e10);vis("#w1",t,C.p8,null,{dx:-80,dy:0});vis("#w2",t,C.p10,null,{dx:80,dy:0});
+ $("#w1").style.opacity=Math.min(+$("#w1").style.opacity,1-.55*ease(P(t,C.p10,C.p10+.4)));
+ E.slam("#x2",t,C.p10+.6,{s:1.8,r:10});
+ // street, view, price, then the details
+ vis("#s3",t,C.p11,C.e13);
+ [["#c1",C.street],["#c2",C.view],["#c3",C.price]].forEach(([c,a])=>E.slam(c,t,a-.05,{s:1.25,r:0}));
+ vis("#det",t,C.p12,null,{dy:30});
+ vis("#s4",t,C.p14,endAt);draw("#chk path, #chk circle",P(t,C.p14,C.p14+.7));
+}};
+E.boot(R);
+render(0);
+</script></body></html>

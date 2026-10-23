@@ -370,3 +370,4 @@ wording or layout). What to look for:
 
 - 2026-10-17: First version, from Coffee & Contracts' site, feed and a 10 slide
   "what's working right now" carousel, and @heyalyssamichelle's hooks carousel.
+- 2026-10-23: Human timing in reels. Split a sentence across two caption lines with `pause` on the first ("Someone taps one," pause, "and now they're scrolling other agents' posts.") to get a real beat mid sentence. Use a long pause (.6 to .7) after a line that should land ("Not yours.", "Cool roof.", "Where's the house?"). Avoid words that sound like other words when said alone ("Buyer ad" sounds like "buy your ad").
