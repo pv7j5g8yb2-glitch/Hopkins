@@ -15,15 +15,11 @@ services:
         value: production
       - key: COOKIE_SECRET
         generateValue: true
-      - key: INVITE_CODES
-        sync: false
+      # Only what's needed to start. Add INVITE_CODES (to let others sign up), NTFY_TOPIC and
+      # ANTHROPIC_API_KEY later in the service's Environment tab.
       - key: ADMIN_EMAILS
         sync: false
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_AUTH_TOKEN
-        sync: false
-      - key: NTFY_TOPIC
-        sync: false
-      - key: ANTHROPIC_API_KEY
         sync: false

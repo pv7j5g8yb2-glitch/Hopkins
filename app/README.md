@@ -81,9 +81,10 @@ separate and untouched).
 1. Turso: create a new database (not the waitlist's), copy its `libsql://` URL and make a token.
 2. Render: New, Blueprint, pick this repository and the branch this code is on. Render reads
    `render.yaml` and creates `hopkins-app` (root `app`, `npm install`, `npm start`, free plan).
-3. Fill in what it asks for: `ADMIN_EMAILS` (your email), `INVITE_CODES` (one or more codes you
-   make up, comma separated), `DATABASE_URL` and `DATABASE_AUTH_TOKEN` from Turso, `NTFY_TOPIC`
-   (same as the waitlist's), `ANTHROPIC_API_KEY` (optional). `COOKIE_SECRET` is generated.
+3. Fill in the three things it asks for: `ADMIN_EMAILS` (your email), and `DATABASE_URL` and
+   `DATABASE_AUTH_TOKEN` from Turso. `COOKIE_SECRET` is generated. Later, in the service's
+   Environment tab: `INVITE_CODES` (codes you make up, comma separated, so others can sign up),
+   `NTFY_TOPIC` (same as the waitlist's), `ANTHROPIC_API_KEY` (optional).
 4. Open `https://hopkins-app.onrender.com/signup` (or whatever address Render gives it) and sign
    up with your admin email; admins don't need a code. Others sign up with
    `/signup?invite=YOURCODE`.
