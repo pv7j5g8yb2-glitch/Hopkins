@@ -158,6 +158,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Cleaning up listings (2026-10-24, Ismael asked): on the Listings page, Select (top right) ticks
+  listings and a bar at the bottom deletes them in one go, like Photos. Press and hold a card (right
+  click on a laptop) for its menu: Open, Select, Mark as sold or for sale, Delete. Every delete asks
+  first. `POST /api/listings/delete` takes several ids, only the workspace's own.
 * Suggested reply (2026-10-24, Ismael): the quick reply pills above the message box are gone. Like
   Claude's app, the empty box shows Hopkins' guess at your next message in grey with a › to send
   it; tapping the box (phone) puts it away so you type your own; on a laptop it stays until you

@@ -220,3 +220,16 @@ test("deleting a listing removes it and its chat, and doesn't hand back free ads
   const next = await c("POST", "/api/listings", { text: DESCRIPTION.replace("412 Oak", "18 Elm") });
   assert.equal(next.json.ads.length, 0);
 });
+
+test("deleting several listings at once, only your own", async () => {
+  const { c } = await signup("bulk@ellery.test");
+  const other = (await signup("bulk2@ellery.test")).c;
+  const mine = [];
+  for (const n of ["1 Elm St", "2 Elm St", "3 Elm St"]) mine.push((await c("POST", "/api/listings", { text: `${n}, Austin, TX. 3 bed, 2 bath. $500,000` })).json.listing.id);
+  const theirs = (await other("POST", "/api/listings", { text: DESCRIPTION })).json.listing.id;
+  const r = await c("POST", "/api/listings/delete", { ids: [mine[0], mine[1], theirs] });
+  assert.equal(r.json.deleted, 2);
+  assert.deepEqual((await c("GET", "/api/listings")).json.listings.map((l) => l.id), [mine[2]]);
+  assert.equal((await other("GET", `/api/listings/${theirs}`)).status, 200);
+  assert.equal((await c("POST", "/api/listings/delete", { ids: [] })).status, 400);
+});

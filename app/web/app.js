@@ -23,6 +23,8 @@
     redo: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>',
     check: '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
     alert: '<svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
+    trash: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 11v5M13.5 11v5"/></svg>',
+    flag: '<svg viewBox="0 0 24 24"><path d="M6 21V4M6 5h10l-2 3.5 2 3.5H6"/></svg>',
     chevR: '<svg viewBox="0 0 24 24"><path d="m10 6.5 5.5 5.5-5.5 5.5"/></svg>',
     chev: '<svg class="chev" viewBox="0 0 24 24"><path d="m8 10 4-4 4 4M8 14l4 4 4-4"/></svg>',
     square: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2.5"/></svg>',
@@ -40,7 +42,7 @@
     people: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg>',
     chart: '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
   };
-  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, format: "feed", pending: [], busy: false, showPhotos: false, showIssues: false, seen: {}, fresh: null };
+  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), format: "feed", pending: [], busy: false, showPhotos: false, showIssues: false, seen: {}, fresh: null };
 
   // ---------- helpers ----------
 
@@ -227,7 +229,7 @@
     return `<a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
       <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make 3 new versions" : "Make the ads"}</button>
-      <button class="danger" data-act="delListingAsk">${ICON.alert}Delete listing</button>`;
+      <button class="danger" data-act="delListingAsk">${ICON.trash}Delete listing</button>`;
   }
 
   // ---------- frame ----------
@@ -274,6 +276,7 @@
     closePop();
     markNav();
     const [view, id] = location.hash.slice(2).split("/");
+    if (view !== "listings") { S.selecting = false; document.body.classList.remove("selecting"); }
     // Inside a listing or a new one, the phone goes full screen like a chat app.
     document.body.classList.toggle("focus", view === "l" || view === "new" || !S.me.workspace.brand.setup_done);
     try {
@@ -349,12 +352,68 @@
 
   // ---------- Listings ----------
 
+  // Clearing listings out, the way Photos does it: Select, tick the ones to go, Delete. Holding
+  // a card (or right clicking it on a laptop) opens its own menu: select, mark as sold, delete.
   function viewListings() {
-    const card = (l, i) => `<a class="card-l" href="#/l/${l.id}" style="animation-delay:${Math.min(i, 8) * 0.04}s"><div class="ph" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id)})` : ""}">
+    const sel = S.selecting && S.listings.length;
+    document.body.classList.toggle("selecting", Boolean(sel));
+    if (!sel) S.picked = new Set();
+    const card = (l, i) => `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id)})` : ""}">${sel ? `<i class="tick">${ICON.check}</i>` : ""}
       ${l.status === "sold" ? `<span class="chip green">Sold</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
       <div class="bd"><b>${esc(listingName(l))}</b><span>${esc([l.price ? money(l.price) : "", l.leads ? `${l.leads} ${l.leads === 1 ? "lead" : "leads"}` : ""].filter(Boolean).join(" · ") || "Draft")}</span></div></a>`;
-    main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head"><h1>Listings</h1><p class="lede">${S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Every home you market lives here."}</p></div>
-      <div class="cards">${S.listings.map(card).join("")}<a class="card-new" href="#/new">${ICON.plus}New listing</a></div></div></div>`;
+    const n = S.picked.size;
+    const lede = sel ? (n ? `${n} selected` : "Tap the ones to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Every home you market lives here.";
+    main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Listings</h1><p class="lede">${lede}</p></div>
+      ${S.listings.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
+      <div class="cards ${sel ? "selecting" : ""}">${S.listings.map(card).join("")}${sel ? "" : `<a class="card-new" href="#/new">${ICON.plus}New listing</a>`}</div></div></div>
+      ${sel ? `<div class="selbar lg"><button class="sec-btn" data-act="selectAll">${n === S.listings.length ? "Select none" : "Select all"}</button>
+        <button class="btn del-btn" data-act="delPicked" ${n ? "" : "disabled"}>${ICON.trash}${n ? `Delete ${n}` : "Delete"}</button></div>` : ""}`;
+    bindHold();
+  }
+
+  // Press and hold a card for its menu. A small move cancels it, so scrolling never opens it.
+  function bindHold() {
+    const cards = $(".cards");
+    if (!cards) return;
+    let timer = 0, x0 = 0, y0 = 0;
+    const cancel = () => clearTimeout(timer);
+    cards.addEventListener("pointerdown", (e) => {
+      const c = e.target.closest("[data-card]");
+      if (!c || S.selecting || e.pointerType === "mouse") return;
+      x0 = e.clientX; y0 = e.clientY;
+      timer = setTimeout(() => { S.heldAt = Date.now(); buzz(10); cardMenu(c); }, 480);
+    });
+    cards.addEventListener("pointermove", (e) => { if (Math.hypot(e.clientX - x0, e.clientY - y0) > 8) cancel(); });
+    for (const t of ["pointerup", "pointercancel", "scroll"]) cards.addEventListener(t, cancel);
+    cards.addEventListener("contextmenu", (e) => {
+      const c = e.target.closest("[data-card]");
+      if (!c || S.selecting) return;
+      e.preventDefault();
+      cancel();
+      S.heldAt = Date.now();
+      cardMenu(c);
+    });
+  }
+
+  function cardMenu(c) {
+    const l = S.listings.find((x) => x.id === c.dataset.card);
+    if (!l) return;
+    c.classList.add("held");
+    setTimeout(() => c.classList.remove("held"), 300);
+    openPop(c, `<div class="note"><b>${esc(listingName(l))}</b>${esc(l.price ? money(l.price) : "Draft")}</div>
+      <a href="#/l/${l.id}">${ICON.eye}Open</a>
+      <button data-act="selectOne" data-id="${l.id}">${ICON.check}Select</button>
+      <button data-act="markSold" data-id="${l.id}" data-sold="${l.status === "sold" ? 0 : 1}">${ICON.flag}${l.status === "sold" ? "Mark as for sale" : "Mark as sold"}</button>
+      <div class="sep"></div><button class="danger" data-act="delOne" data-id="${l.id}">${ICON.trash}Delete listing</button>`);
+  }
+
+  async function deleteListings(ids) {
+    await api("/api/listings/delete", { body: { ids } });
+    S.selecting = false;
+    await Promise.all([loadMe(), loadListings(), loadInbox()]);
+    toast(ids.length === 1 ? "Listing deleted" : `${ids.length} listings deleted`);
+    if (location.hash.startsWith("#/listings")) viewListings();
+    drawSide();
   }
 
   // ---------- the composer (shared) ----------
@@ -1016,6 +1075,18 @@
   }
 
   document.addEventListener("click", async (e) => {
+    // The tap that ends a press and hold doesn't also open the listing.
+    // (or close the menu it just opened, when the finger lifts over the backdrop).
+    if (S.heldAt && Date.now() - S.heldAt < 700 && !e.target.closest("#pop")) { e.preventDefault(); return; }
+    // In Select, tapping a card ticks it.
+    const picked = S.selecting && e.target.closest("[data-card]");
+    if (picked) {
+      e.preventDefault();
+      const id = picked.dataset.card;
+      S.picked.has(id) ? S.picked.delete(id) : S.picked.add(id);
+      buzz(5);
+      return viewListings();
+    }
     if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=dlmenu]")) closePop();
     const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
@@ -1026,9 +1097,23 @@
       if (["saveProfile", "saveBiz", "savePw", "saveAlerts", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "listmenu") openPop(t, listingMenu());
+      else if (act === "selectMode") { S.selecting = !S.selecting; buzz(5); viewListings(); }
+      else if (act === "selectAll") { S.picked = S.picked.size === S.listings.length ? new Set() : new Set(S.listings.map((x) => x.id)); buzz(5); viewListings(); }
+      else if (act === "selectOne") { S.selecting = true; S.picked = new Set([t.dataset.id]); viewListings(); }
+      else if (act === "markSold") {
+        await api(`/api/listings/${t.dataset.id}`, { method: "PATCH", body: { status: t.dataset.sold === "1" ? "sold" : "active" } });
+        await loadListings();
+        toast(t.dataset.sold === "1" ? "Marked as sold" : "Marked as for sale");
+        viewListings(); drawSide();
+      } else if (act === "delOne" || act === "delPicked") {
+        const ids = act === "delOne" ? [t.dataset.id] : [...S.picked];
+        const name = ids.length === 1 ? listingName(S.listings.find((x) => x.id === ids[0]) || {}) : `${ids.length} listings`;
+        openPop(act === "delPicked" ? t : $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, chats, photos and leads go too. It can't be undone.</div>
+          <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "listing" : `${ids.length} listings`}</button>`);
+      } else if (act === "delYes") await deleteListings(t.dataset.ids.split(","));
       else if (act === "delListingAsk") {
         openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, chat, photos and leads go too. It can't be undone.</div>
-          <button class="danger" data-act="delListingYes">${ICON.alert}Delete listing</button>`);
+          <button class="danger" data-act="delListingYes">${ICON.trash}Delete listing</button>`);
       } else if (act === "delListingYes") {
         await api(`/api/listings/${l.id}`, { method: "DELETE" });
         S.current = null;
@@ -1100,7 +1185,7 @@
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
   window.addEventListener("resize", () => { if (!phone()) closePop(); });
-  $("#sheetBg").addEventListener("click", closePop);
+  $("#sheetBg").addEventListener("click", () => { if (!(S.heldAt && Date.now() - S.heldAt < 700)) closePop(); });
   window.addEventListener("hashchange", route);
 
   (async function start() {

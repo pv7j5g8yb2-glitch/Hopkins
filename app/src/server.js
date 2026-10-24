@@ -306,6 +306,15 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
   return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3].includes(r.focus) ? r.focus : null };
 });
 
+// Several at once, from Select on the Listings page.
+app.post("/api/listings/delete", async (request, reply) => {
+  const ids = Array.isArray(request.body?.ids) ? [...new Set(request.body.ids.filter((x) => typeof x === "string"))].slice(0, 200) : [];
+  if (!ids.length) return reply.code(400).send({ error: "Pick a listing first." });
+  let deleted = 0;
+  for (const id of ids) if (await deleteListing(request.ws, id)) deleted++;
+  return { deleted };
+});
+
 app.delete("/api/listings/:id", async (request, reply) => {
   if (!(await deleteListing(request.ws, request.params.id))) return reply.code(404).send({ error: "No such listing." });
   return { ok: true };

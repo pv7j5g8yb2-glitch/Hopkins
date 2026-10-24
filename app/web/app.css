@@ -291,6 +291,26 @@ a.row:hover{background:var(--hover)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .card-l{display:block;border-radius:18px;overflow:hidden;background:var(--raise);box-shadow:0 0 0 1px var(--line),var(--shadow);transition:transform .15s var(--ease);animation:up .35s var(--ease) both}
 .card-l:hover{transform:translateY(-2px)}
+/* Select on the Listings page, and press and hold for a card's menu */
+.head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sel-btn{font-size:15px;font-weight:600;color:var(--ink);padding:7px 14px;border-radius:999px;background:var(--sel);margin-top:6px;flex:none;transition:transform .15s var(--spring)}
+.sel-btn:active{transform:scale(.94)}
+.card-l{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.card-l.held{animation:held .3s var(--ease)}
+@keyframes held{50%{transform:scale(.96)}}
+.cards.selecting .card-l{animation:none;transition:transform .2s var(--spring),box-shadow .2s}
+.cards.selecting .card-l:hover{transform:none}
+.card-l .tick{position:absolute;right:10px;top:10px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  border:2px solid #fff;background:rgba(42,15,20,.18);box-shadow:0 1px 4px rgba(0,0,0,.2);color:transparent;transition:background .15s,transform .2s var(--spring)}
+.card-l .tick svg{width:15px;height:15px;stroke-width:3}
+.card-l.picked{transform:scale(.95);box-shadow:0 0 0 2px var(--ink),var(--shadow)}
+.card-l.picked .tick{background:var(--ink);color:#fff;transform:scale(1.08)}
+.selbar{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:60;display:flex;gap:8px;padding:6px;border-radius:999px;background:var(--raise);box-shadow:0 0 0 1px var(--line),0 14px 40px -10px rgba(42,15,20,.25);animation:selup .3s cubic-bezier(.2,1.2,.4,1)}
+@keyframes selup{from{transform:translate(-50%,24px);opacity:0}}
+.selbar .sec-btn,.selbar .btn{border-radius:999px}
+.del-btn{background:#9b2c2c;color:#fff;box-shadow:none}
+.del-btn:disabled{background:rgba(155,44,44,.35)}
+.del-btn svg{color:#fff}
 .card-l .ph{aspect-ratio:4/3;background:var(--side) center/cover;position:relative}
 .card-l .ph .chip{position:absolute;left:10px;top:10px;background:rgba(251,248,243,.92);backdrop-filter:blur(6px)}
 .card-l .ph .dotw{position:absolute;right:12px;top:13px}
@@ -494,7 +514,12 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .lg-circle svg{width:26px;height:26px;stroke-width:2.2;position:relative;z-index:4}
   .lg-circle:active{transform:scale(1.12)}
   .lg-circle.on{color:var(--ink)}
-  body.focus .tabbar{display:none}
+  body.focus .tabbar,body.selecting .tabbar{display:none}
+  .selbar{left:14px;right:14px;transform:none;bottom:max(12px,calc(var(--safe-b) - 8px))}
+  .selbar .sec-btn,.selbar .btn{flex:1;padding:14px;font-size:16px}
+  @keyframes selup{from{transform:translateY(30px);opacity:0}}
+  .selbar.lg{position:fixed;background:var(--lg-tint);-webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter);box-shadow:var(--lg-shadow)}
+  .selbar.lg .sec-btn{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.6)}
   /* inside a listing: full screen, like a chat app */
   .lv{flex:1;display:flex;min-height:0}
   .ch{display:none}
