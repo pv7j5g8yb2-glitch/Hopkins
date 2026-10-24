@@ -163,7 +163,10 @@ personal in here.
   it; tapping the box (phone) puts it away so you type your own; on a laptop it stays until you
   type and Tab drops it in. The model writes the guess with each reply (never about paying, never
   a placeholder like "new text"); without one, it comes from where the listing is at. "Try an
-  example" moved into the New listing intro. Hopkins also says "the line on the photo", never
+  example" moved into the New listing intro. With no suggestion (none found, or the model failed)
+  the box says "Reply to Hopkins", which fits any conversation (Ismael, 2026-10-24). A reply that
+  fails (no signal) stops the thinking mark, puts the message back in the box and says "No
+  connection. Try again." Hopkins also says "the line on the photo", never
   "overlay", whatever the model writes.
 * Notices (2026-10-24, Ismael): every one ("Saved", "Listing deleted", "Copied"...) drops in from
   the top like an iPhone notification, with the mark as an app icon, and glides back up after about

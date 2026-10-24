@@ -45,11 +45,16 @@
   // ---------- helpers ----------
 
   async function api(path, opts = {}) {
-    const res = await fetch(path, {
-      method: opts.method || (opts.body ? "POST" : "GET"),
-      headers: opts.body ? { "Content-Type": "application/json" } : {},
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
-    });
+    let res;
+    try {
+      res = await fetch(path, {
+        method: opts.method || (opts.body ? "POST" : "GET"),
+        headers: opts.body ? { "Content-Type": "application/json" } : {},
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+    } catch {
+      throw new Error("No connection. Try again.");
+    }
     if (res.status === 401) { location.href = "/login"; throw new Error("signed out"); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Something went wrong. Try again.");
@@ -363,6 +368,10 @@
       <button class="send" id="send" type="submit" aria-label="Send">${ICON.send}</button></div><div class="hint" id="hint"></div></form></div>`;
   }
 
+  // What the empty box says when there's no suggestion (none found, or the model failed): it
+  // fits whatever the conversation is about.
+  const REPLY = "Reply to Hopkins";
+
   // suggestion: Hopkins' guess at what you'll say next, shown in grey in the empty box like
   // Claude does. The › sends it as it is; tapping the box puts it away so you can type your own.
   function bindComposer(onSend, { drop, suggestion } = {}) {
@@ -374,6 +383,7 @@
       ta.placeholder = on ? suggestion : ta.dataset.normal;
     };
     showSug(true);
+    S.clearSug = () => { suggestion = ""; showSug(false); };
     // On a phone, tapping the box means you want to type your own. On a laptop the box is
     // already focused, so the suggestion stays until you type; Tab drops it in to edit.
     ta.addEventListener("focus", () => { if (phone()) showSug(false); });
@@ -514,6 +524,7 @@
         if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; location.hash = `#/l/${p.listing.id}`; return; }
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b"><p>${esc(p.chat.reply)}</p></div></div>`);
+        $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
@@ -530,6 +541,7 @@
         $("#work").closest(".hk").remove();
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b"><p>${esc(p.chat.reply)}</p></div></div>`);
+        $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
@@ -566,7 +578,7 @@
       <div class="lv ${showPv ? "showpv" : ""}" id="lv">
       <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><h2>${esc(listingName(l))}</h2><span class="sub">${esc(sub)}</span></div>${chip}
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
-        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(p.ads.length ? `Ask for a change to version ${S.selected[l.id]}` : "Ask anything about this listing")}</section>
+        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section>
       <section class="pv" id="pv"></section></div>`;
     S.seen[l.id] = p.messages.length;
     const msgs = $("#msgs");
@@ -594,7 +606,19 @@
     const l = S.current.listing;
     showTyping(text);
     const my = current();
-    const next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] } });
+    let next;
+    try {
+      next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] } });
+    } catch (err) {
+      // No answer (no signal, the server's down): stop thinking and drop the old suggestion,
+      // which belonged to the conversation before this message.
+      $("#typing") && $("#typing").remove();
+      // The message didn't go, so it goes back in the box (the composer keeps it), not in the chat.
+      const mine = $$("#thread .me");
+      if (mine.length) mine[mine.length - 1].remove();
+      if ($("#ta")) { $("#ta").dataset.normal = REPLY; S.clearSug(); }
+      throw err;
+    }
     if (my !== current()) return;
     if (next.focus && next.ads.some((a) => a.version === next.focus)) S.selected[l.id] = next.focus;
     drawListing(next);
@@ -665,11 +689,6 @@
     const l = S.current.listing;
     S.selected[l.id] = version;
     $$(".vc").forEach((c) => c.classList.toggle("sel", Number(c.dataset.pick) === version));
-    const ta = $("#ta");
-    if (ta) {
-      ta.dataset.normal = `Ask for a change to version ${version}`;
-      if (!$("#comp").classList.contains("has-sug")) ta.placeholder = ta.dataset.normal;
-    }
     buzz(5);
     drawPreview();
   }
