@@ -55,14 +55,58 @@
     return data;
   }
 
+  // Notices ("Saved", "Listing deleted", every one of them) drop in from the top like a phone
+  // notification and glide back up after a few seconds. They follow the finger: swipe up to send
+  // one away early; pulled down, they stretch a little and spring back. Holding one keeps it.
   let toastTimer;
+  const TOAST_MS = 3200;
   function toast(msg) {
     const t = $("#toast");
-    t.textContent = msg;
+    if (!t.firstChild) t.innerHTML = `<img src="/static/mark.svg" alt=""><span></span>`;
+    const was = t.classList.contains("on");
+    t.lastChild.textContent = msg;
+    t.style.transform = "";
+    t.classList.remove("bump");
+    if (was) { void t.offsetWidth; t.classList.add("bump"); }
     t.classList.add("on");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("on"), 2800);
+    toastTimer = setTimeout(hideToast, TOAST_MS);
   }
+  function hideToast() {
+    const t = $("#toast");
+    clearTimeout(toastTimer);
+    t.style.transform = "";
+    t.classList.remove("on", "drag", "bump");
+  }
+  (function swipeToast() {
+    const t = $("#toast");
+    let id = null, y0 = 0, dy = 0, last = 0, lastT = 0, v = 0;
+    const end = (e) => {
+      if (id === null || e.pointerId !== id) return;
+      id = null;
+      t.classList.remove("drag");
+      // Flicked or dragged up far enough: away it goes. Otherwise back into place.
+      if (dy < -28 || v < -0.4) hideToast();
+      else { t.style.transform = ""; toastTimer = setTimeout(hideToast, 1800); }
+    };
+    t.addEventListener("pointerdown", (e) => {
+      if (!t.classList.contains("on")) return;
+      id = e.pointerId; y0 = last = e.clientY; lastT = e.timeStamp; dy = 0; v = 0;
+      clearTimeout(toastTimer);
+      t.classList.add("drag");
+      try { t.setPointerCapture(id); } catch {}
+    });
+    t.addEventListener("pointermove", (e) => {
+      if (e.pointerId !== id) return;
+      dy = e.clientY - y0;
+      if (e.timeStamp > lastT) { v = (e.clientY - last) / (e.timeStamp - lastT); last = e.clientY; lastT = e.timeStamp; }
+      // Up follows the finger one to one; down resists, like iOS.
+      const y = dy < 0 ? dy : Math.sqrt(dy) * 4;
+      t.style.transform = `translate(-50%, ${y}px)`;
+    });
+    t.addEventListener("pointerup", end);
+    t.addEventListener("pointercancel", end);
+  })();
 
   function ago(iso) {
     const s = (Date.now() - new Date(iso).getTime()) / 1000;

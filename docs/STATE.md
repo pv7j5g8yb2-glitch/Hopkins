@@ -158,6 +158,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Notices (2026-10-24, Ismael): every one ("Saved", "Listing deleted", "Copied"...) drops in from
+  the top like an iPhone notification, with the mark as an app icon, and glides back up after about
+  3 seconds. Swipe up to dismiss early; pulled down it stretches and springs back; holding it keeps
+  it. Glass and full width on phones, a small white card on desktop. All in `toast()` in app.js.
 * Fixed (2026-10-24, third report): "Hello" on the New listing screen made a listing (named after
   the brand city), then the free limit message. Now a message only becomes a listing when it has
   photos, a link or a fact about a home; anything else gets a normal reply there (Groq when the
