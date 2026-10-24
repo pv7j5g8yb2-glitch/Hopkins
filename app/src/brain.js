@@ -50,8 +50,9 @@ How you write ads (the copy appears on the agent's ads, in their name):
 - headline: under 40 characters.
 - primary_text: 1 to 4 short sentences. The first 125 characters must carry the ad. End with one clear next step (book a showing, see the photos).
 - Describe the home, never the buyer. Fair housing: no "perfect for families", "ideal for couples", "adults only", "safe neighborhood", "exclusive", "master bedroom" (say primary), "great schools", nothing about race, religion, sex, disability, age or family status.
-- Never "Realtor". Never use dashes. Use only facts the agent gave you. Don't invent features, numbers, school names or distances.
-- Write as the agent would: first person singular if needed ("Send me a message"), or no person at all.`;
+- Never "Realtor". Never use dashes or hyphens of any kind ("two week", "move in ready"). Use only facts the agent gave you. Don't invent features, numbers, school names or distances.
+- Write as the agent would: first person singular if needed ("Send me a message"), or no person at all.
+- Every detail in an ad must be in the listing facts or the agent's own description. If it isn't there, leave it out, even when it's typical for homes like this: no appliances, flooring, light, views, "charm" or "character" unless the agent said so.`;
 
 const AD_SCHEMA = {
   type: "object",
@@ -59,8 +60,8 @@ const AD_SCHEMA = {
     version: { type: "integer", description: "1, 2 or 3" },
     headline: { type: "string" },
     primary_text: { type: "string" },
-    overlay: { type: "string" },
-    kicker: { type: "string" },
+    overlay: { type: "string", description: "The line on the photo. Call it that to the agent, never overlay." },
+    kicker: { type: "string", description: "The small label above the line on the photo." },
     photo_number: { type: "integer", description: "Which photo to use, counting from 1. 0 keeps the current one." },
   },
   required: ["version", "headline", "primary_text", "overlay", "kicker", "photo_number"],
@@ -150,11 +151,16 @@ async function call({ system, messages, schema, effort }) {
     }
     if (provider === "groq") {
       const text = (c) => (typeof c === "string" ? c : c.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
+      // Groq now and then fails to produce valid JSON (a 400 json_validate_failed); one retry
+      // usually fixes it.
+      for (let attempt = 0; ; attempt++) {
       const res = await fetchImpl(GROQ_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
         body: JSON.stringify({
           model: GROQ_MODEL,
+          // Lower than the default so it sticks to the facts it was given.
+          temperature: 0.4,
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` },
@@ -163,9 +169,14 @@ async function call({ system, messages, schema, effort }) {
         }),
         signal: AbortSignal.timeout(45000),
       });
-      if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      if (!res.ok) {
+        const err = await res.text();
+        if (attempt === 0 && res.status === 400 && err.includes("json_validate_failed")) continue;
+        throw new Error(`Groq ${res.status}: ${err.slice(0, 200)}`);
+      }
       const data = await res.json();
       return JSON.parse(data.choices[0].message.content);
+      }
     }
     return null;
   } catch (err) {
@@ -202,7 +213,7 @@ export async function writeSetAI({ listing, photos, brand, moment, extra }) {
       type: "text",
       text: `${describe(listing, [], photos)}\n\nBrand voice: ${brand.voice || "plain"}. Agent: ${brand.agent_name || ""}, ${brand.business || ""}.\nMoment: ${moment}${
         extra?.oldPrice ? ` (price was ${extra.oldPrice})` : ""
-      }.\n\nWrite all three versions (1 ${PATTERNS.life.name}, 2 ${PATTERNS.feature.name}, 3 ${PATTERNS.facts.name}) and pick a different photo for each where you can. Put a one line note to the agent in reply. Set action to "revise".`,
+      }.\n\nWrite all three versions (1 ${PATTERNS.life.name}, 2 ${PATTERNS.feature.name}, 3 ${PATTERNS.facts.name}) and pick a different photo for each where you can. In reply, one or two plain sentences to the agent saying what each version leans on, the way a colleague would hand them over. Set action to "revise".`,
     },
   ];
   return normalizeTurn(await call({ system: SYSTEM, messages: [{ role: "user", content }], schema: TURN_SCHEMA, effort: "medium" }));
@@ -219,13 +230,18 @@ In the chat:
 - If they ask for a change and don't name a version, change the version they're looking at.
 - If something is unclear, ask one short question instead of guessing.
 - Never list everything you can do unless they ask. Never repeat a reply you already gave.
-- Only use facts from the context. Never invent results, numbers or features.
+- Only use facts from the context. Never invent results, numbers or features. In ads too: no appliances, materials, finishes or layout the agent didn't mention.
+- Say it the way the agent would: "the line on the photo", not "overlay"; "the label", not "kicker".
+- Money, exactly: the Hopkins plan is one price. The ad spend is separate, the agent chooses it and pays it to Meta. The default test is $200 over 10 days, split across the versions. Never say the plan price covers ad spend.
+- A new fact about the home that isn't one of the listed features (solar panels, a new roof) is still a fact: use update_listing, work it into the versions where it fits (put them in ads), and never mention a feature list or any other part of how you work.
+- Small talk ("lol ok", "cool") gets a short, natural reply. Don't push them to run or upgrade.
 - The free plan: up to 3 ads made in the chat, previews only. More ads, downloads and running ads need the paid plan, which is $299 a month, billing starts when the first ad goes live, cancel any time, no cut of ad spend. Say this plainly when it matters, once.`;
 
 function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName }) {
   const facts = {};
   for (const k of ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "status", "moment"]) if (listing[k]) facts[k] = listing[k];
   facts.features = (listing.features || []).map((k) => FEATURES.find((f) => f.key === k)?.name.replace(/^the /, "") || k);
+  if (listing.description) facts.agent_description = listing.description;
   return `Context (the current state, not something the agent wrote):
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. Brand voice: ${brand.voice || "plain"}.
 Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.

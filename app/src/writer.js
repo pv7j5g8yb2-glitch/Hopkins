@@ -172,10 +172,14 @@ export function writeSet(ctx, opts = {}) {
 // "Realtor" (a trademark).
 export function polish(text) {
   if (!text) return text;
+  // Every dash like character counts, including the non breaking hyphen models like to use,
+  // and a hyphen joining two words becomes a space ("two week run", "move in ready").
   return String(text)
+    .replace(/[\u2010\u2011\u2012\u2015\u2212]/g, (c) => (c === "\u2012" || c === "\u2015" ? "—" : "-"))
     .replace(/(\d)\s?[–—]\s?(\d)/g, "$1 to $2")
     .replace(/\s+[–—-]\s+/g, ", ")
     .replace(/[–—]/g, ", ")
+    .replace(/([\p{L}\d])-(?=\p{L})|(\p{L})-(?=\d)/gu, "$1$2 ")
     .replace(/\bRealtors?®?\b/gi, "agent")
     .replace(/,\s*,/g, ",")
     .replace(/\s{2,}/g, " ")
@@ -184,7 +188,7 @@ export function polish(text) {
 
 export function houseRuleProblems(text) {
   const problems = [];
-  if (/[–—]|\s-\s/.test(text)) problems.push("dash");
+  if (/[–—\u2010-\u2015\u2212]|\s-\s|\p{L}-\p{L}/u.test(text)) problems.push("dash");
   if (/\b(we|us|our|ours|we're|we've|we'll)\b/i.test(text)) problems.push("we");
   if (/\brealtor/i.test(text)) problems.push("realtor");
   return problems;

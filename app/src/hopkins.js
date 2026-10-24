@@ -8,7 +8,7 @@ import { parseListingText, readLink, formatPrice, priceBand, labelFromName, FEAT
 import { writeSet, writeVersion, polish, PATTERNS, MOMENTS } from "./writer.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent } from "./rules.js";
-import { aiEnabled, readListingAI, writeSetAI, chatTurnAI } from "./brain.js";
+import { aiEnabled, provider, readListingAI, writeSetAI, chatTurnAI } from "./brain.js";
 import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 
@@ -129,7 +129,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
 export async function patchListing(workspaceId, id, patch) {
   const sets = [];
   const args = [];
-  for (const k of [...LISTING_FIELDS, "status", "moment", "spend"]) {
+  for (const k of [...LISTING_FIELDS, "status", "moment", "spend", "description"]) {
     if (patch[k] !== undefined) { sets.push(`${k} = ?`); args.push(patch[k]); }
   }
   if (patch.features) { sets.push(`features = ?`); args.push(JSON.stringify(patch.features)); }
@@ -212,7 +212,10 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
   const built = writeSet(ctx);
   let set = built;
   let reply = null;
-  const r = aiSet || (aiEnabled ? await writeSetAI(ctx) : null);
+  // Only Claude writes the first set. Groq's free model kept adding details the agent never gave
+  // (appliances, "historic charm") in live tests on 2026-10-24, and an ad that misdescribes a
+  // home is worse than a plainer one; the built-in writer uses only the facts given.
+  const r = aiSet || (provider === "claude" ? await writeSetAI(ctx) : null);
   if (r?.ads?.length >= 3) {
     set = built.map((b) => {
       const a = r.ads.find((x) => x.version === b.version);
@@ -254,7 +257,7 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
     const history = await all(`SELECT role, body FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
     const plan = { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
     const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name });
-    if (r) return applyAI(ws, listing, ads, photos, r);
+    if (r) return applyAI(ws, listing, ads, photos, r, text);
   }
   return applyRules(ws, listing, ads, photos, text, selected);
 }
@@ -273,9 +276,12 @@ function patchFrom(listing, lp) {
   return patch;
 }
 
-async function applyAI(ws, listing, ads, photos, r) {
+async function applyAI(ws, listing, ads, photos, r, text) {
   const reply = polish(r.reply || "");
   const patch = patchFrom(listing, r.listing_patch);
+  // New facts the feature list has no name for ("it has solar panels") are kept in the agent's
+  // own words, so every later rewrite still knows them.
+  if (r.action === "update_listing" && text) patch.description = [listing.description, text].filter(Boolean).join("\n");
   const focus = r.version || undefined;
 
   if (r.action === "run") {

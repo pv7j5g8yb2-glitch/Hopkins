@@ -132,6 +132,13 @@ personal in here.
   adds `GROQ_API_KEY` on Render (hopkins-app, Environment tab; the waitlist service may already
   have one to reuse), then a live chat check. On Groq the ads are written from the text only
   (photos aren't seen), and free tier rate limits fall back to the rules when hit.
+  Live tested on Groq with Ismael's key (2026-10-24, key kept out of the repo): replies in 1 to 2
+  seconds, real conversation, right answers on cost and version switching. Its limits on this
+  account are 1,000 requests a day and 8,000 tokens a minute (about 2 chat messages a minute, 5 or
+  6 active agents a day). It kept inventing details in new ads (appliances, "historic charm"), so
+  on Groq the first 3 ads come from the built-in writer; Groq does the chat and the edits. Claude
+  writes the first set once `ANTHROPIC_API_KEY` is set. Groq sometimes returns broken JSON; Hopkins
+  retries once.
 * Choices made in the build, change any of them: product copy uses US spelling (customers are
   mostly US); the default run plan is $200 over 10 days split across the 3 versions; feed ads are
   4:5; paid upgrades are requests that notify the founder (no Stripe until an ad can go live);

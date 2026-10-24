@@ -21,7 +21,8 @@ them in the chat and says yes. Separate from `survey/` (the waitlist server) and
   whole thread plus the listing, the ads, the plan and the version on screen, answers questions,
   switches version when one is named, and acts when asked. `ANTHROPIC_API_KEY` uses Claude (also
   reads listings and photos and writes the ads); without it, `GROQ_API_KEY` uses Groq's free
-  model (text only, same as the survey). Any failure falls back to the built-in rules, which
+  model for the chat and edits (text only, same as the survey); the first 3 ads then come from
+  the built-in writer, because Groq invented details in live tests. Any failure falls back to the built-in rules, which
   cover the common requests and questions but are not a conversation.
 * **Hopkins messages first.** A new price or open house brings 3 new ads on its own. The Today
   page lists what's waiting on the agent; on Mondays the report is waiting as a message.
