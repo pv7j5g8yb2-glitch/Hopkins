@@ -297,7 +297,8 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
   const selected = [1, 2, 3].includes(request.body?.version) ? request.body.version : 1;
   const r = await handleMessage(request.ws, request.params.id, text, selected);
   if (!r) return reply.code(404).send({ error: "No such listing." });
-  return listingPayload(request.ws, request.params.id);
+  // focus: the version the conversation is now about, so the app can switch to it.
+  return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3].includes(r.focus) ? r.focus : null };
 });
 
 app.post("/api/listings/:id/remake", async (request, reply) => {

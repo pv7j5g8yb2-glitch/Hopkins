@@ -28,6 +28,7 @@ export async function canMake(workspace, count) {
 export function upgradeText(reason, { usedOn } = {}) {
   const tail = `Hopkins is $${PRICE_FROM} a month, and billing only starts when your first ad goes live. Month to month, cancel any time, and no cut of your ad spend. If you joined the waitlist, your first year is 30% off.`;
   if (reason === "run") return `Running ads is on the paid plan. ${tail}`;
+  if (reason === "plan") return tail;
   if (reason === "saved") {
     return `Your ${FREE_AD_LIMIT} free ads went on ${usedOn || "your first listing"}. This listing is saved. Once you're on the paid plan, tap Make the ads. ${tail}`;
   }

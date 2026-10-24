@@ -178,12 +178,18 @@
 
   async function loadMe() { S.me = await api("/api/me"); }
   async function loadListings() { S.listings = (await api("/api/listings")).listings; }
-  async function loadInbox() { S.inbox = (await api("/api/inbox")).items; }
+  async function loadInbox() { S.inbox = (await api("/api/inbox")).items; S.inboxLoaded = true; }
+
+  // The tab you tapped lights up straight away, before its screen has loaded.
+  function markNav() {
+    const view = location.hash.slice(2).split("/")[0];
+    const nav = view === "l" ? "listings" : view || "today";
+    $$(".nv,.tabbar a").forEach((a) => a.classList.toggle("on", a.dataset.nav === nav));
+  }
 
   function drawSide() {
     const route = location.hash.slice(2).split("/");
-    const nav = route[0] === "l" ? "listings" : route[0] || "today";
-    $$(".nv,.tabbar a").forEach((a) => a.classList.toggle("on", a.dataset.nav === nav));
+    markNav();
     const waiting = S.inbox.filter((m) => m.needs_action).length;
     $$("[data-badge]").forEach((b) => (b.textContent = waiting || ""));
     $("#lists").innerHTML = S.listings.length
@@ -210,6 +216,7 @@
   async function route() {
     const seq = ++routeSeq;
     closePop();
+    markNav();
     const [view, id] = location.hash.slice(2).split("/");
     // Inside a listing or a new one, the phone goes full screen like a chat app.
     document.body.classList.toggle("focus", view === "l" || view === "new" || !S.me.workspace.brand.setup_done);
@@ -235,10 +242,18 @@
 
   // ---------- Today: what Hopkins needs from you ----------
 
+  // Today draws at once from what's already loaded, then again only if the fresh copy differs,
+  // so tapping the tab never waits on the network.
   async function viewToday() {
     const my = current();
+    if (S.inboxLoaded) drawToday();
+    else main.innerHTML = `${mtop("Today")}${skeleton()}`;
     await loadInbox();
     if (my !== current()) return;
+    drawToday();
+  }
+
+  function drawToday() {
     const first = (S.me.user.name || "").split(" ")[0];
     const h = new Date().getHours();
     const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
@@ -272,7 +287,8 @@
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     const lede = !S.listings.length ? "Three steps to your first ads." : waiting.length ? `${waiting.length} ${waiting.length === 1 ? "thing needs" : "things need"} you today.` : "Nothing needs you right now.";
-    main.innerHTML = `${mtop("Today")}<div class="page"><div class="wrap"><div class="head"><h1>${greet}${first ? `, <span class="serif">${esc(first)}</span>` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
+    const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, <span class="serif">${esc(first)}</span>` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
+    if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
   }
 
   // ---------- Listings ----------
@@ -288,7 +304,7 @@
   // ---------- the composer (shared) ----------
 
   function composerHtml(placeholder, chips = []) {
-    return `<div class="comp-wrap">${chips.length ? `<div class="chips">${chips.map(([label, act]) => `<button class="chip-btn${act.includes("class-go") ? " go" : ""}" ${act.replace(" class-go", "")}>${label}</button>`).join("")}</div>` : ""}
+    return `<div class="comp-wrap">${chips.length ? `<div class="chips">${chips.map(([label, act]) => `<button class="chip-btn lg${act.includes("class-go") ? " go" : ""}" ${act.replace(" class-go", "")}>${label}</button>`).join("")}</div>` : ""}
       <form class="comp lg" id="comp"><div class="att" id="att"></div>
       <div class="row-c"><label class="icon-btn" title="Add photos">${ICON.photo}<input type="file" id="files" accept="image/*" multiple hidden></label>
       <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" enterkeyhint="send"></textarea>
@@ -485,6 +501,7 @@
     const my = current();
     const next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] } });
     if (my !== current()) return;
+    if (next.focus && next.ads.some((a) => a.version === next.focus)) S.selected[l.id] = next.focus;
     drawListing(next);
     refreshSide();
   }

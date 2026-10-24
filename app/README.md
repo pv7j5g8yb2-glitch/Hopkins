@@ -17,9 +17,12 @@ them in the chat and says yes. Separate from `survey/` (the waitlist server) and
   previews drawn in the agent's brand, exactly as they'd run.
 * **Changes in the chat.** Shorter, longer, warmer, more premium, plainer, another angle, a new
   headline or line on the image, another photo, new facts ("it has a pool"), a new price, an
-  open house, sold, run it. Works with no API key (built-in rules). With `ANTHROPIC_API_KEY`
-  set, Claude reads listings, labels photos, writes the ads and understands free text; any
-  failure falls back to the built-in rules.
+  open house, sold, run it. With a model key set, the chat is a real conversation: it gets the
+  whole thread plus the listing, the ads, the plan and the version on screen, answers questions,
+  switches version when one is named, and acts when asked. `ANTHROPIC_API_KEY` uses Claude (also
+  reads listings and photos and writes the ads); without it, `GROQ_API_KEY` uses Groq's free
+  model (text only, same as the survey). Any failure falls back to the built-in rules, which
+  cover the common requests and questions but are not a conversation.
 * **Hopkins messages first.** A new price or open house brings 3 new ads on its own. The Today
   page lists what's waiting on the agent; on Mondays the report is waiting as a message.
 * **Fair housing.** Every line (Hopkins' and the agent's) is checked; problem wording is
@@ -69,7 +72,8 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 | `ADMIN_EMAILS` | Accounts that see the Admin page (switch workspaces to paid). |
 | `DATABASE_URL`, `DATABASE_AUTH_TOKEN` | Turso database. Defaults to `./data/hopkins.db`. |
 | `ANTHROPIC_API_KEY` | Turns on Claude for reading listings, writing ads and the chat. |
-| `HOPKINS_MODEL` | Overrides the model (default `claude-opus-5-5`). |
+| `GROQ_API_KEY` | Free alternative for the chat when there's no Anthropic key (console.groq.com). |
+| `HOPKINS_MODEL`, `GROQ_MODEL` | Override the models (defaults `claude-opus-5-5`, `openai/gpt-oss-120b`). |
 | `NTFY_TOPIC` | The founder's phone alerts: new accounts, upgrade requests, approvals. |
 | `PORT` | Defaults to 3200. |
 
@@ -84,7 +88,8 @@ separate and untouched).
 3. Fill in the three things it asks for: `ADMIN_EMAILS` (your email), and `DATABASE_URL` and
    `DATABASE_AUTH_TOKEN` from Turso. `COOKIE_SECRET` is generated. Later, in the service's
    Environment tab: `INVITE_CODES` (codes you make up, comma separated, so others can sign up),
-   `NTFY_TOPIC` (same as the waitlist's), `ANTHROPIC_API_KEY` (optional).
+   `NTFY_TOPIC` (same as the waitlist's), `ANTHROPIC_API_KEY` or the free `GROQ_API_KEY` (the
+   chat is only a real conversation with one of them).
 4. Open `https://hopkins-app.onrender.com/signup` (or whatever address Render gives it) and sign
    up with your admin email; admins don't need a code. Others sign up with
    `/signup?invite=YOURCODE`.

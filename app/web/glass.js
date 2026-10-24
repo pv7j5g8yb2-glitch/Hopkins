@@ -40,6 +40,9 @@
 
   let last = 0;
   function tick(t) {
+    try { step(t); } catch (err) { st.running = false; last = 0; }
+  }
+  function step(t) {
     const dt = Math.min(0.032, (t - (last || t)) / 1000) || 0.016;
     last = t;
     // A slightly underdamped spring: it overshoots a touch and settles, like iOS.
@@ -84,20 +87,31 @@
 
   // ---------- press and drag across the bar ----------
 
-  // iOS often cancels a touch part way through a glide or a quick tap (and reports no position
-  // when it does), so the last known finger position decides where the lens lands, whether the
-  // touch ended or was cancelled. If this handling misses a tap for any reason, the link's own
-  // tap still goes through, so a tab can never get stuck.
-  let dragging = false, startX = 0, lastX = 0, pointerId = null, navigatedAt = 0;
+  // Nothing here may leave the bar stuck. iOS can cancel a touch part way through (and reports
+  // no position when it does), send its end somewhere other than the bar, or not send it at
+  // all. So: the last known finger position decides where the lens lands whether the touch
+  // ended or was cancelled; the end is also heard on the whole window; a new touch always
+  // starts fresh, whatever happened to the last one; and a touch that never ends is let go of
+  // after a few seconds.
+  let dragging = false, lastX = 0, pointerId = null, navigatedAt = 0, watchdog = 0;
   const indexAt = (x) => Math.max(0, Math.min(tabs.length - 1, Math.round(x / st.w)));
   const clampX = (r, clientX) => Math.max(0, Math.min(r.width - PAD * 2 - st.w, clientX - r.left - PAD - st.w / 2));
 
+  function settle() {
+    clearTimeout(watchdog);
+    dragging = false;
+    pointerId = null;
+    st.pressTarget = 0;
+    setTimeout(() => lens.classList.remove("press"), 140);
+  }
+
   cap.addEventListener("pointerdown", (e) => {
-    if (!phone() || (dragging && e.pointerId !== pointerId)) return;
+    if (!phone() || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (dragging) settle();
     const r = geometry();
     if (st.w <= 0) return;
     dragging = true;
-    startX = lastX = e.clientX;
+    lastX = e.clientX;
     pointerId = e.pointerId;
     try { cap.setPointerCapture(e.pointerId); } catch {}
     lens.classList.add("press");
@@ -105,21 +119,19 @@
     st.pressTarget = 1;
     st.target = clampX(r, e.clientX);
     kick();
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => { if (dragging) { settle(); select(current()); } }, 4000);
   });
-  cap.addEventListener("pointermove", (e) => {
+  const move = (e) => {
     if (!dragging || e.pointerId !== pointerId) return;
     if (e.clientX) lastX = e.clientX;
     st.target = clampX(cap.getBoundingClientRect(), lastX);
-  });
+  };
   function release(e) {
     if (!dragging || e.pointerId !== pointerId) return;
-    dragging = false;
-    pointerId = null;
     if (e.type === "pointerup" && e.clientX) lastX = e.clientX;
-    st.pressTarget = 0;
-    setTimeout(() => lens.classList.remove("press"), 140);
-    const r = cap.getBoundingClientRect();
-    const i = indexAt(clampX(r, lastX));
+    settle();
+    const i = indexAt(clampX(cap.getBoundingClientRect(), lastX));
     st.target = xFor(i);
     kick();
     go(i);
@@ -132,13 +144,20 @@
       // Tapping the tab you're already on takes you back to the top, like iOS.
       const page = document.querySelector("#main .page");
       if (page) page.scrollTo({ top: 0, behavior: "smooth" });
+      select(i);
     }
   }
-  cap.addEventListener("pointerup", release);
-  cap.addEventListener("pointercancel", release);
+  cap.addEventListener("pointermove", move);
+  window.addEventListener("pointermove", move, { passive: true });
+  for (const type of ["pointerup", "pointercancel"]) {
+    cap.addEventListener(type, release);
+    window.addEventListener(type, release, true);
+  }
   cap.addEventListener("lostpointercapture", (e) => { if (dragging && e.pointerId === pointerId) release(e); });
+  // Leaving the app mid touch (a call, the app switcher) ends it without navigating.
+  document.addEventListener("visibilitychange", () => { if (dragging) { settle(); select(current()); } });
   // The tap that follows a handled touch is swallowed so it doesn't navigate twice. Any other tap
-  // (keyboard, or a touch this code never saw end) goes through as a normal link.
+  // (keyboard, or a touch this code never saw) goes through as a normal tab.
   cap.addEventListener("click", (e) => {
     if (Date.now() - navigatedAt < 700) { e.preventDefault(); return; }
     const a = e.target.closest("a[data-nav]");

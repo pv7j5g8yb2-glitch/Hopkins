@@ -95,5 +95,17 @@ test("reads what the agent wants", () => {
   assert.equal(readIntent("more luxury please").changes.voice, "premium");
   assert.equal(readIntent("try another angle").changes.angle, true);
   assert.deepEqual(readIntent("it also has a pool").listingPatch.addFeatures, ["pool"]);
-  assert.equal(readIntent("what's the weather").kind, "unknown");
+  assert.equal(readIntent("purple monkey dishwasher").kind, "unknown");
+  // Naming a version and nothing else switches to it.
+  for (const t of ["version 2", "No, I meant version 2", "I said version 2", "2", "the second one", "what about 2"]) {
+    const i = readIntent(t, { selected: 1 });
+    assert.equal(i.kind, "select", t);
+    assert.deepEqual(i.versions, [2], t);
+  }
+  assert.equal(readIntent("version 2 shorter").kind, "revise");
+  assert.equal(readIntent("hey").kind, "greeting");
+  assert.equal(readIntent("hi, make it shorter").kind, "revise");
+  assert.equal(readIntent("which one is best?").topic, "which");
+  assert.equal(readIntent("how much does it cost?").topic, "plan");
+  assert.equal(readIntent("make the ads").kind, "make");
 });

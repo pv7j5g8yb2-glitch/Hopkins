@@ -16,7 +16,7 @@ services:
       - key: COOKIE_SECRET
         generateValue: true
       # Only what's needed to start. Add INVITE_CODES (to let others sign up), NTFY_TOPIC and
-      # ANTHROPIC_API_KEY later in the service's Environment tab.
+      # ANTHROPIC_API_KEY (or the free GROQ_API_KEY) later in the service's Environment tab.
       - key: ADMIN_EMAILS
         sync: false
       - key: DATABASE_URL

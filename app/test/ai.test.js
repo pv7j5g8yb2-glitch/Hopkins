@@ -52,6 +52,27 @@ test("Claude reads the listing and writes the set; Hopkins cleans what comes bac
   assert.equal(t.json.ads.find((a) => a.version === 2).overlay, "Your own pool, on the bay.");
   assert.equal(t.json.messages.at(-1).body, "Version 2 is tighter now.");
 
+  // The model gets the conversation as a real back and forth and the state as context.
+  const req = calls.at(-1);
+  assert.equal(req.messages.at(-1).role, "user");
+  assert.match(req.messages.at(-1).content, /tighten the second one/);
+  assert.match(req.system, /looking at version 2/);
+  assert.match(req.system, /3 of 3 free ads used/);
+
+  // Naming a version just switches to it, and the app is told which.
+  next = [{ reply: "Version 3, the facts. What should change?", action: "select_version", version: 3, moment: "none", ads: [], listing_patch: LISTING, budget: 0, days: 0 }];
+  const s = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "no I meant 3", version: 2 });
+  assert.equal(s.json.focus, 3);
+  assert.equal(s.json.messages.at(-1).body, "Version 3, the facts. What should change?");
+
+  // A plain question gets a plain answer and touches nothing.
+  const before = JSON.stringify(s.json.ads);
+  next = [{ reply: "Hi. They're ready whenever you are.", action: "none", version: 0, moment: "none", ads: [], listing_patch: LISTING, budget: 0, days: 0 }];
+  const h = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "hey", version: 3 });
+  assert.equal(h.json.messages.at(-1).body, "Hi. They're ready whenever you are.");
+  assert.equal(JSON.stringify(h.json.ads), before);
+  assert.equal(h.json.focus, null);
+
   // If Claude fails or declines, the built-in rules answer instead, and the chat keeps working.
   next = [new Error("overloaded")];
   const f = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "make version 3 shorter", version: 3 });

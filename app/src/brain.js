@@ -2,22 +2,30 @@ import Anthropic from "@anthropic-ai/sdk";
 import { FEATURES } from "./listing.js";
 import { PATTERNS } from "./writer.js";
 
-// Claude, when ANTHROPIC_API_KEY is set. Every call here returns null on any failure, and
-// the caller falls back to the built-in reader and writer, so the chat never breaks
-// because a model call did.
+// The model behind the chat. Claude when ANTHROPIC_API_KEY is set; otherwise Groq's free
+// model when GROQ_API_KEY is set (the same free option the survey uses). Every call returns
+// null on any failure and the caller falls back to the built-in reader, writer and rules, so
+// the chat never breaks because a model call did.
 //
-// Two jobs: read a listing from what the agent sent (text, link preview, photos), and
-// take one chat turn (understand what the agent wants and write the changed ads).
+// Three jobs: read a listing from what the agent sent, write a set of three ads, and take one
+// chat turn: hold a real conversation and, when the agent asks for something, do it.
 
-export const aiEnabled = Boolean(process.env.ANTHROPIC_API_KEY);
+export const provider = process.env.ANTHROPIC_API_KEY ? "claude" : process.env.GROQ_API_KEY ? "groq" : null;
+export const aiEnabled = Boolean(provider);
 const MODEL = process.env.HOPKINS_MODEL || "claude-opus-5-5";
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 let client = null;
+let fetchImpl = (...a) => fetch(...a);
 export function setClientForTests(fake) {
   client = fake;
 }
+export function setFetchForTests(fake) {
+  fetchImpl = fake;
+}
 function getClient() {
-  if (!client && aiEnabled) client = new Anthropic();
+  if (!client && provider === "claude") client = new Anthropic();
   return client;
 }
 
@@ -95,19 +103,21 @@ const READ_SCHEMA = {
 const TURN_SCHEMA = {
   type: "object",
   properties: {
-    reply: { type: "string", description: "Your message back to the agent" },
+    reply: { type: "string", description: "Your message back to the agent, as you'd say it in a chat" },
     action: {
       type: "string",
-      enum: ["none", "revise", "update_listing", "run", "new_moment"],
-      description: "revise: change ads. update_listing: listing facts changed (ads get rewritten too). run: the agent wants the ads to run. new_moment: a new reason to advertise (price change, open house, sold).",
+      enum: ["none", "select_version", "revise", "update_listing", "make_ads", "run", "new_moment"],
+      description:
+        "none: just talking. select_version: they want to look at or work on a different version. revise: change ads (put them in ads). update_listing: facts about the home changed. make_ads: make the ads (when there are none, or they want fresh ones). run: they want the ads to run. new_moment: a new reason to advertise (price change, open house, sold).",
     },
+    version: { type: "integer", description: "The version (1, 2 or 3) this turn is about, or 0 if none" },
     moment: { type: "string", enum: ["none", "price", "open_house", "sold"] },
-    ads: { type: "array", items: AD_SCHEMA, description: "Only the versions you changed, in full" },
+    ads: { type: "array", items: AD_SCHEMA, description: "Only the versions you changed, in full. Empty otherwise." },
     listing_patch: LISTING_SCHEMA,
     budget: { type: "number", description: "Total budget in dollars if the agent named one, else 0" },
     days: { type: "integer", description: "Days to run if named, else 0" },
   },
-  required: ["reply", "action", "moment", "ads", "listing_patch", "budget", "days"],
+  required: ["reply", "action", "version", "moment", "ads", "listing_patch", "budget", "days"],
   additionalProperties: false,
 };
 
@@ -121,24 +131,45 @@ function photoBlocks(photos) {
   return blocks;
 }
 
-async function call({ content, schema, effort }) {
-  const c = getClient();
-  if (!c) return null;
+// One request, JSON back. system is text; messages are {role, content} where content is a
+// string or Claude content blocks (images are only sent to Claude).
+async function call({ system, messages, schema, effort }) {
   try {
-    const res = await c.beta.messages.create({
-      model: MODEL,
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      system: SYSTEM,
-      output_config: { effort, format: { type: "json_schema", schema } },
-      messages: [{ role: "user", content }],
-    });
-    if (res.stop_reason === "refusal" || res.stop_reason === "max_tokens") return null;
-    const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-    return JSON.parse(text);
+    if (provider === "claude") {
+      const res = await getClient().beta.messages.create({
+        model: MODEL,
+        max_tokens: 16000,
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        system,
+        output_config: { effort, format: { type: "json_schema", schema } },
+        messages,
+      });
+      if (res.stop_reason === "refusal" || res.stop_reason === "max_tokens") return null;
+      return JSON.parse(res.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
+    }
+    if (provider === "groq") {
+      const text = (c) => (typeof c === "string" ? c : c.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
+      const res = await fetchImpl(GROQ_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` },
+            ...messages.map((m) => ({ role: m.role, content: text(m.content) })),
+          ],
+        }),
+        signal: AbortSignal.timeout(45000),
+      });
+      if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      const data = await res.json();
+      return JSON.parse(data.choices[0].message.content);
+    }
+    return null;
   } catch (err) {
-    console.error("Claude call failed, using the built-in writer:", err.message);
+    console.error("Model call failed, using the built-in rules:", err.message);
     return null;
   }
 }
@@ -153,7 +184,7 @@ export async function readListingAI({ text, linkInfo, photos }) {
       }\nLabel each photo. If the price or the city is missing, ask for it in "missing".`,
     },
   ];
-  return call({ content, schema: READ_SCHEMA, effort: "low" });
+  return call({ system: SYSTEM, messages: [{ role: "user", content }], schema: READ_SCHEMA, effort: "low" });
 }
 
 function describe(listing, ads, photos) {
@@ -174,17 +205,75 @@ export async function writeSetAI({ listing, photos, brand, moment, extra }) {
       }.\n\nWrite all three versions (1 ${PATTERNS.life.name}, 2 ${PATTERNS.feature.name}, 3 ${PATTERNS.facts.name}) and pick a different photo for each where you can. Put a one line note to the agent in reply. Set action to "revise".`,
     },
   ];
-  return call({ content, schema: TURN_SCHEMA, effort: "medium" });
+  return normalizeTurn(await call({ system: SYSTEM, messages: [{ role: "user", content }], schema: TURN_SCHEMA, effort: "medium" }));
 }
 
-export async function chatTurnAI({ listing, photos, brand, ads, history, message, selectedVersion }) {
-  const recent = history.slice(-12).map((m) => `${m.role === "agent" ? "Agent" : "Hopkins"}: ${m.body}`).join("\n");
-  const content = [
-    ...photoBlocks(photos),
-    {
-      type: "text",
-      text: `${describe(listing, ads, photos)}\n\nBrand voice: ${brand.voice || "plain"}.\n\nThe conversation so far:\n${recent}\n\nThe agent is looking at version ${selectedVersion || 1} and says:\n"${message}"\n\nDecide what they want. If they ask for a change and don't name a version, change version ${selectedVersion || 1}. Return the changed versions in full in "ads". For listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged).`,
-    },
-  ];
-  return call({ content, schema: TURN_SCHEMA, effort: "low" });
+// How Hopkins talks in the chat, on top of the house rules in SYSTEM.
+const CHAT = `
+In the chat:
+- Talk like a sharp, friendly colleague who knows real estate marketing well, the way a good assistant in ChatGPT or Claude would: understand what they mean, not just what they typed, and answer the actual question.
+- Keep replies short, usually one to three sentences. Longer only when they ask for detail.
+- Greetings get a greeting back and one useful line about where things stand with this listing.
+- Questions about ads, marketing, Instagram, Facebook, budgets, testing or Hopkins get a real, direct answer. You can give opinions and recommendations.
+- If they name a version without saying what to change ("version 2", "no, I meant 2"), switch to it (select_version) and ask what they'd like changed in a few words.
+- If they ask for a change and don't name a version, change the version they're looking at.
+- If something is unclear, ask one short question instead of guessing.
+- Never list everything you can do unless they ask. Never repeat a reply you already gave.
+- Only use facts from the context. Never invent results, numbers or features.
+- The free plan: up to 3 ads made in the chat, previews only. More ads, downloads and running ads need the paid plan, which is $299 a month, billing starts when the first ad goes live, cancel any time, no cut of ad spend. Say this plainly when it matters, once.`;
+
+function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName }) {
+  const facts = {};
+  for (const k of ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "status", "moment"]) if (listing[k]) facts[k] = listing[k];
+  facts.features = (listing.features || []).map((k) => FEATURES.find((f) => f.key === k)?.name.replace(/^the /, "") || k);
+  return `Context (the current state, not something the agent wrote):
+Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. Brand voice: ${brand.voice || "plain"}.
+Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.
+Listing: ${JSON.stringify(facts)}
+Photos: ${photos.length ? photos.map((p, i) => `${i + 1} ${p.label || "unlabelled"}`).join(", ") : "none yet"}
+Ads: ${ads.length ? "" : "none yet"}
+${ads.map((a) => `Version ${a.version} (${PATTERNS[a.pattern]?.name || a.pattern}, photo ${Math.max(1, photos.findIndex((p) => p.id === a.photo_id) + 1)}, ${a.status}):
+  On the image: ${a.overlay}
+  Label: ${a.kicker}
+  Headline: ${a.headline}
+  Text: ${a.primary_text}`).join("\n")}
+The agent is looking at version ${selectedVersion || 1}.`;
+}
+
+// The stored chat as a real back and forth: the agent's messages as the user, Hopkins' as the
+// assistant, starting with the agent and never two turns in a row from the same side.
+function conversation(history) {
+  const out = [];
+  for (const m of history.slice(-24)) {
+    const role = m.role === "agent" ? "user" : "assistant";
+    if (!m.body) continue;
+    if (out.length && out[out.length - 1].role === role) out[out.length - 1].content += "\n\n" + m.body;
+    else out.push({ role, content: m.body });
+  }
+  while (out.length && out[0].role !== "user") out.shift();
+  return out;
+}
+
+const ACTIONS = new Set(["none", "select_version", "revise", "update_listing", "make_ads", "run", "new_moment"]);
+// Models don't always fill every field; this makes the answer safe to act on.
+function normalizeTurn(r) {
+  if (!r || typeof r !== "object" || typeof r.reply !== "string") return null;
+  const num = (v) => (typeof v === "number" && isFinite(v) ? v : Number(v) || 0);
+  return {
+    reply: r.reply,
+    action: ACTIONS.has(r.action) ? r.action : "none",
+    version: [1, 2, 3].includes(num(r.version)) ? num(r.version) : 0,
+    moment: ["price", "open_house", "sold"].includes(r.moment) ? r.moment : "none",
+    ads: Array.isArray(r.ads) ? r.ads.filter((a) => a && [1, 2, 3].includes(num(a.version))).map((a) => ({ ...a, version: num(a.version), photo_number: num(a.photo_number) })) : [],
+    listing_patch: r.listing_patch && typeof r.listing_patch === "object" ? r.listing_patch : null,
+    budget: num(r.budget),
+    days: num(r.days),
+  };
+}
+
+export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName }) {
+  const messages = conversation(history);
+  if (!messages.length) return null;
+  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName })}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
+  return normalizeTurn(await call({ system, messages, schema: TURN_SCHEMA, effort: "low" }));
 }

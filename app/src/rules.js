@@ -1,7 +1,7 @@
-// What the agent wants, read without a model. Covers the requests that come up most:
-// change the wording, the photo, the headline or the tone, try another angle, a new
-// price, an open house, sold, and run it. Anything else gets an honest "here's what I can
-// do" instead of a guess.
+// What the agent wants, read without a model, for when no model key is set or a model call
+// fails. Covers the requests that come up most: switch version, change the wording, the
+// photo, the headline or the tone, try another angle, a new price, an open house, sold, run
+// it, and the common questions. Anything else gets one short question back, not a guess.
 
 import { parseListingText, parsePrice, PHOTO_LABELS } from "./listing.js";
 
@@ -24,11 +24,30 @@ function quoted(text) {
   return m ? m[1].trim() : null;
 }
 
+const GREETING = /^(hi|hey|hello|hiya|heya|yo|howdy|sup|good (morning|afternoon|evening)|morning|evening)\b[\s,!.]*(hopkins|there|man|mate|buddy)?[\s,!.]*$/;
+// Words that can sit around a version number without asking for any change: "no, I meant
+// version 2", "show me the second one", "what about 3".
+const FILLER = /\b(no|nope|i|meant|mean|said|say|the|show|me|go|to|switch|open|look|at|what|about|how|lets|let's|let|us|see|ok|okay|um|uh|sorry|actually|one|please|pls|version|v|ad|option|number|instead|then|and|on|back|wait|not|that|this|is|it|was|i'm|im|talking)\b/g;
+
 export function readIntent(text, { selected = 1, photos = [] } = {}) {
   const t = text.trim();
   const low = t.toLowerCase();
   const versions = targetVersions(t, selected);
   const intent = { versions, changes: {}, listingPatch: {}, kind: "unknown" };
+
+  if (GREETING.test(low)) { intent.kind = "greeting"; return intent; }
+
+  // Only a version, with nothing to change: switch to it. A bare "2" counts.
+  const bare = low.match(/^\W*([123])\W*$/) || low.match(/\b([123])\s*\??$/);
+  const named = bare || /\b(?:v|version|ad|number|option|#)\s?[123]\b|\b(first|second|third|last|1st|2nd|3rd) (one|version|ad|option)\b/.test(low);
+  if (named) {
+    const rest = low.replace(/\b(?:v|version|ad|number|option|#)\s?[123]\b/g, " ").replace(/\b(first|second|third|last|1st|2nd|3rd)\b/g, " ").replace(/\b[123]\b/g, " ").replace(FILLER, " ").replace(/[^a-z]/g, "");
+    if (!rest) {
+      intent.kind = "select";
+      intent.versions = bare ? [Number(bare[1])] : versions;
+      return intent;
+    }
+  }
 
   // Running. "Run it", "launch version 2", "$300 over 10 days".
   const budget = low.match(/\$\s?(\d[\d,]*)(?!\s*(k|m|million|thousand)\b)/);
@@ -126,6 +145,23 @@ export function readIntent(text, { selected = 1, photos = [] } = {}) {
   }
 
   if (/\b(fair housing|compliant|legal|allowed|discriminat)/.test(low)) { intent.kind = "fair_housing"; return intent; }
+
+  // Make the ads, when they're asked for in so many words.
+  if (/\b(make|create|do|generate|write|build)\b.*\b(ads?|them|versions?)\b/.test(low)) { intent.kind = "make"; return intent; }
+
+  // Questions get an answer, not a list of features.
+  if (/\?\s*$/.test(t) || /^(what|how|why|when|which|who|where|can|could|does|do|is|are|should|will|would)\b/.test(low)) {
+    intent.kind = "question";
+    intent.topic =
+      /\b(cost|price of hopkins|how much (is|does) (it|hopkins|this)|pay|paid plan|plan|subscription|free)\b/.test(low) ? "plan"
+      : /\b(which|best|better|winner|pick|choose|recommend)\b/.test(low) ? "which"
+      : /\bwhy\b/.test(low) ? "why"
+      : /\b(download|save|export|post (it|them) myself)\b/.test(low) ? "download"
+      : /\b(leads?|results?|work|how long|when)\b/.test(low) ? "results"
+      : /\b(what can you|what do you|how does (this|it|hopkins) work|help)\b/.test(low) ? "help"
+      : "other";
+    return intent;
+  }
   if (/\b(thanks|thank you|cheers|perfect|great|love it|looks good|nice)\b/.test(low)) { intent.kind = "thanks"; return intent; }
   return intent;
 }

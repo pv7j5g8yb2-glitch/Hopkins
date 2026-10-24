@@ -7,6 +7,7 @@
   --shadow:0 1px 2px rgba(42,15,20,.05),0 8px 24px rgba(42,15,20,.06);
   --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.3,1.4,.5,1);
   --lg-shadow:0 10px 30px -6px rgba(42,15,20,.18),0 2px 6px rgba(42,15,20,.07),inset 0 0 0 .5px rgba(255,255,255,.55),inset 0 1.5px 1px -.5px rgba(255,255,255,.95),inset 0 -1.5px 1px -.5px rgba(255,255,255,.5),inset 0 0 22px -6px rgba(255,255,255,.55);
+  --lg-tint:rgba(255,255,255,.26);--lg-filter:blur(12px) saturate(1.9) brightness(1.05);
   --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -411,8 +412,8 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
      shadow under it. glass.js adds the sliding lens and switches to dark glass over dark content. */
   .tabbar{display:flex;align-items:center;gap:10px;position:fixed;left:14px;right:14px;bottom:max(12px,calc(var(--safe-b) - 8px));z-index:60;pointer-events:none}
   .tabbar>*{pointer-events:auto}
-  .lg{position:relative;isolation:isolate;border-radius:999px;background:rgba(255,255,255,.26);
-    -webkit-backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);backdrop-filter:blur(12px) saturate(1.9) brightness(1.05);
+  .lg{position:relative;isolation:isolate;border-radius:999px;background:var(--lg-tint);
+    -webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter);
     box-shadow:var(--lg-shadow)}
   /* the rim: a hairline that catches light strongest top left and bottom right */
   .lg:before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.3px;pointer-events:none;z-index:3;
@@ -446,17 +447,24 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .chat{position:relative}
   .comp-wrap{position:absolute;left:0;right:0;bottom:0;background:none;pointer-events:none;z-index:10}
   .comp-wrap>*{pointer-events:auto}
-  .comp.lg{border:0;border-radius:26px;padding:5px 5px 5px 10px;background:rgba(255,255,255,.58);-webkit-backdrop-filter:blur(18px) saturate(1.9);backdrop-filter:blur(18px) saturate(1.9)}
+  /* Apple's scroll edge effect: the chat softens and fades as it reaches the floating controls,
+     so the glass keeps its look and the words behind it never fight the words in it. */
+  .comp-wrap:before{content:"";position:absolute;left:0;right:0;top:-34px;bottom:0;z-index:-1;pointer-events:none;
+    background:linear-gradient(rgba(251,248,243,0),rgba(251,248,243,.72) 38%,rgba(251,248,243,.94));
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    -webkit-mask-image:linear-gradient(transparent,#000 42%);mask-image:linear-gradient(transparent,#000 42%)}
+  /* The message box, the chips and the Run it bar use the tab bar's material unchanged, so
+     everything that floats is the same glass. */
+  .comp.lg{border:0;border-radius:26px;padding:5px 5px 5px 10px}
   .comp.lg:focus-within{box-shadow:var(--lg-shadow),0 0 0 3px rgba(215,174,98,.22)}
   .comp.lg .send:disabled{background:rgba(42,15,20,.12)}
   .chips{padding:2px 2px 6px}
-  .chip-btn{background:rgba(255,255,255,.7);border:0;-webkit-backdrop-filter:blur(14px) saturate(1.8);backdrop-filter:blur(14px) saturate(1.8);
-    box-shadow:0 4px 14px -4px rgba(42,15,20,.16),inset 0 0 0 .5px rgba(255,255,255,.7),inset 0 1px 1px -.3px #fff,0 0 0 .5px rgba(42,15,20,.06)}
-  .chip-btn.go{background:rgba(255,246,228,.75)}
-  .pvb .actrow.lg{left:14px;right:14px;bottom:max(12px,calc(var(--safe-b) - 8px));padding:6px;border-top:0;border-radius:999px}
+  .chip-btn.lg{border:0;padding:8px 14px;color:var(--ink);box-shadow:0 6px 16px -6px rgba(42,15,20,.2),0 1px 3px rgba(42,15,20,.06),inset 0 0 0 .5px rgba(255,255,255,.55),inset 0 1.5px 1px -.5px rgba(255,255,255,.95),inset 0 0 14px -5px rgba(255,255,255,.55)}
+  .chip-btn.lg.go{background:rgba(255,226,170,.3);color:var(--bronze)}
+  .pvb .actrow.lg{left:14px;right:14px;bottom:max(12px,calc(var(--safe-b) - 8px));padding:6px;border-top:0;border-radius:999px;background:var(--lg-tint);-webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter)}
   .pvb .actrow.lg .btn{border-radius:999px}
   .pvb .actrow.lg .sec-btn{border-radius:999px;background:rgba(255,255,255,.5);border-color:rgba(255,255,255,.6)}
-  .pop.lg{background:rgba(255,253,249,.74);border:0;border-radius:30px;-webkit-backdrop-filter:blur(26px) saturate(1.9);backdrop-filter:blur(26px) saturate(1.9)}
+  .pop.lg{position:fixed;background:rgba(255,253,249,.84);border:0;border-radius:30px;-webkit-backdrop-filter:blur(30px) saturate(1.9);backdrop-filter:blur(30px) saturate(1.9)}
   .pop.lg:after{inset:1px}
   .lg-circle{width:64px;height:64px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:transform .35s var(--spring)}
   .lg-circle svg{width:26px;height:26px;stroke-width:2.2;position:relative;z-index:4}

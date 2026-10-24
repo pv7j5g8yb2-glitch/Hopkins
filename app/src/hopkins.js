@@ -9,7 +9,7 @@ import { writeSet, writeVersion, polish, PATTERNS, MOMENTS } from "./writer.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent } from "./rules.js";
 import { aiEnabled, readListingAI, writeSetAI, chatTurnAI } from "./brain.js";
-import { canMake, isPaid, upgradeText } from "./plans.js";
+import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house"];
@@ -198,7 +198,10 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
     if (last && last.kind === "upgrade") return { upgrade: true, repeat: true };
     if (!current.length) {
       const used = await get(`SELECT l.address, l.area, l.city FROM ads JOIN listings l ON l.id = ads.listing_id WHERE ads.workspace_id = ? AND l.id != ? ORDER BY ads.created_at LIMIT 1`, [ws.id, listing.id]);
-      await say(ws, listing.id, upgradeText("saved", { usedOn: used ? used.address || used.area || used.city : null }), "upgrade", { reason: "limit" });
+      // Two listings can share a name; "your ads went on Miami" reads wrong on a listing called Miami.
+      const usedOn = used && (used.address || used.area || used.city);
+      const here = listing.address || listing.area || listing.city;
+      await say(ws, listing.id, upgradeText("saved", { usedOn: usedOn && usedOn !== here ? usedOn : usedOn ? `your other ${usedOn} listing` : null }), "upgrade", { reason: "limit" });
     } else {
       await say(ws, listing.id, upgradeText("limit"), "upgrade", { reason: "limit" });
     }
@@ -249,47 +252,138 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
 
   if (aiEnabled) {
     const history = await all(`SELECT role, body FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
-    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, message: text, selectedVersion: selected });
+    const plan = { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
+    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name });
     if (r) return applyAI(ws, listing, ads, photos, r);
   }
   return applyRules(ws, listing, ads, photos, text, selected);
 }
 
-async function applyAI(ws, listing, ads, photos, r) {
+// The model's facts, kept only where they're real values and actually different.
+function patchFrom(listing, lp) {
   const patch = {};
-  if (r.listing_patch) {
-    for (const k of LISTING_FIELDS) {
-      const v = r.listing_patch[k];
-      if (v && !(typeof v === "number" && v <= 0) && v !== listing[k]) patch[k] = v;
-    }
-    if (r.listing_patch.features?.length) patch.features = [...new Set(r.listing_patch.features)];
+  if (!lp) return patch;
+  for (const k of LISTING_FIELDS) {
+    let v = lp[k];
+    if (["price", "beds", "baths", "sqft"].includes(k)) v = Number(v) || 0;
+    if (v && !(typeof v === "number" && v <= 0) && v !== listing[k]) patch[k] = v;
   }
+  const features = Array.isArray(lp.features) ? lp.features.filter((k) => FEATURES.some((f) => f.key === k)) : [];
+  if (features.length && features.sort().join() !== [...(listing.features || [])].sort().join()) patch.features = [...new Set(features)];
+  return patch;
+}
+
+async function applyAI(ws, listing, ads, photos, r) {
+  const reply = polish(r.reply || "");
+  const patch = patchFrom(listing, r.listing_patch);
+  const focus = r.version || undefined;
+
   if (r.action === "run") {
-    if (r.reply) await say(ws, listing.id, polish(r.reply));
-    return proposeRun(ws, listing, { budget: r.budget || undefined, days: r.days || undefined });
+    // On the free plan the upgrade message says it all; a "sure, here's the plan" first would contradict it.
+    if (reply && isPaid(ws)) await say(ws, listing.id, reply);
+    return proposeRun(ws, listing, { versions: r.version ? [r.version] : undefined, budget: r.budget || undefined, days: r.days || undefined });
   }
   if (r.action === "new_moment" && r.moment !== "none") {
     const oldPrice = listing.price;
     if (r.moment === "sold") patch.status = "sold";
     await patchListing(ws.id, listing.id, patch);
-    if (r.reply) await say(ws, listing.id, polish(r.reply));
-    return makeAds(ws, await loadListing(ws.id, listing.id), r.moment, { oldPrice });
+    const out = await makeAds(ws, await loadListing(ws.id, listing.id), r.moment, { oldPrice });
+    return { ...out, focus };
   }
+  if (r.action === "make_ads") {
+    if (Object.keys(patch).length) await patchListing(ws.id, listing.id, patch);
+    // makeAds writes its own message (the ads, or the upgrade note), so the model's
+    // "making them now" isn't posted on top of it.
+    return makeAds(ws, await loadListing(ws.id, listing.id), listing.moment || "new");
+  }
+
   if (Object.keys(patch).length) await patchListing(ws.id, listing.id, patch);
+  const changed = [];
   for (const a of r.ads || []) {
     const ad = ads.find((x) => x.version === a.version);
     if (!ad) continue;
     await saveAd(ws, listing, listing.moment, ad.version, { ...ad, ...normalizeAI(a, photos, ad) }, ad);
+    changed.push(ad.version);
   }
-  await say(ws, listing.id, polish(r.reply || "Done."));
-  return {};
+  // New facts with no rewritten copy from the model: rewrite the ads so they carry them.
+  if (r.action === "update_listing" && !changed.length && ads.length && Object.keys(patch).length) {
+    const fresh = await loadListing(ws.id, listing.id);
+    const ctx = { listing: fresh, photos, brand: ws.brand, moment: fresh.moment };
+    for (const ad of ads) {
+      const next = writeVersion(ad.pattern, ctx, { ...ad.style, photoId: ad.photo_id });
+      await saveAd(ws, fresh, fresh.moment, ad.version, { ...ad, ...applyOverrides(next, ad.style) }, ad);
+    }
+  }
+  await say(ws, listing.id, reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."));
+  return { focus: changed.length === 1 ? changed[0] : focus };
+}
+
+const WHY = {
+  life: "sells the life the home gives, the way one buyer would live it",
+  feature: "puts one standout detail first, with the photo that shows it",
+  facts: "gives the price and the numbers up front, for buyers who are already looking",
+};
+
+// The first reply that isn't word for word what Hopkins said last, so it never repeats itself.
+async function fresh(listingId, options) {
+  const last = await get(`SELECT body FROM messages WHERE listing_id = ? AND role = 'hopkins' ORDER BY created_at DESC LIMIT 1`, [listingId]);
+  return options.find((o) => o && o !== last?.body) || options[options.length - 1];
 }
 
 async function applyRules(ws, listing, ads, photos, text, selected) {
   const intent = readIntent(text, { selected, photos });
   const sorted = [...photos].sort((a, b) => a.position - b.position);
+  const v = intent.versions.length === 1 ? intent.versions[0] : selected;
+  const ad = ads.find((a) => a.version === v);
+  const first = (ws.brand.agent_name || "").split(" ")[0];
 
   if (intent.kind === "run") return proposeRun(ws, listing, { versions: intent.versions, budget: intent.budget, days: intent.days });
+
+  if (intent.kind === "greeting") {
+    const where = ads.length
+      ? `Your 3 versions are ready. Want a change to one, or shall I set them up to run?`
+      : `Send me the price and the best thing about the home and I'll make the ads.`;
+    await say(ws, listing.id, await fresh(listing.id, [`Hi${first ? ` ${first}` : ""}. ${where}`, where]));
+    return {};
+  }
+
+  if (intent.kind === "select" && ads.length) {
+    const pattern = PATTERNS[ad?.pattern];
+    await say(ws, listing.id, await fresh(listing.id, [
+      `Version ${v}${pattern ? `, ${pattern.name.toLowerCase()}` : ""}. What would you like changed on it?`,
+      `On version ${v} now. Tell me what to change, like "shorter" or "use the kitchen photo".`,
+    ]));
+    return { focus: v };
+  }
+
+  if (intent.kind === "make" || (intent.kind === "select" && !ads.length)) {
+    return makeAds(ws, listing, listing.moment || "new");
+  }
+
+  if (intent.kind === "question") {
+    const answers = {
+      plan: `The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`,
+      which: ads.length
+        ? "Nobody knows yet, me included. That's why there are three: they run side by side with the same budget, and the one that brings leads cheapest gets the rest. You'll see it in Monday's report."
+        : "Once the ads are made, the test decides. Three run side by side and the cheapest leads win.",
+      why: ad && WHY[ad.pattern]
+        ? `Version ${v} ${WHY[ad.pattern]}. The three are different on purpose, so the test teaches you something.`
+        : "Each version takes a different angle on the home, so the test shows which one buyers answer.",
+      download: isPaid(ws)
+        ? "Yes. Tap the ··· menu at the top of the listing to download the version you're on as a feed or story image, or copy its text."
+        : "Downloads are on the paid plan. On the free plan you get previews with the Hopkins name across them.",
+      results: "Leads land in Leads the moment someone fills in the form, and every Monday you get a report: what ran, what it cost, and which version won. No numbers until ads have actually run.",
+      help: ads.length
+        ? `Tell me what to change on any version in plain words, like "make 2 warmer" or "use photo 3", and I'll do it. When you're happy, say run it.`
+        : "Send me a listing, a link, the details or photos, and I'll make three ads to test against each other.",
+      other: null,
+    };
+    const answer = answers[intent.topic];
+    if (answer) {
+      await say(ws, listing.id, await fresh(listing.id, [answer, answer]));
+      return { focus: intent.topic === "why" && ad ? v : undefined };
+    }
+  }
 
   if (intent.kind === "moment") {
     const oldPrice = listing.price;
@@ -368,11 +462,14 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
   }
 
   if (intent.kind === "thanks") {
-    await say(ws, listing.id, "When you're happy with them, press Run it and I'll show you the plan first.");
+    await say(ws, listing.id, await fresh(listing.id, ["When you're happy with them, say run it and I'll show you the plan first.", "Any time."]));
     return {};
   }
 
-  await say(ws, listing.id, `I can change the wording, the line on the image, the headline or the photo, make it shorter, warmer or more premium, try another angle, or set it up to run. Tell me what to do with version ${selected}, or name another.`);
+  await say(ws, listing.id, await fresh(listing.id, [
+    `I didn't follow that one. Is it a change to version ${selected}? Say it plainly, like "shorter", "warmer" or "use photo 2".`,
+    `Still not with you, sorry. Try one change at a time, like "new headline: Morning light" or "version 3, use the kitchen photo".`,
+  ]));
   return {};
 }
 

@@ -120,9 +120,15 @@ personal in here.
   this repo and branch), plus a new Turso database. Step by step in `app/README.md` under Deploy.
   Admin emails sign up without a code; production sign ups are closed if `INVITE_CODES` is empty.
   Suggested address: `app.kirmistudio.com`.
-* Works with no API key (built-in writer and chat rules). The Claude path (`app/src/brain.js`,
-  `claude-opus-5-5`) is tested only with a fake client so far; no key was available in the build
-  session. First live check: set the key, make one listing, read the ads.
+* The chat needs a model key to feel like ChatGPT or Claude. The live site has none yet, so it
+  runs on the built-in rules, which is why it felt like a bot with preset answers (Ismael,
+  2026-10-24). Rebuilt (2026-10-24): the model now gets the whole thread as a real back and forth
+  plus the state (listing, ads, plan, version on screen), answers questions, greets back, switches
+  version when one is named ("no, I meant 2"), acts when asked, and never repeats itself.
+  `ANTHROPIC_API_KEY` uses Claude; `GROQ_API_KEY` uses Groq's free model (the survey's). Both
+  paths are tested only with fakes; no real key in the build session. The rules were also
+  improved (greetings, version switching, common questions, no repeated replies). **Next: Ismael
+  adds a key on Render (Environment tab), then a live chat check.**
 * Choices made in the build, change any of them: product copy uses US spelling (customers are
   mostly US); the default run plan is $200 over 10 days split across the 3 versions; feed ads are
   4:5; paid upgrades are requests that notify the founder (no Stripe until an ad can go live);
@@ -142,6 +148,15 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Fixed again (2026-10-24, second report): the tab only lit up after the next screen's data
+  came back, so on the live server the lens sprang back to the old tab for a moment and the tap
+  looked lost. Now the tab lights at once, Today draws from what's loaded, and the touch code
+  can't be left stuck by a touch iOS never finishes. Slow server test: old code 7 of 30 right,
+  new 30 of 30 at 0, 0.9 and 2.5 seconds per request. Real iPhone Safari (WebKit) can't be run
+  in the build session; only Chromium with touch.
+* Fixed (2026-10-24): the account and listing menus on phones sat below the screen (the glass
+  style overrode their fixed position). The message box, pills and Run it bar now use exactly the
+  tab bar's glass, with Apple's scroll edge effect behind them so chat text doesn't show through.
 * Fixed (2026-10-24): tabs that "stuck". Two causes: iOS cancelling a quick tap or glide (the bar
   now lands on the tab under the finger and the link works as a backup), and a slow screen
   finishing late and drawing over the one just tapped (screens now check they're still wanted).
