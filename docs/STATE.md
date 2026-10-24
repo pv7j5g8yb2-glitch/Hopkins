@@ -140,6 +140,12 @@ personal in here.
   dark glass with light labels over dark content. Refraction (background bending at the edge) was
   tried and dropped: iPhone browsers can't do it at all, and Chrome drew banding. Waiting on
   Ismael's verdict on his iPhone before using it anywhere else.
+  Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
+  and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Fixed (2026-10-24): tabs that "stuck". Two causes: iOS cancelling a quick tap or glide (the bar
+  now lands on the tab under the finger and the link works as a backup), and a slow screen
+  finishing late and drawing over the one just tapped (screens now check they're still wanted).
+  Covered by touch stress and slow connection tests in the session's browser checks.
 * Paid accounts can download every ad (feed and story images, copy the text) and post or boost it
   themselves while Meta isn't connected; the approval message says so. Each version's link still
   credits the leads. Free accounts stay previews only (Ismael, 2026-10-22).

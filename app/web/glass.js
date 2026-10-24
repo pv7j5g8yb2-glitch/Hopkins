@@ -84,49 +84,66 @@
 
   // ---------- press and drag across the bar ----------
 
-  let dragging = false, moved = false, startX = 0, pointerId = null;
+  // iOS often cancels a touch part way through a glide or a quick tap (and reports no position
+  // when it does), so the last known finger position decides where the lens lands, whether the
+  // touch ended or was cancelled. If this handling misses a tap for any reason, the link's own
+  // tap still goes through, so a tab can never get stuck.
+  let dragging = false, startX = 0, lastX = 0, pointerId = null, navigatedAt = 0;
   const indexAt = (x) => Math.max(0, Math.min(tabs.length - 1, Math.round(x / st.w)));
+  const clampX = (r, clientX) => Math.max(0, Math.min(r.width - PAD * 2 - st.w, clientX - r.left - PAD - st.w / 2));
 
   cap.addEventListener("pointerdown", (e) => {
-    if (!phone()) return;
+    if (!phone() || (dragging && e.pointerId !== pointerId)) return;
     const r = geometry();
+    if (st.w <= 0) return;
     dragging = true;
-    moved = false;
-    startX = e.clientX;
+    startX = lastX = e.clientX;
     pointerId = e.pointerId;
-    cap.setPointerCapture(e.pointerId);
+    try { cap.setPointerCapture(e.pointerId); } catch {}
     lens.classList.add("press");
     lens.style.opacity = "1";
     st.pressTarget = 1;
-    st.target = Math.max(0, Math.min(r.width - PAD * 2 - st.w, e.clientX - r.left - PAD - st.w / 2));
+    st.target = clampX(r, e.clientX);
     kick();
   });
   cap.addEventListener("pointermove", (e) => {
     if (!dragging || e.pointerId !== pointerId) return;
-    if (Math.abs(e.clientX - startX) > 6) moved = true;
-    const r = cap.getBoundingClientRect();
-    st.target = Math.max(0, Math.min(r.width - PAD * 2 - st.w, e.clientX - r.left - PAD - st.w / 2));
+    if (e.clientX) lastX = e.clientX;
+    st.target = clampX(cap.getBoundingClientRect(), lastX);
   });
-  function release(e, cancel) {
-    if (!dragging || (e && e.pointerId !== pointerId)) return;
+  function release(e) {
+    if (!dragging || e.pointerId !== pointerId) return;
     dragging = false;
+    pointerId = null;
+    if (e.type === "pointerup" && e.clientX) lastX = e.clientX;
     st.pressTarget = 0;
     setTimeout(() => lens.classList.remove("press"), 140);
     const r = cap.getBoundingClientRect();
-    const i = cancel ? current() : indexAt((e ? e.clientX : startX) - r.left - PAD - st.w / 2);
-    if (i < 0) { select(-1); return; }
+    const i = indexAt(clampX(r, lastX));
     st.target = xFor(i);
     kick();
-    if (!cancel) {
-      const href = tabs[i].getAttribute("href");
-      if (location.hash !== href) location.hash = href;
-      else if (!moved) window.dispatchEvent(new HashChangeEvent("hashchange"));
+    go(i);
+  }
+  function go(i) {
+    const href = tabs[i].getAttribute("href");
+    navigatedAt = Date.now();
+    if (location.hash !== href) location.hash = href;
+    else {
+      // Tapping the tab you're already on takes you back to the top, like iOS.
+      const page = document.querySelector("#main .page");
+      if (page) page.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
-  cap.addEventListener("pointerup", (e) => release(e, false));
-  cap.addEventListener("pointercancel", (e) => release(e, true));
-  // Navigation happens on release above, so the links' own taps are swallowed on phones.
-  cap.addEventListener("click", (e) => { if (phone() && e.detail !== 0) e.preventDefault(); });
+  cap.addEventListener("pointerup", release);
+  cap.addEventListener("pointercancel", release);
+  cap.addEventListener("lostpointercapture", (e) => { if (dragging && e.pointerId === pointerId) release(e); });
+  // The tap that follows a handled touch is swallowed so it doesn't navigate twice. Any other tap
+  // (keyboard, or a touch this code never saw end) goes through as a normal link.
+  cap.addEventListener("click", (e) => {
+    if (Date.now() - navigatedAt < 700) { e.preventDefault(); return; }
+    const a = e.target.closest("a[data-nav]");
+    if (a && phone()) { e.preventDefault(); go(tabs.indexOf(a)); }
+  });
 
   // ---------- light or dark glass, from what's behind ----------
   //

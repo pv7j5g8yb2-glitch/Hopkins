@@ -140,6 +140,7 @@
     const pop = $("#pop");
     pop.innerHTML = `<div class="grab"></div>${html}`;
     pop.classList.add("on");
+    pop.classList.toggle("lg", phone());
     if (phone()) { $("#sheetBg").classList.add("on"); buzz(6); return; }
     const r = anchor.getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
@@ -202,7 +203,12 @@
 
   // ---------- routing ----------
 
+  // Each route gets a number. A screen that finishes loading after you've already moved on
+  // checks it and quietly stops, so a slow screen can never draw over the one you picked.
+  let routeSeq = 0;
+  const current = () => routeSeq;
   async function route() {
+    const seq = ++routeSeq;
     closePop();
     const [view, id] = location.hash.slice(2).split("/");
     // Inside a listing or a new one, the phone goes full screen like a chat app.
@@ -219,9 +225,9 @@
       else if (view === "settings") viewSettings();
       else await viewToday();
     } catch (e) {
-      if (e.message !== "signed out") main.innerHTML = `${mtop("Hopkins")}<div class="page"><p class="err">${esc(e.message)}</p></div>`;
+      if (e.message !== "signed out" && seq === routeSeq) main.innerHTML = `${mtop("Hopkins")}<div class="page"><p class="err">${esc(e.message)}</p></div>`;
     }
-    drawSide();
+    if (seq === routeSeq) drawSide();
   }
 
   const skeleton = () => `<div class="page"><div class="wrap"><div class="sk" style="height:34px;width:60%;margin-bottom:12px"></div><div class="sk" style="height:16px;width:40%;margin-bottom:28px"></div>
@@ -230,7 +236,9 @@
   // ---------- Today: what Hopkins needs from you ----------
 
   async function viewToday() {
+    const my = current();
     await loadInbox();
+    if (my !== current()) return;
     const first = (S.me.user.name || "").split(" ")[0];
     const h = new Date().getHours();
     const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
@@ -281,7 +289,7 @@
 
   function composerHtml(placeholder, chips = []) {
     return `<div class="comp-wrap">${chips.length ? `<div class="chips">${chips.map(([label, act]) => `<button class="chip-btn${act.includes("class-go") ? " go" : ""}" ${act.replace(" class-go", "")}>${label}</button>`).join("")}</div>` : ""}
-      <form class="comp" id="comp"><div class="att" id="att"></div>
+      <form class="comp lg" id="comp"><div class="att" id="att"></div>
       <div class="row-c"><label class="icon-btn" title="Add photos">${ICON.photo}<input type="file" id="files" accept="image/*" multiple hidden></label>
       <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" enterkeyhint="send"></textarea>
       <button class="send" id="send" type="submit" aria-label="Send">${ICON.send}</button></div><div class="hint" id="hint"></div></form></div>`;
@@ -421,8 +429,10 @@
   // ---------- a listing: chat and preview ----------
 
   async function viewListing(id, keepScroll) {
+    const my = current();
     if (!S.current || S.current.listing.id !== id) main.innerHTML = `${mtop("", "", { back: "#/listings" })}${skeleton()}`;
     const p = await api(`/api/listings/${id}`);
+    if (my !== current()) return;
     drawListing(p, keepScroll);
   }
 
@@ -472,7 +482,9 @@
   async function say(text) {
     const l = S.current.listing;
     showTyping(text);
+    const my = current();
     const next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] } });
+    if (my !== current()) return;
     drawListing(next);
     refreshSide();
   }
@@ -569,7 +581,7 @@
     pv.innerHTML = `<div class="pvh">${tabs}${fmt}</div><div class="mbar">${tabs}${fmt}</div>
       <div class="stage" id="stage">${S.format === "feed" ? feed : story}<div class="dots">${p.ads.map((a) => `<i class="${a.version === v ? "on" : ""}"></i>`).join("")}</div></div>
       <div class="pvb">
-        <div class="actrow"><button class="btn" data-act="run">Run it</button>${paid() ? `<button class="sec-btn" data-act="dlmenu">${ICON.down}<span>Download</span></button>` : ""}</div>
+        <div class="actrow lg"><button class="btn" data-act="run">Run it</button>${paid() ? `<button class="sec-btn" data-act="dlmenu">${ICON.down}<span>Download</span></button>` : ""}</div>
         ${paid() ? "" : `<p class="small" style="text-align:center">Free plan: previews only.</p>`}
         <div class="status ${issues.length ? "bad" : ""}">${issues.length ? `${ICON.alert}<button data-act="issues">${issues.length} wording ${issues.length === 1 ? "issue" : "issues"} to look at</button>` : `${ICON.check}Fair housing check passed`}<span style="margin-left:auto"></span><button data-act="photos">${S.showPhotos ? "Hide photos" : "Change photo"}</button></div>
         ${issues.length && S.showIssues ? `<div class="issues">${issues.map((i) => `"${esc(i.term)}" ${esc(i.why)}${i.suggestion ? `. Try "${esc(i.suggestion)}"` : ""}.`).join("<br>")}</div>` : ""}
@@ -626,8 +638,10 @@
   const WANTS = { showing: "Wants a showing", info: "Has a question", offer: "Wants to talk about an offer" };
 
   async function viewLeads() {
+    const my = current();
     main.innerHTML = `${mtop("Leads")}${skeleton()}`;
     const { leads } = await api("/api/leads");
+    if (my !== current()) return;
     const fresh = leads.filter((x) => x.status === "new").length;
     const tel = (n) => n.replace(/[^\d+]/g, "");
     const item = (x, i) => `<div class="lead ${x.status === "new" ? "new" : ""}" style="animation-delay:${Math.min(i, 8) * 0.04}s"><span class="av">${esc(x.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span>
@@ -649,8 +663,10 @@
   // ---------- Monday report ----------
 
   async function viewReport() {
+    const my = current();
     main.innerHTML = `${mtop("Report")}${skeleton()}`;
     const r = await api("/api/report");
+    if (my !== current()) return;
     const pats = S.me.patterns;
     const most = Math.max(1, ...r.patterns.map((x) => x.leads || 0));
     const top = r.patterns.reduce((a, x) => ((x.leads || 0) > (a?.leads || 0) ? x : a), null);
@@ -826,7 +842,9 @@
   // ---------- Admin ----------
 
   async function viewAdmin() {
+    const my = current();
     const { workspaces } = await api("/api/admin/workspaces");
+    if (my !== current()) return;
     main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Workspaces</h1><p class="lede">Switch a workspace to paid once they've agreed the price.</p></div>
       <div class="scroll-x"><table class="tbl"><thead><tr><th>Workspace</th><th>Listings</th><th>Ads</th><th>Leads</th><th>Asked to upgrade</th><th>Plan</th></tr></thead><tbody>
       ${workspaces.map((w) => `<tr><td><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")} · ${ago(w.created_at)}</span></td><td>${w.listings}</td><td>${w.ads}</td><td>${w.leads}</td>
