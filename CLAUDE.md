@@ -162,5 +162,6 @@ real value. Never confusing or complex: one point, plain words, a clear tip.
 * **Autopilot:** optional. The owner sets a monthly budget and goal once, Hopkins makes,
   tests and runs ads within it, reports every Monday, and can be paused any time. The
   default stays approving every ad.
+* **Creator referrals (Ismael, 2026-10-24):** a creator earns a one off payment equal to one month of the plan their agent buys ($100 for Solo, $300 for a $299 team, and so on), paid only once that agent's first subscription payment has gone through. Paid by the business, with written terms, through an affiliate tool on Stripe.
 * **Agency offer:** don't ask teams to fire their agency. Run Hopkins next to it on one
   listing for a month, compare cost per lead, keep whichever wins.
