@@ -27,16 +27,21 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
 for (const f of ["app.html", "app.css", "app.js", "creative.js", "login.html", "lead.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
-const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml" };
+const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
+// The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
+// brand page preview before the agent has any listings.
+for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg"]) files[f] = readFileSync(join(WEB, f));
+files["manifest.webmanifest"] = readFileSync(join(WEB, "manifest.webmanifest"), "utf8");
 
 export const app = Fastify({ logger: process.env.NODE_ENV !== "test", bodyLimit: 1_000_000 });
 await app.register(cookie, { secret: COOKIE_SECRET });
 
 app.get("/healthz", async () => ({ ok: true }));
 
-for (const f of ["app.css", "app.js", "creative.js", "mark.svg"]) {
+for (const f of ["app.css", "app.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
+app.get("/apple-touch-icon.png", async (_, reply) => reply.type(TYPES.png).send(files["apple-touch-icon.png"]));
 
 // ---------- pages ----------
 

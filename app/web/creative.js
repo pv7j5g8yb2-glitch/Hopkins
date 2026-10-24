@@ -175,6 +175,14 @@
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = primary;
     ctx.fillRect(0, 0, W, H);
+    if (!img) {
+      // No photo yet: a soft light in the brand colour instead of a flat block.
+      const glow = ctx.createRadialGradient(W * 0.7, H * 0.25, 40, W * 0.7, H * 0.25, W * 0.9);
+      glow.addColorStop(0, isDark(primary) ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.08)");
+      glow.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+    }
 
     const pattern = ad.pattern;
     const kicker = (ad.kicker || "").toUpperCase();
@@ -261,7 +269,7 @@
       ctx.globalAlpha = 0.55;
       ctx.fillStyle = onPrimary;
       ctx.font = '400 30px "Inter Tight"';
-      ctx.fillText("Add a photo and it goes here", 72, 120 + safeTop);
+      ctx.fillText("Your photo goes here", 72, 120 + safeTop);
       ctx.restore();
     }
     grain(ctx, W, H, 14);

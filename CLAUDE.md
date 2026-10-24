@@ -137,6 +137,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   software platform. Keep every feature, but hide the secondary ones: one main action per screen
   (gold), everything else in a "more" menu or the account menu, hairlines instead of boxes, two
   text weights, no extra explanations on screen. Check new screens against this before shipping.
+* **Phones first (Ismael, 2026-10-24):** most use will be on a phone. Design and check every screen at
+  iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar, the main
+  action fixed at the bottom within thumb reach, menus as bottom sheets, inputs at 16px (smaller makes
+  iPhones zoom), room for the home bar, quick reply chips instead of typing, show the work while
+  Hopkins thinks, small rewards on real moments (approved, first ads), never a blank screen.
 
 * **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name
   across the middle, no downloads. Changes to those 3 are included. Asking for a 4th, or
