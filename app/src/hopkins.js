@@ -193,7 +193,15 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
       }
       await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your 3 ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be 3 more, and that's the paid plan.`);
     }
-    await say(ws, listing.id, upgradeText("limit"), "upgrade", { reason: "limit" });
+    // Asking again doesn't stack the same message; the app shows a short note instead.
+    const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
+    if (last && last.kind === "upgrade") return { upgrade: true, repeat: true };
+    if (!current.length) {
+      const used = await get(`SELECT l.address, l.area, l.city FROM ads JOIN listings l ON l.id = ads.listing_id WHERE ads.workspace_id = ? AND l.id != ? ORDER BY ads.created_at LIMIT 1`, [ws.id, listing.id]);
+      await say(ws, listing.id, upgradeText("saved", { usedOn: used ? used.address || used.area || used.city : null }), "upgrade", { reason: "limit" });
+    } else {
+      await say(ws, listing.id, upgradeText("limit"), "upgrade", { reason: "limit" });
+    }
     return { upgrade: true };
   }
   const photos = await loadPhotos(listing.id, aiEnabled);

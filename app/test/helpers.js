@@ -19,10 +19,14 @@ export async function boot(extraEnv = {}) {
   return app;
 }
 
+let clients = 0;
 export function client(app) {
   let cookie = "";
+  // Each test client comes from its own address, like separate people would, so the per
+  // address limits on sign ups and logins don't trip across unrelated tests.
+  const remoteAddress = `10.0.${Math.floor(++clients / 250)}.${clients % 250}`;
   return async (method, url, body) => {
-    const res = await app.inject({ method, url, payload: body, headers: cookie ? { cookie } : {} });
+    const res = await app.inject({ method, url, payload: body, headers: cookie ? { cookie } : {}, remoteAddress });
     const set = res.headers["set-cookie"];
     if (set) cookie = (Array.isArray(set) ? set : [set]).map((c) => c.split(";")[0]).join("; ");
     let json = null;

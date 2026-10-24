@@ -157,6 +157,12 @@ await client.executeMultiple(`
   CREATE INDEX IF NOT EXISTS photos_listing_idx ON photos(listing_id);
 `);
 
+// Columns added after launch. CREATE TABLE above only applies to a brand new database, so
+// existing ones get them here; the catch makes it a no-op once the column exists.
+for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT"]) {
+  try { await client.execute(sql); } catch {}
+}
+
 export async function run(sql, args = []) {
   return client.execute({ sql, args });
 }

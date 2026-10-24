@@ -127,6 +127,13 @@ personal in here.
   mostly US); the default run plan is $200 over 10 days split across the 3 versions; feed ads are
   4:5; paid upgrades are requests that notify the founder (no Stripe until an ad can go live);
   lead alerts use the free ntfy app.
+* Live at `hopkins-app.onrender.com` (Render Blueprint `Hopkins-app`, deploys on every push to
+  `claude/amazing-noether-92ry61`, Turso database). Ismael tests on his admin account; to test
+  the paid side he switches his own workspace to Paid in Admin.
+* Settings page (2026-10-24): profile photo, name, email (needs the current password), password,
+  business name, phone lead alerts, plan, sign out, delete account (deletes the whole workspace).
+* A listing added after the free ads are used is saved with a clear message (where the free ads
+  went) and a "Make the ads" button for after upgrading.
 * Paid accounts can download every ad (feed and story images, copy the text) and post or boost it
   themselves while Meta isn't connected; the approval message says so. Each version's link still
   credits the leads. Free accounts stay previews only (Ismael, 2026-10-22).

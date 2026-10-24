@@ -140,3 +140,49 @@ test("the lead page escapes what agents type", async () => {
   const page = await client(app)("GET", `/l/${created.json.listing.slug}`);
   assert.ok(!page.body.includes("<script>alert(1)"));
 });
+
+test("settings: name, photo, email and password changes, and deleting the account", async () => {
+  const { c } = await signup("set@ellery.test");
+  assert.equal((await c("PATCH", "/api/account", { name: "Sam E" })).status, 200);
+  assert.equal((await c("GET", "/api/me")).json.user.name, "Sam E");
+
+  // A profile photo has to be one of yours, uploaded as an avatar.
+  assert.equal((await c("PATCH", "/api/account", { avatar_id: "not-a-photo" })).status, 400);
+  const av = await c("POST", "/api/photos", { data: TINY_JPEG, mime: "image/jpeg", kind: "avatar", name: "me.jpg" });
+  assert.equal((await c("PATCH", "/api/account", { avatar_id: av.json.id })).status, 200);
+  assert.equal((await c("GET", "/api/me")).json.user.avatar_id, av.json.id);
+
+  // Changing the email needs the password, and can't take someone else's.
+  assert.equal((await c("PATCH", "/api/account", { email: "new@ellery.test" })).status, 401);
+  assert.equal((await c("PATCH", "/api/account", { email: "sam@ellery.test", password: "password123" })).status, 409);
+  assert.equal((await c("PATCH", "/api/account", { email: "new@ellery.test", password: "password123" })).status, 200);
+
+  assert.equal((await c("POST", "/api/account/password", { current: "wrong-one", next: "newpassword1" })).status, 401);
+  assert.equal((await c("POST", "/api/account/password", { current: "password123", next: "short" })).status, 400);
+  assert.equal((await c("POST", "/api/account/password", { current: "password123", next: "newpassword1" })).status, 200);
+  const fresh = client(app);
+  assert.equal((await fresh("POST", "/api/login", { email: "new@ellery.test", password: "password123" })).status, 401);
+  assert.equal((await fresh("POST", "/api/login", { email: "new@ellery.test", password: "newpassword1" })).status, 200);
+
+  await c("POST", "/api/listings", { text: DESCRIPTION });
+  assert.equal((await c("POST", "/api/account/delete", { password: "nope" })).status, 401);
+  assert.equal((await c("POST", "/api/account/delete", { password: "newpassword1" })).status, 200);
+  assert.equal((await fresh("GET", "/api/me")).status, 401);
+  assert.equal((await client(app)("POST", "/api/login", { email: "new@ellery.test", password: "newpassword1" })).status, 401);
+});
+
+test("a listing past the free ads is saved, says where the free ads went, and can get its ads later", async () => {
+  const { c } = await signup("limit@ellery.test");
+  await c("POST", "/api/listings", { text: DESCRIPTION });
+  const second = await c("POST", "/api/listings", { text: "Condo in Midtown, 1 bed 1 bath, $389k" });
+  const msg = second.json.messages.at(-1);
+  assert.equal(msg.kind, "upgrade");
+  assert.match(msg.body, /went on 412 Oak Street/);
+  assert.match(msg.body, /tap Make the ads/);
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  const boss = client(app);
+  await boss("POST", "/api/login", { email: "boss@hopkins.test", password: "password123" });
+  assert.equal((await boss("PATCH", `/api/admin/workspaces/${ws}`, { plan: "paid" })).status, 200);
+  const made = await c("POST", `/api/listings/${second.json.listing.id}/remake`, {});
+  assert.equal(made.json.ads.length, 3);
+});

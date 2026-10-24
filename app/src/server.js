@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { run, get, all, nowIso } from "./db.js";
-import { EMAIL_RE, inviteOk, isAdmin, createAccount, verifyPassword, setSession, clearSession, currentUser } from "./auth.js";
+import { EMAIL_RE, inviteOk, isAdmin, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, inbox,
@@ -114,7 +114,7 @@ app.get("/api/me", async (request) => {
   const ws = request.ws;
   const made = await adsMade(ws.id);
   return {
-    user: { email: request.user.email, name: request.user.name },
+    user: { email: request.user.email, name: request.user.name, avatar_id: request.user.avatar_id || null },
     workspace: { id: ws.id, name: ws.name, plan: ws.plan, brand: ws.brand },
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
     admin: isAdmin(request.user),
@@ -143,6 +143,49 @@ app.put("/api/brand", async (request, reply) => {
   return { brand };
 });
 
+// ---------- your account (Settings) ----------
+
+app.patch("/api/account", async (request, reply) => {
+  const b = request.body || {};
+  const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
+  const sets = [], args = [];
+  if (b.name !== undefined) { sets.push("name = ?"); args.push(clean(b.name, 80)); }
+  if (b.avatar_id !== undefined) {
+    if (b.avatar_id && !(await get(`SELECT id FROM photos WHERE id = ? AND workspace_id = ? AND kind = 'avatar'`, [b.avatar_id, request.ws.id]))) return reply.code(400).send({ error: "That photo didn't upload. Try again." });
+    sets.push("avatar_id = ?"); args.push(b.avatar_id || null);
+  }
+  if (b.email !== undefined && b.email.trim().toLowerCase() !== user.email) {
+    const email = String(b.email).trim().toLowerCase();
+    if (!EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
+    if (typeof b.password !== "string" || !(await verifyPassword(b.password, user.pass_hash))) return reply.code(401).send({ error: "Enter your current password to change your email." });
+    if (await get(`SELECT id FROM users WHERE email = ?`, [email])) return reply.code(409).send({ error: "There's already an account with that email." });
+    sets.push("email = ?"); args.push(email);
+  }
+  if (sets.length) await run(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`, [...args, user.id]);
+  return { ok: true };
+});
+
+app.post("/api/account/password", async (request, reply) => {
+  if (tooMany(`pw:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  const { current, next } = request.body || {};
+  const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
+  if (typeof current !== "string" || !(await verifyPassword(current, user.pass_hash))) return reply.code(401).send({ error: "Your current password isn't right." });
+  if (typeof next !== "string" || next.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the new password." });
+  await run(`UPDATE users SET pass_hash = ? WHERE id = ?`, [await hashPassword(next), user.id]);
+  return { ok: true };
+});
+
+// Deletes the account and everything in its workspace: listings, photos, ads, chats, leads.
+app.post("/api/account/delete", async (request, reply) => {
+  const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
+  if (typeof request.body?.password !== "string" || !(await verifyPassword(request.body.password, user.pass_hash))) return reply.code(401).send({ error: "Your password isn't right." });
+  const ws = request.ws.id;
+  for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "listings", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [ws]);
+  await run(`DELETE FROM workspaces WHERE id = ?`, [ws]);
+  clearSession(reply);
+  return { ok: true };
+});
+
 app.post("/api/upgrade-request", async (request) => {
   const ws = request.ws;
   notifyFounder("Hopkins: upgrade request", `${ws.name} asked for the paid plan. Their account email is in the admin view.`, ["moneybag"]);
@@ -163,7 +206,7 @@ app.post("/api/photos", { bodyLimit: 12_000_000 }, async (request, reply) => {
   const pos = listingId ? Number((await get(`SELECT COALESCE(MAX(position), -1) + 1 AS p FROM photos WHERE listing_id = ?`, [listingId])).p) : 0;
   const { labelFromName } = await import("./listing.js");
   await run(`INSERT INTO photos (id, workspace_id, listing_id, kind, label, position, mime, data, thumb, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`, [
-    id, request.ws.id, listingId || null, kind === "logo" ? "logo" : "listing", labelFromName(name || ""), pos, mime, buf,
+    id, request.ws.id, listingId || null, ["logo", "avatar"].includes(kind) ? kind : "listing", labelFromName(name || ""), pos, mime, buf,
     typeof thumb === "string" ? Buffer.from(thumb, "base64") : null, nowIso(),
   ]);
   return { id, label: labelFromName(name || "") };

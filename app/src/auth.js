@@ -60,5 +60,5 @@ export async function currentUser(request) {
   if (!raw) return null;
   const u = request.unsignCookie(raw);
   if (!u.valid) return null;
-  return get(`SELECT id, workspace_id, email, name FROM users WHERE id = ?`, [u.value]);
+  return get(`SELECT id, workspace_id, email, name, avatar_id FROM users WHERE id = ?`, [u.value]);
 }

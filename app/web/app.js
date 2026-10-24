@@ -25,6 +25,8 @@
     shield: '<svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z"/></svg>',
     out: '<svg viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg>',
     back: '<svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>',
+    gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    chevr: '<svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>',
     phone: '<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/></svg>',
     msg: '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12z"/></svg>',
     mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>',
@@ -72,13 +74,15 @@
   const paid = () => S.me.workspace.plan === "paid";
 
   const initials = () => (S.me.user.name || S.me.user.email).split(/[\s@.]+/).map((w) => w[0]).join("").slice(0, 2);
+  // Your profile photo if you've added one, your initials if not.
+  const avatarStyle = () => (S.me.user.avatar_id ? `style="background:#ddd url(${photoUrl(S.me.user.avatar_id, true)}) center/cover;color:transparent"` : "");
   // The phone's top bar. Top level pages show the logo and your avatar; inside a listing it
   // shows a back arrow and the listing, like any messaging app.
   function mtop(title, extra = "", opts = {}) {
     if (opts.back) {
       return `<div class="mtop"><a class="icon-btn mback" href="${opts.back}" aria-label="Back">${ICON.back}</a><div class="ttl"><b>${esc(title)}</b>${opts.sub ? `<span>${esc(opts.sub)}</span>` : ""}</div>${extra}</div>`;
     }
-    return `<div class="mtop"><a class="logo" href="#/today"><img src="/static/mark.svg" alt="">Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account">${esc(initials())}</button></div>`;
+    return `<div class="mtop"><a class="logo" href="#/today"><img src="/static/mark.svg" alt="">Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account" ${avatarStyle()}>${esc(initials())}</button></div>`;
   }
   const buzz = (ms = 8) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
   function celebrate(text) {
@@ -153,7 +157,7 @@
       ? `<div class="note"><b>Paid plan</b>Billing starts when your first ad goes live.</div>`
       : `<div class="note"><b>Free plan</b><div class="meter"><i style="width:${Math.min(100, (u.adsMade / u.freeLimit) * 100)}%"></i></div>${Math.min(u.adsMade, u.freeLimit)} of ${u.freeLimit} free ads made</div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(S.me.workspace.name)}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
-      <a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
+      <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
       <div class="sep"></div><button data-act="logout">${ICON.out}Sign out</button>`;
   }
 
@@ -166,7 +170,7 @@
       : "";
     return `<a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
-      ${S.current.ads.length ? `<div class="sep"></div><button data-act="remake">${ICON.redo}Make 3 new versions</button>` : ""}`;
+      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make 3 new versions" : "Make the ads"}</button>`;
   }
 
   // ---------- frame ----------
@@ -186,7 +190,7 @@
           <i class="th" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
           <div class="nm"><b>${esc(listingName(l))}</b><span>${esc(sideLine(l))}</span></div>${l.waiting ? '<i class="dotw" title="Waiting on you"></i>' : ""}</a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
-    $("#acct").innerHTML = `<button data-act="account"><span class="av">${esc(initials())}</span><span class="nm"><b>${esc(S.me.workspace.name)}</b><span>${paid() ? "Paid plan" : "Free plan"}</span></span>${ICON.chev}</button>`;
+    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(S.me.workspace.name)}</b><span>${paid() ? "Paid plan" : "Free plan"}</span></span>${ICON.chev}</button>`;
   }
 
   function sideLine(l) {
@@ -212,6 +216,7 @@
       else if (view === "report") await viewReport();
       else if (view === "brand") await viewBrand();
       else if (view === "admin") await viewAdmin();
+      else if (view === "settings") viewSettings();
       else await viewToday();
     } catch (e) {
       if (e.message !== "signed out") main.innerHTML = `${mtop("Hopkins")}<div class="page"><p class="err">${esc(e.message)}</p></div>`;
@@ -368,7 +373,9 @@
 
   function viewNew() {
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. You'll get 3 ads to compare.</p></div>
+      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. You'll get 3 ads to compare.</p>
+      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> You can still add this listing. Its ads get made once you're on the paid plan.
+        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Paid plan requested.</span>` : `<button class="link" data-upgrade>Ask for the paid plan</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml("Paste a link or describe the home", [["Try an example", 'data-act="example"']])}</section>`;
@@ -433,12 +440,12 @@
     const firstPhoto = p.photos[0];
     const chips = p.ads.length
       ? [["Run it", 'data-act="run" class-go'], ["Shorter", 'data-say="Make it shorter"'], ["Warmer", 'data-say="Make it warmer"'], ["More premium", 'data-say="Make it more premium"'], ["Another angle", 'data-say="Try another angle"'], ["Different photo", 'data-say="Use a different photo"']]
-      : [];
+      : [["Make the ads", 'data-act="remake" class-go']];
     main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub })}
       <div class="lv ${showPv ? "showpv" : ""}" id="lv">
       <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><h2>${esc(listingName(l))}</h2><span class="sub">${esc(sub)}</span></div>${chip}
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
-        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(p.ads.length ? `Ask for a change to version ${S.selected[l.id]}` : "Tell me about the home", chips)}</section>
+        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(p.ads.length ? `Ask for a change to version ${S.selected[l.id]}` : "Ask anything about this listing", chips)}</section>
       <section class="pv" id="pv"></section></div>`;
     S.seen[l.id] = p.messages.length;
     const msgs = $("#msgs");
@@ -543,7 +550,7 @@
     const p = S.current, l = p.listing, pv = $("#pv");
     if (!pv) return;
     if (!p.ads.length) {
-      pv.innerHTML = `<div class="pvh"><span class="small">Preview</span></div><div class="empty-pv">Your ads show up here.<span class="small">Add photos and the details in the chat.</span></div>`;
+      pv.innerHTML = `<div class="pvh"><span class="small">Preview</span></div><div class="empty-pv">Your ads show up here.<button class="btn" data-act="remake" style="margin-top:10px">Make the ads</button></div>`;
       return;
     }
     const v = S.selected[l.id];
@@ -690,7 +697,6 @@
         <div class="group"><details class="more"><summary>More</summary><div class="inner">
           <div class="grid2">${field("phone", "Phone on lead pages", "(512) 555 0100")}<div class="fld"><label for="f_country">Country</label><select id="f_country" name="country">${COUNTRIES.map((c) => `<option ${b.country === c ? "selected" : ""}>${c}</option>`).join("")}</select></div></div>
           ${field("license", "License line", "DRE #01234567", "Small print on your lead pages, where your state asks for it.")}
-          ${field("alerts_topic", "Lead alerts on your phone", "ellery-leads-4821", "Install the free ntfy app, subscribe to a name only you know, and type it here.")}
         </div></details></div>
         <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
       </form><div class="brandprev"><canvas id="brandCanvas"></canvas><p class="small">${phone() ? "Live preview. It changes as you go." : "A sample ad. Yours use your listing photos."}</p></div></div></div></div>`;
@@ -739,6 +745,84 @@
     });
   }
 
+  // ---------- Settings ----------
+
+  function viewSettings() {
+    const u = S.me.user, b = S.me.workspace.brand, use = S.me.usage;
+    const fld = (id, label, value, type = "text", ph = "", auto = "off") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="${auto}"></div>`;
+    main.innerHTML = `${mtop("Settings")}<div class="page"><div class="wrap" style="max-width:600px">
+      <div class="head"><h1>Settings</h1></div>
+      <div class="group"><h4>Profile</h4>
+        <div class="set-av"><span class="av big" id="setAv" ${avatarStyle()}>${esc(initials())}</span><div>
+          <label class="sec-btn">Change photo<input type="file" accept="image/*" hidden id="avFile"></label>
+          ${u.avatar_id ? `<button class="link" data-act="avRemove" style="margin-left:10px">Remove</button>` : ""}</div></div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+          ${fld("sName", "Your name", u.name, "text", "Sam Ellery", "name")}
+          ${fld("sEmail", "Email", u.email, "email", "", "email")}
+          <div class="fld hidden" id="sEmailPw">${`<label for="sEmailPass">Current password, to change your email</label><input id="sEmailPass" type="password" autocomplete="current-password">`}</div>
+          <div><button class="sec-btn" data-act="saveProfile">Save profile</button></div></div></div>
+      <div class="group"><h4>Business</h4>
+        ${fld("sBiz", "Business, team or brokerage", b.business, "text", "Ellery Realty", "organization")}
+        <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="saveBiz">Save</button><a class="link" href="#/brand">Colors, logo and voice</a></div></div>
+      <div class="group"><h4>Password</h4><div style="display:flex;flex-direction:column;gap:12px">
+        ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
+        <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
+      <div class="group"><h4>Notifications</h4>
+        ${fld("sAlerts", "Lead alerts on your phone", b.alerts_topic, "text", "ellery-leads-4821")}
+        <p class="small" style="margin-top:6px">Install the free ntfy app, subscribe to a name only you know, and type the same name here. New leads reach your phone within seconds.</p>
+        <div style="margin-top:12px"><button class="sec-btn" data-act="saveAlerts">Save</button></div></div>
+      <div class="group"><h4>Plan</h4>${paid()
+        ? `<p>Paid plan. Billing starts when your first ad goes live.</p>`
+        : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made. Previews only.</p>
+           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Paid plan requested. You'll get an email when your seat is ready.</span>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}</div>`}</div>
+      <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
+        <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
+        <button class="link danger" data-act="deleteAsk">Delete account</button></div></div>
+    </div></div>`;
+    $("#sEmail").addEventListener("input", (e) => $("#sEmailPw").classList.toggle("hidden", e.target.value.trim().toLowerCase() === u.email));
+    $("#avFile").addEventListener("change", async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      toast("Uploading…");
+      const r = await uploadPhoto(f, { kind: "avatar" });
+      await api("/api/account", { method: "PATCH", body: { avatar_id: r.id } });
+      await loadMe();
+      drawSide();
+      viewSettings();
+      toast("Photo updated");
+    });
+  }
+
+  async function settingsAction(act, t) {
+    const val = (id) => ($(id) ? $(id).value : "");
+    if (act === "saveProfile") {
+      const body = { name: val("#sName"), email: val("#sEmail") };
+      if (!$("#sEmailPw").classList.contains("hidden")) body.password = val("#sEmailPass");
+      await api("/api/account", { method: "PATCH", body });
+      await loadMe(); drawSide(); viewSettings(); buzz(6); toast("Profile saved");
+    } else if (act === "saveBiz") {
+      await api("/api/brand", { method: "PUT", body: { business: val("#sBiz") } });
+      await loadMe(); drawSide(); buzz(6); toast("Saved");
+    } else if (act === "savePw") {
+      await api("/api/account/password", { body: { current: val("#sPwCur"), next: val("#sPwNew") } });
+      $("#sPwCur").value = ""; $("#sPwNew").value = ""; buzz(6); toast("Password changed");
+    } else if (act === "saveAlerts") {
+      await api("/api/brand", { method: "PUT", body: { alerts_topic: val("#sAlerts") } });
+      await loadMe(); buzz(6); toast("Saved");
+    } else if (act === "avRemove") {
+      await api("/api/account", { method: "PATCH", body: { avatar_id: "" } });
+      await loadMe(); drawSide(); viewSettings(); toast("Photo removed");
+    } else if (act === "deleteAsk") {
+      openPop(t, `<div class="note"><b>Delete your account?</b>This deletes your listings, ads, leads and photos for good. It can't be undone.</div>
+        <div style="padding:6px 10px 4px"><div class="fld"><label for="delPw">Your password</label><input id="delPw" type="password" autocomplete="current-password"></div></div>
+        <button class="danger" data-act="deleteYes">${ICON.alert}Delete everything</button>`);
+      setTimeout(() => $("#delPw") && $("#delPw").focus(), 50);
+    } else if (act === "deleteYes") {
+      await api("/api/account/delete", { body: { password: val("#delPw") } });
+      location.href = "/signup";
+    }
+  }
+
   // ---------- Admin ----------
 
   async function viewAdmin() {
@@ -782,11 +866,12 @@
     if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=dlmenu]")) closePop();
     const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
-    if (t.closest("#pop")) closePop();
-    const l = S.current && S.current.listing;
     const act = t.dataset.act;
+    if (t.closest("#pop") && act !== "deleteYes") closePop();
+    const l = S.current && S.current.listing;
     try {
-      if (act === "account") openPop(t, accountMenu());
+      if (["saveProfile", "saveBiz", "savePw", "saveAlerts", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
+      else if (act === "account") openPop(t, accountMenu());
       else if (act === "listmenu") openPop(t, listingMenu());
       else if (act === "dlmenu") {
         const ad = adFor(S.selected[l.id]);
@@ -802,7 +887,15 @@
       else if (act === "more") { const ad = adFor(S.selected[l.id]); $("#cp").innerHTML = `<b>${esc(($("#cp b") || {}).textContent || "")}</b>${esc(ad.primary_text)}`; }
       else if (act === "photos") { S.showPhotos = !S.showPhotos; drawPreview(); }
       else if (act === "issues") { S.showIssues = !S.showIssues; drawPreview(); }
-      else if (act === "remake") { toast("Making 3 new versions…"); S.fresh = l.id; drawListing(await api(`/api/listings/${l.id}/remake`, { body: {} })); refreshSide(); }
+      else if (act === "remake") {
+        const before = S.current.messages.length;
+        toast(S.current.ads.length ? "Making 3 new versions…" : "Making the ads…");
+        S.fresh = l.id;
+        const next = await api(`/api/listings/${l.id}/remake`, { body: {} });
+        drawListing(next);
+        if (!next.ads.length && next.messages.length === before) toast("Making ads needs the paid plan");
+        refreshSide();
+      }
       else if (t.dataset.say) { if (!S.busy) { S.busy = true; buzz(6); try { await say(t.dataset.say); } finally { S.busy = false; } } }
       else if (t.dataset.pick) {
         pick(Number(t.dataset.pick));
