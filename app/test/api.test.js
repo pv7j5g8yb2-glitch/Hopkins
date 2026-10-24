@@ -186,3 +186,32 @@ test("a listing past the free ads is saved, says where the free ads went, and ca
   const made = await c("POST", `/api/listings/${second.json.listing.id}/remake`, {});
   assert.equal(made.json.ads.length, 3);
 });
+
+test("hello on the new listing screen gets a reply, not a listing and an upgrade message", async () => {
+  const { c } = await signup("hello@ellery.test");
+  const h = await c("POST", "/api/listings", { text: "Hello" });
+  assert.equal(h.status, 200);
+  assert.equal(h.json.listing, undefined);
+  assert.match(h.json.chat.reply, /^Hi Sam\. Send me a listing/);
+  assert.ok(!/paid plan|\$299/.test(h.json.chat.reply));
+  // Asked again, it doesn't say the same thing word for word.
+  const again = await c("POST", "/api/listings", { text: "hi", history: [{ role: "agent", body: "Hello" }, { role: "hopkins", body: h.json.chat.reply }] });
+  assert.notEqual(again.json.chat.reply, h.json.chat.reply);
+  assert.equal((await c("GET", "/api/listings")).json.listings.length, 0);
+  // A real listing still goes straight in.
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  assert.equal(l.json.ads.length, 3);
+});
+
+test("deleting a listing removes it and its chat, and doesn't hand back free ads", async () => {
+  const { c } = await signup("del@ellery.test");
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 3);
+  assert.equal((await client(app)("DELETE", `/api/listings/${l.json.listing.id}`)).status, 401);
+  assert.equal((await c("DELETE", `/api/listings/${l.json.listing.id}`)).status, 200);
+  assert.equal((await c("GET", `/api/listings/${l.json.listing.id}`)).status, 404);
+  assert.equal((await all(`SELECT id FROM messages WHERE listing_id = ?`, [l.json.listing.id])).length, 0);
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 3);
+  const next = await c("POST", "/api/listings", { text: DESCRIPTION.replace("412 Oak", "18 Elm") });
+  assert.equal(next.json.ads.length, 0);
+});

@@ -8,7 +8,7 @@ import { parseListingText, readLink, formatPrice, priceBand, labelFromName, FEAT
 import { writeSet, writeVersion, polish, PATTERNS, MOMENTS } from "./writer.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent } from "./rules.js";
-import { aiEnabled, provider, readListingAI, writeSetAI, chatTurnAI } from "./brain.js";
+import { aiEnabled, provider, readListingAI, writeSetAI, chatTurnAI, newChatAI } from "./brain.js";
 import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 
@@ -71,6 +71,46 @@ function slugFor(listing) {
 }
 
 const URL_RE = /https?:\/\/[^\s<>"']+/i;
+
+// A message on the New listing screen only becomes a listing when there's a listing in it:
+// photos, a link, or at least one fact about a home. "Hello" is a conversation, not a listing.
+export function looksLikeListing(text, photoIds = []) {
+  if (photoIds.length || URL_RE.test(text)) return true;
+  const p = parseListingText(text);
+  return Boolean(p.price || p.beds || p.baths || p.sqft || p.address || p.home_type || p.features.length);
+}
+
+// The reply on the New listing screen when there's no listing yet. history is the exchange so
+// far on that screen, [{ role: "agent" | "hopkins", body }], ending with the agent's message.
+export async function newChat(ws, history) {
+  const text = history.at(-1)?.body || "";
+  const lastReply = [...history].reverse().find((m) => m.role === "hopkins")?.body;
+  if (aiEnabled) {
+    const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name });
+    if (reply) return polish(reply);
+  }
+  const first = (ws.brand.agent_name || "").split(" ")[0];
+  const intent = readIntent(text);
+  // Said once; after that it isn't tacked onto every reply.
+  const ask = lastReply?.includes("Send me a listing") ? "" : "Send me a listing: paste the link, add the photos, or tell me the address, price and what stands out.";
+  const options =
+    intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos whenever you're ready."]
+    : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`]
+    : intent.kind === "question" && intent.topic === "help" ? [`I make 3 different ads for each listing so you can test them against each other. You change them with me here, and nothing runs until you say yes. ${ask}`]
+    : intent.kind === "thanks" ? ["Any time."]
+    : [`I need a listing to start. ${ask}`, `I didn't catch a listing in that. Paste the link or add the photos and I'll take it from there.`];
+  return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
+}
+
+export async function deleteListing(ws, id) {
+  const listing = await loadListing(ws.id, id);
+  if (!listing) return false;
+  const { n } = await get(`SELECT COUNT(*) AS n FROM ads WHERE listing_id = ?`, [id]);
+  await run(`UPDATE workspaces SET ads_removed = ads_removed + ? WHERE id = ?`, [Number(n) || 0, ws.id]);
+  for (const t of ["leads", "tests", "launches", "ads", "messages", "photos"]) await run(`DELETE FROM ${t} WHERE listing_id = ? AND workspace_id = ?`, [id, ws.id]);
+  await run(`DELETE FROM listings WHERE id = ? AND workspace_id = ?`, [id, ws.id]);
+  return true;
+}
 
 export async function createListing(ws, { text = "", photoIds = [], photoNames = {} }) {
   const link = (text.match(URL_RE) || [])[0] || null;

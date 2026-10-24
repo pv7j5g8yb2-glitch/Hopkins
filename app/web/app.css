@@ -125,6 +125,20 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .hk>.m{width:24px;height:24px;flex:none;margin-top:1px}
 .hk>.b{min-width:0;flex:1}
 .hk p{white-space:pre-wrap}
+/* the mark while Hopkins thinks: it spins, the two pebbles taking turns; then the gold one rises */
+.mk{overflow:visible}
+.mk path{stroke:none}
+.mk.think{animation:mkspin 1.5s cubic-bezier(.6,0,.4,1) infinite}
+.mk.think path{transform-box:fill-box;transform-origin:center;animation:mkswap 1.5s ease-in-out infinite}
+.mk.think path:last-child{animation-delay:-.75s}
+.mk.settle path{transform-box:fill-box;transform-origin:center}
+.mk.settle path:last-child{animation:mkrise .7s cubic-bezier(.3,1.6,.5,1) both}
+.mk.settle path:first-child{animation:mkpop .45s ease-out both}
+@keyframes mkspin{to{transform:rotate(360deg)}}
+@keyframes mkswap{0%,100%{transform:scale(1)}50%{transform:scale(.55)}}
+@keyframes mkrise{from{transform:translate(-70%,85%) scale(.55)}}
+@keyframes mkpop{from{transform:scale(.5)}}
+#typing .b{min-height:26px}
 .typing{display:inline-flex;gap:4px;padding:8px 0}.typing i{width:6px;height:6px;border-radius:50%;background:var(--quiet);animation:bl 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
 @keyframes bl{0%,80%,100%{opacity:.25}40%{opacity:1}}
 /* the "Hopkins is working" list: each step ticks off */

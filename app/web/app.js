@@ -5,6 +5,11 @@
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const main = $("#main");
+  // The mark inline (not an <img>) so its two pebbles can move: they spin and take turns while
+  // Hopkins thinks, and the gold one rises into place when the reply lands, like the old
+  // landing page demo.
+  const MARK = (cls = "") => `<svg class="m mk ${cls}" viewBox="0 0 120 120" aria-hidden="true"><path d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z" fill="#5B4873"/><path d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z" fill="#D7AE62"/></svg>`;
+
   const ICON = {
     menu: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
     send: '<svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>',
@@ -171,7 +176,8 @@
       : "";
     return `<a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
-      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make 3 new versions" : "Make the ads"}</button>`;
+      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make 3 new versions" : "Make the ads"}</button>
+      <button class="danger" data-act="delListingAsk">${ICON.alert}Delete listing</button>`;
   }
 
   // ---------- frame ----------
@@ -366,7 +372,7 @@
     const t = $("#thread");
     if (!t) return;
     if (text) t.insertAdjacentHTML("beforeend", `<div class="me in"><span class="tx">${esc(text)}</span></div>`);
-    t.insertAdjacentHTML("beforeend", `<div class="hk in" id="typing"><img class="m" src="/static/mark.svg" alt=""><div class="b"><span class="typing"><i></i><i></i><i></i></span></div></div>`);
+    t.insertAdjacentHTML("beforeend", `<div class="hk in" id="typing">${MARK("think")}<div class="b"></div></div>`);
     $("#msgs").scrollTop = $("#msgs").scrollHeight;
   }
 
@@ -374,7 +380,7 @@
   // real answer, so it never says "done" before it is.
   function showWork(steps) {
     const t = $("#thread");
-    t.insertAdjacentHTML("beforeend", `<div class="hk in"><img class="m" src="/static/mark.svg" alt=""><div class="b"><ul class="work" id="work">${steps.map((s) => `<li><i></i>${esc(s)}</li>`).join("")}</ul></div></div>`);
+    t.insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("think")}<div class="b"><ul class="work" id="work">${steps.map((s) => `<li><i></i>${esc(s)}</li>`).join("")}</ul></div></div>`);
     $("#msgs").scrollTop = $("#msgs").scrollHeight;
     const items = $$("#work li");
     let i = 0;
@@ -396,6 +402,7 @@
   const EXAMPLE = "Just listed: 412 Oak Street in Riverside, Austin, TX. 3 bed, 2 bath, 1,840 sq ft craftsman with a wraparound porch, renovated kitchen with a quartz island, fenced backyard and a home office. $649,000";
 
   function viewNew() {
+    S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. You'll get 3 ads to compare.</p>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> You can still add this listing. Its ads get made once you're on the paid plan.
@@ -427,6 +434,21 @@
       $(".chips") && ($(".chips").style.display = "none");
       const shown = files.length ? `<div class="ph">${S.pending.slice(0, 8).map((p) => `<i style="background-image:url(${p.url})"></i>`).join("")}</div>` : "";
       $("#thread").insertAdjacentHTML("beforeend", `<div class="me in">${shown}<span class="tx">${esc(text || `${files.length} photos`)}</span></div>`);
+      // Only a message that looks like a listing shows the listing steps. Anything else ("Hello")
+      // gets the thinking mark and a reply; the server decides for sure.
+      const listingish = files.length || /https?:\/\/|\d|\b(bed|bath|sq|condo|house|home|cottage|villa|apartment|townhouse|pool|kitchen|garden|yard|listing for|just listed)/i.test(text);
+      if (!listingish) {
+        showTyping();
+        const my = current();
+        const p = await api("/api/listings", { body: { text, history: S.newChat } });
+        if (my !== current()) return;
+        $("#typing") && $("#typing").remove();
+        if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; location.hash = `#/l/${p.listing.id}`; return; }
+        S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
+        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b"><p>${esc(p.chat.reply)}</p></div></div>`);
+        $("#msgs").scrollTop = $("#msgs").scrollHeight;
+        return;
+      }
       const finish = showWork([...(files.length ? [`Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}`] : []), "Reading the listing", ...(files.length ? ["Picking the best photo for each ad"] : []), "Writing 3 different ads", "Checking the wording"]);
       const photoIds = [], photoNames = {};
       for (const f of files) {
@@ -434,7 +456,15 @@
         photoIds.push(r.id);
         photoNames[r.id] = f.name;
       }
-      const p = await api("/api/listings", { body: { text, photoIds, photoNames } });
+      const p = await api("/api/listings", { body: { text, photoIds, photoNames, history: S.newChat } });
+      if (p.chat) {
+        // It wasn't a listing after all: swap the steps for the reply.
+        $("#work").closest(".hk").remove();
+        S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
+        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b"><p>${esc(p.chat.reply)}</p></div></div>`);
+        $("#msgs").scrollTop = $("#msgs").scrollHeight;
+        return;
+      }
       await finish();
       await Promise.all([loadMe(), loadListings()]);
       S.fresh = p.listing.id;
@@ -518,7 +548,7 @@
         const long = m.body.length > 180;
         return `<div class="me${anim}${long ? " clamp" : ""}">${ph}<span class="tx">${esc(m.body)}</span>${long ? `<button class="more-btn" data-act="expand">Show more</button>` : ""}</div>`;
       }
-      const mark = isFirst ? `<img class="m" src="/static/mark.svg" alt="">` : `<span class="m"></span>`;
+      const mark = isFirst ? (anim ? MARK("settle") : `<img class="m" src="/static/mark.svg" alt="">`) : `<span class="m"></span>`;
       const wrap = (inner) => `<div class="hk${anim}">${mark}<div class="b">${inner}</div></div>`;
       const text = `<p>${esc(m.body)}</p>`;
       if (m.kind === "ads" && m === lastAds && p.ads.length) {
@@ -908,6 +938,16 @@
       if (["saveProfile", "saveBiz", "savePw", "saveAlerts", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "listmenu") openPop(t, listingMenu());
+      else if (act === "delListingAsk") {
+        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, chat, photos and leads go too. It can't be undone.</div>
+          <button class="danger" data-act="delListingYes">${ICON.alert}Delete listing</button>`);
+      } else if (act === "delListingYes") {
+        await api(`/api/listings/${l.id}`, { method: "DELETE" });
+        S.current = null;
+        await Promise.all([loadMe(), loadListings(), loadInbox()]);
+        toast("Listing deleted");
+        location.hash = "#/listings";
+      }
       else if (act === "dlmenu") {
         const ad = adFor(S.selected[l.id]);
         openPop(t, `<button data-dl="feed">${ICON.down}Feed image</button><button data-dl="story">${ICON.down}Story image</button>

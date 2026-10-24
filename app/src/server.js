@@ -9,7 +9,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, inbox,
+  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
@@ -271,6 +271,11 @@ app.post("/api/listings", async (request, reply) => {
   const { text, photoIds, photoNames } = request.body || {};
   const ids = Array.isArray(photoIds) ? photoIds.filter((x) => typeof x === "string").slice(0, 30) : [];
   if (!clean(text, 5000) && !ids.length) return reply.code(400).send({ error: "Send me photos, a link or the description." });
+  // No listing in it ("Hello"): answer, and don't make a listing out of it.
+  if (!looksLikeListing(clean(text, 5000) || "", ids)) {
+    const prior = Array.isArray(request.body.history) ? request.body.history.slice(-12).filter((m) => m && typeof m.body === "string" && ["agent", "hopkins"].includes(m.role)).map((m) => ({ role: m.role, body: clean(m.body, 2000) })) : [];
+    return { chat: { reply: await newChat(request.ws, [...prior, { role: "agent", body: clean(text, 2000) }]) } };
+  }
   const listing = await createListing(request.ws, { text: clean(text, 5000) || "", photoIds: ids, photoNames: photoNames || {} });
   return listingPayload(request.ws, listing.id);
 });
@@ -299,6 +304,11 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
   if (!r) return reply.code(404).send({ error: "No such listing." });
   // focus: the version the conversation is now about, so the app can switch to it.
   return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3].includes(r.focus) ? r.focus : null };
+});
+
+app.delete("/api/listings/:id", async (request, reply) => {
+  if (!(await deleteListing(request.ws, request.params.id))) return reply.code(404).send({ error: "No such listing." });
+  return { ok: true };
 });
 
 app.post("/api/listings/:id/remake", async (request, reply) => {

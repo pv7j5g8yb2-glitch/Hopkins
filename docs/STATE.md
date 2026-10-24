@@ -158,6 +158,15 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Fixed (2026-10-24, third report): "Hello" on the New listing screen made a listing (named after
+  the brand city), then the free limit message. Now a message only becomes a listing when it has
+  photos, a link or a fact about a home; anything else gets a normal reply there (Groq when the
+  key is set, the rules otherwise) and nothing is saved. The listing steps ("Reading the
+  listing...") only show for a listing; otherwise the Hopkins mark spins with the pebbles taking
+  turns while it thinks and the gold one rises as the reply lands, the same animation as the old
+  landing page demo, also in every listing chat. Listings can now be deleted (··· menu); deleting
+  doesn't give free ads back (`workspaces.ads_removed`). Ismael's stray "Miami" listing on the live
+  site can go that way.
 * Fixed again (2026-10-24, second report): the tab only lit up after the next screen's data
   came back, so on the live server the lens sprang back to the old tab for a moment and the tap
   looked lost. Now the tab lights at once, Today draws from what's loaded, and the touch code

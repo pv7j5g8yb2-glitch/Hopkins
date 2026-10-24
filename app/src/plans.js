@@ -12,7 +12,10 @@ export const FREE_AD_LIMIT = 3;
 export const PRICE_FROM = 299;
 
 export async function adsMade(workspaceId) {
-  const row = await get(`SELECT COUNT(*) AS n FROM ads WHERE workspace_id = ?`, [workspaceId]);
+  const row = await get(
+    `SELECT (SELECT COUNT(*) FROM ads WHERE workspace_id = ?) + COALESCE((SELECT ads_removed FROM workspaces WHERE id = ?), 0) AS n`,
+    [workspaceId, workspaceId]
+  );
   return Number(row?.n || 0);
 }
 

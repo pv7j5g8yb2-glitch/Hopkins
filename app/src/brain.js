@@ -287,6 +287,25 @@ function normalizeTurn(r) {
   };
 }
 
+// Before there's a listing (the New listing screen): just talk, and help them get one in.
+const NEW_SCHEMA = {
+  type: "object",
+  properties: { reply: { type: "string", description: "Your message back to the agent" } },
+  required: ["reply"],
+  additionalProperties: false,
+};
+
+export async function newChatAI({ history, brand, plan, agentName }) {
+  const messages = conversation(history);
+  if (!messages.length) return null;
+  const system = `${SYSTEM}\n${CHAT}\n\nContext (the current state, not something the agent wrote):
+Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}.
+Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.
+They're on the New listing screen and haven't sent a listing yet. To make ads you need the listing: a link, photos, or the details (address, price, beds, baths, what stands out). Talk normally, and when it fits, say what you need to start.`;
+  const r = await call({ system, messages, schema: NEW_SCHEMA, effort: "low" });
+  return r && typeof r.reply === "string" && r.reply.trim() ? r.reply : null;
+}
+
 export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName }) {
   const messages = conversation(history);
   if (!messages.length) return null;
