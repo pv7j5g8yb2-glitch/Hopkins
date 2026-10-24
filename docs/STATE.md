@@ -127,8 +127,11 @@ personal in here.
   version when one is named ("no, I meant 2"), acts when asked, and never repeats itself.
   `ANTHROPIC_API_KEY` uses Claude; `GROQ_API_KEY` uses Groq's free model (the survey's). Both
   paths are tested only with fakes; no real key in the build session. The rules were also
-  improved (greetings, version switching, common questions, no repeated replies). **Next: Ismael
-  adds a key on Render (Environment tab), then a live chat check.**
+  improved (greetings, version switching, common questions, no repeated replies). **Decision (Ismael,
+  2026-10-24): start on Groq's free key, switch to Claude once there are paying users.** Next: he
+  adds `GROQ_API_KEY` on Render (hopkins-app, Environment tab; the waitlist service may already
+  have one to reuse), then a live chat check. On Groq the ads are written from the text only
+  (photos aren't seen), and free tier rate limits fall back to the rules when hit.
 * Choices made in the build, change any of them: product copy uses US spelling (customers are
   mostly US); the default run plan is $200 over 10 days split across the 3 versions; feed ads are
   4:5; paid upgrades are requests that notify the founder (no Stripe until an ad can go live);
