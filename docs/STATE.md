@@ -143,6 +143,12 @@ personal in here.
   mostly US); the default run plan is $200 over 10 days split across the 3 versions; feed ads are
   4:5; paid upgrades are requests that notify the founder (no Stripe until an ad can go live);
   lead alerts use the free ntfy app.
+* Keeping it awake (2026-10-24): Render's free plan puts the app to sleep after 15 minutes with no
+  visits (the "Application loading" screen). Fix: a free pinger (cron-job.org) hits
+  `https://hopkins-app.onrender.com/healthz` every 10 minutes. Catch: Render gives 750 free hours a
+  month per workspace and one service awake all month uses about 744, so if the waitlist is also a
+  free service in the same workspace, both together can run out and Render suspends every free
+  service until the 1st. Then the answer is the paid instance for hopkins-app, not more pings.
 * Live at `hopkins-app.onrender.com` (Render Blueprint `Hopkins-app`, deploys on every push to
   `claude/amazing-noether-92ry61`, Turso database). Ismael tests on his admin account; to test
   the paid side he switches his own workspace to Paid in Admin.
