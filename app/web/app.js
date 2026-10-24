@@ -23,6 +23,7 @@
     redo: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/></svg>',
     check: '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
     alert: '<svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
+    chevR: '<svg viewBox="0 0 24 24"><path d="m10 6.5 5.5 5.5-5.5 5.5"/></svg>',
     chev: '<svg class="chev" viewBox="0 0 24 24"><path d="m8 10 4-4 4 4M8 14l4 4 4-4"/></svg>',
     square: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2.5"/></svg>',
     tall: '<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/></svg>',
@@ -353,17 +354,41 @@
 
   // ---------- the composer (shared) ----------
 
-  function composerHtml(placeholder, chips = []) {
-    return `<div class="comp-wrap">${chips.length ? `<div class="chips">${chips.map(([label, act]) => `<button class="chip-btn lg${act.includes("class-go") ? " go" : ""}" ${act.replace(" class-go", "")}>${label}</button>`).join("")}</div>` : ""}
+  function composerHtml(placeholder) {
+    return `<div class="comp-wrap">
       <form class="comp lg" id="comp"><div class="att" id="att"></div>
       <div class="row-c"><label class="icon-btn" title="Add photos">${ICON.photo}<input type="file" id="files" accept="image/*" multiple hidden></label>
-      <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" enterkeyhint="send"></textarea>
+      <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" data-normal="${esc(placeholder)}" enterkeyhint="send"></textarea>
+      <button class="sug-go" id="sugGo" type="button" aria-label="Send this">${ICON.chevR}</button>
       <button class="send" id="send" type="submit" aria-label="Send">${ICON.send}</button></div><div class="hint" id="hint"></div></form></div>`;
   }
 
-  function bindComposer(onSend, { drop } = {}) {
+  // suggestion: Hopkins' guess at what you'll say next, shown in grey in the empty box like
+  // Claude does. The › sends it as it is; tapping the box puts it away so you can type your own.
+  function bindComposer(onSend, { drop, suggestion } = {}) {
     const ta = $("#ta"), comp = $("#comp");
     S.pending = [];
+    const showSug = (on) => {
+      on = on && Boolean(suggestion) && !ta.value.trim() && !S.pending.length;
+      comp.classList.toggle("has-sug", on);
+      ta.placeholder = on ? suggestion : ta.dataset.normal;
+    };
+    showSug(true);
+    // On a phone, tapping the box means you want to type your own. On a laptop the box is
+    // already focused, so the suggestion stays until you type; Tab drops it in to edit.
+    ta.addEventListener("focus", () => { if (phone()) showSug(false); });
+    ta.addEventListener("blur", () => setTimeout(() => showSug(true), 0));
+    ta.addEventListener("input", () => showSug(!phone()));
+    ta.addEventListener("keydown", (e) => {
+      if (e.key === "Tab" && comp.classList.contains("has-sug")) { e.preventDefault(); ta.value = suggestion; showSug(false); ta.dispatchEvent(new Event("input")); }
+    });
+    $("#sugGo").addEventListener("click", () => {
+      if (S.busy || !suggestion) return;
+      ta.value = suggestion;
+      suggestion = "";
+      showSug(false);
+      comp.requestSubmit();
+    });
     const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(160, ta.scrollHeight) + "px"; };
     const drawAtt = () => {
       const html = S.pending.map((p, i) => `<div class="ph" style="background-image:url(${p.url})"><button type="button" data-rm="${i}" aria-label="Remove">×</button></div>`).join("");
@@ -376,7 +401,7 @@
       buzz(5);
       drawAtt();
     };
-    S.addFiles = add;
+    S.addFiles = (files) => { add(files); showSug(false); };
     S.removeFile = (i) => { S.pending.splice(i, 1); drawAtt(); };
     ta.addEventListener("input", () => { grow(); drawAtt(); });
     ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !phone()) { e.preventDefault(); comp.requestSubmit(); } });
@@ -448,12 +473,12 @@
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. You'll get 3 ads to compare.</p>
+      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. You'll get 3 ads to compare. <button class="link" data-act="example">Try an example</button></p>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> You can still add this listing. Its ads get made once you're on the paid plan.
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Paid plan requested.</span>` : `<button class="link" data-upgrade>Ask for the paid plan</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
-      ${composerHtml("Paste a link or describe the home", [["Try an example", 'data-act="example"']])}</section>`;
+      ${composerHtml("Paste a link or describe the home")}</section>`;
     const dropEl = $("#drop");
     $("#dropFiles").addEventListener("change", (e) => { S.addFiles(e.target.files); e.target.value = ""; });
     dropEl.addEventListener("dragover", (e) => { e.preventDefault(); dropEl.classList.add("drag"); });
@@ -475,7 +500,6 @@
     async function create(text, files) {
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
-      $(".chips") && ($(".chips").style.display = "none");
       const shown = files.length ? `<div class="ph">${S.pending.slice(0, 8).map((p) => `<i style="background-image:url(${p.url})"></i>`).join("")}</div>` : "";
       $("#thread").insertAdjacentHTML("beforeend", `<div class="me in">${shown}<span class="tx">${esc(text || `${files.length} photos`)}</span></div>`);
       // Only a message that looks like a listing shows the listing steps. Anything else ("Hello")
@@ -538,14 +562,11 @@
     const chip = l.status === "sold" ? `<span class="chip green">Sold</span>` : l.moment !== "new" ? `<span class="chip gold">${esc(S.me.moments[l.moment])}</span>` : "";
     const sub = [l.priceText, l.facts].filter(Boolean).join(" · ");
     const firstPhoto = p.photos[0];
-    const chips = p.ads.length
-      ? [["Run it", 'data-act="run" class-go'], ["Shorter", 'data-say="Make it shorter"'], ["Warmer", 'data-say="Make it warmer"'], ["More premium", 'data-say="Make it more premium"'], ["Another angle", 'data-say="Try another angle"'], ["Different photo", 'data-say="Use a different photo"']]
-      : [["Make the ads", 'data-act="remake" class-go']];
     main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub })}
       <div class="lv ${showPv ? "showpv" : ""}" id="lv">
       <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><h2>${esc(listingName(l))}</h2><span class="sub">${esc(sub)}</span></div>${chip}
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
-        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(p.ads.length ? `Ask for a change to version ${S.selected[l.id]}` : "Ask anything about this listing", chips)}</section>
+        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(p.ads.length ? `Ask for a change to version ${S.selected[l.id]}` : "Ask anything about this listing")}</section>
       <section class="pv" id="pv"></section></div>`;
     S.seen[l.id] = p.messages.length;
     const msgs = $("#msgs");
@@ -566,7 +587,7 @@
         }
       }
       await say(text);
-    });
+    }, { suggestion: p.suggestion });
   }
 
   async function say(text) {
@@ -644,7 +665,11 @@
     const l = S.current.listing;
     S.selected[l.id] = version;
     $$(".vc").forEach((c) => c.classList.toggle("sel", Number(c.dataset.pick) === version));
-    if ($("#ta")) $("#ta").placeholder = `Ask for a change to version ${version}`;
+    const ta = $("#ta");
+    if (ta) {
+      ta.dataset.normal = `Ask for a change to version ${version}`;
+      if (!$("#comp").classList.contains("has-sug")) ta.placeholder = ta.dataset.normal;
+    }
     buzz(5);
     drawPreview();
   }

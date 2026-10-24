@@ -89,7 +89,7 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 /* buttons: every one gives a little under the finger */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:14.5px;padding:10px 18px;border-radius:12px;background:var(--gold);color:var(--ox);white-space:nowrap;transition:background .15s,transform .12s var(--ease);box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 2px 6px rgba(142,107,44,.18)}
 .btn:hover{background:var(--gold2)}
-.btn:active,.sec-btn:active,.icon-btn:active,.chip-btn:active,.card-l:active,.row:active,.tabbar>a:active{transform:scale(1.1)}
+.btn:active,.sec-btn:active,.icon-btn:active,.card-l:active,.row:active,.tabbar>a:active{transform:scale(1.1)}
 .btn:disabled{opacity:.5;cursor:default;transform:none}
 .btn.wide{width:100%;padding:13px 18px;font-size:15.5px}
 .btn svg{width:17px;height:17px;stroke-width:2.2}
@@ -168,11 +168,13 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .acts{display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .lead-card{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
 .comp-wrap{padding:0 28px 18px;background:linear-gradient(transparent,var(--bg) 30%)}
-.chips{max-width:680px;margin:0 auto 8px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px}
-.chips::-webkit-scrollbar{display:none}
-.chip-btn{flex:none;font-size:13.5px;font-weight:500;padding:7px 12px;border-radius:20px;border:1px solid var(--line2);background:var(--raise);color:var(--soft);white-space:nowrap;transition:transform .12s var(--ease),background .15s,color .15s}
-.chip-btn:hover{color:var(--ink);background:var(--side)}
-.chip-btn.go{border-color:rgba(215,174,98,.7);color:var(--bronze);font-weight:600;background:#FFF9EE}
+/* the suggested next message: grey in the empty box, with › to send it */
+.sug-go{display:none;width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;flex:none;align-items:center;justify-content:center;transition:transform .15s var(--spring)}
+.sug-go svg{width:18px;height:18px;stroke-width:2.4}
+.sug-go:active{transform:scale(.88)}
+.comp.has-sug .sug-go{display:flex;animation:pop .2s var(--ease)}
+.comp.has-sug .send{display:none}
+.comp.has-sug textarea::placeholder{color:var(--soft)}
 .comp{max-width:680px;margin:0 auto;border-radius:20px;background:var(--raise);border:1px solid var(--line2);box-shadow:var(--shadow);padding:6px 6px 6px 14px;transition:border-color .15s,box-shadow .15s}
 .comp:focus-within{border-color:rgba(42,15,20,.28);box-shadow:0 1px 2px rgba(42,15,20,.05),0 10px 30px rgba(42,15,20,.09)}
 .comp.drag{border-color:var(--gold);box-shadow:0 0 0 3px rgba(215,174,98,.3)}
@@ -478,14 +480,11 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
     background:linear-gradient(rgba(251,248,243,0),rgba(251,248,243,.72) 38%,rgba(251,248,243,.94));
     -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
     -webkit-mask-image:linear-gradient(transparent,#000 42%);mask-image:linear-gradient(transparent,#000 42%)}
-  /* The message box, the chips and the Run it bar use the tab bar's material unchanged, so
+  /* The message box and the Run it bar use the tab bar's material unchanged, so
      everything that floats is the same glass. */
   .comp.lg{border:0;border-radius:26px;padding:5px 5px 5px 10px}
   .comp.lg:focus-within{box-shadow:var(--lg-shadow),0 0 0 3px rgba(215,174,98,.22)}
   .comp.lg .send:disabled{background:rgba(42,15,20,.12)}
-  .chips{padding:2px 2px 6px}
-  .chip-btn.lg{border:0;padding:8px 14px;color:var(--ink);box-shadow:0 6px 16px -6px rgba(42,15,20,.2),0 1px 3px rgba(42,15,20,.06),inset 0 0 0 .5px rgba(255,255,255,.55),inset 0 1.5px 1px -.5px rgba(255,255,255,.95),inset 0 0 14px -5px rgba(255,255,255,.55)}
-  .chip-btn.lg.go{background:rgba(255,226,170,.3);color:var(--bronze)}
   .pvb .actrow.lg{left:14px;right:14px;bottom:max(12px,calc(var(--safe-b) - 8px));padding:6px;border-top:0;border-radius:999px;background:var(--lg-tint);-webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter)}
   .pvb .actrow.lg .btn{border-radius:999px}
   .pvb .actrow.lg .sec-btn{border-radius:999px;background:rgba(255,255,255,.5);border-color:rgba(255,255,255,.6)}
@@ -499,7 +498,7 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   /* inside a listing: full screen, like a chat app */
   .lv{flex:1;display:flex;min-height:0}
   .ch{display:none}
-  .msgs{padding:16px 14px 150px}
+  .msgs{padding:16px 14px 104px}
   .thread{gap:16px}
   .hk{font-size:16px}
   .vers{gap:8px;margin-right:-14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 14px 4px 2px;scrollbar-width:none}
@@ -507,7 +506,6 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .vc{width:62%;flex:none;scroll-snap-align:start}
   .comp-wrap{padding:6px 10px calc(10px + var(--safe-b))}
   body:not(.focus) .comp-wrap{padding-bottom:calc(80px + var(--safe-b))}
-  .chips{margin-bottom:8px}
   .pv{display:none;width:auto;flex:1;border-left:0}
   .pv .pvh{display:none}
   .lv.showpv .pv{display:flex}

@@ -158,6 +158,13 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Suggested reply (2026-10-24, Ismael): the quick reply pills above the message box are gone. Like
+  Claude's app, the empty box shows Hopkins' guess at your next message in grey with a › to send
+  it; tapping the box (phone) puts it away so you type your own; on a laptop it stays until you
+  type and Tab drops it in. The model writes the guess with each reply (never about paying, never
+  a placeholder like "new text"); without one, it comes from where the listing is at. "Try an
+  example" moved into the New listing intro. Hopkins also says "the line on the photo", never
+  "overlay", whatever the model writes.
 * Notices (2026-10-24, Ismael): every one ("Saved", "Listing deleted", "Copied"...) drops in from
   the top like an iPhone notification, with the mark as an app icon, and glides back up after about
   3 seconds. Swipe up to dismiss early; pulled down it stretches and springs back; holding it keeps

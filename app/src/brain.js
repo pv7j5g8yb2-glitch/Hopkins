@@ -117,8 +117,12 @@ const TURN_SCHEMA = {
     listing_patch: LISTING_SCHEMA,
     budget: { type: "number", description: "Total budget in dollars if the agent named one, else 0" },
     days: { type: "integer", description: "Days to run if named, else 0" },
+    suggestion: {
+      type: "string",
+      description: "The message the agent is most likely to send next, written the way they'd type it, 2 to 8 words, like \"Make version 2 shorter\" or \"Which photo works best?\". Only a message they could send as it is: if your reply asks for something only they know (their own wording, a time, a price), leave it empty. Plain words, never \"overlay\". Never about upgrading or paying. Empty if nothing obvious.",
+    },
   },
-  required: ["reply", "action", "version", "moment", "ads", "listing_patch", "budget", "days"],
+  required: ["reply", "action", "version", "moment", "ads", "listing_patch", "budget", "days", "suggestion"],
   additionalProperties: false,
 };
 
@@ -284,6 +288,7 @@ function normalizeTurn(r) {
     listing_patch: r.listing_patch && typeof r.listing_patch === "object" ? r.listing_patch : null,
     budget: num(r.budget),
     days: num(r.days),
+    suggestion: typeof r.suggestion === "string" ? r.suggestion.trim().slice(0, 80) : "",
   };
 }
 

@@ -201,6 +201,11 @@ test("hello on the new listing screen gets a reply, not a listing and an upgrade
   // A real listing still goes straight in.
   const l = await c("POST", "/api/listings", { text: DESCRIPTION });
   assert.equal(l.json.ads.length, 3);
+  // The box suggests a next message, and never the one just sent.
+  assert.equal(l.json.suggestion, "Which one would you pick?");
+  const m = await c("POST", `/api/listings/${l.json.listing.id}/messages`, { text: "Which one would you pick?", version: 1 });
+  assert.ok(m.json.suggestion && m.json.suggestion !== "Which one would you pick?", m.json.suggestion);
+  assert.ok(!/run it|upgrade|paid/i.test(m.json.suggestion), "no nudge to pay on the free plan");
 });
 
 test("deleting a listing removes it and its chat, and doesn't hand back free ads", async () => {

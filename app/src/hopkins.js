@@ -102,6 +102,26 @@ export async function newChat(ws, history) {
   return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
 }
 
+// What the agent will most likely say next, shown in grey in the empty message box. The model
+// writes one with each reply; otherwise it comes from where the listing is at. Never something
+// they just sent, never a nudge to pay.
+export function suggestionFor(ws, listing, ads, messages) {
+  const last = messages.at(-1);
+  if (!last || last.role !== "hopkins") return "";
+  const sent = new Set(messages.filter((m) => m.role === "agent").slice(-6).map((m) => m.body.trim().toLowerCase()));
+  const ok = (s) => s && !sent.has(s.toLowerCase());
+  if (ok(last.data?.suggestion)) return last.data.suggestion;
+  // A saved listing with no ads yet: once they're on the paid plan, making them is the next step.
+  if (!ads.length) return (isPaid(ws) || last.kind !== "upgrade") && ok("Make the ads") ? "Make the ads" : "";
+  if (last.kind === "plan" || last.kind === "upgrade") return "";
+  // A fresh set (maybe with a wording note after it) since the agent last spoke.
+  const sinceAgent = messages.slice(messages.findLastIndex((m) => m.role === "agent") + 1);
+  const options = sinceAgent.some((m) => m.kind === "ads")
+    ? ["Which one would you pick?", "Make version 1 shorter", "Use a different photo"]
+    : ["Make it shorter", "Try another angle", "Use a different photo", "Make it warmer", ...(isPaid(ws) ? ["Run it"] : [])];
+  return options.find(ok) || "";
+}
+
 export async function deleteListing(ws, id) {
   const listing = await loadListing(ws.id, id);
   if (!listing) return false;
@@ -316,8 +336,11 @@ function patchFrom(listing, lp) {
   return patch;
 }
 
+// The words agents use, whatever the model says: it's "the line on the photo", not an overlay.
+const plainWords = (s) => polish(String(s || "").replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
+
 async function applyAI(ws, listing, ads, photos, r, text) {
-  const reply = polish(r.reply || "");
+  const reply = plainWords(r.reply);
   const patch = patchFrom(listing, r.listing_patch);
   // New facts the feature list has no name for ("it has solar panels") are kept in the agent's
   // own words, so every later rewrite still knows them.
@@ -360,7 +383,8 @@ async function applyAI(ws, listing, ads, photos, r, text) {
       await saveAd(ws, fresh, fresh.moment, ad.version, { ...ad, ...applyOverrides(next, ad.style) }, ad);
     }
   }
-  await say(ws, listing.id, reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."));
+  const suggestion = plainWords(r.suggestion).replace(/\.$/, "");
+  await say(ws, listing.id, reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."), "text", suggestion && !/\b(upgrade|paid plan|pay)\b/i.test(suggestion) ? { suggestion } : null);
   return { focus: changed.length === 1 ? changed[0] : focus };
 }
 

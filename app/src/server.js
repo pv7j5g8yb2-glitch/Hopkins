@@ -9,7 +9,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing,
+  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
@@ -259,7 +259,7 @@ async function listingPayload(ws, id) {
   ]);
   for (const m of messages) m.data = m.data ? JSON.parse(m.data) : null;
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n), suggestion: suggestionFor(ws, listing, ads, messages) };
 }
 
 app.get("/api/listings/:id", async (request, reply) => {

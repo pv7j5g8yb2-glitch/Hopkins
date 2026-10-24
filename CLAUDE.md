@@ -140,7 +140,7 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Phones first (Ismael, 2026-10-24):** most use will be on a phone. Design and check every screen at
   iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar, the main
   action fixed at the bottom within thumb reach, menus as bottom sheets, inputs at 16px (smaller makes
-  iPhones zoom), room for the home bar, quick reply chips instead of typing, show the work while
+  iPhones zoom), room for the home bar, a suggested next message in grey in the empty box (› sends it) instead of reply chips (Ismael, 2026-10-24), show the work while
   Hopkins thinks, small rewards on real moments (approved, first ads), never a blank screen.
 * **Checking a fix (lesson, 2026-10-24):** test against a slowed down server (the live one on Render
   is slow), not just localhost, and look at every screenshot for the exact thing that was reported.

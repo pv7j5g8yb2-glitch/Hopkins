@@ -31,10 +31,11 @@ test("Groq runs the chat when it's the only key", async () => {
   assert.equal(calls[0].auth, "Bearer test-groq");
   assert.equal(calls[0].body.response_format.type, "json_object");
 
-  next = [{ reply: "Sure. Version 1 leans on the yard, so I'd keep it.", action: "none", version: 1, moment: "none", ads: [], listing_patch: null, budget: 0, days: 0 }];
+  next = [{ reply: "Sure. Version 1 leans on the yard, so I'd keep it.", action: "none", version: 1, moment: "none", ads: [], listing_patch: null, budget: 0, days: 0, suggestion: "Make version 1 warmer" }];
   const t = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "which one would you keep?", version: 2 });
   assert.equal(t.json.messages.at(-1).body, "Sure. Version 1 leans on the yard, so I'd keep it.");
   assert.equal(t.json.focus, 1);
+  assert.equal(t.json.suggestion, "Make version 1 warmer");
   const sent = calls.at(-1).body.messages;
   assert.equal(sent[0].role, "system");
   assert.match(sent[0].content, /Agent: Dana Reyes/);
