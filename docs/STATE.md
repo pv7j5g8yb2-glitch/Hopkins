@@ -134,6 +134,12 @@ personal in here.
   business name, phone lead alerts, plan, sign out, delete account (deletes the whole workspace).
 * A listing added after the free ads are used is saved with a clear message (where the free ads
   went) and a "Make the ads" button for after upgrading.
+* Liquid Glass tab bar on phones (2026-10-24, `app/web/glass.js` and the `.lg` styles): floating
+  capsule plus a round + button like iOS 26, specular rim, frosted blur, a lens behind the selected
+  tab that springs, stretches while moving, swells when pressed and follows a dragged finger, and
+  dark glass with light labels over dark content. Refraction (background bending at the edge) was
+  tried and dropped: iPhone browsers can't do it at all, and Chrome drew banding. Waiting on
+  Ismael's verdict on his iPhone before using it anywhere else.
 * Paid accounts can download every ad (feed and story images, copy the text) and post or boost it
   themselves while Meta isn't connected; the approval message says so. Each version's link still
   credits the leads. Free accounts stay previews only (Ismael, 2026-10-22).

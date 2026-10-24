@@ -142,6 +142,9 @@ The product's code is in `app/` (its README says what works and how to run it).
   action fixed at the bottom within thumb reach, menus as bottom sheets, inputs at 16px (smaller makes
   iPhones zoom), room for the home bar, quick reply chips instead of typing, show the work while
   Hopkins thinks, small rewards on real moments (approved, first ads), never a blank screen.
+* **Liquid Glass (Ismael, 2026-10-24):** Apple's iOS 26 style, on phones only, never laptop or desktop
+  (same as Claude and ChatGPT). Started on the bottom tab bar only, so Ismael can judge it against
+  Apple's before it spreads. It has to match Apple's, not be a cheap copy.
 
 * **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name
   across the middle, no downloads. Changes to those 3 are included. Asking for a 4th, or
