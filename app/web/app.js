@@ -908,7 +908,7 @@
     const issues = ad.issues || [];
     const short = ad.primary_text.length > 125;
     // Instagram's blue verified badge after the handle, wherever an account is shown (Ismael, 2026-10-25).
-    const tick = `<svg class="verified" viewBox="0 0 20 20" aria-label="Verified"><path fill="#0095F6" d="M10.00 1.40Q12.90 -0.82 14.30 2.55Q17.92 2.08 17.45 5.70Q20.82 7.10 18.60 10.00Q20.82 12.90 17.45 14.30Q17.92 17.92 14.30 17.45Q12.90 20.82 10.00 18.60Q7.10 20.82 5.70 17.45Q2.08 17.92 2.55 14.30Q-0.82 12.90 1.40 10.00Q-0.82 7.10 2.55 5.70Q2.08 2.08 5.70 2.55Q7.10 -0.82 10.00 1.40Z"/><path d="m6.4 10.2 2.4 2.4 4.8-5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const tick = `<svg class="verified" viewBox="0 0 40 40" aria-label="Verified"><path fill="#0095F6" fill-rule="evenodd" d="M19.998 3.094 14.638 0l-2.972 5.15H5.432v6.354L0 14.64 3.094 20 0 25.359l5.432 3.137v5.905h5.975L14.638 40l5.36-3.094L25.358 40l3.232-5.6h6.162v-6.01L40 25.359 36.905 20 40 14.641l-5.248-3.03v-6.46h-6.419L25.358 0l-5.36 3.094Zm7.415 11.225 2.254 2.287-11.43 11.5-6.835-6.93 2.244-2.258 4.587 4.581 9.18-9.18Z"/></svg>`;
     const feed = `<div class="igc"><div class="h"><i class="ava" ${ava}></i><div><span class="hn">${esc(handle)}${tick}</span><span>Sponsored</span></div></div><canvas id="big" width="1080" height="1350"></canvas>
       <div class="cta"><span>${esc(ad.cta)}</span><span>›</span></div>
       <div class="cp" id="cp"><b>${esc(handle)}${tick}</b>${esc(short ? ad.primary_text.slice(0, 125).replace(/\s\S*$/, "") : ad.primary_text)}${short ? '<span class="more" data-act="more">… more</span>' : ""}</div></div>`;
