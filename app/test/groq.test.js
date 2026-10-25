@@ -4,7 +4,7 @@ import { boot, client } from "./helpers.js";
 
 // With only GROQ_API_KEY set (the free option), the chat goes to Groq. A fake fetch stands in
 // for the API so this checks the request and what Hopkins does with the answer.
-const app = await boot({ ANTHROPIC_API_KEY: "", GROQ_API_KEY: "test-groq" });
+const app = await boot({ ANTHROPIC_API_KEY: "", GROQ_API_KEY: "test-groq", GROQ_BACKUP_MODELS: "" });
 const brain = await import("../src/brain.js");
 
 const calls = [];
@@ -69,5 +69,44 @@ test("Groq runs the chat when it's the only key", async () => {
   // Something the rules can do still gets done.
   next = ["429:40"];
   const done = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "make version 3 shorter", version: 3 });
-  assert.equal(done.json.messages.at(-1).body, "Version 3 is shorter.");
+  assert.match(done.json.messages.at(-1).body, /^\*\*\$585K.*\*\* is shorter\.$/);
+});
+
+test("Groq writes the first ads: its own ideas and names, checked against the facts; ads can be added and removed", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "groq2@test.com", password: "password123", invite: "EARLY1", name: "Dana Reyes" });
+  const LISTING = { address: "412 Oak Street", city: "Austin", area: "Riverside", price: 649000, beds: 3, baths: 2, sqft: 0, home_type: "craftsman", open_house: "", features: ["porch"] };
+  const a = (version, name, overlay, primary_text) => ({ version, name, kind: "life", headline: name, primary_text, overlay, kicker: "Just listed", photo_number: 0 });
+  const set = (ads) => ({ insight: "The porch is the thing.", ads, reply: "The porch is the thing here, so **Wraparound porch** leads with it and **Under $650K** makes the price concrete." });
+  next = [
+    { listing: LISTING, photo_labels: [], photo_notes: [], missing: "" },
+    // The first try adds granite nobody mentioned; the fact check asks again.
+    set([a(1, "Wraparound porch", "Slow mornings on the porch.", "Granite counters inside. Book a showing."), a(2, "Under $650K", "Under $650K in Riverside.", "3 beds, 2 baths. Book a showing.")]),
+    set([a(1, "Wraparound porch", "Slow mornings on the porch.", "A porch made for slow mornings. Book a showing."), a(2, "Under $650K", "Under $650K in Riverside.", "3 beds, 2 baths. Book a showing.")]),
+  ];
+  const before = calls.length;
+  const r = await c("POST", "/api/listings", { text: "Just listed: 412 Oak Street in Riverside, Austin. 3 bed 2 bath craftsman with a wraparound porch. $649,000. Just two ads please" });
+  assert.equal(calls.length - before, 3);
+  assert.match(calls.at(-1).body.messages.at(-1).content, /granite/i, "the retry says what was wrong");
+  assert.deepEqual(r.json.ads.map((x) => x.name), ["Wraparound porch", "Under $650K"]);
+  assert.ok(!r.json.ads.some((x) => /granite/i.test(x.primary_text)));
+  assert.match(r.json.messages.find((m) => m.kind === "ads").body, /\*\*Wraparound porch\*\*/);
+  const id = r.json.listing.id;
+
+  // One more, about the kitchen: the third free ad.
+  next = [{ reply: "Added **The kitchen**.", action: "add_ads", version: 3, remove: [], ads: [{ ...a(3, "The kitchen", "Dinners around the island.", "Room to cook. Book a showing."), kind: "feature", style: {} }] }];
+  const add = await c("POST", `/api/listings/${id}/messages`, { text: "add one about the kitchen", version: 1 });
+  assert.deepEqual(add.json.ads.map((x) => x.name), ["Wraparound porch", "Under $650K", "The kitchen"]);
+  assert.equal(add.json.focus, 3);
+  assert.equal(add.json.messages.at(-1).data.snapshot.length, 1);
+  // A fourth is the paid plan.
+  next = [{ reply: "Here's another.", action: "add_ads", version: 4, remove: [], ads: [{ ...a(4, "The street", "Oak trees out front.", "Book a showing."), style: {} }] }];
+  const more = await c("POST", `/api/listings/${id}/messages`, { text: "one more ad", version: 1 });
+  assert.equal(more.json.messages.at(-1).kind, "upgrade");
+  assert.equal(more.json.ads.length, 3);
+  // Removing one.
+  next = [{ reply: "", action: "remove_ads", version: 2, remove: [2], ads: [] }];
+  const rm = await c("POST", `/api/listings/${id}/messages`, { text: "get rid of the price one", version: 2 });
+  assert.deepEqual(rm.json.ads.map((x) => x.name), ["Wraparound porch", "The kitchen"]);
+  assert.equal(rm.json.messages.at(-1).body, "Removed **Under $650K**.");
 });

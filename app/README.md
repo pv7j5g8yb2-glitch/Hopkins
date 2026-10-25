@@ -1,7 +1,8 @@
 # Hopkins, the product
 
-The chat itself: an agent sends a listing, Hopkins makes 3 different ads, the agent changes
-them in the chat and says yes. Separate from `survey/` (the waitlist server) and `platform/`
+The chat itself: an agent sends a listing, Hopkins looks at it like an agency would and makes
+ads around what's actually special about that home, the agent changes them in the chat and
+says yes. Separate from `survey/` (the waitlist server) and `platform/`
 (the old booking system).
 
 ## What works today
@@ -12,24 +13,33 @@ them in the chat and says yes. Separate from `survey/` (the waitlist server) and
 * **A listing in.** Photos (resized in the browser) plus the link or the description. Hopkins
   reads the price, beds, baths, size, address, area and features. Links: it reads what the
   page says about itself; most portals block that, and then it asks for the details.
-* **3 ads out**, each a different idea: *The life* (the life the home gives), *The standout*
-  (one detail, its photo), *The facts* (price and numbers). Feed (4:5) and story (9:16)
-  previews drawn in the agent's brand, exactly as they'd run.
+* **Ads out, each its own idea.** Hopkins works out what's different about this home and who'd
+  buy it, then picks ideas that fit (3 by default, or as many as the agent asks for, up to 5).
+  Each ad is named after its idea ("Wraparound porch", "Under $650K"), and the agent can add
+  one, drop one, or turn one into a different idea in the chat. Every line is checked against
+  the facts, the agent's words and what the photos show (`src/facts.js`): a detail from nowhere
+  ("granite counters", a number nobody gave) gets one rewrite, then the sentence goes. Feed
+  (4:5) and story (9:16) previews drawn in the agent's brand, exactly as they'd run.
+* **Hopkins sees the photos.** Claude sees them directly. On Groq, its free vision model
+  (`qwen/qwen3.8-27b`, 3 photos per request) notes the room and what's plainly visible in the
+  first 3, so the ads can lead with what's really there.
 * **Changes in the chat.** Shorter, longer, warmer, more premium, plainer, another angle, a new
   headline or line on the image, another photo, new facts ("it has a pool"), a new price, an
   open house, sold, run it. With a model key set, the chat is a real conversation: it gets the
   whole thread plus the listing, the ads, the plan and the version on screen, answers questions,
-  switches version when one is named, and acts when asked. `ANTHROPIC_API_KEY` uses Claude (also
-  reads listings and photos and writes the ads); without it, `GROQ_API_KEY` uses Groq's free
-  model for the chat and edits (text only, same as the survey); the first 3 ads then come from
-  the built-in writer, because Groq invented details in live tests. Any failure falls back to the built-in rules, which
-  cover the common requests and questions but are not a conversation.
+  switches ad when one is named, and acts when asked. `ANTHROPIC_API_KEY` uses Claude for
+  everything; without it, `GROQ_API_KEY` uses Groq's free models: `openai/gpt-oss-120b` first,
+  then `openai/gpt-oss-20b` and `qwen/qwen3.8-27b` when one is over its limit. Each free model
+  allows about 8,000 tokens a minute and 200,000 a day (checked 2026-10-25); a new listing uses
+  roughly 5,000 to 8,000 text tokens plus about 5,500 for the photos, a chat turn 2,000 to 3,000.
+  The server logs the tokens of every call. Any failure falls back to the built-in reader,
+  writer and rules, which cover the common requests but are not a conversation.
 * **Hopkins messages first.** A new price or open house brings 3 new ads on its own. The Today
   page lists what's waiting on the agent; on Mondays the report is waiting as a message.
 * **Fair housing.** Every line (Hopkins' and the agent's) is checked; problem wording is
   rewritten before it reaches an ad, and the agent's own description gets flagged. Run plans
   use Meta's Housing category: no age, gender or ZIP targeting, 15 mile minimum radius.
-* **Free plan** (CLAUDE.md): 3 ads, previews only, the Hopkins mark across the middle, no
+* **Free plan** (CLAUDE.md): 3 ads in all, previews only, the Hopkins mark across the middle, no
   downloads. A 4th ad or "Run it" brings up the upgrade message. Price changes still update
   the 3 free ads.
 * **Paid plan.** Switched on by an admin (`ADMIN_EMAILS`) on the Admin page. Run it shows the
@@ -75,6 +85,7 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 | `ANTHROPIC_API_KEY` | Turns on Claude for reading listings, writing ads and the chat. |
 | `GROQ_API_KEY` | Free alternative for the chat when there's no Anthropic key (console.groq.com). |
 | `HOPKINS_MODEL`, `GROQ_MODEL` | Override the models (defaults `claude-opus-5-5`, `openai/gpt-oss-120b`). |
+| `GROQ_BACKUP_MODELS`, `GROQ_VISION_MODEL` | Groq models to try when the main one is over its limit (default `openai/gpt-oss-20b,qwen/qwen3.8-27b`), and the one that sees photos (default `qwen/qwen3.8-27b`). |
 | `NTFY_TOPIC` | The founder's phone alerts: new accounts, upgrade requests, approvals. |
 | `PORT` | Defaults to 3200. |
 

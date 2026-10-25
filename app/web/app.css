@@ -638,6 +638,12 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .mtop .seg.lensed .seg-lens,.mbar .seg.lensed .seg-lens,.pop .seg.lensed .seg-lens{top:3px;bottom:3px;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 2px 10px -2px rgba(42,15,20,.18),inset 0 0 0 .5px rgba(255,255,255,.9),inset 0 1px 1px rgba(255,255,255,1)}
   .mtop .seg.lensed>button,.mbar .seg.lensed>button{border-radius:999px}
   /* over a dark photo they turn to dark glass with light labels, like the tab bar */
+  /* the ad names scroll sideways when there are many or they're long; the format icons stay put */
+  .mbar .seg[data-seg=ver]{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
+  .mbar .seg[data-seg=ver]::-webkit-scrollbar{display:none}
+  .mbar .seg[data-seg=ver]>button{flex:none;white-space:nowrap}
+  .mbar .fmt-icons{flex:none}
+  .mbar .fmt-icons>button{display:flex;align-items:center;justify-content:center;padding:6px 9px}
   .mbar .seg.lensed{transition:background-color .25s}
   .mbar .seg.lensed>button{transition:color .25s}
   .lg-now,.lg-now>*{transition:none!important}

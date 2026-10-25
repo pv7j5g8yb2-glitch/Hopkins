@@ -77,9 +77,30 @@ test("house rules: no dashes, no Realtor", () => {
   assert.deepEqual(houseRuleProblems("Our team will help"), ["we"]);
 });
 
+test("the fact check: details and numbers have to come from somewhere", async () => {
+  const { factProblems, withoutProblems } = await import("../src/facts.js");
+  const listing = { price: 649000, beds: 3, baths: 2, sqft: 1840, features: ["porch"], description: "Craftsman with a wraparound porch in Riverside." };
+  const photos = [{ label: "kitchen", seen: "white cabinets, gas range, kitchen island" }];
+  const ok = { overlay: "Slow mornings on the porch.", headline: "Under $650K in Riverside", primary_text: "3 beds, 2 baths, 1,840 sq ft. A kitchen island for long dinners. Book a showing.", kicker: "Just listed" };
+  assert.deepEqual(factProblems(ok, { listing, photos }), []);
+  const bad = { overlay: "Granite and hardwood.", headline: "Minutes from downtown", primary_text: "Renovated in 2021. The porch is lovely. Book a showing.", kicker: "Just listed" };
+  const p = factProblems(bad, { listing, photos });
+  assert.deepEqual([...new Set(p.map((x) => x.what))].sort(), ["2021", "downtown", "granite", "hardwood", "minutes from", "renovated"].sort());
+  assert.equal(withoutProblems(bad.primary_text, p), "The porch is lovely. Book a showing.");
+  // What the agent just said in the chat counts.
+  assert.deepEqual(factProblems({ overlay: "Granite counters.", headline: "", primary_text: "", kicker: "" }, { listing, photos, extra: "it has granite counters" }), []);
+});
+
 test("reads what the agent wants", () => {
   assert.deepEqual(targetVersions("make the second one shorter", 1), [2]);
-  assert.deepEqual(targetVersions("change all of them", 2), [1, 2, 3]);
+  assert.deepEqual(targetVersions("change all of them", 2, [{ version: 1 }, { version: 2 }]), [1, 2]);
+  const named = [{ version: 1, name: "Wraparound porch" }, { version: 2, name: "Under $650K" }, { version: 3, name: "The big kitchen" }];
+  assert.deepEqual(targetVersions("make the big kitchen one warmer", 1, named), [3]);
+  assert.deepEqual(targetVersions("shorten the last one", 1, named), [3]);
+  assert.equal(readIntent("delete the second one").kind, "remove");
+  assert.deepEqual(readIntent("delete the second one").versions, [2]);
+  assert.equal(readIntent("make another ad").kind, "add");
+  assert.equal(readIntent("remove the emoji").kind === "remove", false);
   assert.deepEqual(targetVersions("make it warmer", 3), [3]);
   assert.equal(readIntent("run it").kind, "run");
   const r = readIntent("run it with $300 over 14 days");

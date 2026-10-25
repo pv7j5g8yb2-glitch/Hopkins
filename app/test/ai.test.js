@@ -56,7 +56,7 @@ test("Claude reads the listing and writes the set; Hopkins cleans what comes bac
   const req = calls.at(-1);
   assert.equal(req.messages.at(-1).role, "user");
   assert.match(req.messages.at(-1).content, /tighten the second one/);
-  assert.match(req.system, /looking at version 2/);
+  assert.match(req.system, /looking at ad 2/);
   assert.match(req.system, /3 of 3 free ads used/);
 
   // Naming a version just switches to it, and the app is told which.
@@ -77,7 +77,7 @@ test("Claude reads the listing and writes the set; Hopkins cleans what comes bac
   next = [new Error("overloaded")];
   const f = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "make version 3 shorter", version: 3 });
   assert.equal(f.status, 200);
-  assert.equal(f.json.messages.at(-1).body, "Version 3 is shorter.");
+  assert.match(f.json.messages.at(-1).body, /^\*\*.+\*\* is shorter\.$/);
   next = ["refusal"];
   const g = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "run it", version: 1 });
   assert.equal(g.json.messages.at(-1).kind, "upgrade");

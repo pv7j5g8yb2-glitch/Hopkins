@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { FEATURES } from "./listing.js";
-import { PATTERNS } from "./writer.js";
+import { KINDS, MAX_ADS } from "./writer.js";
 import { LAYOUTS, describeStyle } from "./style.js";
 
 // The model behind the chat. Claude when ANTHROPIC_API_KEY is set; otherwise Groq's free
@@ -8,14 +8,17 @@ import { LAYOUTS, describeStyle } from "./style.js";
 // null on any failure and the caller falls back to the built-in reader, writer and rules, so
 // the chat never breaks because a model call did.
 //
-// Three jobs: read a listing from what the agent sent, write a set of three ads, and take one
-// chat turn: hold a real conversation and, when the agent asks for something, do it.
+// Four jobs: see the photos, read a listing from what the agent sent, write the ads, and take
+// one chat turn: hold a real conversation and, when the agent asks for something, do it.
 
 export const provider = process.env.ANTHROPIC_API_KEY ? "claude" : process.env.GROQ_API_KEY ? "groq" : null;
 export const aiEnabled = Boolean(provider);
 const MODEL = process.env.HOPKINS_MODEL || "claude-opus-5-5";
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+// Groq's free model that can see images (3 per request, about 7,000 input tokens a minute, and
+// each photo costs about 1,800 whatever its size). Checked 2026-10-25.
+const GROQ_VISION_MODEL = process.env.GROQ_VISION_MODEL || "qwen/qwen3.8-27b";
 
 let client = null;
 let fetchImpl = (...a) => fetch(...a);
@@ -42,18 +45,20 @@ How you write to the agent:
 - At most one question per reply, and make it answerable in one line.
 
 How you write ads (the copy appears on the agent's ads, in their name):
-- Three genuinely different concepts per listing, never small tweaks of one:
-  1. "${PATTERNS.life.name}": the life the home gives, for one buyer. "Slow mornings on the porch", not "3 bed 2 bath".
-  2. "${PATTERNS.feature.name}": one standout detail, with the photo that shows it.
-  3. "${PATTERNS.facts.name}": just listed, the price and the numbers, plainly.
-- overlay: the line on the image. 2 to 7 words, ends with a full stop. It must be readable at a glance.
+- Think like the best agency creative given this one home. Before writing, work out what would make the right buyer stop scrolling for THIS place: the one or two things that are genuinely different about it (from the facts, the agent's own words and what the photos show), who is most likely to buy it, and the moment (just listed, new price, open house, sold).
+- No formula. A craftsman with a porch, a downtown condo, a fixer upper and a $4M view home need different ideas. Never fall back on the same three every time, and never make an ad that would fit any listing.
+- When there's more than one ad, each is a genuinely different idea, so testing them against each other teaches something: never small tweaks of one. Idea types that work, to pick from or go beyond: the life the home gives one buyer ("slow mornings on the porch", not "3 bed 2 bath"); one standout detail with the photo that shows it; the price made concrete ("under $650K in Riverside"); the place, only with what the agent said about it; a scroll stopping question or contrarian hook; the moment itself (new price, this Saturday). A plain price and numbers ad only when that's genuinely the strongest idea for this home.
+- name: each ad's own name, 1 to 3 words in sentence case, after its idea, the way an agency labels a concept on the board: "Wraparound porch", "Under $650K", "The big kitchen". Never generic ("The life", "Lifestyle", "Version 1", "Option A").
+- overlay: the line on the image, and the hook of the ad. 2 to 7 words, ends with a full stop, readable at a glance. It makes one buyer feel or want something, in words they'd use themselves: "Slow mornings on the porch.", "Under $650K in Riverside.", "Room for the long table.", "Your Saturday mornings, sorted." Never just describe the photo ("Glass doors open.", "Porch lit at dusk."): the photo already shows that.
+- Sell only what comes with the home: never furniture, decor, cookware, cars or people in the photos, and never the time of day or weather a photo was taken in.
 - kicker: a tiny label above it, like "Just listed · Riverside" or "Open house · Sat 1 to 3pm".
 - headline: under 40 characters.
 - primary_text: 1 to 4 short sentences. The first 125 characters must carry the ad. End with one clear next step (book a showing, see the photos).
-- Describe the home, never the buyer. Fair housing: no "perfect for families", "ideal for couples", "adults only", "safe neighborhood", "exclusive", "master bedroom" (say primary), "great schools", nothing about race, religion, sex, disability, age or family status.
-- Never "Realtor". Never use dashes or hyphens of any kind ("two week", "move in ready"). Use only facts the agent gave you. Don't invent features, numbers, school names or distances.
+- photo_number: the photo that shows the idea best. Different ads use different photos where they can.
+- Describe the home, never the buyer, and never the people in the photos. Fair housing: no "perfect for families", "ideal for couples", "adults only", "safe neighborhood", "exclusive", "master bedroom" (say primary), "great schools", nothing about race, religion, sex, disability, age or family status.
+- Never "Realtor". Never use dashes or hyphens of any kind ("two week", "move in ready"). Don't invent features, numbers, school names or distances.
 - Write as the agent would: first person singular if needed ("Send me a message"), or no person at all.
-- Every detail in an ad must be in the listing facts or the agent's own description. If it isn't there, leave it out, even when it's typical for homes like this: no appliances, flooring, light, views, "charm" or "character" unless the agent said so.`;
+- Every detail in an ad must be in the listing facts, the agent's own words, or what the photo notes say is visible. If it isn't there, leave it out, even when it's typical for homes like this: no appliances, materials, flooring, views, renovations, "charm" or "character" unless it's there.`;
 
 // The look of one ad. "" (or 0 for size) leaves that part as it is; "default" puts it back.
 const STYLE_SCHEMA = {
@@ -77,7 +82,9 @@ const STYLE_SCHEMA = {
 const AD_SCHEMA = {
   type: "object",
   properties: {
-    version: { type: "integer", description: "1, 2 or 3" },
+    version: { type: "integer", description: `Which ad, 1 to ${MAX_ADS}` },
+    name: { type: "string", description: "The ad's own name, 1 to 3 words, after its idea. When changing an ad, keep its name unless the idea changed." },
+    kind: { type: "string", enum: KINDS, description: "Which type of idea it is, for the testing record" },
     headline: { type: "string" },
     primary_text: { type: "string" },
     overlay: { type: "string", description: "The line on the photo. Call it that to the agent, never overlay." },
@@ -85,7 +92,7 @@ const AD_SCHEMA = {
     photo_number: { type: "integer", description: "Which photo to use, counting from 1. 0 keeps the current one." },
     style: STYLE_SCHEMA,
   },
-  required: ["version", "headline", "primary_text", "overlay", "kicker", "photo_number", "style"],
+  required: ["version", "name", "kind", "headline", "primary_text", "overlay", "kicker", "photo_number", "style"],
   additionalProperties: false,
 };
 
@@ -116,9 +123,14 @@ const READ_SCHEMA = {
       items: { type: "string", enum: ["exterior", "living", "kitchen", "bedroom", "bathroom", "garden", "pool", "view", "outdoor", "office", "other"] },
       description: "One label per photo, in order",
     },
+    photo_notes: {
+      type: "array",
+      items: { type: "string" },
+      description: "One per photo, in order: what a buyer would care about that's plainly visible, in a few words. Only what you can clearly see, never the people in it.",
+    },
     missing: { type: "string", description: "The one detail you most need from the agent, as a short question, or empty" },
   },
-  required: ["listing", "photo_labels", "missing"],
+  required: ["listing", "photo_labels", "photo_notes", "missing"],
   additionalProperties: false,
 };
 
@@ -128,13 +140,14 @@ const TURN_SCHEMA = {
     reply: { type: "string", description: "Your message back to the agent, as you'd say it in a chat. Markdown: **bold**, lists, a small table when comparing." },
     action: {
       type: "string",
-      enum: ["none", "select_version", "revise", "update_listing", "make_ads", "run", "new_moment"],
+      enum: ["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "new_moment"],
       description:
-        "none: just talking. select_version: they want to look at or work on a different version. revise: change ads (put them in ads). update_listing: facts about the home changed. make_ads: make the ads (when there are none, or they want fresh ones). run: they want the ads to run. new_moment: a new reason to advertise (price change, open house, sold).",
+        "none: just talking. select_version: they want to look at or work on a different ad. revise: change ads, including turning one into a different idea (put them in ads). add_ads: they want another ad or more (write the new ones in ads, numbered after the last one). remove_ads: they want ads gone (put their numbers in remove). update_listing: facts about the home changed. make_ads: make the ads (when there are none, or they want a whole fresh set). run: they want the ads to run. new_moment: a new reason to advertise (price change, open house, sold).",
     },
-    version: { type: "integer", description: "The version (1, 2 or 3) this turn is about, or 0 if none" },
+    version: { type: "integer", description: "The ad this turn is about, or 0 if none" },
+    remove: { type: "array", items: { type: "integer" }, description: "For remove_ads: the numbers of the ads to remove. Empty otherwise." },
     moment: { type: "string", enum: ["none", "price", "open_house", "sold"] },
-    ads: { type: "array", items: AD_SCHEMA, description: "Only the versions you changed, in full. Empty otherwise." },
+    ads: { type: "array", items: AD_SCHEMA, description: "Only the ads you changed or added, in full. Empty otherwise." },
     listing_patch: LISTING_SCHEMA,
     budget: { type: "number", description: "Total budget in dollars if the agent named one, else 0" },
     days: { type: "integer", description: "Days to run if named, else 0" },
@@ -143,7 +156,7 @@ const TURN_SCHEMA = {
       description: "The message the agent is most likely to send next, written the way they'd type it, 2 to 8 words, like \"Make version 2 shorter\" or \"Which photo works best?\". Only a message they could send as it is: if your reply asks for something only they know (their own wording, a time, a price), leave it empty. Plain words, never \"overlay\". Never about upgrading or paying. Empty if nothing obvious.",
     },
   },
-  required: ["reply", "action", "version", "moment", "ads", "listing_patch", "budget", "days", "suggestion"],
+  required: ["reply", "action", "version", "remove", "moment", "ads", "listing_patch", "budget", "days", "suggestion"],
   additionalProperties: false,
 };
 
@@ -151,7 +164,7 @@ function photoBlocks(photos) {
   const blocks = [];
   photos.slice(0, 8).forEach((p, i) => {
     if (!p.thumb) return;
-    blocks.push({ type: "text", text: `Photo ${i + 1}${p.label ? ` (labelled ${p.label})` : ""}:` });
+    blocks.push({ type: "text", text: `Photo ${i + 1}${p.label ? ` (${p.label}${p.seen ? `: ${p.seen}` : ""})` : ""}:` });
     blocks.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: Buffer.from(p.thumb).toString("base64") } });
   });
   return blocks;
@@ -176,39 +189,50 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
     }
     if (provider === "groq") {
       const text = (c) => (typeof c === "string" ? c : c.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
-      // Groq now and then fails to produce valid JSON (a 400 json_validate_failed); one retry
-      // usually fixes it.
-      for (let attempt = 0; ; attempt++) {
-      const res = await fetchImpl(GROQ_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          // Low for writing so it sticks to the facts it was given; a bit higher for talking.
-          temperature,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` },
-            ...messages.map((m) => ({ role: m.role, content: text(m.content) })),
-          ],
-        }),
-        signal: AbortSignal.timeout(45000),
+      const body = (model) => JSON.stringify({
+        model,
+        // Low for writing so it sticks to the facts it was given; a bit higher for talking.
+        temperature,
+        // gpt-oss thinks before it answers, and the thinking counts against the free allowance.
+        ...(model.startsWith("openai/gpt-oss") ? { reasoning_effort: effort === "medium" ? "medium" : "low" } : {}),
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` },
+          ...messages.map((m) => ({ role: m.role, content: text(m.content) })),
+        ],
       });
-      if (!res.ok) {
-        const err = await res.text();
-        if (attempt === 0 && res.status === 400 && err.includes("json_validate_failed")) continue;
-        // Over the free per minute limit: Groq says how long to wait. Up to 10 seconds is worth
-        // waiting once; past that, give up and say so.
-        if (res.status === 429) {
-          const wait = Number(res.headers?.get?.("retry-after")) || Number((err.match(/try again in ([\d.]+)s/) || [])[1]) || 0;
-          if (attempt === 0 && wait > 0 && wait <= 10) { await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
-          lastFailure = "busy";
+      // Each free model has its own allowance (about 8,000 tokens a minute and 200,000 a day,
+      // checked 2026-10-25). When one is used up, the next one answers.
+      for (const model of groqModels()) {
+        let waited = false;
+        for (let attempt = 0; ; attempt++) {
+          const res = await fetchImpl(GROQ_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+            body: body(model),
+            signal: AbortSignal.timeout(45000),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.usage) console.info(`Groq ${model}: ${data.usage.total_tokens} tokens`);
+            return JSON.parse(data.choices[0].message.content);
+          }
+          const err = await res.text();
+          // Groq now and then fails to produce valid JSON (a 400 json_validate_failed); one
+          // retry usually fixes it.
+          if (attempt === 0 && res.status === 400 && err.includes("json_validate_failed")) continue;
+          if (res.status !== 429) throw new Error(`Groq ${res.status}: ${err.slice(0, 200)}`);
+          // Over a limit: Groq says how long to wait. Up to 10 seconds is worth waiting once;
+          // past that, this model rests and the next one is asked.
+          const wait = retryAfter(res, err);
+          if (!waited && wait > 0 && wait <= 10) { waited = true; await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
+          resting.set(model, Date.now() + Math.min(wait || 60, 6 * 3600) * 1000);
+          console.error(`Groq ${model} is over its limit for ${Math.round(wait)}s: ${err.slice(0, 160)}`);
+          break;
         }
-        throw new Error(`Groq ${res.status}: ${err.slice(0, 200)}`);
       }
-      const data = await res.json();
-      return JSON.parse(data.choices[0].message.content);
-      }
+      lastFailure = "busy";
+      throw new Error("Groq: every free model is over its limit");
     }
     return null;
   } catch (err) {
@@ -216,6 +240,23 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
     console.error("Model call failed, using the built-in rules:", err.message);
     return null;
   }
+}
+
+// The Groq models to ask, best first, minus any resting after a limit. The best one is always
+// tried when everything is resting, so a short limit never blocks the chat for long.
+const GROQ_BACKUPS = (process.env.GROQ_BACKUP_MODELS ?? "openai/gpt-oss-20b,qwen/qwen3.8-27b").split(",").map((m) => m.trim()).filter(Boolean);
+const resting = new Map();
+function groqModels() {
+  const all = [GROQ_MODEL, ...GROQ_BACKUPS.filter((m) => m !== GROQ_MODEL)];
+  const ready = all.filter((m) => !(resting.get(m) > Date.now()));
+  return ready.length ? ready : [GROQ_MODEL];
+}
+// "try again in 7m12.5s", "in 1h2m3s" or a retry-after header, in seconds.
+function retryAfter(res, err) {
+  const header = Number(res.headers?.get?.("retry-after"));
+  if (header) return header;
+  const m = err.match(/try again in (?:(\d+)h)?(?:(\d+)m)?(?:([\d.]+)s)?/);
+  return m ? (Number(m[1]) || 0) * 3600 + (Number(m[2]) || 0) * 60 + (Number(m[3]) || 0) : 0;
 }
 
 // Why the last call failed: "busy" when it was the provider's rate limit. Read right after a
@@ -234,31 +275,111 @@ export async function readListingAI({ text, linkInfo, photos }) {
       type: "text",
       text: `The agent sent a new listing. Read the facts from it. Use only what's actually there.\n\nWhat they wrote:\n${text || "(nothing)"}\n\n${
         linkInfo ? `The listing link's page says:\nTitle: ${linkInfo.title || ""}\nDescription: ${linkInfo.description || ""}\n` : ""
-      }\nLabel each photo. If the price or the city is missing, ask for it in "missing".`,
+      }\n${provider === "claude" ? "Label each photo and note what's visible in it." : "You can't see the photos here, so leave photo_labels and photo_notes empty."} If the price or the city is missing, ask for it in "missing".`,
     },
   ];
-  return call({ system: SYSTEM, messages: [{ role: "user", content }], schema: READ_SCHEMA, effort: "low" });
+  const r = await call({ system: SYSTEM, messages: [{ role: "user", content }], schema: READ_SCHEMA, effort: "low" });
+  // Only a model that saw the photos can say what's in them.
+  if (r && provider !== "claude") { r.photo_labels = []; r.photo_notes = []; }
+  return r;
 }
 
-function describe(listing, ads, photos) {
-  const facts = { ...listing, features: listing.features };
-  delete facts.id; delete facts.workspace_id; delete facts.slug;
-  return `The listing:\n${JSON.stringify(facts, null, 1)}\n\nPhotos: ${photos.map((p, i) => `${i + 1} ${p.label || "unlabelled"}`).join(", ") || "none"}\n\nCurrent ads:\n${ads
-    .map((a) => `Version ${a.version} (${PATTERNS[a.pattern]?.name || a.pattern}, photo ${Math.max(1, photos.findIndex((p) => p.id === a.photo_id) + 1)}):\nOverlay: ${a.overlay}\nKicker: ${a.kicker}\nHeadline: ${a.headline}\nText: ${a.primary_text}`)
-    .join("\n\n") || "none yet"}`;
+// The photos as the model knows them: number, room, and what's visible when it's been seen.
+export function photoList(photos) {
+  return photos.map((p, i) => `${i + 1} ${p.label || "unlabelled"}${p.seen ? ` (${p.seen})` : ""}`).join("; ") || "none";
 }
 
-export async function writeSetAI({ listing, photos, brand, moment, extra }) {
+const adLine = (a, photos) => `Ad ${a.version}, "${a.name || "unnamed"}" (photo ${Math.max(1, photos.findIndex((p) => p.id === a.photo_id) + 1)}${a.status ? `, ${a.status}` : ""})`;
+
+function factsFor(listing) {
+  const facts = {};
+  for (const k of ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "status", "moment"]) if (listing[k]) facts[k] = listing[k];
+  facts.features = (listing.features || []).map((k) => FEATURES.find((f) => f.key === k)?.name.replace(/^the /, "") || k);
+  if (listing.description) facts.agent_description = listing.description;
+  return facts;
+}
+
+// The photos, three to a request (the model's limit): the room and what a buyer would care
+// about that's plainly visible. Groq only; Claude sees the photos itself when it reads the
+// listing. Null when it couldn't (no key, over the free limit).
+export async function seePhotosAI(photos) {
+  if (provider !== "groq") return null;
+  const batch = photos.filter((p) => p.thumb).slice(0, 3);
+  if (!batch.length) return null;
+  const content = [{ type: "text", text: `These are listing photos of one home, numbered in order. For each photo give the room (one of exterior, living, kitchen, bedroom, bathroom, garden, pool, view, outdoor, office, other) and, in a few words, the parts of the home itself a buyer would care about that are plainly visible (the porch, an island, big windows, a fenced yard). Only what you can clearly see; no guesses about materials, age or condition you can't confirm. Leave out what doesn't come with the home: furniture, decor, cookware, cars, people, the light or the time of day. Reply as JSON: {"photos":[{"n":1,"room":"","seen":""}]}` }];
+  batch.forEach((p, i) => {
+    content.push({ type: "text", text: `Photo ${i + 1}:` });
+    content.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${Buffer.from(p.thumb).toString("base64")}` } });
+  });
+  try {
+    for (let attempt = 0; ; attempt++) {
+      const res = await fetchImpl(GROQ_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        body: JSON.stringify({ model: GROQ_VISION_MODEL, temperature: 0.2, response_format: { type: "json_object" }, max_tokens: 600, messages: [{ role: "user", content }] }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        const wait = Number(res.headers?.get?.("retry-after")) || Number((err.match(/try again in ([\d.]+)s/) || [])[1]) || 0;
+        if (attempt === 0 && res.status === 429 && wait > 0 && wait <= 8) { await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
+        throw new Error(`Groq vision ${res.status}: ${err.slice(0, 160)}`);
+      }
+      const out = JSON.parse((await res.json()).choices[0].message.content);
+      const rooms = new Set(["exterior", "living", "kitchen", "bedroom", "bathroom", "garden", "pool", "view", "outdoor", "office", "other"]);
+      return batch.map((p, i) => {
+        const r = (out.photos || []).find((x) => Number(x.n) === i + 1) || (out.photos || [])[i] || {};
+        return { id: p.id, label: rooms.has(r.room) ? r.room : null, seen: typeof r.seen === "string" ? r.seen.trim().slice(0, 160) : "" };
+      });
+    }
+  } catch (err) {
+    console.error("Seeing the photos failed, going on without:", err.message);
+    return null;
+  }
+}
+
+// One ad in a new set: like AD_SCHEMA, without the look (a new ad starts in the brand's).
+const SET_AD_SCHEMA = {
+  type: "object",
+  properties: Object.fromEntries(Object.entries(AD_SCHEMA.properties).filter(([k]) => k !== "style")),
+  required: AD_SCHEMA.required.filter((k) => k !== "style"),
+  additionalProperties: false,
+};
+const SET_SCHEMA = {
+  type: "object",
+  properties: {
+    insight: { type: "string", description: "First, in one or two sentences: what's genuinely different about this home and who is most likely to buy it. This decides the ideas." },
+    ads: { type: "array", items: SET_AD_SCHEMA },
+    reply: { type: "string", description: "To the agent, like a colleague handing them over: what you noticed about the home and what each ad tries, by name, in two to four plain sentences. Bold the names. No question about running, posting or paying; at most a short invite to change anything." },
+  },
+  required: ["insight", "ads", "reply"],
+  additionalProperties: false,
+};
+
+// A set of ads for one listing. count is how many; brief is what the agent asked for, if
+// anything ("one ad about the pool"); keep lists ads that stay, so new ones are different;
+// fix says what was wrong with a first try.
+export async function writeSetAI({ listing, photos, brand, moment, extra, count = 3, brief = "", keep = [], fix = "" }) {
+  const from = keep.length ? Math.max(...keep.map((a) => a.version)) + 1 : 1;
   const content = [
     ...photoBlocks(photos),
     {
       type: "text",
-      text: `${describe(listing, [], photos)}\n\nBrand voice: ${brand.voice || "plain"}. Agent: ${brand.agent_name || ""}, ${brand.business || ""}.\nMoment: ${moment}${
-        extra?.oldPrice ? ` (price was ${extra.oldPrice})` : ""
-      }.\n\nWrite all three versions (1 ${PATTERNS.life.name}, 2 ${PATTERNS.feature.name}, 3 ${PATTERNS.facts.name}) and pick a different photo for each where you can. In reply, one or two plain sentences to the agent saying what each version leans on, the way a colleague would hand them over. Set action to "revise".`,
+      text: `The listing: ${JSON.stringify(factsFor(listing))}
+Photos: ${photoList(photos)}
+Brand voice: ${brand.voice || "plain"}. Agent: ${brand.agent_name || ""}${brand.business ? `, ${brand.business}` : ""}.
+Moment: ${moment}${extra?.oldPrice ? ` (the price was ${extra.oldPrice})` : ""}.
+${keep.length ? `Ads that stay, so make yours different from them:\n${keep.map((a) => `${adLine(a, photos)}: ${a.overlay} / ${a.headline}`).join("\n")}\n` : ""}${brief ? `What the agent asked for: ${brief}\n` : ""}
+Write ${count === 1 ? "one ad" : `${count} ads`}, numbered from ${from}.${fix ? `\n\nYour last try had problems, fix them: ${fix}` : ""}`,
     },
   ];
-  return normalizeTurn(await call({ system: SYSTEM, messages: [{ role: "user", content }], schema: TURN_SCHEMA, effort: "medium" }));
+  const r = await call({ system: SYSTEM, messages: [{ role: "user", content }], schema: SET_SCHEMA, effort: "medium", temperature: 0.7 });
+  if (!r || !Array.isArray(r.ads)) return null;
+  return {
+    insight: typeof r.insight === "string" ? r.insight : "",
+    reply: typeof r.reply === "string" ? r.reply : "",
+    ads: r.ads.filter((a) => a && typeof a === "object").map((a, i) => ({ ...a, version: Number(a.version) || from + i, photo_number: Number(a.photo_number) || 0 })),
+  };
 }
 
 // How Hopkins talks in the chat, on top of the house rules in SYSTEM.
@@ -285,29 +406,25 @@ In the chat:
 - Money, exactly: the Hopkins plan is one price. The ad spend is separate, the agent chooses it and pays it to Meta. The default test is $200 over 10 days, split across the versions. Never say the plan price covers ad spend.
 - A new fact about the home that isn't one of the listed features (solar panels, a new roof) is still a fact: use update_listing, work it into the versions where it fits (put them in ads), and never mention a feature list or any other part of how you work.
 - Small talk ("lol ok", "cool") gets a short, natural reply. Don't push them to run or upgrade.
-- You can change how every ad looks, not only the words, and you never say you can't: background colour, the colour of the label and price, the colour of the big line, the font (modern bold or classic serif), the layout (fade, top, split, card, frame), text size, left or centred, which part of the photo stays in view, and how strong the fade is. Put those in ads[].style for each version you change (with its words copied as they are). Fill in only the parts they asked for and leave every other style field as "" (size 0), so nothing else changes. Use refined colours, never pure web ones: navy #1F2A44, gold #D7AE62, black #111111, cream #F4EBDD, green #2F5D46, burgundy #6D1F2C, white #FFFFFF. If an earlier reply in this chat said you can't change colours, fonts or layout, that was wrong: say so plainly ("I got that wrong earlier, I can"). Say "all three" means all three versions. With no colours set, the ads use the agent's brand colours. Pick colours with enough contrast to read. In the reply, name colours in words ("navy", "gold"), never hex codes, and only say what you actually changed in this turn, not earlier changes. If they ask for something the ads can't do (a second photo in one ad, animation, a video), say so plainly and offer the nearest thing you can do.
+- You can change how every ad looks, not only the words, and you never say you can't: background colour, the colour of the label and price, the colour of the big line, the font (modern bold or classic serif), the layout (fade, top, split, card, frame), text size, left or centred, which part of the photo stays in view, and how strong the fade is. Put those in ads[].style for each ad you change (with its words and name copied as they are). Fill in only the parts they asked for and leave every other style field as "" (size 0), so nothing else changes. Use refined colours, never pure web ones: navy #1F2A44, gold #D7AE62, black #111111, cream #F4EBDD, green #2F5D46, burgundy #6D1F2C, white #FFFFFF. If an earlier reply in this chat said you can't change colours, fonts or layout, that was wrong: say so plainly ("I got that wrong earlier, I can"). "All of them" or "all three" means every ad. With no colours set, the ads use the agent's brand colours. Pick colours with enough contrast to read. In the reply, name colours in words ("navy", "gold"), never hex codes, and only say what you actually changed in this turn, not earlier changes. If they ask for something the ads can't do (a second photo in one ad, animation, a video), say so plainly and offer the nearest thing you can do.
 - What's real today, say it exactly when asked: Hopkins makes and edits the ads (words and look) here, checks the wording, makes the run plan, gives each version a lead page and link, and collects the leads. It is not connected to Meta yet, so nothing goes live on Facebook or Instagram from here, there's no account to link, and there are no performance numbers to see. A plan the agent says yes to waits until that connection is ready; on the paid plan they can download the ads and post or boost them themselves. Never claim more than this.
 - The free plan: up to 3 ads made in the chat, previews only. More ads, downloads and running ads need the paid plan, which is $299 a month, billing starts when the first ad goes live, cancel any time, no cut of ad spend. Say this plainly when it matters, once.`;
 
 function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName }) {
-  const facts = {};
-  for (const k of ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "status", "moment"]) if (listing[k]) facts[k] = listing[k];
-  facts.features = (listing.features || []).map((k) => FEATURES.find((f) => f.key === k)?.name.replace(/^the /, "") || k);
-  if (listing.description) facts.agent_description = listing.description;
   return `Context (the current state, not something the agent wrote):
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. Brand voice: ${brand.voice || "plain"}.
 Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.${!plan.paid && plan.adsMade >= plan.limit ? `
-The free ads are used up (deleted listings still count). No new ads can be made on this account until it's on the paid plan, so never offer to make them or ask if they want to go ahead; changes to ads that already exist are still free.` : ""}
-Listing: ${JSON.stringify(facts)}
-Photos: ${photos.length ? photos.map((p, i) => `${i + 1} ${p.label || "unlabelled"}`).join(", ") : "none yet"}
-Ads: ${ads.length ? "" : "none yet"}
-${ads.map((a) => `Version ${a.version} (${PATTERNS[a.pattern]?.name || a.pattern}, photo ${Math.max(1, photos.findIndex((p) => p.id === a.photo_id) + 1)}, ${a.status}):
+The free ads are used up (deleted listings still count). No new ads can be made on this account until it's on the paid plan, so never offer to make them or ask if they want to go ahead; changes to ads that already exist are still free, including turning one into a different idea.` : ""}
+Listing: ${JSON.stringify(factsFor(listing))}
+Photos: ${photoList(photos)}
+Ads: ${ads.length ? `${ads.length} (up to ${MAX_ADS} per listing)` : "none yet"}
+${ads.map((a) => `${adLine(a, photos)}:
   On the image: ${a.overlay}
   Look: ${describeStyle(a.style)}
   Label: ${a.kicker}
   Headline: ${a.headline}
   Text: ${a.primary_text}`).join("\n")}
-The agent is looking at version ${selectedVersion || 1}.`;
+The agent is looking at ad ${selectedVersion || 1}. Call the ads by their names when you talk about them ("the porch one"), or by number when that's clearer.`;
 }
 
 // The stored chat as a real back and forth: the agent's messages as the user, Hopkins' as the
@@ -327,7 +444,7 @@ function conversation(history) {
   return out;
 }
 
-const ACTIONS = new Set(["none", "select_version", "revise", "update_listing", "make_ads", "run", "new_moment"]);
+const ACTIONS = new Set(["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "new_moment"]);
 // Models don't always fill every field; this makes the answer safe to act on.
 function normalizeTurn(r) {
   if (!r || typeof r !== "object" || typeof r.reply !== "string") return null;
@@ -335,9 +452,10 @@ function normalizeTurn(r) {
   return {
     reply: r.reply,
     action: ACTIONS.has(r.action) ? r.action : "none",
-    version: [1, 2, 3].includes(num(r.version)) ? num(r.version) : 0,
+    version: num(r.version) >= 1 && num(r.version) <= MAX_ADS ? num(r.version) : 0,
+    remove: Array.isArray(r.remove) ? [...new Set(r.remove.map(num).filter((v) => v >= 1 && v <= MAX_ADS))] : [],
     moment: ["price", "open_house", "sold"].includes(r.moment) ? r.moment : "none",
-    ads: Array.isArray(r.ads) ? r.ads.filter((a) => a && [1, 2, 3].includes(num(a.version))).map((a) => ({ ...a, version: num(a.version), photo_number: num(a.photo_number) })) : [],
+    ads: Array.isArray(r.ads) ? r.ads.filter((a) => a && num(a.version) >= 1 && num(a.version) <= MAX_ADS).map((a) => ({ ...a, version: num(a.version), photo_number: num(a.photo_number) })) : [],
     listing_patch: r.listing_patch && typeof r.listing_patch === "object" ? r.listing_patch : null,
     budget: num(r.budget),
     days: num(r.days),

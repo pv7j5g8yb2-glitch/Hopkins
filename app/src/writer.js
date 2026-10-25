@@ -11,11 +11,13 @@
 import { FEATURES, formatPrice, shortPrice, factsLine } from "./listing.js";
 import { cleanWording } from "./fairhousing.js";
 
-export const PATTERNS = {
-  life: { name: "The life", why: "Sells the life the home gives to one buyer." },
-  feature: { name: "The standout", why: "One detail, shown, not described." },
-  facts: { name: "The facts", why: "Price and numbers up front, for buyers who are already looking." },
-};
+// The kind of idea behind each ad, kept for the testing record (which kind wins for which
+// kind of listing) and to pick a default layout. The agent never sees these: each ad has its
+// own name, after its own idea ("Wraparound porch", "Under $650K").
+export const KINDS = ["life", "feature", "facts", "price", "place", "hook", "moment", "other"];
+export const KIND_NAMES = { life: "The life it gives", feature: "One standout detail", facts: "Price and numbers", price: "The price", place: "The place", hook: "A hook or question", moment: "The moment", other: "Other" };
+// How many ads one listing can have at a time. Free accounts make 3 in all (plans.js).
+export const MAX_ADS = 5;
 
 export const MOMENTS = {
   new: "Just listed",
@@ -112,6 +114,7 @@ export function writeVersion(pattern, ctx, opts = {}) {
     const overlay = f ? f.life : where ? `Home, in ${where}.` : "Room to make it yours.";
     ad = {
       pattern,
+      name: f ? cap(f.name) : where ? where : "The home",
       overlay,
       kicker: kickerFor(l, moment, where ? `Just listed · ${where}` : "Just listed"),
       headline: fit(l.beds ? `${l.beds} bed ${type} in ${where || "town"}` : `Just listed${where ? " in " + where : ""}`, 40),
@@ -123,6 +126,7 @@ export function writeVersion(pattern, ctx, opts = {}) {
     const overlay = f ? f.detail : facts ? `${cap(facts)}.` : "See it before the weekend.";
     ad = {
       pattern,
+      name: f ? cap(f.name.replace(/^the /, "")) : "The details",
       overlay,
       kicker: kickerFor(l, moment, where || "Just listed"),
       headline: fit(f ? `${cap(f.name.replace(/^the /, ""))}${where ? " in " + where : ""}` : `Just listed${where ? " in " + where : ""}`, 40),
@@ -133,6 +137,7 @@ export function writeVersion(pattern, ctx, opts = {}) {
     const momentOverlay = moment === "price" ? `Now ${shortPrice(l.price)}.` : moment === "sold" ? "Just sold." : moment === "open_house" ? "Open house." : "Just listed.";
     ad = {
       pattern: "facts",
+      name: moment === "price" ? "New price" : moment === "open_house" ? "Open house" : moment === "sold" ? "Just sold" : l.price ? `${shortPrice(l.price)}${where && where.length < 16 ? ` in ${where}` : ""}` : "The numbers",
       overlay: momentOverlay,
       kicker: facts || cap(type),
       headline: fit([shortPrice(l.price), where].filter(Boolean).join(" in ") || `New ${type}`, 40),
@@ -150,6 +155,7 @@ export function writeVersion(pattern, ctx, opts = {}) {
   const primary = polish(cleanWording(sentence([...ad.body, ctaLine])));
   return {
     pattern: ad.pattern,
+    name: polish(ad.name),
     headline: polish(cleanWording(ad.headline)),
     overlay: polish(cleanWording(ad.overlay)),
     kicker: polish(ad.kicker || ""),
@@ -159,11 +165,16 @@ export function writeVersion(pattern, ctx, opts = {}) {
   };
 }
 
+// The built-in writer, for when no model is there or it failed: count ads (up to 3 ideas,
+// then the same ideas from another angle), numbered from opts.from.
 export function writeSet(ctx, opts = {}) {
   const used = new Set();
-  return ["life", "feature", "facts"].map((pattern, i) => ({
-    version: i + 1,
-    ...writeVersion(pattern, ctx, { ...opts, usedPhotos: used }),
+  const count = opts.count || 3;
+  const from = opts.from || 1;
+  const order = ["life", "feature", "facts"];
+  return Array.from({ length: count }, (_, i) => ({
+    version: from + i,
+    ...writeVersion(order[(from - 1 + i) % 3], ctx, { ...opts, angle: (opts.angle || 0) + Math.floor((from - 1 + i) / 3), usedPhotos: used }),
   }));
 }
 

@@ -13,7 +13,7 @@ import {
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
-import { PATTERNS, MOMENTS } from "./writer.js";
+import { KIND_NAMES, MOMENTS } from "./writer.js";
 import { PHOTO_LABELS, formatPrice, factsLine } from "./listing.js";
 import { notifyFounder } from "./notify.js";
 import { checkWording } from "./fairhousing.js";
@@ -126,7 +126,7 @@ app.get("/api/me", async (request) => {
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
     admin: isAdmin(request.user),
     ai: aiEnabled,
-    patterns: PATTERNS,
+    kinds: KIND_NAMES,
     moments: MOMENTS,
     photoLabels: PHOTO_LABELS,
   };
@@ -268,7 +268,7 @@ async function listingPayload(ws, id) {
   ]);
   for (const m of messages) m.data = m.data ? JSON.parse(m.data) : null;
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n), suggestion: suggestionFor(ws, listing, ads, messages, ws.plan === "paid" || (await adsMade(ws.id)) + 3 <= FREE_AD_LIMIT) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n), suggestion: suggestionFor(ws, listing, ads, messages, ws.plan === "paid" || (await adsMade(ws.id)) + 1 <= FREE_AD_LIMIT) };
 }
 
 app.get("/api/listings/:id", async (request, reply) => {
@@ -312,11 +312,11 @@ app.patch("/api/listings/:id", async (request, reply) => {
 app.post("/api/listings/:id/messages", async (request, reply) => {
   const text = clean(request.body?.text, 2000);
   if (!text) return reply.code(400).send({ error: "Say something first." });
-  const selected = [1, 2, 3].includes(request.body?.version) ? request.body.version : 1;
+  const selected = [1, 2, 3, 4, 5].includes(request.body?.version) ? request.body.version : 1;
   const r = await handleMessage(request.ws, request.params.id, text, selected);
   if (!r) return reply.code(404).send({ error: "No such listing." });
   // focus: the version the conversation is now about, so the app can switch to it.
-  return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3].includes(r.focus) ? r.focus : null };
+  return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null };
 });
 
 // Several at once, from Select on the Listings page.
@@ -337,7 +337,7 @@ app.delete("/api/listings/:id", async (request, reply) => {
 app.patch("/api/listings/:id/style", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
   if (!listing) return reply.code(404).send({ error: "No such listing." });
-  const versions = (Array.isArray(request.body?.versions) ? request.body.versions : [1, 2, 3]).map(Number).filter((v) => [1, 2, 3].includes(v));
+  const versions = (Array.isArray(request.body?.versions) ? request.body.versions : [1, 2, 3, 4, 5]).map(Number).filter((v) => [1, 2, 3, 4, 5].includes(v));
   const step = Number(request.body?.sizeStep) || 0;
   await restyle(request.ws, listing, versions, request.body?.style || {}, Math.max(-0.3, Math.min(0.3, step)));
   return listingPayload(request.ws, listing.id);
@@ -355,7 +355,7 @@ app.post("/api/listings/:id/run", async (request, reply) => {
   if (!listing) return reply.code(404).send({ error: "No such listing." });
   const { versions, budget, days, confirm } = request.body || {};
   if (confirm) await confirmRun(request.ws, listing.id, confirm);
-  else await proposeRun(request.ws, listing, { versions: Array.isArray(versions) && versions.length ? versions : [1, 2, 3], budget, days });
+  else await proposeRun(request.ws, listing, { versions: Array.isArray(versions) && versions.length ? versions : [1, 2, 3, 4, 5], budget, days });
   return listingPayload(request.ws, listing.id);
 });
 
@@ -370,7 +370,7 @@ app.get("/api/inbox", async (request) => ({ items: await inbox(request.ws) }));
 
 app.get("/api/leads", async (request) => {
   const leads = await all(
-    `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern FROM leads
+    `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern, ads.name AS ad_name FROM leads
      JOIN listings ON listings.id = leads.listing_id LEFT JOIN ads ON ads.id = leads.ad_id
      WHERE leads.workspace_id = ? ORDER BY leads.created_at DESC LIMIT 500`,
     [request.ws.id]

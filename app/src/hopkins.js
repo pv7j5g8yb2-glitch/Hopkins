@@ -5,11 +5,12 @@
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
 import { parseListingText, readLink, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
-import { writeSet, writeVersion, polish, polishChat, PATTERNS, MOMENTS } from "./writer.js";
+import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
+import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS } from "./style.js";
-import { aiEnabled, provider, readListingAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
+import { aiEnabled, provider, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
 // needs real understanding gets an honest "give me a moment" instead of "I didn't follow".
@@ -42,7 +43,7 @@ export async function loadListing(workspaceId, id) {
 
 export async function loadPhotos(listingId, withThumb = false) {
   return all(
-    `SELECT id, label, position${withThumb ? ", thumb" : ""} FROM photos WHERE listing_id = ? AND kind = 'listing' ORDER BY position, created_at`,
+    `SELECT id, label, seen, position${withThumb ? ", thumb" : ""} FROM photos WHERE listing_id = ? AND kind = 'listing' ORDER BY position, created_at`,
     [listingId]
   );
 }
@@ -70,7 +71,7 @@ async function snapshot(listing, versions) {
   const ads = await currentAds(await loadListing(listing.workspace_id, listing.id));
   return ads
     .filter((a) => !versions || versions.includes(a.version))
-    .map(({ version, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }) => ({ version, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }));
+    .map(({ version, name, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }) => ({ version, name, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }));
 }
 
 const say = (ws, listingId, body, kind = "text", data = null, needsAction = false) => postMessage(ws.id, listingId, "hopkins", kind, body, data, needsAction);
@@ -113,7 +114,7 @@ export async function newChat(ws, history) {
   const options =
     intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos whenever you're ready."]
     : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`]
-    : intent.kind === "question" && intent.topic === "help" ? [`I make 3 different ads for each listing so you can test them against each other. You change them with me here, and nothing runs until you say yes. ${ask}`]
+    : intent.kind === "question" && intent.topic === "help" ? [`I make ads for each listing, each a different idea, so you can test them against each other. You change them with me here, and nothing runs until you say yes. ${ask}`]
     : intent.kind === "thanks" ? ["Any time."]
     : [`I need a listing to start. ${ask}`, `I didn't catch a listing in that. Paste the link or add the photos and I'll take it from there.`];
   return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
@@ -134,7 +135,7 @@ export function suggestionFor(ws, listing, ads, messages, canMakeMore = true) {
   // A fresh set (maybe with a wording note after it) since the agent last spoke.
   const sinceAgent = messages.slice(messages.findLastIndex((m) => m.role === "agent") + 1);
   const options = sinceAgent.some((m) => m.kind === "ads")
-    ? ["Which one would you pick?", "Make version 1 shorter", "Use a different photo"]
+    ? ["Which one would you pick?", "Make the first one shorter", "Use a different photo"]
     : ["Make it shorter", "Try another angle", "Use a different photo", "Make it warmer", ...(isPaid(ws) ? ["Run it"] : [])];
   return options.find(ok) || "";
 }
@@ -214,14 +215,20 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   // With a model, it reads the listing and labels the photos better than the rules can.
   let missing = null;
   if (aiEnabled) {
-    const photos = await loadPhotos(id, true);
+    let photos = await loadPhotos(id, true);
+    // Groq's text model can't see; its vision model notes what's in the first photos, so the
+    // ads can lead with what's really there.
+    const seen = await seePhotosAI(photos);
+    for (const p of seen || []) await run(`UPDATE photos SET label = COALESCE(?, label), seen = ? WHERE id = ?`, [p.label, p.seen || null, p.id]);
+    if (seen) photos = await loadPhotos(id, true);
     const r = await readListingAI({ text: rest, linkInfo, photos });
     if (r) {
       const patch = {};
       for (const k of LISTING_FIELDS) if (r.listing[k] && !(typeof r.listing[k] === "number" && r.listing[k] <= 0)) patch[k] = r.listing[k];
       if (r.listing.features?.length) patch.features = [...new Set([...(listing.features || []), ...r.listing.features])];
       await patchListing(ws.id, id, patch);
-      for (const [i, label] of (r.photo_labels || []).entries()) if (photos[i]) await run(`UPDATE photos SET label = ? WHERE id = ?`, [label, photos[i].id]);
+      for (const [i, label] of (r.photo_labels || []).entries()) if (photos[i] && label) await run(`UPDATE photos SET label = ? WHERE id = ?`, [label, photos[i].id]);
+      for (const [i, note] of (r.photo_notes || []).entries()) if (photos[i] && note) await run(`UPDATE photos SET seen = ? WHERE id = ?`, [String(note).slice(0, 160), photos[i].id]);
       missing = r.missing || null;
     }
   }
@@ -232,7 +239,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
     return fresh;
   }
   if (!missing && !fresh.price) missing = "What's the asking price?";
-  await makeAds(ws, fresh, "new", {}, { note: missing });
+  await makeAds(ws, fresh, "new", {}, { note: missing, count: countFrom(rest) });
   return fresh;
 }
 
@@ -250,12 +257,19 @@ export async function patchListing(workspaceId, id, patch) {
 
 // ---------- making ads ----------
 
-function introFor(moment, listing) {
+const NAMES = (ads) => {
+  const n = ads.map((a) => `**${a.name || `Ad ${a.version}`}**`);
+  return n.length > 1 ? `${n.slice(0, -1).join(", ")} and ${n.at(-1)}` : n[0] || "";
+};
+function introFor(moment, listing, ads = []) {
   const where = listing.address || listing.area || "this listing";
-  if (moment === "price") return `The price changed on ${where}, so here are 3 new price ads. A new price gives people who scrolled past a reason to look again.`;
-  if (moment === "open_house") return `Here are 3 open house ads for ${where}${listing.open_house ? `, ${listing.open_house}` : ""}. Run them in the days before it.`;
-  if (moment === "sold") return `Sold, nice. Here are 3 just sold ads for ${where}. They're for people nearby who might sell next.`;
-  return `Here are 3 ads for ${where}, each a different idea so the test tells you something: ${PATTERNS.life.name.toLowerCase()}, ${PATTERNS.feature.name.toLowerCase()} and ${PATTERNS.facts.name.toLowerCase()}. Tell me what to change, or press Run it.`;
+  const count = ads.length === 1 ? "an ad" : `${ads.length} ads`;
+  if (moment === "price") return `The price changed on ${where}, so here ${ads.length === 1 ? "is" : "are"} ${count} for the new price: ${NAMES(ads)}. A new price gives people who scrolled past a reason to look again.`;
+  if (moment === "open_house") return `Here ${ads.length === 1 ? "is" : "are"} ${count} for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}: ${NAMES(ads)}. Run them in the days before it.`;
+  if (moment === "sold") return `Sold, nice. Here ${ads.length === 1 ? "is" : "are"} ${count} for people nearby who might sell next: ${NAMES(ads)}.`;
+  return ads.length === 1
+    ? `Here's an ad for ${where}: ${NAMES(ads)}. Tell me what to change, or press Run it.`
+    : `Here are ${count} for ${where}, each a different idea so the test tells you something: ${NAMES(ads)}. Tell me what to change, or press Run it.`;
 }
 
 // The model's style for one ad: "" and 0 mean "leave it", "default" means "back to the brand".
@@ -272,7 +286,7 @@ function modelStyle(st, message, { filter = true } = {}) {
 
 // What really changed on each version, in words, plus any colour left out because it wouldn't
 // read. Versions with the same change are said together.
-function sayChanges(items, unreadable = {}, brandBg = "#1F2A36") {
+function sayChanges(items, unreadable = {}, brandBg = "#1F2A36", ads = []) {
   const groups = [];
   for (const { version, before = {}, after = {} } of items) {
     const changes = {};
@@ -287,12 +301,20 @@ function sayChanges(items, unreadable = {}, brandBg = "#1F2A36") {
     if (g) g.versions.push(version);
     else groups.push({ key, versions: [version], changes, step });
   }
-  const lines = groups.map((g) => `${VERSION_WORD(g.versions)} now ${g.versions.length > 1 ? "have" : "has"} ${sayLook(g.changes, g.step)}.`);
+  const lines = groups.map((g) => `${VERSION_WORD(g.versions, ads)} now ${g.versions.length > 1 ? "have" : "has"} ${sayLook(g.changes, g.step)}.`);
   for (const [v, list] of Object.entries(unreadable)) {
     const bg = items.find((i) => i.version === Number(v))?.after?.bg;
-    for (const [k, col] of list) lines.push(`I left the ${k === "text" ? "text" : "label"} colour on version ${v} as it was, because ${colourName(col)} wouldn't be readable on ${bg ? colourName(bg) : "that background"}. A ${contrast(bg || brandBg, "#FFFFFF") > contrast(bg || brandBg, "#000000") ? "lighter" : "darker"} one will work.`);
+    for (const [k, col] of list) lines.push(`I left the ${k === "text" ? "text" : "label"} colour on ${VERSION_WORD([Number(v)], ads).replace(/^Ad /, "ad ")} as it was, because ${colourName(col)} wouldn't be readable on ${bg ? colourName(bg) : "that background"}. A ${contrast(bg || brandBg, "#FFFFFF") > contrast(bg || brandBg, "#000000") ? "lighter" : "darker"} one will work.`);
   }
   return lines.join(" ");
+}
+
+// An ad's name in sentence case ("Porch Life" becomes "Porch life"); place names, prices and
+// acronyms keep their capitals.
+function adName(raw, keep = []) {
+  const words = polish(String(raw || "")).replace(/[.!]$/, "").slice(0, 28).split(" ").filter(Boolean);
+  const titled = words.length > 1 && words.slice(1).every((w) => /^[A-Z$0-9]/.test(w));
+  return words.map((w, i) => (i && titled && /^[A-Z][a-z]/.test(w) && !keep.includes(w) ? w.toLowerCase() : w)).join(" ");
 }
 
 function normalizeAI(ad, photos, fallback, message = "") {
@@ -300,46 +322,109 @@ function normalizeAI(ad, photos, fallback, message = "") {
   const clean = (s, max) => polish(cleanWording(String(s || ""))).slice(0, max);
   return {
     style: mergeStyle(fallback.style || {}, modelStyle(ad.style, message)),
+    name: adName(ad.name) || fallback.name || "",
+    pattern: KINDS.includes(ad.kind) ? ad.kind : fallback.pattern || "other",
     headline: clean(ad.headline, 60) || fallback.headline,
     primary_text: clean(ad.primary_text, 600) || fallback.primary_text,
-    overlay: clean(ad.overlay, 60) || fallback.overlay,
+    overlay: (clean(ad.overlay, 60).replace(/([^.!?])$/, "$1.")) || fallback.overlay,
     kicker: clean(ad.kicker, 50) || fallback.kicker || "",
     photo_id: photo ? photo.id : fallback.photo_id,
   };
+}
+
+// The ad with anything not backed by the facts taken out: a line on the photo or headline that
+// claims something new goes back to the fallback's, a sentence that does is dropped.
+function guarded(next, fallback, ctx) {
+  const problems = factProblems(next, ctx);
+  if (!problems.length) return next;
+  const out = { ...next };
+  for (const f of ["overlay", "headline", "kicker"]) if (problems.some((p) => p.field === f)) out[f] = fallback[f] || "";
+  out.primary_text = withoutProblems(next.primary_text, problems) || fallback.primary_text;
+  return out;
+}
+
+// What the fact check said about a set, for asking the writer to fix it.
+function setProblems(ads, ctx) {
+  return ads
+    .map((a) => ({ a, problems: factProblems(a, ctx) }))
+    .filter((x) => x.problems.length)
+    .map(({ a, problems }) => `ad ${a.version}: ${[...new Set(problems.map((p) => p.why))].join("; ")}`)
+    .join(". ");
+}
+
+// A set written by the model, checked, fixed once if needed, and laid over the built-in
+// writer's set (used for anything the model left out or got wrong). Returns { ads, reply }.
+async function writtenSet(ctx, built, { count, brief = "", keep = [], extra = "" } = {}) {
+  const guardCtx = { listing: ctx.listing, photos: ctx.photos, extra, oldPrice: ctx.extra?.oldPrice };
+  let r = await writeSetAI({ ...ctx, count, brief, keep });
+  if (r && r.ads.length) {
+    const fix = setProblems(r.ads, guardCtx);
+    if (fix) {
+      const again = await writeSetAI({ ...ctx, count, brief, keep, fix });
+      if (again && again.ads.length >= r.ads.length && setProblems(again.ads, guardCtx).length <= fix.length) r = again;
+    }
+  }
+  if (!r || !r.ads.length) return { ads: built, reply: null };
+  const ads = built.map((b, i) => {
+    const a = r.ads.find((x) => x.version === b.version) || r.ads[i];
+    return a ? { ...b, ...guarded({ ...b, ...normalizeAI(a, ctx.photos, b) }, b, guardCtx), version: b.version } : b;
+  });
+  return { ads, reply: r.reply ? polishChat(r.reply) : null };
+}
+
+// How many ads the agent asked for in so many words ("just one ad", "two ads"), else null.
+function countFrom(text) {
+  const m = String(text || "").toLowerCase().match(/\b(one|single|1|two|2|three|3|four|4|five|5)\s+(new\s+|more\s+|different\s+)?(ad|ads|version|versions|options?)\b/);
+  if (!m) return null;
+  return { one: 1, single: 1, 1: 1, two: 2, 2: 2, three: 3, 3: 3, four: 4, 4: 4, five: 5, 5: 5 }[m[1]];
 }
 
 async function saveAd(ws, listing, moment, version, ad, existing) {
   const now = nowIso();
   if (existing) {
     await run(
-      `UPDATE ads SET pattern = ?, headline = ?, primary_text = ?, overlay = ?, kicker = ?, cta = ?, photo_id = ?, style = ?, revision = revision + 1, updated_at = ? WHERE id = ?`,
-      [ad.pattern || existing.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker || "", ad.cta || existing.cta, ad.photo_id || null, JSON.stringify(ad.style || existing.style || {}), now, existing.id]
+      `UPDATE ads SET name = ?, pattern = ?, headline = ?, primary_text = ?, overlay = ?, kicker = ?, cta = ?, photo_id = ?, style = ?, revision = revision + 1, updated_at = ? WHERE id = ?`,
+      [ad.name || existing.name || null, ad.pattern || existing.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker || "", ad.cta || existing.cta, ad.photo_id || null, JSON.stringify(ad.style || existing.style || {}), now, existing.id]
     );
     return existing.id;
   }
   const id = randomUUID();
   await run(
-    `INSERT INTO ads (id, workspace_id, listing_id, version, moment, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [id, ws.id, listing.id, version, moment, ad.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker || "", ad.cta || "Learn more", ad.photo_id || null, JSON.stringify(ad.style || {}), now, now]
+    `INSERT INTO ads (id, workspace_id, listing_id, version, moment, name, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id, ws.id, listing.id, version, moment, ad.name || null, ad.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker || "", ad.cta || "Learn more", ad.photo_id || null, JSON.stringify(ad.style || {}), now, now]
   );
   return id;
 }
 
-export async function makeAds(ws, listing, moment = "new", extra = {}, { note = null, aiSet = null } = {}) {
+// Rewrites the ads a listing has, keeping each one's idea and name, for new facts, a new price
+// or an open house. The model does it when it can; the built-in writer otherwise.
+async function rewriteAds(ws, listing, ads, photos, why, extra = {}) {
+  const ctx = { listing, photos, brand: ws.brand, moment: listing.moment, extra };
+  const built = ads.map((ad) => ({ ...ad, ...applyOverrides(writeVersion(ad.pattern, ctx, { ...ad.style, photoId: ad.photo_id }), ad.style), name: ad.name, version: ad.version }));
+  const brief = `Rewrite these ${ads.length} ads, same numbers, keeping each one's idea and name, with ${why} worked in:\n${ads.map((a) => `${a.version} "${a.name || ""}": ${a.overlay} / ${a.headline} / ${a.primary_text}`).join("\n")}`;
+  const { ads: next } = aiEnabled ? await writtenSet(ctx, built, { count: ads.length, brief }) : { ads: built };
+  for (const ad of ads) {
+    const n = next.find((x) => x.version === ad.version);
+    if (n) await saveAd(ws, listing, listing.moment, ad.version, { ...ad, ...n, style: ad.style, photo_id: ad.photo_id }, ad);
+  }
+}
+
+// A new set of ads for a listing: count of them (3 unless the agent asked otherwise), each its
+// own idea. brief is what the agent asked for, if anything.
+export async function makeAds(ws, listing, moment = "new", extra = {}, { note = null, aiSet = null, count = null, brief = "" } = {}) {
   const existing = await all(`SELECT * FROM ads WHERE listing_id = ? AND moment = ? ORDER BY version`, [listing.id, moment]);
-  if (!existing.length && !(await canMake(ws, 3))) {
-    // On the free plan a new price or open house can't bring 3 more ads, but the 3 it has
+  const want = Math.max(1, Math.min(MAX_ADS, count || (aiSet?.ads?.length) || 3));
+  // Ads being rewritten in place were already counted; only new rows use up free ads.
+  const room = isPaid(ws) ? want : Math.min(want, FREE_AD_LIMIT - (await adsMade(ws.id)) + existing.length);
+  if (room < 1) {
+    // On the free plan a new price or open house can't bring more ads, but the ones it has
     // still get the new facts: changes to those are included.
     const current = await currentAds(listing);
     if (current.length && (moment === "price" || moment === "open_house")) {
-      const photos = await loadPhotos(listing.id);
-      const ctx = { listing, photos, brand: ws.brand, moment: listing.moment, extra };
-      for (const ad of current) {
-        const next = writeVersion(ad.pattern, ctx, { ...ad.style, photoId: ad.photo_id });
-        await saveAd(ws, listing, listing.moment, ad.version, { ...ad, ...applyOverrides(next, ad.style) }, ad);
-      }
-      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your 3 ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be 3 more, and that's the paid plan.`, "text", { snapshot: await snapshot(listing) });
+      const photos = await loadPhotos(listing.id, aiEnabled);
+      await rewriteAds(ws, listing, current, photos, moment === "price" ? "the new price" : "the open house", extra);
+      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be new ads, and that's the paid plan.`, "text", { snapshot: await snapshot(listing) });
     }
     // Asking again doesn't stack the same message; the app shows a short note instead.
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
@@ -357,26 +442,31 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
   }
   const photos = await loadPhotos(listing.id, aiEnabled);
   const ctx = { listing, photos, brand: ws.brand, moment, extra };
-  const built = writeSet(ctx);
+  const built = writeSet(ctx, { count: room });
+  // The model writes them (Claude or Groq), checked against the facts; the built-in writer
+  // only fills in when it can't. Until 2026-10-25 Groq's sets were thrown away for inventing
+  // details, which left every listing with the same three template ads.
   let set = built;
   let reply = null;
-  // Only Claude writes the first set. Groq's free model kept adding details the agent never gave
-  // (appliances, "historic charm") in live tests on 2026-10-24, and an ad that misdescribes a
-  // home is worse than a plainer one; the built-in writer uses only the facts given.
-  const r = aiSet || (provider === "claude" ? await writeSetAI(ctx) : null);
-  if (r?.ads?.length >= 3) {
-    set = built.map((b) => {
-      const a = r.ads.find((x) => x.version === b.version);
-      return a ? { ...b, ...normalizeAI(a, photos, b) } : b;
+  if (aiSet?.ads?.length) {
+    const guardCtx = { listing, photos, extra: brief, oldPrice: extra.oldPrice };
+    set = built.map((b, i) => {
+      const a = aiSet.ads[i];
+      return a ? { ...b, ...guarded({ ...b, ...normalizeAI(a, photos, b) }, b, guardCtx), version: b.version } : b;
     });
-    reply = r.reply ? polish(r.reply) : null;
+  } else if (aiEnabled) {
+    ({ ads: set, reply } = await writtenSet(ctx, built, { count: room, brief, extra: brief }));
   }
   for (const ad of set) {
     await saveAd(ws, listing, moment, ad.version, { ...ad, style: {} }, existing.find((e) => e.version === ad.version));
   }
+  // A smaller set than before: the extra ones go (and still count as made).
+  const extraOld = existing.filter((e) => e.version > set.length);
+  if (extraOld.length) await removeAds(ws, listing, extraOld);
+  if (room < want && !note) note = `That's ${room} of the ${want}: your free ads are used up after ${room === 1 ? "this one" : "these"}.`;
   await patchListing(ws.id, listing.id, { moment });
   await clearActions(listing.id);
-  const body = [reply || introFor(moment, listing), note].filter(Boolean).join(" ");
+  const body = [reply || introFor(moment, listing, set), note].filter(Boolean).join(" ");
   await say(ws, listing.id, body, "ads", { moment, snapshot: await snapshot(listing) }, true);
 
   // The agent's own description gets the same fair housing check as Hopkins' copy.
@@ -392,7 +482,63 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
 
 // ---------- the chat ----------
 
-const VERSION_WORD = (vs) => (vs.length === 3 ? "All three versions" : vs.length === 2 ? `Versions ${vs[0]} and ${vs[1]}` : `Version ${vs[0]}`);
+// The ads a reply is about, by name: "**Wraparound porch**", "Both ads", "All three ads".
+const NUMBER_WORDS = { 2: "two", 3: "three", 4: "four", 5: "five" };
+function VERSION_WORD(vs, ads = []) {
+  if (vs.length > 1 && ads.length && vs.length === ads.length) return vs.length === 2 ? "Both ads" : `All ${NUMBER_WORDS[vs.length] || vs.length} ads`;
+  const names = vs.map((v) => ads.find((a) => a.version === v)?.name).filter(Boolean);
+  if (names.length === vs.length && names.length) return NAMES(vs.map((v) => ads.find((a) => a.version === v)));
+  return vs.length === 1 ? `Ad ${vs[0]}` : `Ads ${vs.slice(0, -1).join(", ")} and ${vs.at(-1)}`;
+}
+
+// Takes ads out of a listing. They still count as made on the free plan.
+async function removeAds(ws, listing, gone) {
+  if (!gone.length) return;
+  await run(`UPDATE workspaces SET ads_removed = ads_removed + ? WHERE id = ?`, [gone.length, ws.id]);
+  for (const a of gone) await run(`DELETE FROM ads WHERE id = ? AND workspace_id = ?`, [a.id, ws.id]);
+}
+
+// More ads, or fewer, from the chat.
+async function changeSet(ws, listing, ads, photos, r, text) {
+  const reply = plainWords(r.reply);
+  if (r.action === "remove_ads") {
+    const gone = ads.filter((a) => r.remove.includes(a.version) || (!r.remove.length && a.version === r.version));
+    if (!gone.length) { await say(ws, listing.id, reply || "Which one should go?"); return {}; }
+    await removeAds(ws, listing, gone);
+    const left = ads.filter((a) => !gone.includes(a));
+    await say(ws, listing.id, reply || `Removed ${VERSION_WORD(gone.map((a) => a.version), gone)}.${left.length ? "" : " Tell me what to make instead whenever you like."}`);
+    return { focus: left[0]?.version };
+  }
+  // add_ads
+  const from = Math.max(0, ...ads.map((a) => a.version)) + 1;
+  const asked = countFrom(text) || Math.max(1, r.ads.filter((a) => !ads.some((x) => x.version === a.version)).length);
+  const n = Math.min(asked, MAX_ADS - ads.length);
+  if (n < 1) {
+    await say(ws, listing.id, `This listing has ${ads.length} ads, the most at once. Tell me which one to swap and what for, and I'll turn it into the new idea.`);
+    return {};
+  }
+  if (!(await canMake(ws, n))) {
+    const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
+    if (last && last.kind === "upgrade") return { upgrade: true, repeat: true };
+    await say(ws, listing.id, `${upgradeText("limit")} You can still turn any of these into a different idea, that's included.`, "upgrade", { reason: "limit" });
+    return { upgrade: true };
+  }
+  const ctx = { listing, photos, brand: ws.brand, moment: listing.moment || "new" };
+  const built = writeSet(ctx, { count: n, from });
+  const fresh = r.ads.filter((a) => !ads.some((x) => x.version === a.version)).slice(0, n);
+  let set;
+  let note = null;
+  if (fresh.length === n) {
+    const guardCtx = { listing, photos, extra: text };
+    set = built.map((b, i) => ({ ...b, ...guarded({ ...b, ...normalizeAI(fresh[i], photos, b) }, b, guardCtx), version: b.version }));
+  } else {
+    ({ ads: set, reply: note } = await writtenSet(ctx, built, { count: n, brief: text, keep: ads, extra: text }));
+  }
+  for (const ad of set) await saveAd(ws, listing, listing.moment || "new", ad.version, { ...ad, style: {} }, null);
+  const added = set.map((a) => a.version);
+  await say(ws, listing.id, (fresh.length === n && reply) || note || `Added ${VERSION_WORD(added, set)}.`, "text", { snapshot: await snapshot(listing, added) });
+  return { focus: added[0] };
+}
 
 export async function handleMessage(ws, listingId, text, selected = 1) {
   const listing = await loadListing(ws.id, listingId);
@@ -448,15 +594,16 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     const oldPrice = listing.price;
     if (r.moment === "sold") patch.status = "sold";
     await patchListing(ws.id, listing.id, patch);
-    const out = await makeAds(ws, await loadListing(ws.id, listing.id), r.moment, { oldPrice });
+    const out = await makeAds(ws, await loadListing(ws.id, listing.id), r.moment, { oldPrice }, { count: ads.length || 3 });
     return { ...out, focus };
   }
   if (r.action === "make_ads") {
     if (Object.keys(patch).length) await patchListing(ws.id, listing.id, patch);
     // makeAds writes its own message (the ads, or the upgrade note), so the model's
     // "making them now" isn't posted on top of it.
-    return makeAds(ws, await loadListing(ws.id, listing.id), listing.moment || "new");
+    return makeAds(ws, await loadListing(ws.id, listing.id), listing.moment || "new", {}, { count: countFrom(text), brief: text });
   }
+  if (r.action === "add_ads" || r.action === "remove_ads") return changeSet(ws, listing, ads, photos, r, text);
 
   if (Object.keys(patch).length) await patchListing(ws.id, listing.id, patch);
   const changed = [];
@@ -464,7 +611,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   // names, colours in the part the agent named them for, and nothing that wouldn't read.
   // When any of that overrides the model, its reply may describe the wrong thing, so Hopkins
   // says what actually changed instead.
-  const named = r.action === "revise" ? namedVersions(text) : null;
+  const named = r.action === "revise" ? namedVersions(text, ads) : null;
   const ruled = text ? readStyle(text.toLowerCase()) : null;
   const ruledColours = ruled && !ruled.vague ? Object.fromEntries(["bg", "accent", "text"].filter((k) => ruled.style[k]).map((k) => [k, ruled.style[k]])) : {};
   let overrode = false;
@@ -473,7 +620,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     const ad = ads.find((x) => x.version === a.version);
     if (!ad) continue;
     if (named && !named.includes(ad.version)) { overrode = true; continue; }
-    const next = normalizeAI(a, photos, ad, text);
+    const next = guarded({ ...ad, ...normalizeAI(a, photos, ad, text) }, ad, { listing: { ...listing, ...patch }, photos, extra: text });
     const wanted = modelStyle(a.style, text, { filter: false });
     const look = modelStyle(a.style, text);
     for (const k of ["bg", "accent", "text"]) {
@@ -511,24 +658,19 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   let lookReply = null;
   if ((overrode || Object.keys(unreadable).length) && changed.length && !copyChanged) {
     const after = await currentAds(listing);
-    lookReply = sayChanges(changed.map((v) => ({ version: v, before: ads.find((x) => x.version === v)?.style, after: after.find((x) => x.version === v)?.style })), unreadable, ws.brand?.primary) || null;
+    lookReply = sayChanges(changed.map((v) => ({ version: v, before: ads.find((x) => x.version === v)?.style, after: after.find((x) => x.version === v)?.style })), unreadable, ws.brand?.primary, ads) || null;
   }
   // New facts with no rewritten copy from the model: rewrite the ads so they carry them.
   let rewroteAll = false;
   if (r.action === "update_listing" && !changed.length && ads.length && Object.keys(patch).length) {
     rewroteAll = true;
-    const fresh = await loadListing(ws.id, listing.id);
-    const ctx = { listing: fresh, photos, brand: ws.brand, moment: fresh.moment };
-    for (const ad of ads) {
-      const next = writeVersion(ad.pattern, ctx, { ...ad.style, photoId: ad.photo_id });
-      await saveAd(ws, fresh, fresh.moment, ad.version, { ...ad, ...applyOverrides(next, ad.style) }, ad);
-    }
+    await rewriteAds(ws, await loadListing(ws.id, listing.id), ads, photos, `the new facts (${text})`);
   }
   const suggestion = plainWords(r.suggestion, polish).replace(/\.$/, "");
   const data = {};
   if (suggestion && !/\b(upgrade|paid plan|pay)\b/i.test(suggestion)) data.suggestion = suggestion;
   if (changed.length || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
-  await say(ws, listing.id, lookReply || reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
+  await say(ws, listing.id, lookReply || reply || (changed.length ? `${VERSION_WORD(changed, ads)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
   return { focus: changed.length === 1 ? changed[0] : focus };
 }
 
@@ -545,7 +687,7 @@ async function fresh(listingId, options) {
 }
 
 async function applyRules(ws, listing, ads, photos, text, selected) {
-  const intent = readIntent(text, { selected, photos });
+  const intent = readIntent(text, { selected, photos, ads });
   const sorted = [...photos].sort((a, b) => a.position - b.position);
   const v = intent.versions.length === 1 ? intent.versions[0] : selected;
   const ad = ads.find((a) => a.version === v);
@@ -553,19 +695,22 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
 
   if (intent.kind === "run") return proposeRun(ws, listing, { versions: intent.versions, budget: intent.budget, days: intent.days });
 
+  if (intent.kind === "remove" && ads.length) return changeSet(ws, listing, ads, photos, { action: "remove_ads", remove: intent.versions, ads: [], reply: "" }, text);
+  if (intent.kind === "add") return changeSet(ws, listing, ads, photos, { action: "add_ads", remove: [], ads: [], reply: "" }, text);
+
   if (intent.kind === "greeting") {
     const where = ads.length
-      ? `Your 3 versions are ready. Want a change to one, or shall I set them up to run?`
+      ? `Your ${ads.length === 1 ? "ad is" : `${ads.length} ads are`} ready. Want a change, or shall I set ${ads.length === 1 ? "it" : "them"} up to run?`
       : `Send me the price and the best thing about the home and I'll make the ads.`;
     await say(ws, listing.id, await fresh(listing.id, [`Hi${first ? ` ${first}` : ""}. ${where}`, where]));
     return {};
   }
 
   if (intent.kind === "select" && ads.length) {
-    const pattern = PATTERNS[ad?.pattern];
+    const called = VERSION_WORD([v], ads);
     await say(ws, listing.id, await fresh(listing.id, [
-      `Version ${v}${pattern ? `, ${pattern.name.toLowerCase()}` : ""}. What would you like changed on it?`,
-      `On version ${v} now. Tell me what to change, like "shorter" or "use the kitchen photo".`,
+      `${called}. What would you like changed on it?`,
+      `On ${called.replace(/^Ad /, "ad ")} now. Tell me what to change, like "shorter" or "use the kitchen photo".`,
     ]));
     return { focus: v };
   }
@@ -578,18 +723,18 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     const answers = {
       plan: `The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`,
       which: ads.length
-        ? "Nobody knows yet, me included. That's why there are three: they run side by side with the same budget, and the one that brings leads cheapest gets the rest. You'll see it in Monday's report."
-        : "Once the ads are made, the test decides. Three run side by side and the cheapest leads win.",
+        ? "Nobody knows yet, me included. That's why they're different ideas: they run side by side with the same budget, and the one that brings leads cheapest gets the rest. You'll see it in Monday's report."
+        : "Once the ads are made, the test decides. They run side by side and the cheapest leads win.",
       why: ad && WHY[ad.pattern]
-        ? `Version ${v} ${WHY[ad.pattern]}. The three are different on purpose, so the test teaches you something.`
-        : "Each version takes a different angle on the home, so the test shows which one buyers answer.",
+        ? `${VERSION_WORD([v], ads)} ${WHY[ad.pattern]}. The ads are different ideas on purpose, so the test teaches you something.`
+        : "Each ad takes a different idea about the home, so the test shows which one buyers answer.",
       download: isPaid(ws)
         ? "Yes. Tap the ··· menu at the top of the listing to download the version you're on as a feed or story image, or copy its text."
         : "Downloads are on the paid plan. On the free plan you get previews with the Hopkins name across them.",
       results: "Leads land in Leads the moment someone fills in the form, and every Monday you get a report: what ran, what it cost, and which version won. No numbers until ads have actually run.",
       help: ads.length
         ? `Tell me what to change on any version in plain words, like "make 2 warmer" or "use photo 3", and I'll do it. When you're happy, say run it.`
-        : "Send me a listing, a link, the details or photos, and I'll make three ads to test against each other.",
+        : "Send me a listing, a link, the details or photos, and I'll make ads to test against each other.",
       other: null,
     };
     const answer = answers[intent.topic];
@@ -661,7 +806,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
       : c.length === "short" ? "is shorter" : c.length === "long" ? "has more detail" : c.voice === "warm" ? "sounds warmer"
       : c.voice === "premium" ? "reads more premium" : c.voice === "plain" ? "is plainer" : "has a new angle";
     const flagged = [c.headline, c.overlay].filter(Boolean).flatMap((s) => checkWording(s));
-    let reply = `${VERSION_WORD(done)} ${done.length > 1 ? what.replace(/^is /, "are ").replace(/^has /, "have ").replace(/^sounds /, "sound ").replace(/^reads /, "read ") : what}.`;
+    let reply = `${VERSION_WORD(done, ads)} ${done.length > 1 ? what.replace(/^is /, "are ").replace(/^has /, "have ").replace(/^sounds /, "sound ").replace(/^reads /, "read ") : what}.`;
     if (flagged.length) reply += ` One flag: "${flagged[0].term}" ${flagged[0].why}, so I changed it${flagged[0].suggestion ? ` to "${flagged[0].suggestion}"` : ""}.`;
     await say(ws, listing.id, reply, "text", done.length ? { snapshot: await snapshot(listing, done) } : null);
     return {};
@@ -682,7 +827,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     const bg = first?.style?.bg || ws.brand?.primary || "#1F2A36";
     const why = dropped.length ? `I left the ${dropped.map((d) => (d === "text" ? "text" : "label")).join(" and ")} colour as it was, because ${dropped.map((d) => colourName(intent.style[d])).join(" and ")} wouldn't be readable on ${colourName(bg)}. A ${contrast(bg, "#FFFFFF") > contrast(bg, "#000000") ? "lighter" : "darker"} one will work.` : "";
     const changedAny = Object.keys(kept).length || intent.sizeStep;
-    const reply = [changedAny ? `${VERSION_WORD(done)} ${done.length > 1 ? "now have" : "now has"} ${sayLook(kept, intent.sizeStep)}.` : "", why].filter(Boolean).join(" ");
+    const reply = [changedAny ? `${VERSION_WORD(done, ads)} ${done.length > 1 ? "now have" : "now has"} ${sayLook(kept, intent.sizeStep)}.` : "", why].filter(Boolean).join(" ");
     await say(ws, listing.id, reply, "text", { snapshot: await snapshot(listing, done) });
     return { focus: done.length === 1 ? done[0] : undefined };
   }
@@ -717,7 +862,7 @@ function applyOverrides(ad, style = {}) {
 
 // ---------- running ----------
 
-export async function proposeRun(ws, listing, { versions = [1, 2, 3], budget, days } = {}) {
+export async function proposeRun(ws, listing, { versions = [1, 2, 3, 4, 5], budget, days } = {}) {
   if (!isPaid(ws)) {
     await say(ws, listing.id, upgradeText("run"), "upgrade", { reason: "run" });
     return { upgrade: true };
@@ -791,7 +936,7 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
 export async function weeklyReport(ws, days = 7) {
   const since = new Date(Date.now() - days * 86400_000).toISOString();
   const leads = await all(
-    `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern FROM leads
+    `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern, ads.name AS ad_name FROM leads
      JOIN listings ON listings.id = leads.listing_id LEFT JOIN ads ON ads.id = leads.ad_id
      WHERE leads.workspace_id = ? AND leads.created_at >= ? ORDER BY leads.created_at DESC`,
     [ws.id, since]

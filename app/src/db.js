@@ -160,7 +160,7 @@ await client.executeMultiple(`
 // Columns added after launch. CREATE TABLE above only applies to a brand new database, so
 // existing ones get them here; the catch makes it a no-op once the column exists.
 // ads_removed: ads on listings the agent deleted, so deleting a listing doesn't hand back free ads.
-for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE workspaces ADD COLUMN ads_removed INTEGER NOT NULL DEFAULT 0", "ALTER TABLE listings ADD COLUMN title TEXT"]) {
+for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE workspaces ADD COLUMN ads_removed INTEGER NOT NULL DEFAULT 0", "ALTER TABLE listings ADD COLUMN title TEXT", "ALTER TABLE ads ADD COLUMN name TEXT", "ALTER TABLE photos ADD COLUMN seen TEXT"]) {
   try { await client.execute(sql); } catch {}
 }
 

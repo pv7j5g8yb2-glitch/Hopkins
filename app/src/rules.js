@@ -59,23 +59,23 @@ export function readStyle(low) {
   return { style: clean, sizeStep };
 }
 
-const ORDINALS = { first: 1, "1st": 1, one: 1, second: 2, "2nd": 2, two: 2, third: 3, "3rd": 3, three: 3, last: 3 };
+const ORDINALS = { first: 1, "1st": 1, one: 1, second: 2, "2nd": 2, two: 2, third: 3, "3rd": 3, three: 3, fourth: 4, "4th": 4, fifth: 5, "5th": 5, last: 3 };
 
-export function targetVersions(text, selected) {
-  return namedVersions(text) || [selected || 1];
+export function targetVersions(text, selected, ads = []) {
+  return namedVersions(text, ads) || [selected || 1];
 }
 
 // The versions a message names ("version 2", "the first one", "all of them"), or null when it
 // names none.
-export function namedVersions(text) {
+export function namedVersions(text, ads = []) {
   const t = String(text || "").toLowerCase();
-  if (/\b(all|every|each)( of them| three| versions?| ads?)?\b|\bthem all\b/.test(t)) return [1, 2, 3];
+  // An ad called by its name ("the porch one", "make Under $650K shorter").
+  const byName = ads.filter((a) => a.name && a.name.length > 2 && t.includes(a.name.toLowerCase().replace(/^the /, ""))).map((a) => a.version);
+  if (/\b(all|every|each)( of them| three| versions?| ads?)?\b|\bthem all\b/.test(t)) return ads.length ? ads.map((a) => a.version) : [1, 2, 3, 4, 5];
   const found = new Set();
-  for (const m of t.matchAll(/\b(?:v|version|ad|number|option|#)\s?([123])\b/g)) found.add(Number(m[1]));
-  for (const m of t.matchAll(/\b(first|1st|second|2nd|third|3rd|last)\b(?= (one|version|ad|option))/g)) found.add(ORDINALS[m[1]]);
-  if (/\b(the life|lifestyle)\b/.test(t)) found.add(1);
-  if (/\b(the standout|standout)\b/.test(t)) found.add(2);
-  if (/\b(the facts)\b/.test(t)) found.add(3);
+  for (const m of t.matchAll(/\b(?:v|version|ad|number|option|#)\s?([1-5])\b/g)) found.add(Number(m[1]));
+  for (const m of t.matchAll(/\b(first|1st|second|2nd|third|3rd|fourth|4th|fifth|5th|last)\b(?= (one|version|ad|option))/g)) found.add(m[1] === "last" && ads.length ? Math.max(...ads.map((a) => a.version)) : ORDINALS[m[1]]);
+  for (const v of byName) found.add(v);
   return found.size ? [...found].sort() : null;
 }
 
@@ -89,19 +89,19 @@ const GREETING = /^(hi|hey|hello|hiya|heya|yo|howdy|sup|good (morning|afternoon|
 // version 2", "show me the second one", "what about 3".
 const FILLER = /\b(no|nope|i|meant|mean|said|say|the|show|me|go|to|switch|open|look|at|what|about|how|lets|let's|let|us|see|ok|okay|um|uh|sorry|actually|one|please|pls|version|v|ad|option|number|instead|then|and|on|back|wait|not|that|this|is|it|was|i'm|im|talking)\b/g;
 
-export function readIntent(text, { selected = 1, photos = [] } = {}) {
+export function readIntent(text, { selected = 1, photos = [], ads = [] } = {}) {
   const t = text.trim();
   const low = t.toLowerCase();
-  const versions = targetVersions(t, selected);
+  const versions = targetVersions(t, selected, ads);
   const intent = { versions, changes: {}, listingPatch: {}, kind: "unknown" };
 
   if (GREETING.test(low)) { intent.kind = "greeting"; return intent; }
 
   // Only a version, with nothing to change: switch to it. A bare "2" counts.
-  const bare = low.match(/^\W*([123])\W*$/) || low.match(/\b([123])\s*\??$/);
-  const named = bare || /\b(?:v|version|ad|number|option|#)\s?[123]\b|\b(first|second|third|last|1st|2nd|3rd) (one|version|ad|option)\b/.test(low);
+  const bare = low.match(/^\W*([1-5])\W*$/) || low.match(/\b([1-5])\s*\??$/);
+  const named = bare || /\b(?:v|version|ad|number|option|#)\s?[1-5]\b|\b(first|second|third|last|1st|2nd|3rd) (one|version|ad|option)\b/.test(low);
   if (named) {
-    const rest = low.replace(/\b(?:v|version|ad|number|option|#)\s?[123]\b/g, " ").replace(/\b(first|second|third|last|1st|2nd|3rd)\b/g, " ").replace(/\b[123]\b/g, " ").replace(FILLER, " ").replace(/[^a-z]/g, "");
+    const rest = low.replace(/\b(?:v|version|ad|number|option|#)\s?[1-5]\b/g, " ").replace(/\b(first|second|third|last|1st|2nd|3rd)\b/g, " ").replace(/\b[1-5]\b/g, " ").replace(FILLER, " ").replace(/[^a-z]/g, "");
     if (!rest) {
       intent.kind = "select";
       intent.versions = bare ? [Number(bare[1])] : versions;
@@ -116,7 +116,17 @@ export function readIntent(text, { selected = 1, photos = [] } = {}) {
     intent.kind = "run";
     if (budget && (days || /\bbudget|spend|over\b/.test(low))) intent.budget = Number(budget[1].replace(/,/g, ""));
     if (days) intent.days = Number(days[1]);
-    if (!/\b(v|version|ad|number|option)\s?[123]\b/.test(low) && !/\b(first|second|third|last) (one|version|ad)\b/.test(low)) intent.versions = [1, 2, 3];
+    if (!/\b(v|version|ad|number|option)\s?[1-5]\b/.test(low) && !/\b(first|second|third|last) (one|version|ad)\b/.test(low)) intent.versions = [1, 2, 3, 4, 5];
+    return intent;
+  }
+
+  // Fewer ads, or more.
+  if (/\b(delete|remove|get rid of|drop|bin|lose|scrap)\b/.test(low) && /\b(ad|ads|version|one|it|this|that)\b/.test(low) && !/\b(word|words|line|sentence|emoji|photo|picture|label|price|listing)\b/.test(low)) {
+    intent.kind = "remove";
+    return intent;
+  }
+  if (/\b(another|one more|an extra|a new|add (an?|one|another))\s+(ad|version)\b|\bmore ads\b|\b(two|2|three|3) more\b/.test(low)) {
+    intent.kind = "add";
     return intent;
   }
 

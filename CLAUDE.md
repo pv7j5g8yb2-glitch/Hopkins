@@ -152,6 +152,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   (same as Claude and ChatGPT). Started on the bottom tab bar only, so Ismael can judge it against
   Apple's before it spreads. It has to match Apple's, not be a cheap copy.
 
+* **Ads are never a fixed set (Ismael, 2026-10-25):** no set names like "The life / The standout /
+  The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
+  its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the
+  failure to avoid.
 * **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name
   across the middle, no downloads. Changes to those 3 are included. Asking for a 4th, or
   pressing "run it" on any ad, brings up the upgrade message in the chat.

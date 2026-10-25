@@ -806,12 +806,12 @@
           const key = `${m.id}:${a.version}`;
           S.snaps[key] = a;
           return `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
-            <img class="snap" data-snap="${key}" alt="Version ${a.version}" ${S.snapImg[key] ? `src="${S.snapImg[key]}"` : ""}><span><b>${a.version}</b> · ${esc(S.me.patterns[a.pattern]?.name || a.pattern)}</span></button>`;
+            <img class="snap" data-snap="${key}" alt="Version ${a.version}" ${S.snapImg[key] ? `src="${S.snapImg[key]}"` : ""}><span>${esc(a.name || "Ad " + a.version)}</span></button>`;
         }).join("")}</div>`);
       }
       if (m.kind === "ads" && m === lastAds && p.ads.length) {
         return wrap(`${text}<div class="vers ${reveal ? "reveal" : ""}">${p.ads.map((a) => `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
-          <canvas data-mini="${a.version}" width="1080" height="1350"></canvas><span><b>${a.version}</b> · ${esc(S.me.patterns[a.pattern]?.name || a.pattern)}</span></button>`).join("")}</div>`);
+          <canvas data-mini="${a.version}" width="1080" height="1350"></canvas><span>${esc(a.name || "Ad " + a.version)}</span></button>`).join("")}</div>`);
       }
       if (m.kind === "plan") {
         const d = m.data;
@@ -896,9 +896,12 @@
       <div class="cta"><span>${esc(ad.cta)}</span><span>›</span></div>
       <div class="cp" id="cp"><b>${esc(handle)}</b>${esc(short ? ad.primary_text.slice(0, 125).replace(/\s\S*$/, "") : ad.primary_text)}${short ? '<span class="more" data-act="more">… more</span>' : ""}</div></div>`;
     const story = `<div class="story"><canvas id="big" width="1080" height="1920"></canvas><div class="bar"><i></i></div><div class="who"><i class="ava" ${ava}></i>${esc(handle)} <span>Sponsored</span></div><div class="go">${esc(ad.cta)}</div></div>`;
-    const tabs = `<div class="seg" data-seg="ver">${p.ads.map((a) => `<button data-pick="${a.version}" class="${a.version === v ? "on" : ""}">${esc(S.me.patterns[a.pattern]?.name || "Version " + a.version)}</button>`).join("")}</div>`;
+    const tabs = `<div class="seg" data-seg="ver">${p.ads.map((a) => `<button data-pick="${a.version}" class="${a.version === v ? "on" : ""}">${esc(a.name || "Ad " + a.version)}</button>`).join("")}</div>`;
     const fmt = `<div class="seg" data-seg="fmt"><button data-fmt="feed" class="${S.format === "feed" ? "on" : ""}" title="Feed post">Feed</button><button data-fmt="story" class="${S.format === "story" ? "on" : ""}" title="Story">Story</button></div>`;
-    pv.innerHTML = `<div class="pvh">${tabs}${fmt}</div><div class="mbar">${tabs}${fmt}</div>
+    // On a phone the two formats are drawn as their shapes, so the ad names get the room.
+    const shape = (w, h) => `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><rect x="${10 - w / 2}" y="${10 - h / 2}" width="${w}" height="${h}" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
+    const fmtIcons = `<div class="seg fmt-icons" data-seg="fmt"><button data-fmt="feed" class="${S.format === "feed" ? "on" : ""}" aria-label="Feed post">${shape(12, 15)}</button><button data-fmt="story" class="${S.format === "story" ? "on" : ""}" aria-label="Story">${shape(9.5, 17)}</button></div>`;
+    pv.innerHTML = `<div class="pvh">${tabs}${fmt}</div><div class="mbar">${tabs}${fmtIcons}</div>
       <div class="stage" id="stage">${S.format === "feed" ? feed : story}<div class="dots">${p.ads.map((a) => `<i class="${a.version === v ? "on" : ""}"></i>`).join("")}</div></div>
       <div class="pvb">
         <div class="actrow lg"><button class="btn" data-act="run">Run it</button><button class="sec-btn" data-act="style" aria-label="Style">${ICON.brush}<span>Style</span></button>${paid() ? `<button class="sec-btn" data-act="dlmenu" aria-label="Download">${ICON.down}<span>Download</span></button>` : ""}</div>
@@ -943,7 +946,7 @@
       .concat(list.map((c) => `<button class="dot ${String(st[key] || "").toUpperCase() === c ? "on" : ""}" data-st="${key}" data-v="${c}" style="--c:${c}"></button>`)).join("")}
       <label class="dot pick" title="Any colour" style="--c:${esc(st[key] || "#888888")}"><input type="color" data-stpick="${key}" value="${esc(st[key] || brandColour || "#888888")}"></label></div>`;
     const chips = (key, opts, cur) => `<div class="stc">${opts.map(([v, label]) => `<button class="${cur === v ? "on" : ""}" data-st="${key}" data-v="${v}">${label}</button>`).join("")}</div>`;
-    return `<div class="st-head"><canvas class="st-prev" id="stPrev" width="1080" height="1350" aria-hidden="true"></canvas><b>Style</b><div class="seg st-who" data-seg="stwho"><button class="${S.styleAll ? "" : "on"}" data-stwho="one">Version ${ad.version}</button><button class="${S.styleAll ? "on" : ""}" data-stwho="all">All 3</button></div></div>
+    return `<div class="st-head"><canvas class="st-prev" id="stPrev" width="1080" height="1350" aria-hidden="true"></canvas><b>Style</b><div class="seg st-who" data-seg="stwho"><button class="${S.styleAll ? "" : "on"}" data-stwho="one">This ad</button><button class="${S.styleAll ? "on" : ""}" data-stwho="all">All ${S.current.ads.length}</button></div></div>
       <div class="st-row"><span>Layout</span>${chips("layout", [["fade", "Fade"], ["top", "Top"], ["split", "Split"], ["card", "Card"], ["frame", "Frame"]], layout)}</div>
       <div class="st-row"><span>Background</span>${sw("bg", SWATCH.bg, b.primary || "#1F2A36")}</div>
       <div class="st-row"><span>Label</span>${sw("accent", SWATCH.accent, b.accent || "#C8A96A")}</div>
@@ -1010,7 +1013,7 @@
     const tel = (n) => n.replace(/[^\d+]/g, "");
     const item = (x, i) => `<div class="lead ${x.status === "new" ? "new" : ""}" style="animation-delay:${Math.min(i, 8) * 0.04}s"><span class="av">${esc(x.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span>
       <div class="tx"><b>${esc(x.name)}</b><p>${esc(WANTS[x.wants] || x.wants)}${x.note ? `: "${esc(x.note)}"` : ""}</p>
-      <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? `${esc(S.me.patterns[x.pattern]?.name || "")} ad` : "Lead page"} · ${ago(x.created_at)}</div>
+      <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? esc(x.ad_name || `Ad ${x.version}`) : "Lead page"} · ${ago(x.created_at)}</div>
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
       <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1><p class="lede">${leads.length ? `${leads.length} in total${fresh ? `, ${fresh} new` : ""}. Tap to call or text.` : "Everyone who asks about a listing lands here."}</p></div>
@@ -1031,7 +1034,7 @@
     main.innerHTML = `${mtop("Report")}${skeleton()}`;
     const r = await api("/api/report");
     if (my !== current()) return;
-    const pats = S.me.patterns;
+    const pats = S.me.kinds || {};
     const most = Math.max(1, ...r.patterns.map((x) => x.leads || 0));
     const top = r.patterns.reduce((a, x) => ((x.leads || 0) > (a?.leads || 0) ? x : a), null);
     main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap">
@@ -1044,7 +1047,7 @@
           <input type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$ spent" data-spend="${x.id}" aria-label="Spend on ${esc(x.name)}"></div>`).join("")
         + `<p class="small" style="margin-top:10px">Spend fills in on its own once Meta is connected. Until then, type it in.</p>` : `<p class="small">No listings yet.</p>`}
       <h3>What's winning</h3>
-      ${r.patterns.length ? r.patterns.map((x) => `<div class="bar-row ${top && x === top && x.leads ? "win" : ""}"><span class="nm">${esc(pats[x.pattern]?.name || x.pattern)}</span><span class="track"><i style="width:${((x.leads || 0) / most) * 100}%"></i></span><span class="n">${x.leads || 0} ${x.leads === 1 ? "lead" : "leads"}</span></div>`).join("")
+      ${r.patterns.length ? r.patterns.map((x) => `<div class="bar-row ${top && x === top && x.leads ? "win" : ""}"><span class="nm">${esc(pats[x.pattern] || x.pattern)}</span><span class="track"><i style="width:${((x.leads || 0) / most) * 100}%"></i></span><span class="n">${x.leads || 0} ${x.leads === 1 ? "lead" : "leads"}</span></div>`).join("")
         : `<p class="small">Every ad you approve is recorded here with the leads it brought, so you can see which kind of ad wins.</p>`}
     </div></div>`;
     $$("[data-spend]").forEach((i) => i.addEventListener("change", async () => {
@@ -1275,6 +1278,11 @@
       lens.style.transform = `translateX(${x}px)`;
       lens.style.width = `${w}px`;
       S.segPos[key] = { x, w };
+      // A long row of names keeps the chosen one in view.
+      if (seg.scrollWidth > seg.clientWidth) {
+        if (x < seg.scrollLeft) seg.scrollLeft = x - 8;
+        else if (x + w > seg.scrollLeft + seg.clientWidth) seg.scrollLeft = x + w - seg.clientWidth + 8;
+      }
     }
   }
 
@@ -1374,7 +1382,7 @@
       else if (act === "run") {
         t.disabled = true;
         buzz(8);
-        const next = await api(`/api/listings/${l.id}/run`, { body: { versions: [1, 2, 3] } });
+        const next = await api(`/api/listings/${l.id}/run`, { body: { versions: S.current.ads.map((a) => a.version) } });
         $("#lv").classList.remove("showpv");
         drawListing(next);
         refreshSide();
@@ -1397,7 +1405,7 @@
         const v = S.selected[l.id];
         const idx = S.current.photos.findIndex((p) => p.id === t.dataset.use);
         buzz(6);
-        drawListing(await api(`/api/listings/${l.id}/messages`, { body: { text: `Use photo ${idx + 1} on version ${v}`, version: v } }), true);
+        drawListing(await api(`/api/listings/${l.id}/messages`, { body: { text: `Use photo ${idx + 1} on ad ${v}`, version: v } }), true);
       }
     } catch (err) {
       toast(err.message);

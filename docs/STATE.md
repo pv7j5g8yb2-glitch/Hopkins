@@ -168,6 +168,25 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* No more fixed three (2026-10-25, Ismael: "what if the user doesn't want any of the 3... the
+  entire process of the ads is way too generic"). Why it felt generic: on Groq the first ads were
+  never written by the model, only by fill in the blank templates (switched off 2026-10-24 after
+  Groq invented details), so every home got the same three skeletons, "The life", "The standout",
+  "The facts". Now: Hopkins sees the photos (Groq's free vision model), works out what's
+  different about the home and who'd buy it, picks ideas that fit, names each ad after its idea,
+  and makes 3 by default or what the agent asks for (1 to 5). The chat can add an ad, drop one or
+  turn one into a different idea. A fact check (`app/src/facts.js`) catches details from nowhere;
+  one rewrite, then the sentence goes. Free plan stays 3 ads in all; turning an ad into a new idea
+  is a change, so it's included. Tested live on Groq 2026-10-25 with a craftsman (photos), a
+  downtown condo and a fixer upper ("just one ad"): different ideas each time, nothing invented.
+  Still to judge on a real phone with real listings: how good the ideas are on gpt-oss-20b, the
+  backup model, which writes plainer than 120b.
+* Groq's real capacity (found 2026-10-25): each free model has about 200,000 tokens a DAY as well
+  as 8,000 a minute. The earlier estimate only counted requests. One new listing is about 5,000 to
+  8,000 text tokens plus about 5,500 for the photos; a chat turn 2,000 to 3,000. So the main model
+  covers roughly 25 to 40 new listings or 70 to 100 chat turns a day, then the backups take over
+  (`GROQ_BACKUP_MODELS`), then the built-in writer. Testing burns the same allowance as the live
+  site if both use the same key. The server logs tokens per call ("Groq <model>: N tokens").
 * Ad style (2026-10-25, Ismael: "the user can change everything in their style"): each ad has its
   own look in `ad.style` (`app/src/style.js` checks every change): background, label and text
   colour, font (modern or classic serif), layout (fade, top, split, card, frame), text size,

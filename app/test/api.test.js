@@ -267,7 +267,7 @@ test("the look of an ad: from the chat in plain words, and from the Style sheet"
   const l = await c("POST", "/api/listings", { text: DESCRIPTION });
   const id = l.json.listing.id;
   const m = await c("POST", `/api/listings/${id}/messages`, { text: "make all three green with a gold label", version: 1 });
-  assert.equal(m.json.messages.at(-1).body, "All three versions now have a green background and a gold label.");
+  assert.equal(m.json.messages.at(-1).body, "All three ads now have a green background and a gold label.");
   for (const a of m.json.ads) assert.deepEqual([a.style.bg, a.style.accent], ["#2F5D46", "#D7AE62"]);
   assert.equal(m.json.messages.at(-1).data.snapshot.length, 3);
   const f = await c("POST", `/api/listings/${id}/messages`, { text: "version 2: serif font and the text at the top", version: 1 });
