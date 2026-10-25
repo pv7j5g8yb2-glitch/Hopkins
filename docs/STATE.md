@@ -168,6 +168,10 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Run it on the free plan (2026-10-25, Ismael: the same upgrade note looped in the chat): it now
+  opens a plan card over the screen (bottom sheet on a phone) with the price points and Ask for
+  the paid plan, and nothing is posted to the chat. Make a new set past the free ads does the
+  same. Typing "run it" gets the note once; asking again opens the card instead.
 * Listing names (2026-10-25, Ismael): a listing with no name or address is "Untitled 1",
   "Untitled 2"... (`listings.untitled_no`, given in the order they came in, never reused), the
   same on Today, Listings and the chat. Listing cards and the Today card show only the name.

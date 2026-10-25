@@ -386,3 +386,19 @@ test("listings with no name or address are Untitled 1, Untitled 2, and keep thei
   const rows = (await c("GET", "/api/listings")).json.listings;
   assert.deepEqual(rows.map((l) => l.untitled_no).sort(), [2, 3]);
 });
+
+test("asking to run on the free plan says it once, then the app shows the plan card", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "runloop@ellery.test", password: "password123", invite: "EARLY1" });
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  const first = await c("POST", `/api/listings/${id}/messages`, { text: "run it", version: 1 });
+  assert.equal(first.json.messages.at(-1).kind, "upgrade");
+  assert.equal(first.json.upgrade, null);
+  const count = first.json.messages.filter((m) => m.kind === "upgrade").length;
+  for (let i = 0; i < 3; i++) {
+    const again = await c("POST", `/api/listings/${id}/messages`, { text: "run it", version: 1 });
+    assert.equal(again.json.upgrade, "run", "the app opens the card");
+    assert.equal(again.json.messages.filter((m) => m.kind === "upgrade").length, count, "no new note in the chat");
+  }
+});

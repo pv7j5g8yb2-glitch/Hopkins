@@ -381,6 +381,18 @@ a.row:hover{background:var(--hover)}
 .adm-act{display:flex;gap:8px;align-items:center}
 .adm-act select{font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--raise)}
 .fb-list{display:flex;flex-direction:column}
+.upsell{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 14px 6px;max-width:360px;margin:0 auto}
+.upsell-mark{width:44px;height:44px;margin-bottom:12px;animation:rise .6s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.8)}to{opacity:1;transform:none}}
+.upsell h3{font-size:26px;line-height:1.05;letter-spacing:-.04em;margin-bottom:8px}
+.upsell>p{color:var(--soft);font-size:15px;line-height:1.5;margin-bottom:14px}
+.upsell ul{list-style:none;text-align:left;width:100%;border-top:1px solid var(--line);margin-bottom:16px}
+.upsell li{font-size:14.5px;line-height:1.45;padding:9px 0 9px 22px;border-bottom:1px solid var(--line);position:relative;color:var(--soft)}
+.upsell li:before{content:"";position:absolute;left:4px;top:15px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.upsell li b{color:var(--ink);font-weight:600}
+.upsell .btn{width:100%;padding:14px 18px;font-size:16px}
+.upsell-done{color:var(--soft);font-size:14px;padding:10px 0}
+.pop .upsell-later,.upsell-later{margin-top:10px;padding:8px 14px;font-size:14px;width:auto;align-self:center;justify-content:center;background:none!important;color:var(--soft)}
 .fb{padding:14px 0;border-top:1px solid var(--line)}
 .fb p{white-space:pre-wrap;margin-bottom:4px}
 .rename input{flex:1;min-width:0;font-size:16px;padding:11px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--raise);color:var(--ink)}

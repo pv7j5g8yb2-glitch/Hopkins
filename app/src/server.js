@@ -392,7 +392,7 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
   const r = await handleMessage(request.ws, request.params.id, text, selected);
   if (!r) return reply.code(404).send({ error: "No such listing." });
   // focus: the version the conversation is now about, so the app can switch to it.
-  return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null };
+  return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null, upgrade: r.repeat ? r.reason || "run" : null };
 });
 
 // Several at once, from Select on the Listings page.

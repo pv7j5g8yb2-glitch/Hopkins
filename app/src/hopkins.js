@@ -448,7 +448,7 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
     }
     // Asking again doesn't stack the same message; the app shows a short note instead.
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
-    if (last && last.kind === "upgrade") return { upgrade: true, repeat: true };
+    if (last && last.kind === "upgrade") return { upgrade: true, repeat: true, reason: "limit" };
     if (!current.length) {
       const used = await get(`SELECT l.title, l.address, l.area, l.city, l.untitled_no FROM ads JOIN listings l ON l.id = ads.listing_id WHERE ads.workspace_id = ? AND l.id != ? ORDER BY ads.created_at LIMIT 1`, [ws.id, listing.id]);
       // Two listings can share a name; "your ads went on Miami" reads wrong on a listing called Miami.
@@ -900,6 +900,9 @@ function applyOverrides(ad, style = {}) {
 
 export async function proposeRun(ws, listing, { versions = [1, 2, 3, 4, 5], budget, days } = {}) {
   if (!isPaid(ws)) {
+    // Said once. Asking again opens the plan card in the app instead of the same note again.
+    const last = await get(`SELECT kind FROM messages WHERE listing_id = ? AND role = 'hopkins' ORDER BY created_at DESC LIMIT 1`, [listing.id]);
+    if (last && last.kind === "upgrade") return { upgrade: true, repeat: true, reason: "run" };
     await say(ws, listing.id, upgradeText("run"), "upgrade", { reason: "run" });
     return { upgrade: true };
   }

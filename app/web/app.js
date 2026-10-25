@@ -784,6 +784,24 @@
     if (next.focus && next.ads.some((a) => a.version === next.focus)) S.selected[l.id] = next.focus;
     drawListing(next);
     refreshSide();
+    // Asked again for something the free plan doesn't do: the card, not the same note again.
+    if (next.upgrade) upgradeSheet(next.upgrade);
+  }
+
+  // The paid plan, as a card over the screen: what Run it (or a new ad past the free 3) needs.
+  // It replaces posting the same upgrade note into the chat every time.
+  function upgradeSheet(reason = "run", anchor) {
+    const asked = S.me.workspace.brand.upgrade_requested;
+    const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : `That's your <span class="serif">3 free ads.</span>`;
+    const line = reason === "run"
+      ? "Putting ads in front of buyers is on the paid plan. Your ads stay here, ready."
+      : "New ads are on the paid plan. Changes to the ads you have stay free.";
+    openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
+      <img class="upsell-mark" src="/static/mark.svg" alt="">
+      <h3>${title}</h3><p>${line}</p>
+      <ul><li><b>From $${S.me.usage.priceFrom} a month</b>, and billing starts when your first ad goes live</li><li>Month to month, cancel any time</li><li>No cut of your ad spend</li><li>30% off the first year if you joined the waitlist</li></ul>
+      ${asked ? `<p class="upsell-done">Paid plan requested. You'll hear back soon.</p>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}
+      <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
 
   // Photos the agent sent, like Claude shows them: the images themselves on the right, outside
@@ -1515,9 +1533,10 @@
       else if (act === "more") { const ad = adFor(S.selected[l.id]); $("#cp").innerHTML = `<b>${esc(($("#cp b") || {}).textContent || "")}</b>${esc(ad.primary_text)}`; }
       else if (act === "photos") { S.showPhotos = !S.showPhotos; drawPreview(); }
       else if (act === "issues") { S.showIssues = !S.showIssues; drawPreview(); }
+      else if (act === "remake" && !paid() && S.me.usage.adsMade >= S.me.usage.freeLimit) upgradeSheet("limit");
       else if (act === "remake") {
         const before = S.current.messages.length;
-        toast(S.current.ads.length ? "Making 3 new versions…" : "Making the ads…");
+        toast(S.current.ads.length ? "Making a new set…" : "Making the ads…");
         S.fresh = l.id;
         const next = await api(`/api/listings/${l.id}/remake`, { body: {} });
         drawListing(next);
@@ -1530,6 +1549,7 @@
         // On a phone, tapping an ad card in the chat opens it big.
         if (t.dataset.open && phone()) showAds(true);
       } else if (t.dataset.fmt) { S.format = t.dataset.fmt; buzz(5); drawPreview(); }
+      else if (act === "run" && !paid()) { buzz(8); upgradeSheet("run", t); }
       else if (act === "run") {
         t.disabled = true;
         buzz(8);
@@ -1546,10 +1566,11 @@
       } else if (t.dataset.fill) { const ta = $("#ta"); ta.value = t.dataset.fill; ta.dispatchEvent(new Event("input")); ta.focus(); }
       else if (t.dataset.upgrade !== undefined) {
         t.disabled = true;
+        S.me.workspace.brand.upgrade_requested = new Date().toISOString();
         await api("/api/upgrade-request", { body: {} });
         await loadMe();
         t.textContent = "Requested";
-        toast("Sent. You'll get an email when your seat is ready.");
+        toast("Sent. You'll hear back soon");
       } else if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); buzz(6); toast(t.dataset.copied || "Link copied"); }
       else if (t.dataset.dl) { await download(t.dataset.dl); toast("Saved to your downloads"); }
       else if (t.dataset.use) {
