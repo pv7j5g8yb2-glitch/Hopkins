@@ -292,9 +292,12 @@ function conversation(history) {
   const out = [];
   for (const m of history.slice(-24)) {
     const role = m.role === "agent" ? "user" : "assistant";
-    if (!m.body) continue;
-    if (out.length && out[out.length - 1].role === role) out[out.length - 1].content += "\n\n" + m.body;
-    else out.push({ role, content: m.body });
+    // Photos sent without words still happened in the conversation.
+    const photos = (() => { try { return (typeof m.data === "string" ? JSON.parse(m.data) : m.data)?.photos?.length || 0; } catch { return 0; } })();
+    const body = m.body || (photos ? `(sent ${photos} ${photos === 1 ? "photo" : "photos"})` : "");
+    if (!body) continue;
+    if (out.length && out[out.length - 1].role === role) out[out.length - 1].content += "\n\n" + body;
+    else out.push({ role, content: body });
   }
   while (out.length && out[0].role !== "user") out.shift();
   return out;

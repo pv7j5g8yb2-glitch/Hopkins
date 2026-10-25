@@ -628,8 +628,7 @@
     async function create(text, files) {
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
-      const shown = files.length ? `<div class="ph">${S.pending.slice(0, 8).map((p) => `<i style="background-image:url(${p.url})"></i>`).join("")}</div>` : "";
-      $("#thread").insertAdjacentHTML("beforeend", `<div class="me in">${shown}<span class="tx">${esc(text || `${files.length} photos`)}</span></div>`);
+      $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>` : ""));
       // Only a message that looks like a listing shows the listing steps. Anything else ("Hello")
       // gets the thinking mark and a reply; the server decides for sure.
       const listingish = files.length || /https?:\/\/|\d|\b(bed|bath|sq|condo|house|home|cottage|villa|apartment|townhouse|pool|kitchen|garden|yard|listing for|just listed)/i.test(text);
@@ -745,6 +744,15 @@
     refreshSide();
   }
 
+  // Photos the agent sent, like Claude shows them: the images themselves on the right, outside
+  // the text bubble. One is shown big, two side by side, more in a grid with "+3" on the last.
+  function sentPhotos(urls, anim = "") {
+    if (!urls.length) return "";
+    const shown = urls.slice(0, 6);
+    const extra = urls.length - shown.length;
+    return `<div class="sent n${Math.min(shown.length, 3)}${anim}">${shown.map((u, i) => `<i style="background-image:url(${u})">${extra && i === shown.length - 1 ? `<b>+${extra}</b>` : ""}</i>`).join("")}</div>`;
+  }
+
   function messagesHtml(p, seen, reveal) {
     const lastAds = [...p.messages].reverse().find((m) => m.kind === "ads");
     let prev = null;
@@ -753,9 +761,12 @@
       const isFirst = prev !== m.role;
       prev = m.role;
       if (m.role === "agent") {
-        const ph = m.data && m.data.photos ? `<div class="ph">${m.data.photos.slice(0, 8).map((id) => `<i style="background-image:url(${photoUrl(id, true)})"></i>`).join("")}</div>` : "";
-        const long = m.body.length > 180;
-        return `<div class="me${anim}${long ? " clamp" : ""}">${ph}<span class="tx">${esc(m.body)}</span>${long ? `<button class="more-btn" data-act="expand">Show more</button>` : ""}</div>`;
+        const photos = m.data && m.data.photos ? sentPhotos(m.data.photos.map((id) => photoUrl(id, m.data.photos.length > 2)), anim) : "";
+        // Photos sent on their own have no words; older ones were saved as "New listing".
+        const body = photos && m.body === "New listing" ? "" : m.body;
+        if (!body) return photos;
+        const long = body.length > 180;
+        return `${photos}<div class="me${anim}${long ? " clamp" : ""}"><span class="tx">${esc(body)}</span>${long ? `<button class="more-btn" data-act="expand">Show more</button>` : ""}</div>`;
       }
       const mark = isFirst ? (anim ? MARK("settle") : `<img class="m" src="/static/mark.svg" alt="">`) : `<span class="m"></span>`;
       const wrap = (inner) => `<div class="hk${anim}">${mark}<div class="b">${inner}</div></div>`;

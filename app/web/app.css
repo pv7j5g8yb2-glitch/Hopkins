@@ -117,8 +117,16 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .thread{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 .thread .in{animation:up .32s var(--ease) both}
 .me{align-self:flex-end;max-width:min(480px,85%);background:#EFE8DC;border-radius:20px 20px 6px 20px;padding:10px 14px;font-size:15px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
-.me .ph{display:flex;gap:4px;margin:-2px -6px 8px;flex-wrap:wrap}
-.me .ph i{display:block;width:56px;height:42px;border-radius:8px;background:#ddd2c2 center/cover}
+/* photos the agent sent: the images themselves, right aligned, no bubble */
+.sent{align-self:flex-end;display:grid;gap:4px;max-width:min(330px,85%)}
+.sent+.me{margin-top:-10px}
+.sent.n1{grid-template-columns:1fr;width:min(240px,70%)}
+.sent.n2{grid-template-columns:1fr 1fr;width:min(280px,78%)}
+.sent.n3{grid-template-columns:repeat(3,1fr);width:min(300px,85%)}
+.sent i{position:relative;display:block;aspect-ratio:1;border-radius:14px;background:#ddd2c2 center/cover;box-shadow:0 0 0 1px var(--line)}
+.sent.n1 i{aspect-ratio:4/3;border-radius:18px}
+.sent i b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:inherit;background:rgba(42,15,20,.45);color:#fff;font-size:20px;font-weight:600}
+.sent.in{animation:up .35s var(--ease) both}
 .me.clamp .tx{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .me .more-btn{display:block;font-size:12.5px;color:var(--soft);margin-top:4px;text-decoration:underline;text-underline-offset:2px}
 .hk{display:flex;gap:11px;align-items:flex-start;font-size:15px;line-height:1.6;max-width:660px}

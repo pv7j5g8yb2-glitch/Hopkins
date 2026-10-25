@@ -166,7 +166,8 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
 
   for (const m of history) await postMessage(ws.id, id, m.role, "text", m.body);
   const shown = [rest, link].filter(Boolean).join("\n");
-  await postMessage(ws.id, id, "agent", "text", shown || "New listing", photoIds.length ? { photos: photoIds } : null);
+  // Photos sent on their own are just photos, with no made up words.
+  await postMessage(ws.id, id, "agent", "text", shown, photoIds.length ? { photos: photoIds } : null);
 
   // With a model, it reads the listing and labels the photos better than the rules can.
   let missing = null;
@@ -321,7 +322,7 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
   const photos = await loadPhotos(listing.id, aiEnabled);
 
   if (aiEnabled) {
-    const history = await all(`SELECT role, body FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
+    const history = await all(`SELECT role, body, data FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
     const plan = { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
     const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name });
     if (r) return applyAI(ws, listing, ads, photos, r, text);

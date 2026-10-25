@@ -164,6 +164,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Photos sent (2026-10-25, Ismael): shown like Claude, the images themselves on the right with no
+  bubble (one big, two side by side, more in a grid with "+N"), and a text bubble only if words were
+  typed. Photos sent alone are saved with no text (they used to say "New listing"; old ones still
+  render as photos only). The model sees "(sent 2 photos)" in the conversation.
 * Photos waiting to be sent (2026-10-25, Ismael): a tray inside the message box, like Claude or
   ChatGPT: a thumbnail each with × to remove, a + to add more, "3 photos ready to send", and a
   count badge on the photo button. Before, on the New listing screen after a first message, added
