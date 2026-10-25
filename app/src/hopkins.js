@@ -415,8 +415,9 @@ async function rewriteAds(ws, listing, ads, photos, why, extra = {}) {
 export async function makeAds(ws, listing, moment = "new", extra = {}, { note = null, aiSet = null, count = null, brief = "" } = {}) {
   const existing = await all(`SELECT * FROM ads WHERE listing_id = ? AND moment = ? ORDER BY version`, [listing.id, moment]);
   const want = Math.max(1, Math.min(MAX_ADS, count || (aiSet?.ads?.length) || 3));
-  // Ads being rewritten in place were already counted; only new rows use up free ads.
-  const room = isPaid(ws) ? want : Math.min(want, FREE_AD_LIMIT - (await adsMade(ws.id)) + existing.length);
+  // On the free plan a new set is new ads, even when it replaces the old ones, so it needs free
+  // ads left. Changes to existing ads stay included (they go through the chat, not here).
+  const room = isPaid(ws) ? want : Math.min(want, FREE_AD_LIMIT - (await adsMade(ws.id)));
   if (room < 1) {
     // On the free plan a new price or open house can't bring more ads, but the ones it has
     // still get the new facts: changes to those are included.
@@ -457,11 +458,15 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
   } else if (aiEnabled) {
     ({ ads: set, reply } = await writtenSet(ctx, built, { count: room, brief, extra: brief }));
   }
+  // Paid: a new set replaces the old ads in place, so their links (and the leads they bring)
+  // carry on. Free: the old ones go and still count, so a new set uses up free ads like any.
+  const reuse = isPaid(ws);
+  if (!reuse && existing.length) await removeAds(ws, listing, existing);
   for (const ad of set) {
-    await saveAd(ws, listing, moment, ad.version, { ...ad, style: {} }, existing.find((e) => e.version === ad.version));
+    await saveAd(ws, listing, moment, ad.version, { ...ad, style: {} }, reuse ? existing.find((e) => e.version === ad.version) : null);
   }
   // A smaller set than before: the extra ones go (and still count as made).
-  const extraOld = existing.filter((e) => e.version > set.length);
+  const extraOld = reuse ? existing.filter((e) => e.version > set.length) : [];
   if (extraOld.length) await removeAds(ws, listing, extraOld);
   if (room < want && !note) note = `That's ${room} of the ${want}: your free ads are used up after ${room === 1 ? "this one" : "these"}.`;
   await patchListing(ws.id, listing.id, { moment });
@@ -730,7 +735,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
         : "Each ad takes a different idea about the home, so the test shows which one buyers answer.",
       download: isPaid(ws)
         ? "Yes. Tap the ··· menu at the top of the listing to download the version you're on as a feed or story image, or copy its text."
-        : "Downloads are on the paid plan. On the free plan you get previews with the Hopkins name across them.",
+        : "Yes. Tap the ··· menu at the top of the listing, or Download under the ad, for the feed or story image, or copy its text.",
       results: "Leads land in Leads the moment someone fills in the form, and every Monday you get a report: what ran, what it cost, and which version won. No numbers until ads have actually run.",
       help: ads.length
         ? `Tell me what to change on any version in plain words, like "make 2 warmer" or "use photo 3", and I'll do it. When you're happy, say run it.`

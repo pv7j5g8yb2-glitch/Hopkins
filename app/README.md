@@ -43,9 +43,9 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
 * **Fair housing.** Every line (Hopkins' and the agent's) is checked; problem wording is
   rewritten before it reaches an ad, and the agent's own description gets flagged. Run plans
   use Meta's Housing category: no age, gender or ZIP targeting, 15 mile minimum radius.
-* **Free plan** (CLAUDE.md): 3 ads in all, previews only, the Hopkins mark across the middle, no
-  downloads. A 4th ad or "Run it" brings up the upgrade message. Price changes still update
-  the 3 free ads.
+* **Free plan** (CLAUDE.md): 3 ads in all, no watermark, downloadable. Changes to them are
+  included; any new ad after that (a new set too, and deleting never gives any back) or "Run it"
+  brings up the upgrade message. Price changes still update the 3 free ads.
 * **Paid plan.** Switched on by an admin (`ADMIN_EMAILS`) on the Admin page. Run it shows the
   plan first (budget, days, where, Housing category), then the yes. Until Meta is connected,
   paid accounts download the feed and story images and copy the text to post or boost it

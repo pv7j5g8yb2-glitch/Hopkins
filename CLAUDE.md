@@ -156,9 +156,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
   its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the
   failure to avoid.
-* **Free plan:** up to 3 ads made in the chat, previews only, the Hopkins logo and name
-  across the middle, no downloads. Changes to those 3 are included. Asking for a 4th, or
-  pressing "run it" on any ad, brings up the upgrade message in the chat.
+* **Free plan (Ismael, 2026-10-25):** 3 ads in all, the real thing: no watermark, and they can be
+  downloaded. Changes to those 3 are included. After that, strictly nothing new without upgrading
+  to a solo or team plan: no new set, no extra ad, no ads for another listing, and deleting a
+  listing or an ad never gives any back. Running any ad needs the paid plan too.
 * **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.

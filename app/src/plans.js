@@ -1,8 +1,8 @@
 // The free plan and the paid plan, as decided (see CLAUDE.md, "Product decisions").
 //
-// Free: up to 3 ads made in the chat, previews only, the Hopkins logo and name across the
-// middle, no downloads. Changes to those 3 are included. Asking for a 4th, or pressing
-// "run it" on any ad, brings up the upgrade message in the chat.
+// Free: 3 ads in all, with no watermark, and they can be downloaded. Changes to those 3 are
+// included. Any new ad after that (a new set, another ad, another listing's, even after deleting
+// one) or pressing "run it" brings up the upgrade message in the chat.
 // Paid: billing starts when the first ad goes live. Month to month, cancel any time, a flat
 // price with no cut of ad spend. From $299 a month.
 

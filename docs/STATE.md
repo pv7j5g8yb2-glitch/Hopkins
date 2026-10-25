@@ -168,6 +168,10 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Free plan changed (2026-10-25, Ismael): the 3 free ads are the real thing, no watermark and
+  downloadable. After them nothing new without upgrading: a new set on free now removes the old
+  ads (still counted) and needs free ads left, so it can't be used to get fresh ads for nothing.
+  On paid a new set still replaces the ads in place so their links keep crediting leads.
 * Pilot readiness check (2026-10-25, Ismael asked for an end to end look before real pilots).
   Fixed: on Render every request came through its proxy, so the brakes on sign up (10 per 10 min),
   sign in and the lead form (8 per 10 min) counted every visitor together; a busy hour of real

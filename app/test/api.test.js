@@ -345,3 +345,29 @@ test("feedback reaches Admin; limits count each visitor on their own behind the 
   assert.equal(res.headers["x-content-type-options"], "nosniff");
   assert.equal(res.headers["x-frame-options"], "DENY");
 });
+
+test("free plan: 3 ads in all, and nothing new after that, whatever gets deleted", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "strict@ellery.test", password: "password123", invite: "EARLY1" });
+  const me = async () => (await c("GET", "/api/me")).json.usage.adsMade;
+  // One ad, then a new set of one: that's 2 used, not 1.
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard. Just one ad" });
+  assert.equal(l.json.ads.length, 1);
+  const id = l.json.listing.id;
+  assert.equal((await c("POST", `/api/listings/${id}/remake`, {})).json.ads.length, 1);
+  assert.equal(await me(), 2);
+  // Changes are still included.
+  const s = await c("POST", `/api/listings/${id}/messages`, { text: "make it shorter", version: 1 });
+  assert.notEqual(s.json.messages.at(-1).kind, "upgrade");
+  assert.equal(await me(), 2);
+  // The third, then nothing more: not a new set, not another listing, not after deleting.
+  await c("POST", `/api/listings/${id}/remake`, {});
+  assert.equal(await me(), 3);
+  const again = await c("POST", `/api/listings/${id}/remake`, {});
+  assert.equal(again.json.messages.at(-1).kind, "upgrade");
+  assert.equal(await me(), 3);
+  assert.equal((await c("DELETE", `/api/listings/${id}`)).status, 200);
+  const next = await c("POST", "/api/listings", { text: "9 Oak Ave, Austin, 2 bed 1 bath, $410,000" });
+  assert.equal(next.json.ads.length, 0);
+  assert.equal(next.json.messages.at(-1).kind, "upgrade");
+});

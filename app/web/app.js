@@ -298,7 +298,7 @@
   function listingMenu() {
     const l = S.current.listing;
     const ad = adFor(S.selected[l.id]);
-    const own = ad && paid()
+    const own = ad
       ? `<div class="sep"></div><button data-dl="feed">${ICON.down}Download feed image</button><button data-dl="story">${ICON.down}Download story image</button>
          <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>`
       : "";
@@ -856,7 +856,7 @@
       ad, brand: b, format,
       photo: photoUrl(ad.photo_id),
       logo: b.logo_id ? photoUrl(b.logo_id) : null,
-      watermark: !paid(),
+      watermark: false,
       price: l.price ? (l.price >= 1e6 ? `$${(l.price / 1e6).toFixed(2).replace(/\.?0+$/, "")}M` : money(l.price)) : "",
       place: l.area || l.city || "",
     };
@@ -919,8 +919,7 @@
     pv.innerHTML = `<div class="pvh">${tabs}${fmt}</div><div class="mbar">${tabs}${fmtIcons}</div>
       <div class="stage" id="stage">${S.format === "feed" ? feed : story}<div class="dots">${p.ads.map((a) => `<i class="${a.version === v ? "on" : ""}"></i>`).join("")}</div></div>
       <div class="pvb">
-        <div class="actrow lg"><button class="btn" data-act="run">Run it</button><button class="sec-btn" data-act="style" aria-label="Style">${ICON.brush}<span>Style</span></button>${paid() ? `<button class="sec-btn" data-act="dlmenu" aria-label="Download">${ICON.down}<span>Download</span></button>` : ""}</div>
-        ${paid() ? "" : `<p class="small" style="text-align:center">Free plan: previews only.</p>`}
+        <div class="actrow lg"><button class="btn" data-act="run">Run it</button><button class="sec-btn" data-act="style" aria-label="Style">${ICON.brush}<span>Style</span></button><button class="sec-btn" data-act="dlmenu" aria-label="Download">${ICON.down}<span>Download</span></button></div>
         <div class="status ${issues.length ? "bad" : ""}">${issues.length ? `${ICON.alert}<button data-act="issues">${issues.length} wording ${issues.length === 1 ? "issue" : "issues"} to look at</button>` : `${ICON.check}Fair housing check passed`}<span style="margin-left:auto"></span><button data-act="photos">${S.showPhotos ? "Hide photos" : "Change photo"}</button></div>
         ${issues.length && S.showIssues ? `<div class="issues">${issues.map((i) => `"${esc(i.term)}" ${esc(i.why)}${i.suggestion ? `. Try "${esc(i.suggestion)}"` : ""}.`).join("<br>")}</div>` : ""}
         ${S.showPhotos ? photoStrip(ad) : ""}
@@ -1174,7 +1173,7 @@
            <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>Paid plan. Billing starts when your first ad goes live.</p>`
-        : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made. Previews only.</p>
+        : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
            <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Paid plan requested. You'll hear back soon.</span>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
