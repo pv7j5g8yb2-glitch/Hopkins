@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { run, get, all, nowIso } from "./db.js";
-import { EMAIL_RE, inviteOk, isAdmin, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
+import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities,
@@ -71,6 +71,7 @@ const clean = (v, max = 200) => (typeof v === "string" && v.trim() ? v.trim().sl
 app.post("/api/signup", async (request, reply) => {
   if (tooMany(`signup:${request.ip}`)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   const { email, password, name, business, invite } = request.body || {};
+  if (typeof email === "string" && adminSignupBlocked(email.trim())) return reply.code(403).send({ error: "That email can't be used to sign up here." });
   if (!inviteOk(invite, typeof email === "string" ? email.trim() : "")) return reply.code(403).send({ error: "Hopkins is invite only for now. Check the code, or join the waitlist." });
   if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) return reply.code(400).send({ error: "That email doesn't look right." });
   if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the password." });
@@ -165,6 +166,8 @@ app.patch("/api/account", async (request, reply) => {
     if (!EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
     if (typeof b.password !== "string" || !(await verifyPassword(b.password, user.pass_hash))) return reply.code(401).send({ error: "Enter your current password to change your email." });
     if (await get(`SELECT id FROM users WHERE email = ?`, [email])) return reply.code(409).send({ error: "There's already an account with that email." });
+    // Moving onto an admin address would hand out admin; it can only be granted on Render.
+    if (isAdmin({ email })) return reply.code(403).send({ error: "That email can't be used here." });
     sets.push("email = ?"); args.push(email);
   }
   if (sets.length) await run(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`, [...args, user.id]);
@@ -436,7 +439,8 @@ app.post("/api/l/:slug/lead", async (request, reply) => {
   return { ok: true };
 });
 
-if (process.env.NODE_ENV !== "test") {
+// Tests load the app without opening a port (NO_LISTEN covers tests that run as production).
+if (process.env.NODE_ENV !== "test" && !process.env.NO_LISTEN) {
   await forgetGuessedCities().catch((err) => console.error("City clean up failed:", err.message));
   await app.listen({ port: Number(process.env.PORT || 3200), host: "0.0.0.0" });
 }

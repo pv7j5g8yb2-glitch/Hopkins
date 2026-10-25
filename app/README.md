@@ -70,7 +70,7 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 | --- | --- |
 | `COOKIE_SECRET` | Signs sessions. Required. Long and random. |
 | `INVITE_CODES` | Comma separated codes a sign up needs. Set it in production. |
-| `ADMIN_EMAILS` | Accounts that see the Admin page (switch workspaces to paid). |
+| `ADMIN_EMAILS` | Accounts that see the Admin page (switch workspaces to paid). In production an email on this list can't sign up or be moved onto, so admin only applies to accounts that already exist: the person signs up first, then their email goes on the list. |
 | `DATABASE_URL`, `DATABASE_AUTH_TOKEN` | Turso database. Defaults to `./data/hopkins.db`. |
 | `ANTHROPIC_API_KEY` | Turns on Claude for reading listings, writing ads and the chat. |
 | `GROQ_API_KEY` | Free alternative for the chat when there's no Anthropic key (console.groq.com). |

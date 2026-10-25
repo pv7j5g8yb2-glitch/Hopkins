@@ -164,6 +164,13 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Admin (2026-10-25, Ismael): only his account (gethopkins@gmail.com) should have it, never the
+  public. Admin = the account's email is on `ADMIN_EMAILS` in Render (hopkins-app, Environment),
+  checked by the server on every admin request; the menu link only shows for admins too. Emails
+  aren't verified, so in production an admin email can't be used to sign up and no account can
+  change its email to one: admin only ever applies to an account that already exists. To make
+  someone an admin later: they sign up as normal with an invite code, then their email is added
+  to `ADMIN_EMAILS` (comma separated) and the service restarts. To remove it, take the email out.
 * Covers (2026-10-25, Ismael): a listing with no photo shows a cover instead of a beige square:
   oxblood with fine grain, the price big in gold, beds, baths and size in cream, and the two
   pebbles drawn large and faint, placed differently per listing. Same on Today; sidebar thumbnails
