@@ -159,6 +159,17 @@
     return `<div class="md">${out.join("")}</div>`;
   }
 
+  // A canvas shown big over the page; a tap anywhere puts it away.
+  function zoomCanvas(c) {
+    const z = document.createElement("div");
+    z.className = "zoom";
+    z.innerHTML = `<img alt="" src="${c.toDataURL("image/jpeg", 0.9)}">`;
+    z.onclick = () => { z.classList.remove("on"); setTimeout(() => z.remove(), 220); };
+    document.body.appendChild(z);
+    requestAnimationFrame(() => z.classList.add("on"));
+    buzz(5);
+  }
+
   // A message as one plain line, for previews: no Markdown marks.
   const plainText = (s) => String(s || "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)\*([^*]+)\*/g, "$1$2").replace(/^\s*([-*•]|\d+[.)]|#{1,6})\s+/gm, "").replace(/\|/g, " ").replace(/\s+/g, " ").trim();
 
@@ -1072,7 +1083,7 @@
     const field = (k, label, ph = "", hint = "") => `<div class="fld"><label for="f_${k}">${label}</label><input id="f_${k}" name="${k}" value="${esc(b[k] || "")}" placeholder="${esc(ph)}" autocomplete="off">${hint ? `<p class="small">${hint}</p>` : ""}</div>`;
     const radio = (k, opts) => `<div class="choice">${opts.map(([v, l]) => `<label><input type="radio" name="${k}" value="${v}" ${(b[k] || opts[0][0]) === v ? "checked" : ""}>${l}</label>`).join("")}</div>`;
     main.innerHTML = `${first ? `<div class="mtop"><span class="logo"><img src="/static/mark.svg" alt="">Hopkins</span></div>` : mtop("Brand")}<div class="page"><div class="wrap">
-      <div class="head"><h1>${first ? `Make it <span class="serif">yours</span>` : "Brand"}</h1><p class="lede">${first ? "One minute. Every ad follows this, so people start to recognize you." : "Every ad follows this."}</p></div>
+      <div class="head"><h1>${first ? `Make it <span class="serif">yours</span>` : "Brand"}</h1></div>
       <div class="brandgrid"><form class="form" id="brandForm">
         <div class="group"><h4>Who you are</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
         <div class="group"><h4>How it looks</h4><div style="display:flex;flex-direction:column;gap:14px">
@@ -1086,13 +1097,14 @@
           ${field("license", "License line", "DRE #01234567", "Small print on your lead pages, where your state asks for it.")}
         </div></details></div>
         <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
-      </form><div class="brandprev"><canvas id="brandCanvas"></canvas><p class="small">${phone() ? "Live preview. It changes as you go." : "A sample ad. Yours use your listing photos."}</p></div></div></div></div>`;
+      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="See the preview bigger"></canvas><p class="small">${phone() ? "Live preview. Tap it to see it bigger." : "A sample ad. Yours use your listing photos."}</p></div></div></div></div>`;
     const form = $("#brandForm");
     let logoId = b.logo_id || "";
     const sample = () => {
       const brand = Object.fromEntries(new FormData(form).entries());
       brand.logo_id = logoId;
       const l = S.listings.find((x) => x.photo_id);
+      $("#brandCanvas").onclick = () => zoomCanvas($("#brandCanvas"));
       Creative.render($("#brandCanvas"), {
         ad: { pattern: "life", overlay: "Slow mornings on the porch.", kicker: `Just listed · ${brand.city || "Riverside"}` },
         brand, format: "feed", photo: l ? photoUrl(l.photo_id) : "/static/sample-home.jpg", logo: logoId ? photoUrl(logoId) : null, watermark: false,
