@@ -501,10 +501,22 @@
       comp.requestSubmit();
     });
     const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(160, ta.scrollHeight) + "px"; };
+    // Photos waiting to be sent sit in a tray inside the box, like Claude or ChatGPT: a
+    // thumbnail each (× takes one out), a + to add more, and the count. While the big drop
+    // area on the New listing screen is showing, they appear there instead.
     const drawAtt = () => {
-      const html = S.pending.map((p, i) => `<div class="ph" style="background-image:url(${p.url})"><button type="button" data-rm="${i}" aria-label="Remove">×</button></div>`).join("");
+      const n = S.pending.length;
+      const dropShown = drop && $("#drop") && $("#drop").offsetParent !== null;
       if (drop) drop(S.pending);
-      else $("#att").innerHTML = html;
+      $("#att").innerHTML = n && !dropShown
+        ? `<div class="att-row">${S.pending.map((p, i) => `<div class="ph" style="background-image:url(${p.url})"><button type="button" data-rm="${i}" aria-label="Remove photo ${i + 1}">×</button></div>`).join("")}<label class="att-more" for="files" aria-label="Add more photos">${ICON.plus}</label></div>
+          <div class="att-note">${n} ${n === 1 ? "photo" : "photos"} ready to send</div>`
+        : "";
+      const pick = comp.querySelector("label.icon-btn");
+      if (pick) pick.dataset.count = n || "";
+      // A suggestion doesn't go with photos: it's hidden while any are waiting.
+      if (n) showSug(false);
+      else if (!phone() || document.activeElement !== ta) showSug(true);
       $("#send").disabled = S.busy || (!ta.value.trim() && !S.pending.length);
     };
     const add = (files) => {

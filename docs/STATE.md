@@ -164,6 +164,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Photos waiting to be sent (2026-10-25, Ismael): a tray inside the message box, like Claude or
+  ChatGPT: a thumbnail each with × to remove, a + to add more, "3 photos ready to send", and a
+  count badge on the photo button. Before, on the New listing screen after a first message, added
+  photos went into the hidden drop area and couldn't be seen. The suggestion hides while photos wait.
 * Chat like Claude or ChatGPT (2026-10-25, Ismael): replies render Markdown (bold, lists, small
   tables that scroll sideways on a phone, short headings), the model is told to talk like a person
   with opinions and reasons, fit the length to the question, use an emoji only now and then, with a
