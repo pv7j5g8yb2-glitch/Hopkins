@@ -9,7 +9,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities, restyle,
+  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities, restyle, numberUntitled,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
@@ -319,8 +319,9 @@ app.delete("/api/photos/:id", async (request) => {
 // ---------- listings and the chat ----------
 
 app.get("/api/listings", async (request) => {
+  await numberUntitled(request.ws.id);
   const rows = await all(
-    `SELECT l.id, l.title, l.address, l.area, l.city, l.price, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at,
+    `SELECT l.id, l.title, l.address, l.area, l.city, l.untitled_no, l.price, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at,
        (SELECT id FROM photos WHERE listing_id = l.id ORDER BY position LIMIT 1) AS photo_id,
        (SELECT COUNT(*) FROM leads WHERE listing_id = l.id) AS leads,
        (SELECT COUNT(*) FROM messages WHERE listing_id = l.id AND needs_action = 1) AS waiting,
@@ -332,6 +333,7 @@ app.get("/api/listings", async (request) => {
 });
 
 async function listingPayload(ws, id) {
+  await numberUntitled(ws.id);
   const listing = await loadListing(ws.id, id);
   if (!listing) return null;
   const [photos, ads, messages, leads] = await Promise.all([

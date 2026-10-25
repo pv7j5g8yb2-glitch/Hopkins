@@ -176,7 +176,9 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   // session_ver: bumped when the password changes, which signs out every other device.
   // reset_hash and reset_expires: a one time password reset link (only its hash is kept).
   "ALTER TABLE users ADD COLUMN session_ver INTEGER NOT NULL DEFAULT 0", "ALTER TABLE users ADD COLUMN last_seen TEXT",
-  "ALTER TABLE users ADD COLUMN reset_hash TEXT", "ALTER TABLE users ADD COLUMN reset_expires TEXT", "ALTER TABLE users ADD COLUMN reset_asked TEXT"]) {
+  "ALTER TABLE users ADD COLUMN reset_hash TEXT", "ALTER TABLE users ADD COLUMN reset_expires TEXT", "ALTER TABLE users ADD COLUMN reset_asked TEXT",
+  // untitled_no: a listing with no name or address is "Untitled 1", "Untitled 2"... for good.
+  "ALTER TABLE listings ADD COLUMN untitled_no INTEGER"]) {
   try { await client.execute(sql); } catch {}
 }
 

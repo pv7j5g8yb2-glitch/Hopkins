@@ -168,6 +168,9 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Listing names (2026-10-25, Ismael): a listing with no name or address is "Untitled 1",
+  "Untitled 2"... (`listings.untitled_no`, given in the order they came in, never reused), the
+  same on Today, Listings and the chat. Listing cards and the Today card show only the name.
 * Ad labels (2026-10-25, Ismael): the tabs, captions and replies say Ad 1, Ad 2, Ad 3; the idea
   names ("Brick gable") only appear after the number in the first message, since as tab labels
   they didn't make sense to him. Removing an ad numbers the rest again from 1.

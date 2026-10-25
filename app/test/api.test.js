@@ -371,3 +371,18 @@ test("free plan: 3 ads in all, and nothing new after that, whatever gets deleted
   assert.equal(next.json.ads.length, 0);
   assert.equal(next.json.messages.at(-1).kind, "upgrade");
 });
+
+test("listings with no name or address are Untitled 1, Untitled 2, and keep their number", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "untitled@ellery.test", password: "password123", invite: "EARLY1" });
+  const up = async () => (await c("POST", "/api/photos", { data: TINY_JPEG, thumb: TINY_JPEG, mime: "image/jpeg", name: "IMG_1.jpg" })).json.id;
+  const a = await c("POST", "/api/listings", { text: "", photoIds: [await up()] });
+  const b = await c("POST", "/api/listings", { text: "", photoIds: [await up()] });
+  assert.equal(a.json.listing.untitled_no, 1);
+  assert.equal(b.json.listing.untitled_no, 2);
+  assert.equal((await c("DELETE", `/api/listings/${a.json.listing.id}`)).status, 200);
+  const d = await c("POST", "/api/listings", { text: "", photoIds: [await up()] });
+  assert.equal(d.json.listing.untitled_no, 3, "a deleted number isn't reused");
+  const rows = (await c("GET", "/api/listings")).json.listings;
+  assert.deepEqual(rows.map((l) => l.untitled_no).sort(), [2, 3]);
+});

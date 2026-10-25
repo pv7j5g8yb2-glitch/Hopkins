@@ -233,6 +233,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
     }
   }
 
+  await numberUntitled(ws.id);
   const fresh = await loadListing(ws.id, id);
   if (link && !linkInfo && !fresh.price && !rest) {
     await say(ws, id, "I couldn't open that link (a lot of listing sites block other apps). Paste the description, or tell me the price, beds, baths and the best thing about it, and I'll make the ads.");
@@ -241,6 +242,16 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   if (!missing && !fresh.price) missing = "What's the asking price?";
   await makeAds(ws, fresh, "new", {}, { note: missing, count: countFrom(rest) });
   return fresh;
+}
+
+// A listing's name: the agent's own, else the address or area or city, else "Untitled 1",
+// "Untitled 2" and so on, numbered in the order they came in and never renumbered.
+export const listingTitle = (l) => l.title || l.address || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
+export async function numberUntitled(workspaceId) {
+  const bare = await all(`SELECT id FROM listings WHERE workspace_id = ? AND untitled_no IS NULL AND COALESCE(title, address, area, city, '') = '' ORDER BY created_at`, [workspaceId]);
+  if (!bare.length) return;
+  const top = await get(`SELECT COALESCE(MAX(untitled_no), 0) AS n FROM listings WHERE workspace_id = ?`, [workspaceId]);
+  for (const [i, l] of bare.entries()) await run(`UPDATE listings SET untitled_no = ? WHERE id = ?`, [Number(top.n) + i + 1, l.id]);
 }
 
 export async function patchListing(workspaceId, id, patch) {
@@ -439,10 +450,10 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
     if (last && last.kind === "upgrade") return { upgrade: true, repeat: true };
     if (!current.length) {
-      const used = await get(`SELECT l.address, l.area, l.city FROM ads JOIN listings l ON l.id = ads.listing_id WHERE ads.workspace_id = ? AND l.id != ? ORDER BY ads.created_at LIMIT 1`, [ws.id, listing.id]);
+      const used = await get(`SELECT l.title, l.address, l.area, l.city, l.untitled_no FROM ads JOIN listings l ON l.id = ads.listing_id WHERE ads.workspace_id = ? AND l.id != ? ORDER BY ads.created_at LIMIT 1`, [ws.id, listing.id]);
       // Two listings can share a name; "your ads went on Miami" reads wrong on a listing called Miami.
-      const usedOn = used && (used.address || used.area || used.city);
-      const here = listing.address || listing.area || listing.city;
+      const usedOn = used && listingTitle(used);
+      const here = listingTitle(listing);
       await say(ws, listing.id, upgradeText("saved", { usedOn: usedOn && usedOn !== here ? usedOn : usedOn ? `your other ${usedOn} listing` : null }), "upgrade", { reason: "limit" });
     } else {
       await say(ws, listing.id, upgradeText("limit"), "upgrade", { reason: "limit" });
@@ -966,7 +977,7 @@ export async function weeklyReport(ws, days = 7) {
      WHERE leads.workspace_id = ? AND leads.created_at >= ? ORDER BY leads.created_at DESC`,
     [ws.id, since]
   );
-  const listings = await all(`SELECT id, address, area, city, price, status, spend, moment, created_at FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
+  const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, status, spend, moment, created_at FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
   const launched = await all(`SELECT DISTINCT listing_id FROM launches WHERE workspace_id = ?`, [ws.id]);
   const launchedIds = new Set(launched.map((r) => r.listing_id));
   const drafts = await all(`SELECT DISTINCT listing_id FROM ads WHERE workspace_id = ? AND status = 'draft'`, [ws.id]);
@@ -978,7 +989,7 @@ export async function weeklyReport(ws, days = 7) {
     for (const x of ls) if (x.version) byVersion[`Ad ${x.version}`] = (byVersion[`Ad ${x.version}`] || 0) + 1;
     const spend = Number(l.spend || 0);
     return {
-      id: l.id, name: l.title || l.address || l.area || l.city || "Untitled listing", status: l.status, leads: ls.length,
+      id: l.id, name: listingTitle(l), status: l.status, leads: ls.length,
       showings: ls.filter((x) => x.wants === "showing").length, spend, cpl: spend > 0 && ls.length ? Math.round((spend / ls.length) * 100) / 100 : null,
       byVersion, running: launchedIds.has(l.id), drafts: draftIds.has(l.id),
     };
@@ -1019,8 +1030,9 @@ export async function mondayMessage(ws, now = new Date()) {
 
 export async function inbox(ws) {
   await mondayMessage(ws);
+  await numberUntitled(ws.id);
   const items = await all(
-    `SELECT messages.*, listings.title, listings.address, listings.area, listings.city FROM messages LEFT JOIN listings ON listings.id = messages.listing_id
+    `SELECT messages.*, listings.title, listings.address, listings.area, listings.city, listings.untitled_no FROM messages LEFT JOIN listings ON listings.id = messages.listing_id
      WHERE messages.workspace_id = ? AND (messages.needs_action = 1 OR (messages.kind IN ('lead','report') AND messages.created_at >= ?))
      ORDER BY messages.created_at DESC LIMIT 30`,
     [ws.id, new Date(Date.now() - 7 * 86400_000).toISOString()]

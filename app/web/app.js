@@ -197,7 +197,7 @@
   }
   const photoOrCover = (l, thumb) => (l && l.photo_id ? { cls: "", style: `background-image:url(${photoUrl(l.photo_id, thumb)})`, inner: "" } : { cls: " cover", style: "", inner: l ? cover(l) : "" });
 
-  const listingName = (l) => l.title || l.address || l.area || l.city || "Untitled listing";
+  const listingName = (l) => l.title || l.address || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
   const photoUrl = (id, thumb) => (id ? `/photos/${id}${thumb ? "?thumb=1" : ""}` : null);
   const paid = () => S.me.workspace.plan === "paid";
 
@@ -338,7 +338,7 @@
     if (l.status === "sold") return "Sold";
     if (l.waiting) return "Ads ready";
     if (l.approved) return l.leads ? `${l.leads} ${l.leads === 1 ? "lead" : "leads"}` : "Approved";
-    return l.price ? money(l.price) : "Draft";
+    return l.price ? money(l.price) : "";
   }
 
   // ---------- routing ----------
@@ -395,12 +395,12 @@
     const waiting = S.inbox.filter((m) => m.needs_action);
     const recent = S.inbox.filter((m) => !m.needs_action);
     const listingOf = (m) => S.listings.find((x) => x.id === m.listing_id);
-    const where = (m) => m.title || m.address || m.area || m.city || "Your listing";
+    const where = (m) => listingName(m);
     const hero = (m) => {
       const isPlan = m.kind === "plan";
       const pc = photoOrCover(listingOf(m));
       return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}<span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "Ads ready"}</span></div>
-        <div class="bd"><div class="tx"><b>${esc(where(m))}</b><p>${esc(isPlan ? "Check the plan and say yes." : plainText(m.body))}</p></div><span class="btn">${isPlan ? "Review" : "See ads"}</span></div></a>`;
+        <div class="bd"><div class="tx"><b>${esc(where(m))}</b></div><span class="btn">${isPlan ? "Review" : "See ads"}</span></div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
     const titleFor = (m) => (m.kind === "lead" ? `New lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
@@ -436,7 +436,7 @@
     if (!sel) S.picked = new Set();
     const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}
       ${l.status === "sold" ? `<span class="chip green">Sold</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
-      <div class="bd"><b>${esc(listingName(l))}</b><span>${esc([l.photo_id && l.price ? money(l.price) : "", l.leads ? `${l.leads} ${l.leads === 1 ? "lead" : "leads"}` : ""].filter(Boolean).join(" · ") || (l.photo_id ? "Draft" : "No photos yet"))}</span></div></a>`; };
+      <div class="bd"><b>${esc(listingName(l))}</b></div></a>`; };
     const n = S.picked.size;
     const lede = sel ? (n ? `${n} selected` : "Tap the ones to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Every home you market lives here.";
     main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Listings</h1><p class="lede">${lede}</p></div>
@@ -482,7 +482,7 @@
     if (!l) return;
     c.classList.add("held");
     setTimeout(() => c.classList.remove("held"), 300);
-    openPop(c, `<div class="note"><b>${esc(listingName(l))}</b>${esc(l.price ? money(l.price) : "Draft")}</div>
+    openPop(c, `<div class="note"><b>${esc(listingName(l))}</b>${esc(l.price ? money(l.price) : "")}</div>
       <a href="#/l/${l.id}">${ICON.eye}Open</a>
       <button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button>
       <button data-act="selectOne" data-id="${l.id}">${ICON.check}Select</button>
