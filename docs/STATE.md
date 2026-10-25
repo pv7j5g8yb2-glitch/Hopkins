@@ -187,6 +187,10 @@ personal in here.
   covers roughly 25 to 40 new listings or 70 to 100 chat turns a day, then the backups take over
   (`GROQ_BACKUP_MODELS`), then the built-in writer. Testing burns the same allowance as the live
   site if both use the same key. The server logs tokens per call ("Groq <model>: N tokens").
+  The live site and session testing do share one key, "Hopkins App" (Ismael, 2026-10-25). Groq
+  limits are per organisation, not per key, so a second key in the same account wouldn't help;
+  only a separate Groq account would. Until then, test with the fake model in `npm test` and the
+  no key server, and keep live Groq runs to a few messages.
 * Ad style (2026-10-25, Ismael: "the user can change everything in their style"): each ad has its
   own look in `ad.style` (`app/src/style.js` checks every change): background, label and text
   colour, font (modern or classic serif), layout (fade, top, split, card, frame), text size,
