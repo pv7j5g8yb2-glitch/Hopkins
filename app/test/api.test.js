@@ -234,3 +234,19 @@ test("deleting several listings at once, only your own", async () => {
   assert.equal((await other("GET", `/api/listings/${theirs}`)).status, 200);
   assert.equal((await c("POST", "/api/listings/delete", { ids: [] })).status, 400);
 });
+
+test("a listing with no city doesn't borrow the brand's city, and old guesses get cleared", async () => {
+  const { c } = await signup("city@ellery.test");
+  assert.equal((await c("PUT", "/api/brand", { city: "Miami" })).status, 200);
+  const l = await c("POST", "/api/listings", { photoIds: [(await c("POST", "/api/photos", { data: TINY_JPEG, thumb: TINY_JPEG, mime: "image/jpeg" })).json.id] });
+  assert.equal(l.status, 200);
+  assert.equal(l.json.listing.city, null);
+  // One made before the fix, with the guess in it, and one that really is in Miami.
+  const { run } = await import("../src/db.js");
+  const real = await c("POST", "/api/listings", { text: "Condo at 9 Bay Road, Miami, FL. 2 bed, $500,000" });
+  await run(`UPDATE listings SET city = 'Miami' WHERE id = ?`, [l.json.listing.id]);
+  const { forgetGuessedCities } = await import("../src/hopkins.js");
+  await forgetGuessedCities();
+  assert.equal((await c("GET", `/api/listings/${l.json.listing.id}`)).json.listing.city, null);
+  assert.equal((await c("GET", `/api/listings/${real.json.listing.id}`)).json.listing.city === null, false);
+});

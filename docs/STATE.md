@@ -164,6 +164,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* No guessed cities (2026-10-25, Ismael): a listing's city comes from the listing or not at all.
+  Hopkins used to fill it from the brand's city, so photos of Dubai became "Miami". A listing with
+  no address is "Untitled listing". On start, the server clears the brand city from listings whose
+  own words never mention it (`forgetGuessedCities`).
 * Photos sent (2026-10-25, Ismael): shown like Claude, the images themselves on the right with no
   bubble (one big, two side by side, more in a grid with "+N"), and a text bubble only if words were
   typed. Photos sent alone are saved with no text (they used to say "New listing"; old ones still

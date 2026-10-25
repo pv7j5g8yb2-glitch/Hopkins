@@ -168,7 +168,7 @@
   }
 
   const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
-  const listingName = (l) => l.address || l.area || l.city || "New listing";
+  const listingName = (l) => l.address || l.area || l.city || "Untitled listing";
   const photoUrl = (id, thumb) => (id ? `/photos/${id}${thumb ? "?thumb=1" : ""}` : null);
   const paid = () => S.me.workspace.plan === "paid";
 

@@ -9,7 +9,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor,
+  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
@@ -429,5 +429,6 @@ app.post("/api/l/:slug/lead", async (request, reply) => {
 });
 
 if (process.env.NODE_ENV !== "test") {
+  await forgetGuessedCities().catch((err) => console.error("City clean up failed:", err.message));
   await app.listen({ port: Number(process.env.PORT || 3200), host: "0.0.0.0" });
 }

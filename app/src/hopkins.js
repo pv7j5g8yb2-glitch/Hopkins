@@ -128,6 +128,19 @@ export function suggestionFor(ws, listing, ads, messages, canMakeMore = true) {
   return options.find(ok) || "";
 }
 
+// Listings made before that fix may carry the brand city as a guess. Clear it where the listing's
+// own words never mention it. Runs at start, and does nothing once they're clean.
+export async function forgetGuessedCities() {
+  for (const w of await all(`SELECT id, brand FROM workspaces`)) {
+    const city = safeJson(w.brand, {}).city;
+    if (!city) continue;
+    await run(
+      `UPDATE listings SET city = NULL WHERE workspace_id = ? AND city = ? AND instr(lower(coalesce(description, '') || ' ' || coalesce(link, '')), lower(?)) = 0`,
+      [w.id, city, city]
+    );
+  }
+}
+
 export async function deleteListing(ws, id) {
   const listing = await loadListing(ws.id, id);
   if (!listing) return false;
@@ -145,7 +158,8 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
 
   const parsed = parseListingText(source);
-  if (!parsed.city && ws.brand.city) parsed.city = ws.brand.city;
+  // The city comes from the listing or not at all. Filling it in from the agent's brand city
+  // named a listing "Miami" from photos of somewhere else (2026-10-25).
 
   const id = randomUUID();
   const now = nowIso();
