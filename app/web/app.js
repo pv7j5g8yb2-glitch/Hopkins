@@ -320,8 +320,7 @@
   // card saying plainly that it's coming.
   function soon(title, line, preview) {
     return `<div class="soon"><div class="soon-prev" aria-hidden="true">${preview}</div>
-      <div class="soon-card"><span class="soon-chip">Coming soon</span><h2>${title}</h2><p>${line}</p>
-      <span class="soon-note">Hopkins is in early access. This opens once ads can go live on Facebook and Instagram.</span></div></div>`;
+      <div class="soon-card"><span class="soon-chip">Coming soon</span><h2>${title}</h2><p>${line}</p></div></div>`;
   }
   async function loadListings() { S.listings = (await api("/api/listings")).listings; }
   async function loadInbox() { S.inbox = (await api("/api/inbox")).items; S.inboxLoaded = true; }

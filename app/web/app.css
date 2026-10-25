@@ -386,9 +386,8 @@ a.row:hover{background:var(--hover)}
 .soon-prev{padding:6px 18px 18px;filter:blur(2.5px) grayscale(1);opacity:.45;pointer-events:none;user-select:none;-webkit-user-select:none}
 .soon-card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:linear-gradient(180deg,rgba(251,248,243,.55),rgba(251,248,243,.92) 60%)}
 .soon-chip{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8E6B2C;background:rgba(215,174,98,.16);padding:5px 10px;border-radius:999px;margin-bottom:12px}
-.soon-card h2{font-size:26px;line-height:1.08;letter-spacing:-.04em;margin-bottom:8px;max-width:340px}
-.soon-card p{color:var(--soft);font-size:15px;line-height:1.5;max-width:360px}
-.soon-note{color:var(--quiet);font-size:12.5px;line-height:1.45;margin-top:12px;max-width:320px}
+.soon-card h2{font-size:28px;line-height:1.08;letter-spacing:-.04em;margin-bottom:16px;max-width:340px}
+.soon-card p{color:var(--quiet);font-size:14.5px;line-height:1.55;max-width:290px;padding-top:16px;border-top:1px solid var(--line2)}
 /* their tabs look quieter until there's something in them */
 body.soon-leads [data-nav=leads],body.soon-report [data-nav=report]{opacity:.5}
 body.soon-leads [data-nav=leads].on,body.soon-report [data-nav=report].on{opacity:.8}
