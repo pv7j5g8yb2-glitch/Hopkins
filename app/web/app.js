@@ -821,12 +821,12 @@
           const key = `${m.id}:${a.version}`;
           S.snaps[key] = a;
           return `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
-            <img class="snap" data-snap="${key}" alt="Version ${a.version}" ${S.snapImg[key] ? `src="${S.snapImg[key]}"` : ""}><span>${esc(a.name || "Ad " + a.version)}</span></button>`;
+            <img class="snap" data-snap="${key}" alt="Ad ${a.version}" ${S.snapImg[key] ? `src="${S.snapImg[key]}"` : ""}><span>Ad ${a.version}</span></button>`;
         }).join("")}</div>`);
       }
       if (m.kind === "ads" && m === lastAds && p.ads.length) {
         return wrap(`${text}<div class="vers ${reveal ? "reveal" : ""}">${p.ads.map((a) => `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
-          <canvas data-mini="${a.version}" width="1080" height="1350"></canvas><span>${esc(a.name || "Ad " + a.version)}</span></button>`).join("")}</div>`);
+          <canvas data-mini="${a.version}" width="1080" height="1350"></canvas><span>Ad ${a.version}</span></button>`).join("")}</div>`);
       }
       if (m.kind === "plan") {
         const d = m.data;
@@ -911,7 +911,7 @@
       <div class="cta"><span>${esc(ad.cta)}</span><span>›</span></div>
       <div class="cp" id="cp"><b>${esc(handle)}</b>${esc(short ? ad.primary_text.slice(0, 125).replace(/\s\S*$/, "") : ad.primary_text)}${short ? '<span class="more" data-act="more">… more</span>' : ""}</div></div>`;
     const story = `<div class="story"><canvas id="big" width="1080" height="1920"></canvas><div class="bar"><i></i></div><div class="who"><i class="ava" ${ava}></i>${esc(handle)} <span>Sponsored</span></div><div class="go">${esc(ad.cta)}</div></div>`;
-    const tabs = `<div class="seg" data-seg="ver">${p.ads.map((a) => `<button data-pick="${a.version}" class="${a.version === v ? "on" : ""}">${esc(a.name || "Ad " + a.version)}</button>`).join("")}</div>`;
+    const tabs = `<div class="seg" data-seg="ver">${p.ads.map((a) => `<button data-pick="${a.version}" class="${a.version === v ? "on" : ""}">Ad ${a.version}</button>`).join("")}</div>`;
     const fmt = `<div class="seg" data-seg="fmt"><button data-fmt="feed" class="${S.format === "feed" ? "on" : ""}" title="Feed post">Feed</button><button data-fmt="story" class="${S.format === "story" ? "on" : ""}" title="Story">Story</button></div>`;
     // On a phone the two formats are drawn as their shapes, so the ad names get the room.
     const shape = (w, h) => `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><rect x="${10 - w / 2}" y="${10 - h / 2}" width="${w}" height="${h}" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
@@ -1027,7 +1027,7 @@
     const tel = (n) => n.replace(/[^\d+]/g, "");
     const item = (x, i) => `<div class="lead ${x.status === "new" ? "new" : ""}" style="animation-delay:${Math.min(i, 8) * 0.04}s"><span class="av">${esc(x.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span>
       <div class="tx"><b>${esc(x.name)}</b><p>${esc(WANTS[x.wants] || x.wants)}${x.note ? `: "${esc(x.note)}"` : ""}</p>
-      <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? esc(x.ad_name || `Ad ${x.version}`) : "Lead page"} · ${ago(x.created_at)}</div>
+      <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? `Ad ${x.version}` : "Lead page"} · ${ago(x.created_at)}</div>
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
       <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1><p class="lede">${leads.length ? `${leads.length} in total${fresh ? `, ${fresh} new` : ""}. Tap to call or text.` : "Everyone who asks about a listing lands here."}</p></div>

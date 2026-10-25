@@ -66,10 +66,19 @@ test("Groq runs the chat when it's the only key", async () => {
   next = ["429:40"];
   const busy = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "what do you think of the photos?", version: 1 });
   assert.match(busy.json.messages.at(-1).body, /a lot of messages at once/);
+  // "Now?" after that: the model gets the unanswered question and the nudge as one message,
+  // without the busy reply in between, so it answers the question.
+  next = [{ reply: "They're strong. The porch shot leads.", action: "none", version: 0, ads: [] }];
+  const nudge = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "Now?", version: 1 });
+  assert.equal(nudge.json.messages.at(-1).body, "They're strong. The porch shot leads.");
+  const last = calls.at(-1).body.messages.at(-1);
+  assert.equal(last.role, "user");
+  assert.match(last.content, /what do you think of the photos\?\s+Now\?/);
+  assert.ok(!calls.at(-1).body.messages.some((m) => /a lot of messages/.test(m.content)));
   // Something the rules can do still gets done.
   next = ["429:40"];
   const done = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "make version 3 shorter", version: 3 });
-  assert.match(done.json.messages.at(-1).body, /^\*\*\$585K.*\*\* is shorter\.$/);
+  assert.equal(done.json.messages.at(-1).body, "**Ad 3** is shorter.");
 });
 
 test("Groq writes the first ads: its own ideas and names, checked against the facts; ads can be added and removed", async () => {
@@ -107,6 +116,6 @@ test("Groq writes the first ads: its own ideas and names, checked against the fa
   // Removing one.
   next = [{ reply: "", action: "remove_ads", version: 2, remove: [2], ads: [] }];
   const rm = await c("POST", `/api/listings/${id}/messages`, { text: "get rid of the price one", version: 2 });
-  assert.deepEqual(rm.json.ads.map((x) => x.name), ["Wraparound porch", "The kitchen"]);
-  assert.equal(rm.json.messages.at(-1).body, "Removed **Under $650K**.");
+  assert.deepEqual(rm.json.ads.map((x) => [x.version, x.name]), [[1, "Wraparound porch"], [2, "The kitchen"]], "numbered again from 1");
+  assert.equal(rm.json.messages.at(-1).body, "Removed **Ad 2**. What was Ad 3 is now Ad 2.");
 });

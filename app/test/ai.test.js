@@ -77,7 +77,7 @@ test("Claude reads the listing and writes the set; Hopkins cleans what comes bac
   next = [new Error("overloaded")];
   const f = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "make version 3 shorter", version: 3 });
   assert.equal(f.status, 200);
-  assert.match(f.json.messages.at(-1).body, /^\*\*.+\*\* is shorter\.$/);
+  assert.equal(f.json.messages.at(-1).body, "**Ad 3** is shorter.");
   next = ["refusal"];
   const g = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "run it", version: 1 });
   assert.equal(g.json.messages.at(-1).kind, "upgrade");

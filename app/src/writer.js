@@ -217,6 +217,8 @@ export function polishChat(text) {
 
 export function houseRuleProblems(text) {
   const problems = [];
+  // A Markdown list in a chat reply starts its lines with "- ", which shows as a bullet, not a dash.
+  text = String(text || "").replace(/^\s*-\s+/gm, "");
   if (/[–—\u2010-\u2015\u2212]|\s-\s|\p{L}-\p{L}/u.test(text)) problems.push("dash");
   if (/\b(we|us|our|ours|we're|we've|we'll)\b/i.test(text)) problems.push("we");
   if (/\brealtor/i.test(text)) problems.push("realtor");

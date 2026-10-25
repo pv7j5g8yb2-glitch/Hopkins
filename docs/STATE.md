@@ -168,6 +168,15 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Ad labels (2026-10-25, Ismael): the tabs, captions and replies say Ad 1, Ad 2, Ad 3; the idea
+  names ("Brick gable") only appear after the number in the first message, since as tab labels
+  they didn't make sense to him. Removing an ad numbers the rest again from 1.
+* "Busy" fix (2026-10-25): on Groq free a chat message is about 5,000 tokens and each model
+  allows about 8,000 a minute, so right after a new listing all three were spent and Hopkins said
+  it was getting a lot of messages. It now waits for the first model to free up (up to 25
+  seconds) and asks again. A busy reply is left out of what the model sees, so "now?" after one
+  reaches it together with the unanswered question, and the model is told a short nudge means
+  answer what they asked last.
 * Free plan changed (2026-10-25, Ismael): the 3 free ads are the real thing, no watermark and
   downloadable. After them nothing new without upgrading: a new set on free now removes the old
   ads (still counted) and needs free ads left, so it can't be used to get fresh ads for nothing.

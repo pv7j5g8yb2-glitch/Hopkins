@@ -257,19 +257,26 @@ export async function patchListing(workspaceId, id, patch) {
 
 // ---------- making ads ----------
 
+// The app labels ads by number (Ad 1, Ad 2), so replies do too; each one's idea is said after it.
 const NAMES = (ads) => {
-  const n = ads.map((a) => `**${a.name || `Ad ${a.version}`}**`);
+  const n = ads.map((a) => `**Ad ${a.version}**`);
   return n.length > 1 ? `${n.slice(0, -1).join(", ")} and ${n.at(-1)}` : n[0] || "";
 };
+const IDEAS = (ads) => ads.map((a) => `- **Ad ${a.version}**${a.name ? `: ${a.name}` : ""}`).join("\n");
 function introFor(moment, listing, ads = []) {
   const where = listing.address || listing.area || "this listing";
-  const count = ads.length === 1 ? "an ad" : `${ads.length} ads`;
-  if (moment === "price") return `The price changed on ${where}, so here ${ads.length === 1 ? "is" : "are"} ${count} for the new price: ${NAMES(ads)}. A new price gives people who scrolled past a reason to look again.`;
-  if (moment === "open_house") return `Here ${ads.length === 1 ? "is" : "are"} ${count} for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}: ${NAMES(ads)}. Run them in the days before it.`;
-  if (moment === "sold") return `Sold, nice. Here ${ads.length === 1 ? "is" : "are"} ${count} for people nearby who might sell next: ${NAMES(ads)}.`;
-  return ads.length === 1
-    ? `Here's an ad for ${where}: ${NAMES(ads)}. Tell me what to change, or press Run it.`
-    : `Here are ${count} for ${where}, each a different idea so the test tells you something: ${NAMES(ads)}. Tell me what to change, or press Run it.`;
+  if (ads.length === 1) {
+    const one = `**Ad 1**${ads[0].name ? `, ${ads[0].name.charAt(0).toLowerCase()}${ads[0].name.slice(1)}` : ""}`;
+    if (moment === "price") return `The price changed on ${where}, so here's ${one}, for the new price. A new price gives people who scrolled past a reason to look again.`;
+    if (moment === "open_house") return `Here's ${one}, for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}. Run it in the days before.`;
+    if (moment === "sold") return `Sold, nice. Here's ${one}, for people nearby who might sell next.`;
+    return `Here's ${one}, for ${where}. Tell me what to change, or press Run it.`;
+  }
+  const list = `\n\n${IDEAS(ads)}\n\n`;
+  if (moment === "price") return `The price changed on ${where}, so here are ${ads.length} ads for the new price:${list}A new price gives people who scrolled past a reason to look again.`;
+  if (moment === "open_house") return `Here are ${ads.length} ads for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}:${list}Run them in the days before it.`;
+  if (moment === "sold") return `Sold, nice. Here are ${ads.length} ads for people nearby who might sell next:${list}`.trim();
+  return `Here are ${ads.length} ads for ${where}, each a different idea so the test tells you something:${list}Tell me what to change, or press Run it.`;
 }
 
 // The model's style for one ad: "" and 0 mean "leave it", "default" means "back to the brand".
@@ -327,7 +334,8 @@ function normalizeAI(ad, photos, fallback, message = "") {
     headline: clean(ad.headline, 60) || fallback.headline,
     primary_text: clean(ad.primary_text, 600) || fallback.primary_text,
     overlay: (clean(ad.overlay, 60).replace(/([^.!?])$/, "$1.")) || fallback.overlay,
-    kicker: clean(ad.kicker, 50) || fallback.kicker || "",
+    // "New ·" with nothing after it: the model left the place blank.
+    kicker: clean(ad.kicker, 50).replace(/\s*[·•|,]\s*$/, "") || fallback.kicker || "",
     photo_id: photo ? photo.id : fallback.photo_id,
   };
 }
@@ -491,16 +499,26 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
 const NUMBER_WORDS = { 2: "two", 3: "three", 4: "four", 5: "five" };
 function VERSION_WORD(vs, ads = []) {
   if (vs.length > 1 && ads.length && vs.length === ads.length) return vs.length === 2 ? "Both ads" : `All ${NUMBER_WORDS[vs.length] || vs.length} ads`;
-  const names = vs.map((v) => ads.find((a) => a.version === v)?.name).filter(Boolean);
-  if (names.length === vs.length && names.length) return NAMES(vs.map((v) => ads.find((a) => a.version === v)));
-  return vs.length === 1 ? `Ad ${vs[0]}` : `Ads ${vs.slice(0, -1).join(", ")} and ${vs.at(-1)}`;
+  return NAMES(vs.map((v) => ({ version: v })));
 }
 
-// Takes ads out of a listing. They still count as made on the free plan.
+// Takes ads out of a listing. They still count as made on the free plan. The ones left are
+// numbered again from 1, so the tabs never read "Ad 1, Ad 3"; leads follow the ad, not its
+// number. Returns what moved, as [old, new] pairs.
 async function removeAds(ws, listing, gone) {
-  if (!gone.length) return;
+  if (!gone.length) return [];
   await run(`UPDATE workspaces SET ads_removed = ads_removed + ? WHERE id = ?`, [gone.length, ws.id]);
   for (const a of gone) await run(`DELETE FROM ads WHERE id = ? AND workspace_id = ?`, [a.id, ws.id]);
+  const moved = [];
+  for (const moment of [...new Set(gone.map((a) => a.moment))]) {
+    const left = await all(`SELECT id, version FROM ads WHERE listing_id = ? AND moment = ? ORDER BY version`, [listing.id, moment]);
+    for (const [i, a] of left.entries()) {
+      if (a.version === i + 1) continue;
+      await run(`UPDATE ads SET version = ? WHERE id = ?`, [i + 1, a.id]);
+      moved.push([a.version, i + 1]);
+    }
+  }
+  return moved;
 }
 
 // More ads, or fewer, from the chat.
@@ -509,10 +527,12 @@ async function changeSet(ws, listing, ads, photos, r, text) {
   if (r.action === "remove_ads") {
     const gone = ads.filter((a) => r.remove.includes(a.version) || (!r.remove.length && a.version === r.version));
     if (!gone.length) { await say(ws, listing.id, reply || "Which one should go?"); return {}; }
-    await removeAds(ws, listing, gone);
+    const moved = await removeAds(ws, listing, gone);
     const left = ads.filter((a) => !gone.includes(a));
-    await say(ws, listing.id, reply || `Removed ${VERSION_WORD(gone.map((a) => a.version), gone)}.${left.length ? "" : " Tell me what to make instead whenever you like."}`);
-    return { focus: left[0]?.version };
+    const renumbered = moved.length ? ` ${moved.map(([from, to]) => `What was Ad ${from} is now Ad ${to}`).join(", ")}.` : "";
+    // The model's reply was written before the numbers moved, so Hopkins says it plainly.
+    await say(ws, listing.id, `Removed ${VERSION_WORD(gone.map((a) => a.version), gone)}.${renumbered}${left.length ? "" : " Tell me what to make instead whenever you like."}`);
+    return { focus: left.length ? 1 : undefined };
   }
   // add_ads
   const from = Math.max(0, ...ads.map((a) => a.version)) + 1;
@@ -558,7 +578,7 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
     const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name });
     if (r) return applyAI(ws, listing, ads, photos, r, text);
     if (takeFailure() === "busy" && needsModel(text)) {
-      await say(ws, listing.id, BUSY);
+      await say(ws, listing.id, BUSY, "text", { busy: true });
       return {};
     }
   }
@@ -931,7 +951,7 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
   if (ad) await run(`UPDATE tests SET leads = leads + 1 WHERE ad_id = ?`, [ad.id]);
   const what = wants === "showing" ? "wants a showing" : wants === "offer" ? "wants to talk about an offer" : "has a question";
   const contact = [phone, email].filter(Boolean).join(", ");
-  await say(ws, listing.id, `New lead${ad ? ` from ${ad.name ? `**${ad.name}**` : `ad ${ad.version}`}` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""} A quick reply is the best way to keep a lead warm.`, "lead", { leadId: id }, false);
+  await say(ws, listing.id, `New lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""} A quick reply is the best way to keep a lead warm.`, "lead", { leadId: id }, false);
   if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
   return id;
 }
@@ -955,7 +975,7 @@ export async function weeklyReport(ws, days = 7) {
   const rows = listings.map((l) => {
     const ls = leads.filter((x) => x.listing_id === l.id);
     const byVersion = {};
-    for (const x of ls) if (x.version) byVersion[x.ad_name || `Ad ${x.version}`] = (byVersion[x.ad_name || `Ad ${x.version}`] || 0) + 1;
+    for (const x of ls) if (x.version) byVersion[`Ad ${x.version}`] = (byVersion[`Ad ${x.version}`] || 0) + 1;
     const spend = Number(l.spend || 0);
     return {
       id: l.id, name: l.title || l.address || l.area || l.city || "Untitled listing", status: l.status, leads: ls.length,

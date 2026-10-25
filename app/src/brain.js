@@ -203,6 +203,10 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
       });
       // Each free model has its own allowance (about 8,000 tokens a minute and 200,000 a day,
       // checked 2026-10-25). When one is used up, the next one answers.
+      // Each free model allows about 8,000 tokens a minute and a chat message uses 5,000 or so,
+      // so right after a new listing every model can be spent for a few seconds. Rather than
+      // say "busy", Hopkins waits for the first one to free up (up to 25 seconds) and asks again.
+      for (let round = 0; round < 2; round++) {
       for (const model of groqModels()) {
         let waited = false;
         for (let attempt = 0; ; attempt++) {
@@ -230,6 +234,10 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
           console.error(`Groq ${model} is over its limit for ${Math.round(wait)}s: ${err.slice(0, 160)}`);
           break;
         }
+      }
+      const soonest = Math.min(...[GROQ_MODEL, ...GROQ_BACKUPS].map((m) => resting.get(m) || 0)) - Date.now();
+      if (round > 0 || soonest > 25000) break;
+      await new Promise((r) => setTimeout(r, Math.max(0, soonest) + 300));
       }
       lastFailure = "busy";
       throw new Error("Groq: every free model is over its limit");
@@ -350,7 +358,7 @@ const SET_SCHEMA = {
   properties: {
     insight: { type: "string", description: "First, in one or two sentences: what's genuinely different about this home and who is most likely to buy it. This decides the ideas." },
     ads: { type: "array", items: SET_AD_SCHEMA },
-    reply: { type: "string", description: "To the agent, like a colleague handing them over: what you noticed about the home and what each ad tries, by name, in two to four plain sentences. Bold the names. No question about running, posting or paying; at most a short invite to change anything." },
+    reply: { type: "string", description: "To the agent, like a colleague handing them over: what you noticed about the home and what each ad tries, calling them Ad 1, Ad 2 and so on (bold the numbers), in two to four plain sentences. No question about running, posting or paying; at most a short invite to change anything." },
   },
   required: ["insight", "ads", "reply"],
   additionalProperties: false,
@@ -400,6 +408,8 @@ In the chat:
 - If they name a version without saying what to change ("version 2", "no, I meant 2"), switch to it (select_version) and ask what they'd like changed in a few words.
 - If they ask for a change and don't name a version, change the version they're looking at.
 - If something is unclear, ask one short question instead of guessing.
+- A short nudge ("now?", "and?", "so?", "?", "try again", "well?") means they're still waiting on what they asked last: answer that, fully. Never ask what they mean by it.
+- Call the ads "Ad 1", "Ad 2" and so on, the way the app labels them. You can say what one is about after its number ("Ad 2, the arched entry").
 - Never list everything you can do unless they ask. Never repeat a reply you already gave.
 - Only use facts from the context. Never invent results, numbers or features. In ads too: no appliances, materials, finishes or layout the agent didn't mention.
 - Say it the way the agent would: "the line on the photo", not "overlay"; "the label", not "kicker".
@@ -434,7 +444,11 @@ function conversation(history) {
   for (const m of history.slice(-24)) {
     const role = m.role === "agent" ? "user" : "assistant";
     // Photos sent without words still happened in the conversation.
-    const photos = (() => { try { return (typeof m.data === "string" ? JSON.parse(m.data) : m.data)?.photos?.length || 0; } catch { return 0; } })();
+    const data = (() => { try { return (typeof m.data === "string" ? JSON.parse(m.data) : m.data) || {}; } catch { return {}; } })();
+    // "I'm getting a lot of messages" never reached the model, so it isn't part of the talk:
+    // the question before it and a "now?" after it read as one message to answer.
+    if (data.busy) continue;
+    const photos = data.photos?.length || 0;
     const body = m.body || (photos ? `(sent ${photos} ${photos === 1 ? "photo" : "photos"})` : "");
     if (!body) continue;
     if (out.length && out[out.length - 1].role === role) out[out.length - 1].content += "\n\n" + body;
