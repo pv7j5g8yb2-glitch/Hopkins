@@ -261,3 +261,33 @@ test("renaming a listing, and clearing the name goes back to the address", async
   assert.equal(back.json.listing.title, null);
   assert.equal(back.json.listing.address, "412 Oak Street");
 });
+
+test("the look of an ad: from the chat in plain words, and from the Style sheet", async () => {
+  const { c } = await signup("style@ellery.test");
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  const id = l.json.listing.id;
+  const m = await c("POST", `/api/listings/${id}/messages`, { text: "make all three green with a gold label", version: 1 });
+  assert.equal(m.json.messages.at(-1).body, "All three versions now have a green background and a gold label.");
+  for (const a of m.json.ads) assert.deepEqual([a.style.bg, a.style.accent], ["#2F5D46", "#D7AE62"]);
+  assert.equal(m.json.messages.at(-1).data.snapshot.length, 3);
+  const f = await c("POST", `/api/listings/${id}/messages`, { text: "version 2: serif font and the text at the top", version: 1 });
+  assert.deepEqual([f.json.ads[1].style.font, f.json.ads[1].style.layout], ["classic", "top"]);
+  assert.equal(f.json.focus, 2);
+  // a fact about the home is not a colour request
+  const fact = await c("POST", `/api/listings/${id}/messages`, { text: "it has a white kitchen", version: 1 });
+  assert.equal(fact.json.ads[0].style.bg, "#2F5D46");
+  // a colour that wouldn't read on the background is left out, and the reply says so
+  const dark = await c("POST", `/api/listings/${id}/messages`, { text: "version 3 dark green text please", version: 1 });
+  assert.equal(dark.json.ads[2].style.text, undefined);
+  assert.match(dark.json.messages.at(-1).body, /dark green wouldn't be readable on green\. A lighter one will work\.$/);
+  const cream = await c("POST", `/api/listings/${id}/messages`, { text: "version 3 cream text please", version: 1 });
+  assert.equal(cream.json.ads[2].style.text, "#F4EBDD");
+  // the Style sheet: one version, then all, then back to the brand look; nonsense is ignored
+  let s = await c("PATCH", `/api/listings/${id}/style`, { versions: [3], style: { bg: "#6d1f2c", layout: "frame", font: "comic sans" } });
+  assert.deepEqual([s.json.ads[2].style.bg, s.json.ads[2].style.layout, s.json.ads[2].style.font], ["#6D1F2C", "frame", undefined]);
+  s = await c("PATCH", `/api/listings/${id}/style`, { versions: [1, 2, 3], style: {}, sizeStep: 0.1 });
+  assert.equal(s.json.ads[0].style.size, 1.1);
+  s = await c("PATCH", `/api/listings/${id}/style`, { versions: [1], style: { reset: true } });
+  assert.deepEqual(Object.keys(s.json.ads[0].style).filter((k) => ["bg", "accent", "font", "layout", "size"].includes(k)), []);
+  assert.equal(s.json.ads[1].style.bg, "#2F5D46");
+});

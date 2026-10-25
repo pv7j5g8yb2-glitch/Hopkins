@@ -41,11 +41,35 @@
     const [r, g, b] = hexRgb(hex).map((v) => v / 255);
     return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.55;
   }
+  const lum = (hex) => {
+    const [r, g, b] = hexRgb(hex).map((v) => v / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+  // A label colour too close to its background (gold on cream) is darkened or lightened just
+  // enough to read, the way bronze stands in for gold on cream.
+  function readableOn(col, bg, min = 2.2) {
+    if (contrast(col, bg) >= min) return col;
+    const to = isDark(bg) ? 255 : 0;
+    const c = hexRgb(col);
+    for (let t = 0.1; t <= 1; t += 0.1) {
+      const m = "#" + c.map((v) => Math.round(v + (to - v) * t).toString(16).padStart(2, "0")).join("");
+      if (contrast(m, bg) >= min) return m;
+    }
+    return isDark(bg) ? "#FFFFFF" : "#111111";
+  }
 
-  function cover(ctx, img, x, y, w, h) {
+  // Fills the box with the photo, cropping what doesn't fit; fy picks which part stays in view
+  // (0 the top, 0.5 the middle, 1 the bottom).
+  function cover(ctx, img, x, y, w, h, fy = 0.5) {
     const s = Math.max(w / img.width, h / img.height);
     const iw = img.width * s, ih = img.height * s;
-    ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) * fy, iw, ih);
+    ctx.restore();
   }
 
   function wrap(ctx, text, maxWidth, maxLines) {
@@ -152,25 +176,49 @@
     ctx.restore();
   }
 
+  // Every ad can carry its own look in ad.style, set from the chat or the Style sheet:
+  //   bg      the colour of the fade, block, card or frame (default: the brand colour)
+  //   accent  the small label and the price (default: the brand accent)
+  //   text    the big line (default: light or dark, whichever reads on the background)
+  //   font    "modern" (Inter Tight bold) or "classic" (Instrument Serif)
+  //   layout  "fade" (photo full, fades into the colour at the bottom), "top" (the same from
+  //           the top), "split" (photo above, solid block below), "card" (photo full, a card
+  //           with the price), "frame" (photo framed in the colour, text below)
+  //   size    0.7 to 1.4 times the usual text size
+  //   align   "left" or "center"
+  //   focus   which part of the photo stays in view: "top", "center" or "bottom"
+  //   fade    "light", "normal" or "strong"
+  // With no style the three versions keep their own layouts (fade, split, card).
+  const LAYOUT_FOR = { life: "fade", feature: "split", facts: "card" };
+  const HEX = /^#[0-9a-f]{6}$/i;
+
   async function render(canvas, opts) {
     const { ad, brand = {}, format = "feed", photo, logo, watermark: wm } = opts;
+    const st = ad.style || {};
     await loadFonts();
     const [img, logoImg] = await Promise.all([loadImage(photo), loadImage(logo)]);
     const W = 1080, H = format === "story" ? 1920 : 1350;
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext("2d");
-    const primary = brand.primary || "#1F2A36";
-    const accent = brand.accent || "#C8A96A";
-    const classic = brand.font === "classic";
-    const big = (s) => (classic ? `400 ${s}px "Instrument Serif"` : `700 ${s}px "Inter Tight"`);
+    const primary = HEX.test(st.bg || "") ? st.bg : brand.primary || "#1F2A36";
+    const accent = readableOn(HEX.test(st.accent || "") ? st.accent : brand.accent || "#C8A96A", primary);
+    const classic = (st.font || brand.font) === "classic";
+    const scale = Math.min(1.4, Math.max(0.7, Number(st.size) || 1));
+    const big = (s) => (classic ? `400 ${Math.round(s)}px "Instrument Serif"` : `700 ${Math.round(s)}px "Inter Tight"`);
     const light = "#FBF8F3";
-    const onPrimary = isDark(primary) ? light : "#1A1A1A";
+    const onPrimary = HEX.test(st.text || "") ? st.text : isDark(primary) ? light : "#1A1A1A";
+    const onPhoto = HEX.test(st.text || "") ? st.text : light;
     const story = format === "story";
     // Instagram covers the top and bottom of a story with its own buttons; keep text clear.
     const safeTop = story ? 250 : 0;
     const safeBottom = story ? 330 : 0;
     const letter = classic ? -0.5 : -3;
+    const layout = ["fade", "top", "split", "card", "frame"].includes(st.layout) ? st.layout : LAYOUT_FOR[ad.pattern] || "fade";
+    const center = st.align === "center";
+    const focus = st.focus === "top" ? 0 : st.focus === "bottom" ? 1 : 0.5;
+    const fade = st.fade === "light" ? 0.62 : st.fade === "strong" ? 1.18 : 1;
+    const X = center ? W / 2 : 72;
 
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = primary;
@@ -184,86 +232,106 @@
       ctx.fillRect(0, 0, W, H);
     }
 
-    const pattern = ad.pattern;
     const kicker = (ad.kicker || "").toUpperCase();
-
+    const photoAt = (x, y, w, h) => { if (img) cover(ctx, img, x, y, w, h, focus); };
     const drawLines = (lines, x, y, size, color, lh = 0.98) => {
       ctx.fillStyle = color;
       ctx.letterSpacing = `${letter}px`;
       lines.forEach((l, i) => ctx.fillText(l, x, y + i * size * lh));
       ctx.letterSpacing = "0px";
     };
-
-    if (pattern === "feature") {
-      // Photo on top, a solid block in the brand colour with the one detail.
-      const split = story ? 1180 : 860;
-      if (img) cover(ctx, img, 0, 0, W, split);
-      ctx.fillStyle = primary;
-      ctx.fillRect(0, split, W, H - split);
-      ctx.fillStyle = accent;
-      ctx.fillRect(72, split + 64, 72, 8);
+    const label = (text, x, y, withBar) => {
+      if (!text) return;
       ctx.font = '700 28px "Inter Tight"';
       ctx.fillStyle = accent;
       ctx.letterSpacing = "3px";
-      ctx.fillText(kicker, 168, split + 76);
+      if (withBar && !center) {
+        ctx.fillRect(x, y - 12, 72, 8);
+        ctx.fillText(text, x + 96, y);
+      } else ctx.fillText(text, x, y);
       ctx.letterSpacing = "0px";
-      const t = fitText(ctx, ad.overlay, big, story ? 100 : 92, W - 144, 3, 52);
-      ctx.textBaseline = "alphabetic";
+    };
+    const fadeTo = (y0, y1, a0, aMid, a1) => {
+      const g = ctx.createLinearGradient(0, y0, 0, y1);
+      g.addColorStop(0, rgba(primary, Math.min(1, a0 * fade)));
+      g.addColorStop(0.55, rgba(primary, Math.min(1, aMid * fade)));
+      g.addColorStop(1, rgba(primary, Math.min(1, a1 * fade)));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0));
+    };
+    ctx.textAlign = center ? "center" : "left";
+    ctx.textBaseline = "alphabetic";
+
+    if (layout === "split" || layout === "frame") {
+      // Photo above (framed in the colour for "frame"), a solid block below with the line.
+      const split = story ? 1180 : 860;
+      if (layout === "frame") photoAt(48, 48 + safeTop * 0.4, W - 96, split - 48 - safeTop * 0.4);
+      else photoAt(0, 0, W, split);
+      label(kicker, X, split + 76, true);
+      const t = fitText(ctx, ad.overlay, big, (story ? 100 : 92) * scale, W - 144, 3, 52 * scale);
       ctx.font = big(t.size);
-      drawLines(t.lines, 72, split + 110 + t.size * 0.9, t.size, onPrimary);
+      drawLines(t.lines, X, split + 110 + t.size * 0.9, t.size, onPrimary);
+      ctx.textAlign = "left";
       footer(ctx, W, H - 64 - safeBottom * 0.6, brand, onPrimary, logoImg);
-    } else if (pattern === "facts") {
-      // Photo full bleed, a card in the brand colour with the price as the big number.
-      if (img) cover(ctx, img, 0, 0, W, H);
+    } else if (layout === "card") {
+      // Photo full bleed, a card in the colour with the price as the big number.
+      photoAt(0, 0, W, H);
       const cardH = 430;
       const cy = H - cardH - 64 - safeBottom;
       ctx.fillStyle = rgba(primary, 0.94);
       roundRect(ctx, 56, cy, W - 112, cardH, 28);
       ctx.fill();
-      ctx.textBaseline = "alphabetic";
-      ctx.font = big(classic ? 84 : 72);
-      drawLines([ad.overlay], 104, cy + 112, 72, onPrimary);
+      const cx = center ? W / 2 : 104;
+      ctx.font = big((classic ? 84 : 72) * scale);
+      drawLines([ad.overlay], cx, cy + 112, 72 * scale, onPrimary);
       const price = opts.price || "";
       if (price) {
-        ctx.font = big(classic ? 150 : 132);
-        drawLines([price], 100, cy + 262, 132, accent);
+        ctx.font = big((classic ? 150 : 132) * scale);
+        drawLines([price], center ? cx : 100, cy + 262, 132, accent);
       }
       ctx.font = '400 34px "Inter Tight"';
       ctx.fillStyle = onPrimary;
       ctx.globalAlpha = 0.9;
-      ctx.fillText([kicker && kicker.toLowerCase() !== (ad.overlay || "").toLowerCase() ? ad.kicker : "", opts.place].filter(Boolean).join("  ·  "), 104, cy + 340);
+      const small = kicker && kicker.toLowerCase() !== (ad.overlay || "").toLowerCase() ? ad.kicker : "";
+      const place = opts.place && !small.toLowerCase().includes(String(opts.place).toLowerCase()) ? opts.place : "";
+      ctx.fillText([small, place].filter(Boolean).join("  ·  "), cx, cy + 340);
       ctx.globalAlpha = 1;
       ctx.font = '700 28px "Inter Tight"';
-      ctx.fillStyle = onPrimary;
       ctx.globalAlpha = 0.75;
-      ctx.fillText(brand.agent_name || brand.business || "", 104, cy + cardH - 40);
+      ctx.fillText(brand.agent_name || brand.business || "", cx, cy + cardH - 40);
       ctx.globalAlpha = 1;
+      ctx.textAlign = "left";
       if (logoImg) {
         const h = 56, w = Math.min(180, (logoImg.width / logoImg.height) * h);
         ctx.drawImage(logoImg, W - 104 - w, cy + cardH - 40 - h + 12, w, h);
       }
+    } else if (layout === "top") {
+      // Photo full bleed, the line large at the top over a fade from the colour.
+      photoAt(0, 0, W, H);
+      fadeTo(0, H * 0.62, 0.97, 0.7, 0);
+      fadeTo(H * 0.78, H, 0, 0.35, 0.75);
+      const t = fitText(ctx, ad.overlay, big, (story ? 128 : 116) * scale, W - 144, 3, 60 * scale);
+      const top = 150 + safeTop + t.size * 0.85;
+      label(kicker, X, top - t.size - 6);
+      ctx.font = big(t.size);
+      drawLines(t.lines, X, top, t.size, onPhoto);
+      ctx.textAlign = "left";
+      footer(ctx, W, H - 72 - safeBottom, brand, light, logoImg);
     } else {
-      // The life: photo full bleed, the line large over a fade into the brand colour.
-      if (img) cover(ctx, img, 0, 0, W, H);
-      const g = ctx.createLinearGradient(0, H * 0.32, 0, H);
-      g.addColorStop(0, rgba(primary, 0));
-      g.addColorStop(0.55, rgba(primary, 0.78));
-      g.addColorStop(1, rgba(primary, 0.97));
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, W, H);
-      const t = fitText(ctx, ad.overlay, big, story ? 128 : 116, W - 144, 3, 60);
+      // Fade: photo full bleed, the line large over a fade into the colour at the bottom.
+      photoAt(0, 0, W, H);
+      fadeTo(H * 0.32, H, 0, 0.78, 0.97);
+      const t = fitText(ctx, ad.overlay, big, (story ? 128 : 116) * scale, W - 144, 3, 60 * scale);
       const bottom = H - 190 - safeBottom;
       const top = bottom - (t.lines.length - 1) * t.size * 0.98;
-      ctx.font = '700 28px "Inter Tight"';
-      ctx.fillStyle = accent;
-      ctx.letterSpacing = "3px";
-      ctx.fillText(kicker, 72, top - t.size - 6);
-      ctx.letterSpacing = "0px";
+      label(kicker, X, top - t.size - 6);
       ctx.font = big(t.size);
-      drawLines(t.lines, 72, top, t.size, light);
+      drawLines(t.lines, X, top, t.size, onPhoto);
+      ctx.textAlign = "left";
       footer(ctx, W, H - 72 - safeBottom, brand, light, logoImg);
     }
 
+    ctx.textAlign = "left";
     if (!img) {
       ctx.save();
       ctx.globalAlpha = 0.55;
@@ -287,5 +355,5 @@
     ctx.closePath();
   }
 
-  window.Creative = { render, loadImage };
+  window.Creative = { render, loadImage, LAYOUT_FOR };
 })();

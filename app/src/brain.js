@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { FEATURES } from "./listing.js";
 import { PATTERNS } from "./writer.js";
+import { LAYOUTS, describeStyle } from "./style.js";
 
 // The model behind the chat. Claude when ANTHROPIC_API_KEY is set; otherwise Groq's free
 // model when GROQ_API_KEY is set (the same free option the survey uses). Every call returns
@@ -54,6 +55,25 @@ How you write ads (the copy appears on the agent's ads, in their name):
 - Write as the agent would: first person singular if needed ("Send me a message"), or no person at all.
 - Every detail in an ad must be in the listing facts or the agent's own description. If it isn't there, leave it out, even when it's typical for homes like this: no appliances, flooring, light, views, "charm" or "character" unless the agent said so.`;
 
+// The look of one ad. "" (or 0 for size) leaves that part as it is; "default" puts it back.
+const STYLE_SCHEMA = {
+  type: "object",
+  properties: {
+    bg: { type: "string", description: "Background colour of the fade, block, card or frame, as a hex like #2F5D46" },
+    accent: { type: "string", description: "Colour of the small label and the price, as hex" },
+    text: { type: "string", description: "Colour of the big line on the image, as hex" },
+    font: { type: "string", description: "modern (bold sans) or classic (serif)" },
+    layout: { type: "string", description: `One of ${LAYOUTS.join(", ")}: fade = photo full with the line at the bottom over a fade, top = the same at the top, split = photo above a solid block, card = photo full with a card showing the price, frame = photo framed in the colour with the line below` },
+    size: { type: "number", description: "Text size, 0.7 to 1.4 times normal; 0 leaves it" },
+    align: { type: "string", description: "left or center" },
+    focus: { type: "string", description: "Which part of the photo stays in view: top, center or bottom" },
+    fade: { type: "string", description: "Strength of the fade: light, normal or strong" },
+    reset: { type: "boolean", description: "true puts the whole look back to the brand defaults" },
+  },
+  required: ["bg", "accent", "text", "font", "layout", "size", "align", "focus", "fade", "reset"],
+  additionalProperties: false,
+};
+
 const AD_SCHEMA = {
   type: "object",
   properties: {
@@ -63,8 +83,9 @@ const AD_SCHEMA = {
     overlay: { type: "string", description: "The line on the photo. Call it that to the agent, never overlay." },
     kicker: { type: "string", description: "The small label above the line on the photo." },
     photo_number: { type: "integer", description: "Which photo to use, counting from 1. 0 keeps the current one." },
+    style: STYLE_SCHEMA,
   },
-  required: ["version", "headline", "primary_text", "overlay", "kicker", "photo_number"],
+  required: ["version", "headline", "primary_text", "overlay", "kicker", "photo_number", "style"],
   additionalProperties: false,
 };
 
@@ -264,7 +285,8 @@ In the chat:
 - Money, exactly: the Hopkins plan is one price. The ad spend is separate, the agent chooses it and pays it to Meta. The default test is $200 over 10 days, split across the versions. Never say the plan price covers ad spend.
 - A new fact about the home that isn't one of the listed features (solar panels, a new roof) is still a fact: use update_listing, work it into the versions where it fits (put them in ads), and never mention a feature list or any other part of how you work.
 - Small talk ("lol ok", "cool") gets a short, natural reply. Don't push them to run or upgrade.
-- What's real today, say it exactly when asked: Hopkins makes and edits the ads here, checks the wording, makes the run plan, gives each version a lead page and link, and collects the leads. It is not connected to Meta yet, so nothing goes live on Facebook or Instagram from here, there's no account to link, and there are no performance numbers to see. A plan the agent says yes to waits until that connection is ready; on the paid plan they can download the ads and post or boost them themselves. Never claim more than this.
+- You can change how every ad looks, not only the words, and you never say you can't: background colour, the colour of the label and price, the colour of the big line, the font (modern bold or classic serif), the layout (fade, top, split, card, frame), text size, left or centred, which part of the photo stays in view, and how strong the fade is. Put those in ads[].style for each version you change (with its words copied as they are). Fill in only the parts they asked for and leave every other style field as "" (size 0), so nothing else changes. Use refined colours, never pure web ones: navy #1F2A44, gold #D7AE62, black #111111, cream #F4EBDD, green #2F5D46, burgundy #6D1F2C, white #FFFFFF. If an earlier reply in this chat said you can't change colours, fonts or layout, that was wrong: say so plainly ("I got that wrong earlier, I can"). Say "all three" means all three versions. With no colours set, the ads use the agent's brand colours. Pick colours with enough contrast to read. In the reply, name colours in words ("navy", "gold"), never hex codes, and only say what you actually changed in this turn, not earlier changes. If they ask for something the ads can't do (a second photo in one ad, animation, a video), say so plainly and offer the nearest thing you can do.
+- What's real today, say it exactly when asked: Hopkins makes and edits the ads (words and look) here, checks the wording, makes the run plan, gives each version a lead page and link, and collects the leads. It is not connected to Meta yet, so nothing goes live on Facebook or Instagram from here, there's no account to link, and there are no performance numbers to see. A plan the agent says yes to waits until that connection is ready; on the paid plan they can download the ads and post or boost them themselves. Never claim more than this.
 - The free plan: up to 3 ads made in the chat, previews only. More ads, downloads and running ads need the paid plan, which is $299 a month, billing starts when the first ad goes live, cancel any time, no cut of ad spend. Say this plainly when it matters, once.`;
 
 function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName }) {
@@ -281,6 +303,7 @@ Photos: ${photos.length ? photos.map((p, i) => `${i + 1} ${p.label || "unlabelle
 Ads: ${ads.length ? "" : "none yet"}
 ${ads.map((a) => `Version ${a.version} (${PATTERNS[a.pattern]?.name || a.pattern}, photo ${Math.max(1, photos.findIndex((p) => p.id === a.photo_id) + 1)}, ${a.status}):
   On the image: ${a.overlay}
+  Look: ${describeStyle(a.style)}
   Label: ${a.kicker}
   Headline: ${a.headline}
   Text: ${a.primary_text}`).join("\n")}

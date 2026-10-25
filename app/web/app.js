@@ -43,7 +43,7 @@
     people: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg>',
     chart: '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
   };
-  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), snaps: {}, snapImg: {}, snapQueue: Promise.resolve(), format: "feed", pending: [], busy: false, showPhotos: false, showIssues: false, seen: {}, fresh: null };
+  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), snaps: {}, snapImg: {}, snapQueue: Promise.resolve(), segPos: {}, styleAll: false, format: "feed", pending: [], busy: false, showPhotos: false, showIssues: false, seen: {}, fresh: null };
 
   // ---------- helpers ----------
 
@@ -250,12 +250,15 @@
   // One popover for every "more" menu: a dropdown on a laptop, a bottom sheet on a phone.
   // Items use the same data attributes as the rest of the page, so one click handler covers all.
   const phone = () => window.innerWidth <= 980;
-  function openPop(anchor, html, { top = false } = {}) {
+  function openPop(anchor, html, { top = false, style = false } = {}) {
     const pop = $("#pop");
     pop.innerHTML = `<div class="grab"></div>${html}`;
     pop.classList.add("on");
     pop.classList.toggle("lg", phone());
     pop.classList.toggle("top", phone() && top);
+    // The Style sheet leaves the ad in view (no dimming), so each change can be seen as it lands.
+    pop.classList.toggle("stylesheet", style);
+    $("#sheetBg").classList.toggle("clear", style);
     if (phone()) { $("#sheetBg").classList.add("on"); buzz(6); return; }
     const r = anchor.getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
@@ -716,7 +719,7 @@
     const chip = l.status === "sold" ? `<span class="chip green">Sold</span>` : l.moment !== "new" ? `<span class="chip gold">${esc(S.me.moments[l.moment])}</span>` : "";
     const sub = [l.priceText, l.facts].filter(Boolean).join(" · ");
     const firstPhoto = p.photos[0];
-    main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub })}
+    main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab" data-seg="view"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub })}
       <div class="lv ${showPv ? "showpv" : ""}" id="lv">
       <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><h2>${esc(listingName(l))}</h2><span class="sub">${esc(sub)}</span></div>${chip}
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
@@ -729,6 +732,7 @@
     msgs.style.scrollBehavior = "";
     drawMiniCards();
     drawPreview();
+    settleSegs();
     bindComposer(async (text, files) => {
       if (files.length) {
         $("#hint").textContent = `Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}…`;
@@ -892,12 +896,12 @@
       <div class="cta"><span>${esc(ad.cta)}</span><span>›</span></div>
       <div class="cp" id="cp"><b>${esc(handle)}</b>${esc(short ? ad.primary_text.slice(0, 125).replace(/\s\S*$/, "") : ad.primary_text)}${short ? '<span class="more" data-act="more">… more</span>' : ""}</div></div>`;
     const story = `<div class="story"><canvas id="big" width="1080" height="1920"></canvas><div class="bar"><i></i></div><div class="who"><i class="ava" ${ava}></i>${esc(handle)} <span>Sponsored</span></div><div class="go">${esc(ad.cta)}</div></div>`;
-    const tabs = `<div class="seg">${p.ads.map((a) => `<button data-pick="${a.version}" class="${a.version === v ? "on" : ""}">${esc(S.me.patterns[a.pattern]?.name || "Version " + a.version)}</button>`).join("")}</div>`;
-    const fmt = `<div class="seg"><button data-fmt="feed" class="${S.format === "feed" ? "on" : ""}" title="Feed post">Feed</button><button data-fmt="story" class="${S.format === "story" ? "on" : ""}" title="Story">Story</button></div>`;
+    const tabs = `<div class="seg" data-seg="ver">${p.ads.map((a) => `<button data-pick="${a.version}" class="${a.version === v ? "on" : ""}">${esc(S.me.patterns[a.pattern]?.name || "Version " + a.version)}</button>`).join("")}</div>`;
+    const fmt = `<div class="seg" data-seg="fmt"><button data-fmt="feed" class="${S.format === "feed" ? "on" : ""}" title="Feed post">Feed</button><button data-fmt="story" class="${S.format === "story" ? "on" : ""}" title="Story">Story</button></div>`;
     pv.innerHTML = `<div class="pvh">${tabs}${fmt}</div><div class="mbar">${tabs}${fmt}</div>
       <div class="stage" id="stage">${S.format === "feed" ? feed : story}<div class="dots">${p.ads.map((a) => `<i class="${a.version === v ? "on" : ""}"></i>`).join("")}</div></div>
       <div class="pvb">
-        <div class="actrow lg"><button class="btn" data-act="run">Run it</button>${paid() ? `<button class="sec-btn" data-act="dlmenu">${ICON.down}<span>Download</span></button>` : ""}</div>
+        <div class="actrow lg"><button class="btn" data-act="run">Run it</button><button class="sec-btn" data-act="style" aria-label="Style">${ICON.brush}<span>Style</span></button>${paid() ? `<button class="sec-btn" data-act="dlmenu" aria-label="Download">${ICON.down}<span>Download</span></button>` : ""}</div>
         ${paid() ? "" : `<p class="small" style="text-align:center">Free plan: previews only.</p>`}
         <div class="status ${issues.length ? "bad" : ""}">${issues.length ? `${ICON.alert}<button data-act="issues">${issues.length} wording ${issues.length === 1 ? "issue" : "issues"} to look at</button>` : `${ICON.check}Fair housing check passed`}<span style="margin-left:auto"></span><button data-act="photos">${S.showPhotos ? "Hide photos" : "Change photo"}</button></div>
         ${issues.length && S.showIssues ? `<div class="issues">${issues.map((i) => `"${esc(i.term)}" ${esc(i.why)}${i.suggestion ? `. Try "${esc(i.suggestion)}"` : ""}.`).join("<br>")}</div>` : ""}
@@ -905,6 +909,7 @@
       </div>`;
     Creative.render($("#big"), renderOpts(ad, S.format));
     bindStrip();
+    settleSegs();
     // Swipe left or right on the ad to flip between the versions.
     const stage = $("#stage");
     let x0 = null, y0 = null;
@@ -919,20 +924,63 @@
     });
   }
 
+  // The listing's photos: tap one to use it on this version. The number is the one to use in
+  // the chat ("use photo 3"); what's in each photo is worked out behind the scenes.
+  // ---------- the Style sheet: how an ad looks ----------
+  // Every change shows on the ad straight away. "This one" or "All 3" says which versions.
+  const SWATCH = {
+    bg: ["#111111", "#1F2A44", "#2F5D46", "#6D1F2C", "#5B4873", "#6B4A35", "#F4EBDD", "#FFFFFF"],
+    accent: ["#D7AE62", "#F4EBDD", "#FFFFFF", "#8A9A7B", "#E8B4C0", "#9CC3E6", "#111111"],
+    text: ["#FBF8F3", "#FFFFFF", "#111111", "#2A0F14", "#D7AE62"],
+  };
+  function styleSheet() {
+    const l = S.current.listing;
+    const ad = adFor(S.selected[l.id]) || S.current.ads[0];
+    const st = ad.style || {};
+    const b = S.me.workspace.brand;
+    const layout = st.layout || Creative.LAYOUT_FOR[ad.pattern] || "fade";
+    const sw = (key, list, brandColour) => `<div class="sw">${[brandColour ? `<button class="dot brand ${!st[key] ? "on" : ""}" data-st="${key}" data-v="" style="--c:${esc(brandColour)}" title="Brand"></button>` : `<button class="dot auto ${!st[key] ? "on" : ""}" data-st="${key}" data-v="" title="Automatic">A</button>`]
+      .concat(list.map((c) => `<button class="dot ${String(st[key] || "").toUpperCase() === c ? "on" : ""}" data-st="${key}" data-v="${c}" style="--c:${c}"></button>`)).join("")}
+      <label class="dot pick" title="Any colour" style="--c:${esc(st[key] || "#888888")}"><input type="color" data-stpick="${key}" value="${esc(st[key] || brandColour || "#888888")}"></label></div>`;
+    const chips = (key, opts, cur) => `<div class="stc">${opts.map(([v, label]) => `<button class="${cur === v ? "on" : ""}" data-st="${key}" data-v="${v}">${label}</button>`).join("")}</div>`;
+    return `<div class="st-head"><canvas class="st-prev" id="stPrev" width="1080" height="1350" aria-hidden="true"></canvas><b>Style</b><div class="seg st-who" data-seg="stwho"><button class="${S.styleAll ? "" : "on"}" data-stwho="one">Version ${ad.version}</button><button class="${S.styleAll ? "on" : ""}" data-stwho="all">All 3</button></div></div>
+      <div class="st-row"><span>Layout</span>${chips("layout", [["fade", "Fade"], ["top", "Top"], ["split", "Split"], ["card", "Card"], ["frame", "Frame"]], layout)}</div>
+      <div class="st-row"><span>Background</span>${sw("bg", SWATCH.bg, b.primary || "#1F2A36")}</div>
+      <div class="st-row"><span>Label</span>${sw("accent", SWATCH.accent, b.accent || "#C8A96A")}</div>
+      <div class="st-row"><span>Text</span>${sw("text", SWATCH.text, null)}</div>
+      <div class="st-row"><span>Font</span>${chips("font", [["modern", "Modern"], ["classic", "Classic"]], st.font || b.font || "modern")}</div>
+      <div class="st-row"><span>Text size</span><div class="stc"><button data-stsize="-1" aria-label="Smaller">A−</button><button data-stsize="1" aria-label="Bigger">A+</button></div>${chips("align", [["left", "Left"], ["center", "Center"]], st.align || "left")}</div>
+      <div class="st-row"><span>Photo</span>${chips("focus", [["top", "Top"], ["center", "Middle"], ["bottom", "Bottom"]], st.focus || "center")}</div>
+      <div class="st-row"><span>Fade</span>${chips("fade", [["light", "Light"], ["normal", "Normal"], ["strong", "Strong"]], st.fade || "normal")}</div>
+      <button class="st-reset" data-streset="1">Back to the brand look</button>`;
+  }
+  // The ad as it now looks, small, at the top of the sheet, so a change shows where your eyes are.
+  function drawStylePreview() {
+    const c = $("#stPrev");
+    const ad = S.current && adFor(S.selected[S.current.listing.id]);
+    if (c && ad) Creative.render(c, renderOpts(ad, "feed"));
+  }
+
+  async function applyStyle(body) {
+    const l = S.current.listing;
+    const versions = S.styleAll ? S.current.ads.map((a) => a.version) : [S.selected[l.id]];
+    try {
+      const next = await api(`/api/listings/${l.id}/style`, { method: "PATCH", body: { versions, ...body } });
+      S.current = next;
+      buzz(5);
+      drawPreview();
+      drawMiniCards();
+      if ($("#pop").classList.contains("on")) { const sc = $("#pop").scrollTop; $("#pop").innerHTML = `<div class="grab"></div>${styleSheet()}`; $("#pop").scrollTop = sc; settleSegs(); drawStylePreview(); }
+    } catch (err) { toast(err.message); }
+  }
+
   function photoStrip(ad) {
-    const labels = S.me.photoLabels;
-    return `<div class="strip">${S.current.photos.map((ph) => `<div class="p ${ad && ad.photo_id === ph.id ? "on" : ""}"><i data-use="${ph.id}" style="background-image:url(${photoUrl(ph.id, true)})" title="Use this photo"></i>
-      <select data-label="${ph.id}" aria-label="What's in this photo"><option value="">Label</option>${labels.map((x) => `<option ${ph.label === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>`).join("")}
+    return `<div class="strip">${S.current.photos.map((ph, i) => `<div class="p ${ad && ad.photo_id === ph.id ? "on" : ""}"><i data-use="${ph.id}" style="background-image:url(${photoUrl(ph.id, true)})" title="Use photo ${i + 1}"><b>${i + 1}</b></i></div>`).join("")}
       <label class="add" title="Add photos">${ICON.plus}<input type="file" accept="image/*" multiple hidden data-addphotos></label></div>`;
   }
 
   function bindStrip() {
     const l = S.current.listing;
-    $$("[data-label]").forEach((s) => s.addEventListener("change", async () => {
-      await api(`/api/photos/${s.dataset.label}`, { method: "PATCH", body: { label: s.value || null } });
-      const ph = S.current.photos.find((x) => x.id === s.dataset.label);
-      if (ph) ph.label = s.value || null;
-    }));
     const add = $("[data-addphotos]");
     if (add) add.addEventListener("change", async (e) => {
       const files = [...e.target.files];
@@ -1194,6 +1242,40 @@
     $("#lv").classList.toggle("showpv", on);
     $$(".mtop .seg button").forEach((b) => b.classList.toggle("on", b.dataset.act === (on ? "ads" : "chat")));
     buzz(5);
+    settleSegs();
+  }
+
+  // Segmented controls slide a lens to the chosen option instead of jumping (Chat and Ads, the
+  // versions, Feed and Story, the Style sheet's "this one or all 3"); on a phone they're glass.
+  // Screens redraw on every choice, so where each lens was is remembered and it slides from
+  // there. Only transform and width animate, which keeps it smooth.
+  function settleSegs() {
+    for (const seg of $$(".seg[data-seg]")) {
+      const on = seg.querySelector(":scope > button.on");
+      let lens = seg.querySelector(":scope > .seg-lens");
+      if (!lens) {
+        lens = document.createElement("i");
+        lens.className = "seg-lens";
+        seg.prepend(lens);
+        seg.classList.add("lensed");
+      }
+      if (!on || !seg.offsetWidth) { lens.style.opacity = "0"; continue; }
+      const key = `${seg.dataset.seg}:${seg.parentElement ? seg.parentElement.className : ""}`;
+      const x = on.offsetLeft, w = on.offsetWidth;
+      const prev = S.segPos[key];
+      if (!lens.dataset.placed) {
+        lens.style.transition = "none";
+        lens.style.transform = `translateX(${(prev || { x }).x}px)`;
+        lens.style.width = `${(prev || { w }).w}px`;
+        void lens.offsetWidth;
+        lens.style.transition = "";
+        lens.dataset.placed = "1";
+      }
+      lens.style.opacity = "1";
+      lens.style.transform = `translateX(${x}px)`;
+      lens.style.width = `${w}px`;
+      S.segPos[key] = { x, w };
+    }
   }
 
   document.addEventListener("click", async (e) => {
@@ -1219,6 +1301,11 @@
       if (["saveProfile", "saveBiz", "savePw", "saveAlerts", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "listmenu") openPop(t, listingMenu());
+      else if (act === "style") {
+        openPop(t, styleSheet(), { style: true });
+        settleSegs();
+        drawStylePreview();
+      }
       else if (act === "renameAsk") {
         const item = S.listings.find((x) => x.id === t.dataset.id) || (S.current && S.current.listing.id === t.dataset.id ? S.current.listing : null);
         if (!item) return;
@@ -1353,6 +1440,23 @@
   document.addEventListener("selectstart", (e) => {
     const el = e.target.nodeType === 1 ? e.target : e.target.parentElement;
     if (phone() && !(el && el.closest(COPYABLE))) e.preventDefault();
+  });
+
+  // The Style sheet's own controls.
+  $("#pop").addEventListener("click", (e) => {
+    const t = e.target.closest("[data-st],[data-stwho],[data-stsize],[data-streset]");
+    if (!t || !S.current) return;
+    // The sheet redraws under the finger; the page's own click handling mustn't read that as a
+    // tap outside it and close it.
+    e.stopPropagation();
+    if (t.dataset.stwho) { S.styleAll = t.dataset.stwho === "all"; $("#pop").innerHTML = `<div class="grab"></div>${styleSheet()}`; settleSegs(); drawStylePreview(); buzz(5); return; }
+    if (t.dataset.stsize) return applyStyle({ style: {}, sizeStep: Number(t.dataset.stsize) * 0.1 });
+    if (t.dataset.streset) return applyStyle({ style: { reset: true } });
+    applyStyle({ style: { [t.dataset.st]: t.dataset.v || null } });
+  });
+  $("#pop").addEventListener("change", (e) => {
+    const k = e.target.dataset && e.target.dataset.stpick;
+    if (k) applyStyle({ style: { [k]: e.target.value } });
   });
 
   $("#sheetBg").addEventListener("click", () => { if (!(S.heldAt && Date.now() - S.heldAt < 700)) closePop(); });

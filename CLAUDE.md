@@ -145,6 +145,9 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Checking a fix (lesson, 2026-10-24):** test against a slowed down server (the live one on Render
   is slow), not just localhost, and look at every screenshot for the exact thing that was reported.
   Two "fixed" bugs reached Ismael because local checks were instant and a sheet off screen was missed.
+  The server reads `app/web` files once at start, so restart it after editing them or the test
+  runs the old code (2026-10-25). Stop a local server by its PID, never `pkill -f`, which also
+  kills the shell running the command.
 * **Liquid Glass (Ismael, 2026-10-24):** Apple's iOS 26 style, on phones only, never laptop or desktop
   (same as Claude and ChatGPT). Started on the bottom tab bar only, so Ismael can judge it against
   Apple's before it spreads. It has to match Apple's, not be a cheap copy.

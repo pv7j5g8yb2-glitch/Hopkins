@@ -168,6 +168,25 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Ad style (2026-10-25, Ismael: "the user can change everything in their style"): each ad has its
+  own look in `ad.style` (`app/src/style.js` checks every change): background, label and text
+  colour, font (modern or classic serif), layout (fade, top, split, card, frame), text size,
+  left or centred, which part of the photo shows, fade strength. Two ways in: say it in the chat
+  ("version 1 black with a serif font, centred"), or the Style button next to Run it (a sheet with
+  a live preview, for one version or all 3). Guards on the chat path, because Groq fills every
+  field it's given: only the parts the message mentions change, only the versions it names,
+  colours go where the agent said ("green with a gold label"), harsh web colours are swapped for
+  tuned ones, and a colour that wouldn't read (black text on navy) is left out and the reply says
+  why. When a guard overrides the model, Hopkins writes the reply itself from what actually
+  changed. The renderer also nudges a label that's too close to its background (gold on cream
+  goes bronze). Tested live on Groq 2026-10-25: six requests in a row all came out right.
+* Room labels (2026-10-25): the "Label, exterior, living" dropdown under each photo is gone (Ismael
+  didn't see what it was for). Photos are numbered instead, so "use photo 3" works; labels are
+  still guessed from file names behind the scenes so "use the kitchen photo" works too.
+* Glass on the Ads screen (2026-10-25): the Chat/Ads switch, the version tabs, Feed/Story and the
+  Style sheet's Version/All 3 have the glass with a sliding highlight (CSS transform, no layout
+  work, so no lag). Over a dark photo the version and Feed/Story controls turn dark with light
+  labels, like the tab bar (`glass.js` samples the ad canvas under them).
 * Admin (2026-10-25, Ismael): only his account (gethopkins@gmail.com) should have it, never the
   public. Admin = the account's email is on `ADMIN_EMAILS` in Render (hopkins-app, Environment),
   checked by the server on every admin request; the menu link only shows for admins too. Emails

@@ -196,8 +196,8 @@
     }
     return 0.97;
   }
-  function sampleAt(x, y) {
-    const els = document.elementsFromPoint(x, y).filter((e) => !e.closest("#tabbar"));
+  function sampleAt(x, y, target) {
+    const els = document.elementsFromPoint(x, y).filter((e) => !e.closest("#tabbar") && !target.contains(e) && !e.contains(target));
     for (const el of els.slice(0, 4)) {
       if (el.tagName === "CANVAS" && el.width) {
         try {
@@ -230,16 +230,25 @@
     requestAnimationFrame(() => {
       adaptQueued = false;
       if (!phone()) return;
-      for (const el of [cap, document.querySelector(".lg-circle")]) {
+      // the tab bar, and the glass controls that float over the ad on the Ads screen
+      for (const el of [cap, document.querySelector(".lg-circle"), ...document.querySelectorAll(".mbar .seg.lensed")]) {
+        if (!el) continue;
         const r = el.getBoundingClientRect();
         if (!r.width) continue;
         const ys = [r.top + r.height * 0.3, r.top + r.height * 0.7];
         const vals = [];
-        for (let k = 0; k < 5; k++) for (const y of ys) { const v = sampleAt(r.left + (r.width * (k + 0.5)) / 5, y); if (v !== null) vals.push(v); }
+        for (let k = 0; k < 5; k++) for (const y of ys) { const v = sampleAt(r.left + (r.width * (k + 0.5)) / 5, y, el); if (v !== null) vals.push(v); }
         if (!vals.length) continue;
         const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
         // a little hysteresis so it doesn't flicker on mid tones
         const dark = el.classList.contains("dark") ? avg < 0.56 : avg < 0.46;
+        // A control drawn fresh (the Ads screen redraws on every switch) takes its colour at
+        // once, without a fade from light.
+        if (!el.dataset.lgSeen) {
+          el.dataset.lgSeen = "1";
+          el.classList.add("lg-now");
+          requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove("lg-now")));
+        }
         el.classList.toggle("dark", dark);
       }
     });

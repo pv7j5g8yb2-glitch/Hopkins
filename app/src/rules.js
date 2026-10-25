@@ -4,11 +4,71 @@
 // it, and the common questions. Anything else gets one short question back, not a guess.
 
 import { parseListingText, parsePrice, PHOTO_LABELS } from "./listing.js";
+import { COLOUR_WORDS, cleanStyle } from "./style.js";
+
+// A change to how the ad looks: colours, font, layout, size, alignment, crop, fade. Returns
+// { style, sizeStep } or null when the message isn't about the look at all.
+const COLOUR_NAMES = Object.keys(COLOUR_WORDS).sort((a, b) => b.length - a.length);
+export function readStyle(low) {
+  const style = {};
+  let sizeStep = 0;
+  if (/\b(reset|original|default|back to (the )?(brand|normal|original))\b.*\b(look|style|colou?rs?|design|font|layout)\b|\b(look|style|colou?rs?|design)\b.*\b(reset|default|original)\b/.test(low)) return { style: { reset: true }, sizeStep };
+  // colours, by what they're for: the big line, the label and price, or the background
+  const found = [];
+  const hexes = [...low.matchAll(/#[0-9a-f]{6}\b|#[0-9a-f]{3}\b/g)].map((m) => ({ word: m[0], at: m.index }));
+  for (const name of COLOUR_NAMES) {
+    const m = low.match(new RegExp(`\\b${name}\\b`));
+    if (m && !found.some((f) => f.at <= m.index && m.index < f.at + f.word.length)) found.push({ word: name, at: m.index });
+  }
+  // Only when it's a request about the ad, not a fact about the home ("it has a white kitchen").
+  const asking = /\b(make|change|turn|use|switch|try|go with|set|want|colou?rs?|background|bg|labels?|accents?|font|tone|in|please|pls|can you|could you|instead|should be|to be|give it)\b/.test(low) && !/\b(has|have|had|comes with|features?)\b/.test(low);
+  // Each colour belongs to the part named right after it ("gold label"), or failing that right
+  // before it ("label in gold"), stopping at the next colour; otherwise it's the background.
+  const colours = asking ? [...found, ...hexes].sort((a, b) => a.at - b.at) : [];
+  const roleIn = (t) => /\b(labels?|accents?|prices?|highlights?|small text|tags?|kicker)\b/.test(t) ? "accent"
+    : /\b(background|bg|backdrop|panel|block|band|fade|frame|card)\b/.test(t) ? "bg"
+    : /\b(text|words|writing|letters|headline|line|title)\b/.test(t) ? "text" : null;
+  colours.forEach((c, i) => {
+    const end = c.at + c.word.length;
+    const after = low.slice(end, Math.min(colours[i + 1] ? colours[i + 1].at : low.length, end + 24));
+    const before = low.slice(Math.max(colours[i - 1] ? colours[i - 1].at + colours[i - 1].word.length : 0, c.at - 24), c.at);
+    const role = roleIn(after.split(/\band\b|\bwith\b|,/)[0]) || roleIn(before.split(/\band\b|\bwith\b|,/).at(-1)) || "bg";
+    if (!style[role]) style[role] = c.word;
+  });
+  if (/\b(serif|classic|elegant|editorial|italic|old style)\b/.test(low) && /\b(font|type|typeface|text|writing|look)\b/.test(low)) style.font = "classic";
+  else if (/\b(sans|modern|bold|clean)\b/.test(low) && /\b(font|type|typeface)\b/.test(low)) style.font = "modern";
+  if (/\b(text|words|line|writing)\b.*\b(at|on|to) the top\b|\btop of the (image|photo|ad)\b/.test(low)) style.layout = "top";
+  else if (/\b(split|solid block|photo (on top|above))\b/.test(low)) style.layout = "split";
+  else if (/\bcard\b/.test(low)) style.layout = "card";
+  else if (/\b(frame|framed|border)\b/.test(low)) style.layout = "frame";
+  else if (/\b(full (photo|bleed|picture)|fade layout)\b/.test(low)) style.layout = "fade";
+  if (/\b(bigger|larger|huge|bolder|bigger)\b.*\b(text|font|words|line|writing|type)\b|\b(text|font|words|line|type)\b.*\b(bigger|larger)\b/.test(low)) sizeStep = 0.15;
+  if (/\b(smaller|tinier)\b.*\b(text|font|words|line|writing|type)\b|\b(text|font|words|line|type)\b.*\bsmaller\b/.test(low)) sizeStep = -0.15;
+  if (/\bcent(er|re)(ed|d)?\b/.test(low)) style.align = "center";
+  else if (/\b(left|left aligned)\b/.test(low) && /\b(text|align|words|line)\b/.test(low)) style.align = "left";
+  if (/\b(show|crop|see|keep)\b.*\b(more of )?(the )?(top|sky|roof|roofline)\b/.test(low)) style.focus = "top";
+  else if (/\b(show|crop|see|keep)\b.*\b(more of )?(the )?(bottom|lawn|garden|ground|driveway|front door)\b/.test(low)) style.focus = "bottom";
+  if (/\b(lighter|less|softer|subtle|weaker)\b.*\b(fade|overlay|shadow|gradient|tint)\b/.test(low)) style.fade = "light";
+  else if (/\b(stronger|darker|more|heavier)\b.*\b(fade|overlay|gradient|tint)\b/.test(low)) style.fade = "strong";
+  const clean = cleanStyle(style);
+  if (!Object.keys(clean).length && !sizeStep) {
+    // Asked for a different look with nothing specific: say what's possible, briefly.
+    if (/\b(colou?rs?|font|layout|design|look|style)\b/.test(low) && /\b(change|different|another|new|edit|update|make|switch)\b/.test(low)) return { style: {}, sizeStep, vague: true };
+    return null;
+  }
+  return { style: clean, sizeStep };
+}
 
 const ORDINALS = { first: 1, "1st": 1, one: 1, second: 2, "2nd": 2, two: 2, third: 3, "3rd": 3, three: 3, last: 3 };
 
 export function targetVersions(text, selected) {
-  const t = text.toLowerCase();
+  return namedVersions(text) || [selected || 1];
+}
+
+// The versions a message names ("version 2", "the first one", "all of them"), or null when it
+// names none.
+export function namedVersions(text) {
+  const t = String(text || "").toLowerCase();
   if (/\b(all|every|each)( of them| three| versions?| ads?)?\b|\bthem all\b/.test(t)) return [1, 2, 3];
   const found = new Set();
   for (const m of t.matchAll(/\b(?:v|version|ad|number|option|#)\s?([123])\b/g)) found.add(Number(m[1]));
@@ -16,7 +76,7 @@ export function targetVersions(text, selected) {
   if (/\b(the life|lifestyle)\b/.test(t)) found.add(1);
   if (/\b(the standout|standout)\b/.test(t)) found.add(2);
   if (/\b(the facts)\b/.test(t)) found.add(3);
-  return found.size ? [...found].sort() : [selected || 1];
+  return found.size ? [...found].sort() : null;
 }
 
 function quoted(text) {
@@ -99,6 +159,15 @@ export function readIntent(text, { selected = 1, photos = [] } = {}) {
   if (/\b(on the (image|photo|picture)|overlay|big text|the line)\b/.test(low) && (q || after("(?:image|photo|picture|overlay|line|text)"))) {
     intent.kind = "revise";
     intent.changes.overlay = q || after("(?:image|photo|picture|overlay|line|text)");
+    return intent;
+  }
+
+  // How it looks: colours, font, layout, size and the rest.
+  const look = readStyle(low);
+  if (look) {
+    intent.kind = look.vague ? "style_ask" : "style";
+    intent.style = look.style;
+    intent.sizeStep = look.sizeStep;
     return intent;
   }
 

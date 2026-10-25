@@ -9,7 +9,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities,
+  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities, restyle,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
@@ -331,6 +331,16 @@ app.post("/api/listings/delete", async (request, reply) => {
 app.delete("/api/listings/:id", async (request, reply) => {
   if (!(await deleteListing(request.ws, request.params.id))) return reply.code(404).send({ error: "No such listing." });
   return { ok: true };
+});
+
+// The Style sheet: change how one version (or all of them) looks, straight away.
+app.patch("/api/listings/:id/style", async (request, reply) => {
+  const listing = await loadListing(request.ws.id, request.params.id);
+  if (!listing) return reply.code(404).send({ error: "No such listing." });
+  const versions = (Array.isArray(request.body?.versions) ? request.body.versions : [1, 2, 3]).map(Number).filter((v) => [1, 2, 3].includes(v));
+  const step = Number(request.body?.sizeStep) || 0;
+  await restyle(request.ws, listing, versions, request.body?.style || {}, Math.max(-0.3, Math.min(0.3, step)));
+  return listingPayload(request.ws, listing.id);
 });
 
 app.post("/api/listings/:id/remake", async (request, reply) => {

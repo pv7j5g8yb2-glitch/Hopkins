@@ -7,7 +7,8 @@ import { run, get, all, nowIso } from "./db.js";
 import { parseListingText, readLink, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, PATTERNS, MOMENTS } from "./writer.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
-import { readIntent } from "./rules.js";
+import { readIntent, readStyle, namedVersions } from "./rules.js";
+import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS } from "./style.js";
 import { aiEnabled, provider, readListingAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
@@ -151,6 +152,23 @@ export async function forgetGuessedCities() {
   }
 }
 
+// Changes how some versions look (from the rules or the Style sheet). sizeStep nudges the text
+// size up or down from where it is. Returns the versions changed.
+// From the chat, a colour that wouldn't read is left out (readable: true). The Style sheet shows
+// a live preview, so what's picked there is kept as picked.
+export async function restyle(ws, listing, versions, changes, sizeStep = 0, { readable = false } = {}) {
+  const ads = await currentAds(listing);
+  const done = [];
+  for (const ad of ads.filter((a) => versions.includes(a.version))) {
+    const wanted = cleanStyle(changes);
+    let style = mergeStyle(ad.style, readable ? keepReadable(wanted, ad.style, ws.brand?.primary).changes : wanted);
+    if (sizeStep) style = mergeStyle(style, cleanStyle({ size: (Number(ad.style.size) || 1) + sizeStep }));
+    await saveAd(ws, listing, listing.moment, ad.version, { ...ad, style }, ad);
+    done.push(ad.version);
+  }
+  return done;
+}
+
 export async function deleteListing(ws, id) {
   const listing = await loadListing(ws.id, id);
   if (!listing) return false;
@@ -240,14 +258,52 @@ function introFor(moment, listing) {
   return `Here are 3 ads for ${where}, each a different idea so the test tells you something: ${PATTERNS.life.name.toLowerCase()}, ${PATTERNS.feature.name.toLowerCase()} and ${PATTERNS.facts.name.toLowerCase()}. Tell me what to change, or press Run it.`;
 }
 
-function normalizeAI(ad, photos, fallback) {
+// The model's style for one ad: "" and 0 mean "leave it", "default" means "back to the brand".
+function modelStyle(st, message, { filter = true } = {}) {
+  if (!st || typeof st !== "object") return {};
+  if (st.reset === true) return { reset: true };
+  const out = {};
+  for (const [k, v] of Object.entries(st)) {
+    if (k === "reset" || v === "" || v === 0 || v === null || v === undefined) continue;
+    out[k] = typeof v === "string" && v.trim().toLowerCase() === "default" ? null : v;
+  }
+  return filter ? onlyAsked(cleanStyle(out), message) : cleanStyle(out);
+}
+
+// What really changed on each version, in words, plus any colour left out because it wouldn't
+// read. Versions with the same change are said together.
+function sayChanges(items, unreadable = {}, brandBg = "#1F2A36") {
+  const groups = [];
+  for (const { version, before = {}, after = {} } of items) {
+    const changes = {};
+    for (const k of STYLE_KEYS) {
+      if (k === "size" || before[k] === after[k]) continue;
+      if (after[k] !== undefined) changes[k] = after[k];
+    }
+    const step = Math.round(((Number(after.size) || 1) - (Number(before.size) || 1)) * 100) / 100;
+    if (!Object.keys(changes).length && !step) continue;
+    const key = JSON.stringify([changes, Math.sign(step)]);
+    const g = groups.find((x) => x.key === key);
+    if (g) g.versions.push(version);
+    else groups.push({ key, versions: [version], changes, step });
+  }
+  const lines = groups.map((g) => `${VERSION_WORD(g.versions)} now ${g.versions.length > 1 ? "have" : "has"} ${sayLook(g.changes, g.step)}.`);
+  for (const [v, list] of Object.entries(unreadable)) {
+    const bg = items.find((i) => i.version === Number(v))?.after?.bg;
+    for (const [k, col] of list) lines.push(`I left the ${k === "text" ? "text" : "label"} colour on version ${v} as it was, because ${colourName(col)} wouldn't be readable on ${bg ? colourName(bg) : "that background"}. A ${contrast(bg || brandBg, "#FFFFFF") > contrast(bg || brandBg, "#000000") ? "lighter" : "darker"} one will work.`);
+  }
+  return lines.join(" ");
+}
+
+function normalizeAI(ad, photos, fallback, message = "") {
   const photo = ad.photo_number > 0 ? photos[ad.photo_number - 1] : null;
   const clean = (s, max) => polish(cleanWording(String(s || ""))).slice(0, max);
   return {
+    style: mergeStyle(fallback.style || {}, modelStyle(ad.style, message)),
     headline: clean(ad.headline, 60) || fallback.headline,
     primary_text: clean(ad.primary_text, 600) || fallback.primary_text,
     overlay: clean(ad.overlay, 60) || fallback.overlay,
-    kicker: clean(ad.kicker, 50),
+    kicker: clean(ad.kicker, 50) || fallback.kicker || "",
     photo_id: photo ? photo.id : fallback.photo_id,
   };
 }
@@ -404,11 +460,58 @@ async function applyAI(ws, listing, ads, photos, r, text) {
 
   if (Object.keys(patch).length) await patchListing(ws.id, listing.id, patch);
   const changed = [];
+  // The model's look changes are checked against the message itself: only the versions it
+  // names, colours in the part the agent named them for, and nothing that wouldn't read.
+  // When any of that overrides the model, its reply may describe the wrong thing, so Hopkins
+  // says what actually changed instead.
+  const named = r.action === "revise" ? namedVersions(text) : null;
+  const ruled = text ? readStyle(text.toLowerCase()) : null;
+  const ruledColours = ruled && !ruled.vague ? Object.fromEntries(["bg", "accent", "text"].filter((k) => ruled.style[k]).map((k) => [k, ruled.style[k]])) : {};
+  let overrode = false;
+  const unreadable = {};
   for (const a of r.ads || []) {
     const ad = ads.find((x) => x.version === a.version);
     if (!ad) continue;
-    await saveAd(ws, listing, listing.moment, ad.version, { ...ad, ...normalizeAI(a, photos, ad) }, ad);
+    if (named && !named.includes(ad.version)) { overrode = true; continue; }
+    const next = normalizeAI(a, photos, ad, text);
+    const wanted = modelStyle(a.style, text, { filter: false });
+    const look = modelStyle(a.style, text);
+    for (const k of ["bg", "accent", "text"]) {
+      if (ruledColours[k] && look[k] !== ruledColours[k]) look[k] = ruledColours[k];
+      else if (!ruledColours[k] && look[k] && Object.values(ruledColours).includes(look[k])) delete look[k];
+    }
+    const { changes: safe, dropped } = keepReadable(look, ad.style, ws.brand?.primary);
+    if (dropped.length) unreadable[ad.version] = dropped.map((k) => [k, look[k]]);
+    next.style = mergeStyle(ad.style || {}, safe);
+    // Anything the model asked for that didn't go through means its reply may be wrong.
+    if (Object.entries(wanted).some(([k, v]) => v !== (ad.style || {})[k] && next.style[k] !== v)) overrode = true;
+    if (Object.keys(look).some((k) => look[k] !== wanted[k])) overrode = true;
+    await saveAd(ws, listing, listing.moment, ad.version, { ...ad, ...next }, ad);
     changed.push(ad.version);
+  }
+  // A version the agent named for a new look that the model left out still gets it.
+  const ruledLook = ruled && !ruled.vague && (Object.keys(ruled.style).length || ruled.sizeStep);
+  if (named && ruledLook) {
+    const missing = named.filter((v) => !changed.includes(v) && ads.some((x) => x.version === v));
+    if (missing.length) {
+      for (const v of missing) {
+        const { dropped } = keepReadable(cleanStyle(ruled.style), ads.find((x) => x.version === v).style, ws.brand?.primary);
+        if (dropped.length) unreadable[v] = dropped.map((k) => [k, ruled.style[k]]);
+      }
+      await restyle(ws, listing, missing, ruled.style, ruled.sizeStep, { readable: true });
+      changed.push(...missing);
+      changed.sort();
+      overrode = true;
+    }
+  }
+  const copyChanged = (r.ads || []).some((a) => {
+    const ad = ads.find((x) => x.version === a.version);
+    return ad && (!named || named.includes(ad.version)) && ["headline", "primary_text", "overlay"].some((k) => a[k] && polish(cleanWording(String(a[k]))) !== ad[k]);
+  });
+  let lookReply = null;
+  if ((overrode || Object.keys(unreadable).length) && changed.length && !copyChanged) {
+    const after = await currentAds(listing);
+    lookReply = sayChanges(changed.map((v) => ({ version: v, before: ads.find((x) => x.version === v)?.style, after: after.find((x) => x.version === v)?.style })), unreadable, ws.brand?.primary) || null;
   }
   // New facts with no rewritten copy from the model: rewrite the ads so they carry them.
   let rewroteAll = false;
@@ -425,7 +528,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   const data = {};
   if (suggestion && !/\b(upgrade|paid plan|pay)\b/i.test(suggestion)) data.suggestion = suggestion;
   if (changed.length || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
-  await say(ws, listing.id, reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
+  await say(ws, listing.id, lookReply || reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
   return { focus: changed.length === 1 ? changed[0] : focus };
 }
 
@@ -562,6 +665,26 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     if (flagged.length) reply += ` One flag: "${flagged[0].term}" ${flagged[0].why}, so I changed it${flagged[0].suggestion ? ` to "${flagged[0].suggestion}"` : ""}.`;
     await say(ws, listing.id, reply, "text", done.length ? { snapshot: await snapshot(listing, done) } : null);
     return {};
+  }
+
+  if (intent.kind === "style_ask") {
+    await say(ws, listing.id, await fresh(listing.id, [
+      `Sure. Tell me what you'd like, for example **"navy background"**, **"gold label"**, **"serif font"**, **"text at the top"**, **"bigger text"** or **"photo in a frame"**. Say "all three" to change every version.`,
+      `What should it look like? A colour name or a hex code works, and so does a font, a layout or a text size.`,
+    ]));
+    return {};
+  }
+
+  if (intent.kind === "style") {
+    const done = await restyle(ws, listing, intent.versions, intent.style, intent.sizeStep, { readable: true });
+    const first = ads.find((a) => done.includes(a.version));
+    const { changes: kept, dropped } = keepReadable(cleanStyle(intent.style), first?.style, ws.brand?.primary);
+    const bg = first?.style?.bg || ws.brand?.primary || "#1F2A36";
+    const why = dropped.length ? `I left the ${dropped.map((d) => (d === "text" ? "text" : "label")).join(" and ")} colour as it was, because ${dropped.map((d) => colourName(intent.style[d])).join(" and ")} wouldn't be readable on ${colourName(bg)}. A ${contrast(bg, "#FFFFFF") > contrast(bg, "#000000") ? "lighter" : "darker"} one will work.` : "";
+    const changedAny = Object.keys(kept).length || intent.sizeStep;
+    const reply = [changedAny ? `${VERSION_WORD(done)} ${done.length > 1 ? "now have" : "now has"} ${sayLook(kept, intent.sizeStep)}.` : "", why].filter(Boolean).join(" ");
+    await say(ws, listing.id, reply, "text", { snapshot: await snapshot(listing, done) });
+    return { focus: done.length === 1 ? done[0] : undefined };
   }
 
   if (intent.kind === "fair_housing") {
