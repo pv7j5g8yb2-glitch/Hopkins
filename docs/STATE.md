@@ -168,6 +168,11 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Leads and Report are "coming soon" (2026-10-25, Ismael): until an account has a lead (or, for the
+  report, an approved run), each page shows a faded, greyed preview of what it will hold under a
+  card ("Coming soon", what it does, "This opens once ads can go live on Facebook and Instagram"),
+  and their tabs look quieter. Real leads still show the moment one arrives (lead pages already
+  work when an agent shares the link).
 * Run it on the free plan (2026-10-25, Ismael: the same upgrade note looped in the chat): it now
   opens a plan card over the screen (bottom sheet on a phone) with the price points and Ask for
   the paid plan, and nothing is posted to the chat. Make a new set past the free ads does the

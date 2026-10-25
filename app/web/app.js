@@ -310,7 +310,19 @@
 
   // ---------- frame ----------
 
-  async function loadMe() { S.me = await api("/api/me"); }
+  async function loadMe() {
+    S.me = await api("/api/me");
+    document.body.classList.toggle("soon-leads", Boolean(S.me.soon && S.me.soon.leads));
+    document.body.classList.toggle("soon-report", Boolean(S.me.soon && S.me.soon.report));
+  }
+
+  // A part of Hopkins that opens once ads run on Meta: a faded look at what it will hold, and a
+  // card saying plainly that it's coming.
+  function soon(title, line, preview) {
+    return `<div class="soon"><div class="soon-prev" aria-hidden="true">${preview}</div>
+      <div class="soon-card"><span class="soon-chip">Coming soon</span><h2>${title}</h2><p>${line}</p>
+      <span class="soon-note">Hopkins is in early access. This opens once ads can go live on Facebook and Instagram.</span></div></div>`;
+  }
   async function loadListings() { S.listings = (await api("/api/listings")).listings; }
   async function loadInbox() { S.inbox = (await api("/api/inbox")).items; S.inboxLoaded = true; }
 
@@ -1050,9 +1062,10 @@
       <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? `Ad ${x.version}` : "Lead page"} · ${ago(x.created_at)}</div>
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
       <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
-    main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1><p class="lede">${leads.length ? `${leads.length} in total${fresh ? `, ${fresh} new` : ""}. Tap to call or text.` : "Everyone who asks about a listing lands here."}</p></div>
+    main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}. Tap to call or text.</p>` : ""}</div>
       ${leads.length ? `<div class="list" style="border-top:0">${leads.map(item).join("")}</div>`
-        : `<div class="empty"><div class="ic">${ICON.people}</div><b>No leads yet</b>Every listing has a lead page where buyers ask for a showing. Leads land here and on your phone.</div>`}</div></div>`;
+        : soon(`Every lead, <span class="serif">in one place.</span>`, "When your ads run, everyone who asks about a listing lands here, with the ad that brought them, ready to call or text.",
+            `<div class="list" style="border-top:0">${[["JM", "Jordan M.", "Wants a showing", "Ad 1 · 2m ago"], ["PS", "Priya S.", "Has a question", "Ad 3 · 1h ago"], ["AR", "Alex R.", "Wants a showing", "Ad 1 · yesterday"]].map(([i, n, w, m]) => `<div class="lead"><span class="av">${i}</span><div class="tx"><b>${n}</b><p>${w}</p><div class="small">${m}</div></div></div>`).join("")}</div>`)}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");
@@ -1068,6 +1081,12 @@
     main.innerHTML = `${mtop("Report")}${skeleton()}`;
     const r = await api("/api/report");
     if (my !== current()) return;
+    if (!r.total && !r.listings.some((x) => x.running)) {
+      main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap"><div class="head"><h1>Report</h1></div>
+        ${soon(`Your <span class="serif">Monday report.</span>`, "Every Monday: the leads each listing brought, what they cost, which ad won, and what to do next.",
+          `<div class="headline">7 leads, $21 each.</div><div class="stats"><div class="stat"><span>Leads</span><b>7</b></div><div class="stat key"><span>Cost per lead</span><b>$21</b></div><div class="stat"><span>Asked for a showing</span><b>3</b></div><div class="stat"><span>Spend</span><b>$147</b></div></div>`)}</div></div>`;
+      return;
+    }
     const pats = S.me.kinds || {};
     const most = Math.max(1, ...r.patterns.map((x) => x.leads || 0));
     const top = r.patterns.reduce((a, x) => ((x.leads || 0) > (a?.leads || 0) ? x : a), null);

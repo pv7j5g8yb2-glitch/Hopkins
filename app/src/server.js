@@ -177,7 +177,14 @@ app.addHook("preHandler", async (request, reply) => {
 app.get("/api/me", async (request) => {
   const ws = request.ws;
   const made = await adsMade(ws.id);
+  // Leads and the report fill in once ads run on Meta; until an account has any, they show as
+  // coming soon.
+  const [leadCount, launchCount] = await Promise.all([
+    get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ?`, [ws.id]),
+    get(`SELECT COUNT(*) AS n FROM launches WHERE workspace_id = ?`, [ws.id]),
+  ]);
   return {
+    soon: { leads: !Number(leadCount.n), report: !Number(leadCount.n) && !Number(launchCount.n) },
     user: { email: request.user.email, name: request.user.name, avatar_id: request.user.avatar_id || null },
     workspace: { id: ws.id, name: ws.name, plan: ws.plan, brand: ws.brand },
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
