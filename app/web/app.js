@@ -25,6 +25,7 @@
     alert: '<svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
     trash: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 11v5M13.5 11v5"/></svg>',
     flag: '<svg viewBox="0 0 24 24"><path d="M6 21V4M6 5h10l-2 3.5 2 3.5H6"/></svg>',
+    pen: '<svg viewBox="0 0 24 24"><path d="M5 19h3.5L19 8.5 15.5 5 5 15.5V19zM13.5 7l3.5 3.5"/></svg>',
     chevR: '<svg viewBox="0 0 24 24"><path d="m10 6.5 5.5 5.5-5.5 5.5"/></svg>',
     chev: '<svg class="chev" viewBox="0 0 24 24"><path d="m8 10 4-4 4 4M8 14l4 4 4-4"/></svg>',
     square: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2.5"/></svg>',
@@ -168,7 +169,7 @@
   }
 
   const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
-  const listingName = (l) => l.address || l.area || l.city || "Untitled listing";
+  const listingName = (l) => l.title || l.address || l.area || l.city || "Untitled listing";
   const photoUrl = (id, thumb) => (id ? `/photos/${id}${thumb ? "?thumb=1" : ""}` : null);
   const paid = () => S.me.workspace.plan === "paid";
 
@@ -235,11 +236,12 @@
   // One popover for every "more" menu: a dropdown on a laptop, a bottom sheet on a phone.
   // Items use the same data attributes as the rest of the page, so one click handler covers all.
   const phone = () => window.innerWidth <= 980;
-  function openPop(anchor, html) {
+  function openPop(anchor, html, { top = false } = {}) {
     const pop = $("#pop");
     pop.innerHTML = `<div class="grab"></div>${html}`;
     pop.classList.add("on");
     pop.classList.toggle("lg", phone());
+    pop.classList.toggle("top", phone() && top);
     if (phone()) { $("#sheetBg").classList.add("on"); buzz(6); return; }
     const r = anchor.getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
@@ -268,7 +270,7 @@
       ? `<div class="sep"></div><button data-dl="feed">${ICON.down}Download feed image</button><button data-dl="story">${ICON.down}Download story image</button>
          <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>`
       : "";
-    return `<a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
+    return `<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
       <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make 3 new versions" : "Make the ads"}</button>
       <button class="danger" data-act="delListingAsk">${ICON.trash}Delete listing</button>`;
@@ -362,7 +364,7 @@
     const recent = S.inbox.filter((m) => !m.needs_action);
     const listingOf = (m) => S.listings.find((x) => x.id === m.listing_id);
     const bg = (m) => { const l = listingOf(m); return l && l.photo_id ? `background-image:url(${photoUrl(l.photo_id)})` : ""; };
-    const where = (m) => m.address || m.area || m.city || "Your listing";
+    const where = (m) => m.title || m.address || m.area || m.city || "Your listing";
     const hero = (m) => {
       const isPlan = m.kind === "plan";
       return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph" style="${bg(m)}"><span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "3 ads ready"}</span></div>
@@ -423,7 +425,13 @@
       const c = e.target.closest("[data-card]");
       if (!c || S.selecting || e.pointerType === "mouse") return;
       x0 = e.clientX; y0 = e.clientY;
-      timer = setTimeout(() => { S.heldAt = Date.now(); buzz(10); cardMenu(c); }, 480);
+      timer = setTimeout(() => {
+        S.heldAt = Date.now();
+        // iOS starts selecting text on a long press; the menu is what was meant.
+        const clear = () => { try { window.getSelection().removeAllRanges(); } catch {} };
+        clear(); setTimeout(clear, 50); setTimeout(clear, 250);
+        buzz(10); cardMenu(c);
+      }, 480);
     });
     cards.addEventListener("pointermove", (e) => { if (Math.hypot(e.clientX - x0, e.clientY - y0) > 8) cancel(); });
     for (const t of ["pointerup", "pointercancel", "scroll"]) cards.addEventListener(t, cancel);
@@ -444,6 +452,7 @@
     setTimeout(() => c.classList.remove("held"), 300);
     openPop(c, `<div class="note"><b>${esc(listingName(l))}</b>${esc(l.price ? money(l.price) : "Draft")}</div>
       <a href="#/l/${l.id}">${ICON.eye}Open</a>
+      <button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button>
       <button data-act="selectOne" data-id="${l.id}">${ICON.check}Select</button>
       <button data-act="markSold" data-id="${l.id}" data-sold="${l.status === "sold" ? 0 : 1}">${ICON.flag}${l.status === "sold" ? "Mark as for sale" : "Mark as sold"}</button>
       <div class="sep"></div><button class="danger" data-act="delOne" data-id="${l.id}">${ICON.trash}Delete listing</button>`);
@@ -1169,6 +1178,18 @@
       if (["saveProfile", "saveBiz", "savePw", "saveAlerts", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "listmenu") openPop(t, listingMenu());
+      else if (act === "renameAsk") {
+        const item = S.listings.find((x) => x.id === t.dataset.id) || (S.current && S.current.listing.id === t.dataset.id ? S.current.listing : null);
+        if (!item) return;
+        // On a phone it opens at the top, so the keyboard doesn't cover it.
+        openPop($(`[data-card="${item.id}"]`) || $("[data-act=listmenu]") || t, `<div class="note"><b>Rename listing</b></div>
+          <form class="rename" data-id="${item.id}"><input id="renameIn" maxlength="80" value="${esc(listingName(item))}" placeholder="${esc(item.address || "Name this listing")}" autocomplete="off" enterkeyhint="done">
+          <button class="btn" type="submit">Save</button></form>`, { top: true });
+        // Focused in the same tap, or iOS won't bring up the keyboard.
+        const input = $("#renameIn");
+        input.focus();
+        input.select();
+      }
       else if (act === "selectMode") { S.selecting = !S.selecting; buzz(5); viewListings(); }
       else if (act === "selectAll") { S.picked = S.picked.size === S.listings.length ? new Set() : new Set(S.listings.map((x) => x.id)); buzz(5); viewListings(); }
       else if (act === "selectOne") { S.selecting = true; S.picked = new Set([t.dataset.id]); viewListings(); }
@@ -1257,6 +1278,25 @@
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
   window.addEventListener("resize", () => { if (!phone()) closePop(); });
+  // Renaming a listing (from its card menu or its ··· menu).
+  document.addEventListener("submit", async (e) => {
+    const f = e.target.closest("form.rename");
+    if (!f) return;
+    e.preventDefault();
+    const id = f.dataset.id;
+    const title = $("#renameIn").value.trim();
+    closePop();
+    try {
+      await api(`/api/listings/${id}`, { method: "PATCH", body: { title } });
+      await loadListings();
+      if (S.current && S.current.listing.id === id) S.current.listing.title = title || null;
+      toast(title ? "Renamed" : "Name reset to the address");
+      if (location.hash.startsWith("#/listings")) viewListings();
+      else if (S.current && S.current.listing.id === id) drawListing(S.current, true);
+      drawSide();
+    } catch (err) { toast(err.message); }
+  });
+
   $("#sheetBg").addEventListener("click", () => { if (!(S.heldAt && Date.now() - S.heldAt < 700)) closePop(); });
   window.addEventListener("hashchange", route);
 

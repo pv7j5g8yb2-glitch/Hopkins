@@ -250,3 +250,14 @@ test("a listing with no city doesn't borrow the brand's city, and old guesses ge
   assert.equal((await c("GET", `/api/listings/${l.json.listing.id}`)).json.listing.city, null);
   assert.equal((await c("GET", `/api/listings/${real.json.listing.id}`)).json.listing.city === null, false);
 });
+
+test("renaming a listing, and clearing the name goes back to the address", async () => {
+  const { c } = await signup("rename@ellery.test");
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  const r = await c("PATCH", `/api/listings/${l.json.listing.id}`, { title: "Oak Street craftsman" });
+  assert.equal(r.json.listing.title, "Oak Street craftsman");
+  assert.equal((await c("GET", "/api/listings")).json.listings[0].title, "Oak Street craftsman");
+  const back = await c("PATCH", `/api/listings/${l.json.listing.id}`, { title: "  " });
+  assert.equal(back.json.listing.title, null);
+  assert.equal(back.json.listing.address, "412 Oak Street");
+});

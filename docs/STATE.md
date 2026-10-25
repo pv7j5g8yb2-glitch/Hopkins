@@ -164,6 +164,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Rename (2026-10-25, Ismael): in a card's press and hold menu and in the listing's ··· menu. Opens
+  at the top on a phone (clear of the keyboard), saved as `listings.title`; clearing it goes back
+  to the address. Holding a card no longer starts iPhone text selection (the Listings screen and
+  menus can't be selected, and any selection the press starts is cleared).
 * No guessed cities (2026-10-25, Ismael): a listing's city comes from the listing or not at all.
   Hopkins used to fill it from the brand's city, so photos of Dubai became "Miami". A listing with
   no address is "Untitled listing". On start, the server clears the brand city from listings whose

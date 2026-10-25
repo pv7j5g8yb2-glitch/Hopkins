@@ -329,6 +329,14 @@ a.row:hover{background:var(--hover)}
 .sel-btn{font-size:15px;font-weight:600;color:var(--ink);padding:7px 14px;border-radius:999px;background:var(--sel);margin-top:6px;flex:none;transition:transform .15s var(--spring)}
 .sel-btn:active{transform:scale(.94)}
 .card-l{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* The Listings page behaves like an app screen: pressing and holding never selects its text. */
+#main:has(.cards),#main:has(.cards) *,.pop,.pop *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.pop input{-webkit-user-select:text;user-select:text}
+.pop .rename .btn{width:auto;justify-content:center;padding:9px 16px}
+.rename{display:flex;gap:8px;padding:4px 6px 6px}
+.rename input{flex:1;min-width:0;font-size:16px;padding:11px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--raise);color:var(--ink)}
+.rename input:focus{outline:none;border-color:rgba(42,15,20,.35)}
+.rename .btn{flex:none}
 .card-l.held{animation:held .3s var(--ease)}
 @keyframes held{50%{transform:scale(.96)}}
 .cards.selecting .card-l{animation:none;transition:transform .2s var(--spring),box-shadow .2s}
@@ -599,6 +607,10 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   /* menus become bottom sheets */
   .pop{left:8px!important;right:8px;top:auto!important;bottom:calc(8px + var(--safe-b));min-width:0;border-radius:22px;padding:8px 8px 10px;animation:up .25s var(--ease)}
   .pop a,.pop button{padding:13px 12px;font-size:16px;border-radius:12px}
+  .pop .rename .btn{width:auto;padding:11px 18px;justify-content:center}
+  /* a sheet with a text box opens from the top, clear of the keyboard */
+  .pop.top{top:calc(10px + var(--safe-t))!important;bottom:auto;animation:down .3s var(--ease)}
+  @keyframes down{from{transform:translateY(-30px);opacity:0}}
   .pop svg{width:20px;height:20px}
   .pop .grab{display:block;width:36px;height:5px;border-radius:3px;background:var(--line2);margin:2px auto 8px}
   .sheet-bg{position:fixed;inset:0;z-index:85;background:rgba(42,15,20,.28);animation:fade .2s}

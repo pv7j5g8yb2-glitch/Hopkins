@@ -237,7 +237,7 @@ app.delete("/api/photos/:id", async (request) => {
 
 app.get("/api/listings", async (request) => {
   const rows = await all(
-    `SELECT l.id, l.address, l.area, l.city, l.price, l.status, l.moment, l.updated_at,
+    `SELECT l.id, l.title, l.address, l.area, l.city, l.price, l.status, l.moment, l.updated_at,
        (SELECT id FROM photos WHERE listing_id = l.id ORDER BY position LIMIT 1) AS photo_id,
        (SELECT COUNT(*) FROM leads WHERE listing_id = l.id) AS leads,
        (SELECT COUNT(*) FROM messages WHERE listing_id = l.id AND needs_action = 1) AS waiting,
@@ -288,6 +288,8 @@ app.patch("/api/listings/:id", async (request, reply) => {
   const b = request.body || {};
   const patch = {};
   for (const k of ["address", "city", "area", "home_type", "open_house"]) if (b[k] !== undefined) patch[k] = clean(b[k], 120);
+  // The agent's own name for the listing; empty goes back to the address.
+  if (b.title !== undefined) patch.title = clean(b.title, 80) || null;
   for (const k of ["price", "beds", "baths", "sqft", "spend"]) if (b[k] !== undefined) patch[k] = Number(b[k]) >= 0 ? Number(b[k]) : null;
   if (b.status && ["active", "sold", "archived"].includes(b.status)) patch.status = b.status;
   await patchListing(request.ws.id, listing.id, patch);

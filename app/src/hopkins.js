@@ -211,7 +211,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
 export async function patchListing(workspaceId, id, patch) {
   const sets = [];
   const args = [];
-  for (const k of [...LISTING_FIELDS, "status", "moment", "spend", "description"]) {
+  for (const k of [...LISTING_FIELDS, "status", "moment", "spend", "description", "title"]) {
     if (patch[k] !== undefined) { sets.push(`${k} = ?`); args.push(patch[k]); }
   }
   if (patch.features) { sets.push(`features = ?`); args.push(JSON.stringify(patch.features)); }
@@ -670,7 +670,7 @@ export async function weeklyReport(ws, days = 7) {
     for (const x of ls) if (x.version) byVersion[x.version] = (byVersion[x.version] || 0) + 1;
     const spend = Number(l.spend || 0);
     return {
-      id: l.id, name: l.address || l.area || l.city || "Listing", status: l.status, leads: ls.length,
+      id: l.id, name: l.title || l.address || l.area || l.city || "Untitled listing", status: l.status, leads: ls.length,
       showings: ls.filter((x) => x.wants === "showing").length, spend, cpl: spend > 0 && ls.length ? Math.round((spend / ls.length) * 100) / 100 : null,
       byVersion, running: launchedIds.has(l.id), drafts: draftIds.has(l.id),
     };
@@ -712,7 +712,7 @@ export async function mondayMessage(ws, now = new Date()) {
 export async function inbox(ws) {
   await mondayMessage(ws);
   const items = await all(
-    `SELECT messages.*, listings.address, listings.area, listings.city FROM messages LEFT JOIN listings ON listings.id = messages.listing_id
+    `SELECT messages.*, listings.title, listings.address, listings.area, listings.city FROM messages LEFT JOIN listings ON listings.id = messages.listing_id
      WHERE messages.workspace_id = ? AND (messages.needs_action = 1 OR (messages.kind IN ('lead','report') AND messages.created_at >= ?))
      ORDER BY messages.created_at DESC LIMIT 30`,
     [ws.id, new Date(Date.now() - 7 * 86400_000).toISOString()]
