@@ -402,3 +402,27 @@ test("asking to run on the free plan says it once, then the app shows the plan c
     assert.equal(again.json.messages.filter((m) => m.kind === "upgrade").length, count, "no new note in the chat");
   }
 });
+
+test("with email set up, forgot password emails the link straight away", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "mailme@ellery.test", password: "password123", invite: "EARLY1" });
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  Object.assign(process.env, { RESEND_API_KEY: "re_test", MAIL_FROM: "Hopkins <hello@example.test>" });
+  globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init.body), auth: init.headers.Authorization }); return { ok: true, text: async () => "" }; };
+  try {
+    assert.equal((await client(app)("POST", "/api/forgot", { email: "mailme@ellery.test" })).status, 200);
+    assert.equal((await client(app)("POST", "/api/forgot", { email: "nobody@ellery.test" })).status, 200);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete process.env.RESEND_API_KEY; delete process.env.MAIL_FROM;
+  }
+  assert.equal(sent.length, 1, "only the real account gets an email");
+  assert.equal(sent[0].url, "https://api.resend.com/emails");
+  assert.equal(sent[0].auth, "Bearer re_test");
+  assert.deepEqual(sent[0].body.to, ["mailme@ellery.test"]);
+  const t = sent[0].body.text.match(/reset\?t=([\w-]+)/)[1];
+  const stranger = client(app);
+  assert.equal((await stranger("POST", "/api/reset", { t, password: "fromemail123" })).status, 200);
+  assert.equal((await stranger("GET", "/api/me")).json.user.email, "mailme@ellery.test");
+});

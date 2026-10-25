@@ -91,7 +91,7 @@ button:disabled{opacity:.6}
     if (code) $("invite").value = code;
   } else if (mode === "forgot") {
     $("title").innerHTML = "Forgot your <em>password?</em>";
-    $("sub").textContent = "Enter the email you signed up with and a reset link will be sent to you. During early access it's sent by hand, so it can take a few hours.";
+    $("sub").textContent = "Enter the email you signed up with and a reset link will be sent to you.";
     $("go").textContent = "Send me a reset link";
     $("switch").innerHTML = 'Remembered it? <a href="/login">Sign in</a>';
   } else if (mode === "reset") {

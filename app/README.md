@@ -8,9 +8,9 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
 ## What works today
 
 * **Accounts.** Invite only sign up (`INVITE_CODES`; a link like `/signup?invite=CODE` fills the
-  code in), email and password, one workspace per business. Forgot password: the founder is
-  told on his phone and makes a one time reset link in Admin to send by hand (no email service
-  yet). A new password signs out every other device.
+  code in), email and password, one workspace per business. Forgot password: with Resend set up the
+  reset link is emailed straight away; without it, the founder is told on his phone and makes the
+  link in Admin to send by hand. A new password signs out every other device.
 * **Feedback and errors.** Send feedback from the account menu; it shows in Admin and reaches the
   founder's phone (`NTFY_TOPIC`), as does any server error. Privacy page at `/privacy`.
 * **Brand.** Business name, colors, logo, type, voice. Every ad follows it. Set on first sign in.
@@ -90,6 +90,7 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 | `GROQ_API_KEY` | Free alternative for the chat when there's no Anthropic key (console.groq.com). |
 | `HOPKINS_MODEL`, `GROQ_MODEL` | Override the models (defaults `claude-opus-5-5`, `openai/gpt-oss-120b`). |
 | `GROQ_BACKUP_MODELS`, `GROQ_VISION_MODEL` | Groq models to try when the main one is over its limit (default `openai/gpt-oss-20b,qwen/qwen3.8-27b`), and the one that sees photos (default `qwen/qwen3.8-27b`). |
+| `RESEND_API_KEY`, `MAIL_FROM` | Email through Resend (free: 3,000 a month, 100 a day). With both set, Forgot password emails the reset link straight away. `MAIL_FROM` is a sender on a domain verified in Resend, like `Hopkins <hello@kirmistudio.com>`. Without them, the founder makes the link in Admin. |
 | `NTFY_TOPIC` | The founder's phone alerts: new accounts, upgrade requests, approvals. |
 | `PORT` | Defaults to 3200. |
 

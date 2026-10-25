@@ -168,6 +168,11 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Password reset by email (2026-10-25, Ismael asked why it isn't instant like other apps): built
+  on Resend (`app/src/mail.js`). It works the moment `RESEND_API_KEY` and `MAIL_FROM` are set on
+  Render; until then the by hand route stays. Needs from Ismael: a free Resend account, the domain
+  (kirmistudio.com, or gethopkins.com once bought) verified there with the DNS records Resend gives,
+  then the two values on Render.
 * Leads and Report are "coming soon" (2026-10-25, Ismael): until an account has a lead (or, for the
   report, an approved run), each page shows a faded, greyed preview of what it will hold under a
   card ("Coming soon", what it does, "This opens once ads can go live on Facebook and Instagram"),

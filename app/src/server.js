@@ -16,6 +16,7 @@ import { aiEnabled } from "./brain.js";
 import { KIND_NAMES, MOMENTS } from "./writer.js";
 import { PHOTO_LABELS, formatPrice, factsLine } from "./listing.js";
 import { notifyFounder, notifyTopic } from "./notify.js";
+import { mailReady, sendMail, resetEmail } from "./mail.js";
 import { checkWording } from "./fairhousing.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -123,16 +124,20 @@ app.post("/api/login", async (request, reply) => {
   return { ok: true };
 });
 
-// Forgot password. With no email service yet, the founder's phone hears about it and he sends
-// the reset link from Admin. The answer is the same whether or not the email has an account.
+// Forgot password. With email set up (mail.js) the reset link goes straight to the person's
+// inbox. Without it, or if the email fails, the founder's phone hears about it and he sends the
+// link from Admin. The answer is the same whether or not the email has an account.
 app.post("/api/forgot", async (request, reply) => {
   if (tooMany(`forgot:${request.ip}`, 5)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   const email = clean(request.body?.email, 200)?.toLowerCase();
   if (!email || !EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
   const user = await get(`SELECT id FROM users WHERE email = ?`, [email]);
   if (user) {
-    await run(`UPDATE users SET reset_asked = ? WHERE id = ?`, [nowIso(), user.id]);
-    notifyFounder("Hopkins: password reset asked", "Someone asked to reset their password. Open Admin to make their reset link.", ["key"]);
+    const sent = mailReady() && (await sendMail({ to: email, ...resetEmail(await makeResetLink(user.id, `${request.protocol}://${request.host}`)) }));
+    if (!sent) {
+      await run(`UPDATE users SET reset_asked = ? WHERE id = ?`, [nowIso(), user.id]);
+      notifyFounder("Hopkins: password reset asked", "Someone asked to reset their password. Open Admin to make their reset link.", ["key"]);
+    }
   }
   return { ok: true };
 });
