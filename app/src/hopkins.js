@@ -881,7 +881,7 @@ export async function proposeRun(ws, listing, { versions = [1, 2, 3, 4, 5], budg
   };
   plan.perDay = Math.round((plan.budget / plan.days) * 100) / 100;
   await clearActions(listing.id);
-  const split = plan.versions.length > 1 ? `, split evenly across ${plan.versions.length} versions so the test is fair` : "";
+  const split = plan.versions.length > 1 ? `, split evenly across the ${plan.versions.length} ads so the test is fair` : "";
   await say(ws, listing.id, `Here's the plan: $${plan.budget} over ${plan.days} days${split}. Say yes and I'll set it up.`, "plan", plan, true);
   return { plan };
 }
@@ -908,7 +908,7 @@ export async function confirmRun(ws, listingId, messageId) {
     );
   }
   await clearActions(listingId);
-  await say(ws, listingId, `Approved. ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live as soon as your Meta ad account is connected, and billing starts then, not before. You don't have to wait: download them under the preview and post or boost them yourself. Each version has its own link, so leads still land here and on the Leads page.`);
+  await say(ws, listingId, `Approved. ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live as soon as your Meta ad account is connected, and billing starts then, not before. You don't have to wait: download them under the preview and post or boost them yourself. Each ad has its own link, so leads still land here and on the Leads page.`);
   notifyFounder("Hopkins: ads approved", `A workspace approved ${ads.length} ads ($${plan.budget} over ${plan.days} days). Waiting on Meta.`);
   return { ok: true };
 }
@@ -917,7 +917,7 @@ export async function confirmRun(ws, listingId, messageId) {
 
 export async function addLead(listing, { name, email, phone, wants, note, adId, source }) {
   const ws = await getWorkspace(listing.workspace_id);
-  const ad = adId ? await get(`SELECT id, version FROM ads WHERE id = ? AND listing_id = ?`, [adId, listing.id]) : null;
+  const ad = adId ? await get(`SELECT id, version, name FROM ads WHERE id = ? AND listing_id = ?`, [adId, listing.id]) : null;
   const id = randomUUID();
   await run(
     `INSERT INTO leads (id, workspace_id, listing_id, ad_id, name, email, phone, wants, note, source, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
@@ -926,7 +926,7 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
   if (ad) await run(`UPDATE tests SET leads = leads + 1 WHERE ad_id = ?`, [ad.id]);
   const what = wants === "showing" ? "wants a showing" : wants === "offer" ? "wants to talk about an offer" : "has a question";
   const contact = [phone, email].filter(Boolean).join(", ");
-  await say(ws, listing.id, `New lead${ad ? ` from version ${ad.version}` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""} A quick reply is the best way to keep a lead warm.`, "lead", { leadId: id }, false);
+  await say(ws, listing.id, `New lead${ad ? ` from ${ad.name ? `**${ad.name}**` : `ad ${ad.version}`}` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""} A quick reply is the best way to keep a lead warm.`, "lead", { leadId: id }, false);
   if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
   return id;
 }
@@ -950,7 +950,7 @@ export async function weeklyReport(ws, days = 7) {
   const rows = listings.map((l) => {
     const ls = leads.filter((x) => x.listing_id === l.id);
     const byVersion = {};
-    for (const x of ls) if (x.version) byVersion[x.version] = (byVersion[x.version] || 0) + 1;
+    for (const x of ls) if (x.version) byVersion[x.ad_name || `Ad ${x.version}`] = (byVersion[x.ad_name || `Ad ${x.version}`] || 0) + 1;
     const spend = Number(l.spend || 0);
     return {
       id: l.id, name: l.title || l.address || l.area || l.city || "Untitled listing", status: l.status, leads: ls.length,
@@ -967,7 +967,7 @@ export async function weeklyReport(ws, days = 7) {
   const next = [];
   for (const r of rows) {
     const top = Object.entries(r.byVersion).sort((a, b) => b[1] - a[1])[0];
-    if (top && r.leads >= 3 && top[1] / r.leads >= 0.5) next.push(`Version ${top[0]} on ${r.name} brought ${top[1]} of its ${r.leads} leads. Put the budget behind it.`);
+    if (top && r.leads >= 3 && top[1] / r.leads >= 0.5) next.push(`${top[0]} on ${r.name} brought ${top[1]} of its ${r.leads} leads. Put the budget behind it.`);
     else if (r.running && r.leads === 0 && r.status === "active") next.push(`No leads yet on ${r.name}. Try another angle, or a price ad if the price moved.`);
     if (r.drafts && r.status === "active") next.push(`${r.name} has ${r.running ? "new " : ""}ads ready that aren't approved yet.`);
   }

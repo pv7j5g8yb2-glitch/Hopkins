@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { run, get, all, nowIso } from "./db.js";
-import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, verifyPassword, hashPassword, setSession, clearSession, currentUser } from "./auth.js";
+import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities, restyle,
@@ -33,8 +33,34 @@ const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8"
 for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg"]) files[f] = readFileSync(join(WEB, f));
 files["manifest.webmanifest"] = readFileSync(join(WEB, "manifest.webmanifest"), "utf8");
 
-export const app = Fastify({ logger: process.env.NODE_ENV !== "test", bodyLimit: 1_000_000 });
+// trustProxy: on Render every request arrives through its proxy, so the visitor's address is in
+// X-Forwarded-For. Without it, every visitor looked like the same one and the brakes below
+// (sign up, sign in, lead form) counted everyone together.
+export const app = Fastify({ logger: process.env.NODE_ENV !== "test", bodyLimit: 1_000_000, trustProxy: true });
 await app.register(cookie, { secret: COOKIE_SECRET });
+
+// Plain safety headers on every answer.
+app.addHook("onSend", async (request, reply, payload) => {
+  reply.header("X-Content-Type-Options", "nosniff");
+  reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
+  reply.header("X-Frame-Options", "DENY");
+  if (process.env.NODE_ENV === "production") reply.header("Strict-Transport-Security", "max-age=15552000");
+  return payload;
+});
+
+// When something breaks: the person sees a plain message (never the internal error), and the
+// founder's phone hears about it, at most once every 10 minutes so a bad hour isn't a flood.
+let lastAlert = 0;
+app.setErrorHandler((err, request, reply) => {
+  const status = err.statusCode >= 400 && err.statusCode < 500 ? err.statusCode : 500;
+  if (status < 500) return reply.code(status).send({ error: status === 413 ? "That's too big to send." : status === 429 ? "Too many tries. Wait a few minutes." : "That didn't come through right. Try again." });
+  request.log.error(err);
+  if (Date.now() - lastAlert > 10 * 60 * 1000) {
+    lastAlert = Date.now();
+    notifyFounder("Hopkins: something broke", `${request.method} ${request.routeOptions?.url || request.url.split("?")[0]}: ${String(err.message || err).slice(0, 160)}`, ["warning"]);
+  }
+  return reply.code(500).send({ error: "Something went wrong on my side. Try again in a moment." });
+});
 
 app.get("/healthz", async () => ({ ok: true }));
 
@@ -52,6 +78,8 @@ app.get("/", async (request, reply) => {
 });
 app.get("/login", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/signup", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
+app.get("/reset", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
+app.get("/forgot", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 
 // ---------- accounts ----------
 
@@ -90,7 +118,31 @@ app.post("/api/login", async (request, reply) => {
   if (!user || typeof password !== "string" || !(await verifyPassword(password, user.pass_hash))) {
     return reply.code(401).send({ error: "That email and password don't match." });
   }
-  setSession(reply, user.id);
+  setSession(reply, user.id, Number(user.session_ver) || 0);
+  return { ok: true };
+});
+
+// Forgot password. With no email service yet, the founder's phone hears about it and he sends
+// the reset link from Admin. The answer is the same whether or not the email has an account.
+app.post("/api/forgot", async (request, reply) => {
+  if (tooMany(`forgot:${request.ip}`, 5)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  const email = clean(request.body?.email, 200)?.toLowerCase();
+  if (!email || !EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
+  const user = await get(`SELECT id FROM users WHERE email = ?`, [email]);
+  if (user) {
+    await run(`UPDATE users SET reset_asked = ? WHERE id = ?`, [nowIso(), user.id]);
+    notifyFounder("Hopkins: password reset asked", "Someone asked to reset their password. Open Admin to make their reset link.", ["key"]);
+  }
+  return { ok: true };
+});
+
+app.post("/api/reset", async (request, reply) => {
+  if (tooMany(`reset:${request.ip}`, 10)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  const { t, password } = request.body || {};
+  const user = await userForReset(t);
+  if (!user) return reply.code(400).send({ error: "That reset link has expired or was already used. Ask for a new one." });
+  if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the password." });
+  await changePassword(reply, user.id, password);
   return { ok: true };
 });
 
@@ -108,10 +160,14 @@ app.addHook("onSend", async (request, reply, payload) => {
 
 app.addHook("preHandler", async (request, reply) => {
   const path = request.url.split("?")[0];
-  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout"].includes(path) || path.startsWith("/api/l/")) return;
+  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset"].includes(path) || path.startsWith("/api/l/")) return;
   const user = await currentUser(request);
   if (!user) return reply.code(401).send({ error: "Sign in first." });
   request.user = user;
+  // When each account was last in the app, for Admin. Written at most every 10 minutes.
+  if (!user.last_seen || Date.now() - new Date(user.last_seen).getTime() > 10 * 60 * 1000) {
+    run(`UPDATE users SET last_seen = ? WHERE id = ?`, [nowIso(), user.id]).catch(() => {});
+  }
   request.ws = await getWorkspace(user.workspace_id);
 });
 
@@ -180,7 +236,7 @@ app.post("/api/account/password", async (request, reply) => {
   const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
   if (typeof current !== "string" || !(await verifyPassword(current, user.pass_hash))) return reply.code(401).send({ error: "Your current password isn't right." });
   if (typeof next !== "string" || next.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the new password." });
-  await run(`UPDATE users SET pass_hash = ? WHERE id = ?`, [await hashPassword(next), user.id]);
+  await changePassword(reply, user.id, next);
   return { ok: true };
 });
 
@@ -189,9 +245,19 @@ app.post("/api/account/delete", async (request, reply) => {
   const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
   if (typeof request.body?.password !== "string" || !(await verifyPassword(request.body.password, user.pass_hash))) return reply.code(401).send({ error: "Your password isn't right." });
   const ws = request.ws.id;
-  for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "listings", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [ws]);
+  for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "listings", "feedback", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [ws]);
   await run(`DELETE FROM workspaces WHERE id = ?`, [ws]);
   clearSession(reply);
+  return { ok: true };
+});
+
+// Feedback from inside the app: kept for Admin, and straight to the founder's phone.
+app.post("/api/feedback", async (request, reply) => {
+  if (tooMany(`feedback:${request.user.id}`, 20)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  const body = clean(request.body?.body, 3000);
+  if (!body) return reply.code(400).send({ error: "Write something first." });
+  await run(`INSERT INTO feedback (id, workspace_id, user_id, body, page, created_at) VALUES (?,?,?,?,?,?)`, [randomUUID(), request.ws.id, request.user.id, body, clean(request.body?.page, 120), nowIso()]);
+  notifyFounder(`Hopkins feedback · ${request.ws.name}`, body.slice(0, 300), ["speech_balloon"]);
   return { ok: true };
 });
 
@@ -346,7 +412,8 @@ app.patch("/api/listings/:id/style", async (request, reply) => {
 app.post("/api/listings/:id/remake", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
   if (!listing) return reply.code(404).send({ error: "No such listing." });
-  await makeAds(request.ws, listing, listing.moment);
+  // A new set keeps the number of ads the listing has now.
+  await makeAds(request.ws, listing, listing.moment, {}, { count: (await currentAds(listing)).length || null });
   return listingPayload(request.ws, listing.id);
 });
 
@@ -393,11 +460,26 @@ app.get("/api/admin/workspaces", async (request, reply) => {
   if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
   const rows = await all(
     `SELECT w.id, w.name, w.plan, w.brand, w.created_at, (SELECT GROUP_CONCAT(email) FROM users WHERE workspace_id = w.id) AS emails,
+       (SELECT id FROM users WHERE workspace_id = w.id LIMIT 1) AS user_id, (SELECT MAX(last_seen) FROM users WHERE workspace_id = w.id) AS last_seen,
+       (SELECT MAX(reset_asked) FROM users WHERE workspace_id = w.id) AS reset_asked,
        (SELECT COUNT(*) FROM listings WHERE workspace_id = w.id) AS listings, (SELECT COUNT(*) FROM ads WHERE workspace_id = w.id) AS ads,
        (SELECT COUNT(*) FROM leads WHERE workspace_id = w.id) AS leads
      FROM workspaces w ORDER BY w.created_at DESC`
   );
   return { workspaces: rows.map((r) => ({ ...r, upgrade_requested: JSON.parse(r.brand || "{}").upgrade_requested || null, brand: undefined })) };
+});
+
+// A one time password reset link for an account, to send to the person yourself.
+app.post("/api/admin/users/:id/reset-link", async (request, reply) => {
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
+  if (!(await get(`SELECT id FROM users WHERE id = ?`, [request.params.id]))) return reply.code(404).send({ error: "No such account." });
+  return { link: await makeResetLink(request.params.id, `${request.protocol}://${request.host}`) };
+});
+
+app.get("/api/admin/feedback", async (request, reply) => {
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
+  const rows = await all(`SELECT f.body, f.page, f.created_at, w.name, u.email FROM feedback f LEFT JOIN workspaces w ON w.id = f.workspace_id LEFT JOIN users u ON u.id = f.user_id ORDER BY f.created_at DESC LIMIT 100`);
+  return { feedback: rows };
 });
 
 app.patch("/api/admin/workspaces/:id", async (request, reply) => {

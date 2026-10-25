@@ -1,4 +1,4 @@
-import { scrypt, randomBytes, timingSafeEqual, randomUUID } from "node:crypto";
+import { scrypt, randomBytes, timingSafeEqual, randomUUID, createHash } from "node:crypto";
 import { promisify } from "node:util";
 import { run, get, nowIso } from "./db.js";
 
@@ -56,8 +56,32 @@ export async function createAccount({ email, password, name, business }) {
   return userId;
 }
 
-export function setSession(reply, userId) {
-  reply.setCookie(COOKIE, userId, { path: "/", httpOnly: true, sameSite: "lax", signed: true, maxAge: MAX_AGE, secure: process.env.NODE_ENV === "production" });
+// The cookie holds the user id and their session number. A new password raises the number, so
+// every device signed in before it has to sign in again. Cookies from before this change carry
+// no number and count as 0.
+export function setSession(reply, userId, ver = 0) {
+  reply.setCookie(COOKIE, `${userId}.${ver}`, { path: "/", httpOnly: true, sameSite: "lax", signed: true, maxAge: MAX_AGE, secure: process.env.NODE_ENV === "production" });
+}
+
+// A new password: saved, other devices signed out, this one kept signed in.
+export async function changePassword(reply, userId, password) {
+  await run(`UPDATE users SET pass_hash = ?, session_ver = session_ver + 1, reset_hash = NULL, reset_expires = NULL, reset_asked = NULL WHERE id = ?`, [await hashPassword(password), userId]);
+  const u = await get(`SELECT session_ver FROM users WHERE id = ?`, [userId]);
+  setSession(reply, userId, Number(u.session_ver));
+}
+
+// Password reset links. There's no email service yet, so the founder makes the link in Admin
+// and sends it himself. Only a hash of the token is stored; the link works once, for 48 hours.
+const sha = (t) => createHash("sha256").update(t).digest("hex");
+export async function makeResetLink(userId, base) {
+  const token = randomBytes(24).toString("base64url");
+  await run(`UPDATE users SET reset_hash = ?, reset_expires = ? WHERE id = ?`, [sha(token), new Date(Date.now() + 48 * 3600_000).toISOString(), userId]);
+  return `${base}/reset?t=${token}`;
+}
+export async function userForReset(token) {
+  if (typeof token !== "string" || token.length < 20) return null;
+  const u = await get(`SELECT id, email, reset_expires FROM users WHERE reset_hash = ?`, [sha(token)]);
+  return u && u.reset_expires > new Date().toISOString() ? u : null;
 }
 
 export function clearSession(reply) {
@@ -69,5 +93,7 @@ export async function currentUser(request) {
   if (!raw) return null;
   const u = request.unsignCookie(raw);
   if (!u.valid) return null;
-  return get(`SELECT id, workspace_id, email, name, avatar_id FROM users WHERE id = ?`, [u.value]);
+  const [id, ver = "0"] = u.value.split(".");
+  const user = await get(`SELECT id, workspace_id, email, name, avatar_id, session_ver, last_seen FROM users WHERE id = ?`, [id]);
+  return user && Number(user.session_ver) === Number(ver) ? user : null;
 }

@@ -155,12 +155,28 @@ await client.executeMultiple(`
   CREATE UNIQUE INDEX IF NOT EXISTS ads_set_idx ON ads(listing_id, moment, version);
   CREATE INDEX IF NOT EXISTS leads_ws_idx ON leads(workspace_id, created_at);
   CREATE INDEX IF NOT EXISTS photos_listing_idx ON photos(listing_id);
+  CREATE INDEX IF NOT EXISTS messages_listing_idx ON messages(listing_id, created_at);
+  CREATE INDEX IF NOT EXISTS leads_listing_idx ON leads(listing_id);
+
+  -- What pilot users tell the founder from the app (account menu, Send feedback).
+  CREATE TABLE IF NOT EXISTS feedback (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    body TEXT NOT NULL,
+    page TEXT,
+    created_at TEXT NOT NULL
+  );
 `);
 
 // Columns added after launch. CREATE TABLE above only applies to a brand new database, so
 // existing ones get them here; the catch makes it a no-op once the column exists.
 // ads_removed: ads on listings the agent deleted, so deleting a listing doesn't hand back free ads.
-for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE workspaces ADD COLUMN ads_removed INTEGER NOT NULL DEFAULT 0", "ALTER TABLE listings ADD COLUMN title TEXT", "ALTER TABLE ads ADD COLUMN name TEXT", "ALTER TABLE photos ADD COLUMN seen TEXT"]) {
+for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE workspaces ADD COLUMN ads_removed INTEGER NOT NULL DEFAULT 0", "ALTER TABLE listings ADD COLUMN title TEXT", "ALTER TABLE ads ADD COLUMN name TEXT", "ALTER TABLE photos ADD COLUMN seen TEXT",
+  // session_ver: bumped when the password changes, which signs out every other device.
+  // reset_hash and reset_expires: a one time password reset link (only its hash is kept).
+  "ALTER TABLE users ADD COLUMN session_ver INTEGER NOT NULL DEFAULT 0", "ALTER TABLE users ADD COLUMN last_seen TEXT",
+  "ALTER TABLE users ADD COLUMN reset_hash TEXT", "ALTER TABLE users ADD COLUMN reset_expires TEXT", "ALTER TABLE users ADD COLUMN reset_asked TEXT"]) {
   try { await client.execute(sql); } catch {}
 }
 

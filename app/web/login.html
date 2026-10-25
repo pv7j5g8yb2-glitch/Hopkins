@@ -44,6 +44,10 @@ button:disabled{opacity:.6}
 .switch a{color:var(--cream);font-weight:600}
 .signup-only{display:none}
 .mode-signup .signup-only{display:block}
+.forgot{display:block;margin-top:10px;font-size:13.5px;color:var(--rose);text-decoration:none}
+.forgot:hover{color:var(--cream)}
+.mode-forgot .pw-field,.mode-reset .email-field,.mode-signup .forgot,.mode-forgot .forgot,.mode-reset .forgot{display:none}
+.done{margin-top:18px;background:var(--ox2);border:1px solid var(--oxl);border-radius:12px;padding:14px 16px;font-size:15px;line-height:1.5}
 .foot{margin-top:40px;font-size:12.5px;color:#9C807A;line-height:1.5}
 </style>
 </head>
@@ -55,8 +59,9 @@ button:disabled{opacity:.6}
   <form id="f" novalidate>
     <div class="signup-only"><label for="name">Your name</label><input id="name" autocomplete="name" placeholder="Sam Ellery"></div>
     <div class="signup-only"><label for="business">Business, team or brokerage</label><input id="business" autocomplete="organization" placeholder="Ellery Realty"></div>
-    <label for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="you@yourbrokerage.com">
-    <label for="password">Password</label><div class="pw"><input id="password" type="password" autocomplete="current-password" placeholder="At least 8 characters"><button type="button" id="show">Show</button></div>
+    <div class="email-field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="you@yourbrokerage.com"></div>
+    <div class="pw-field"><label for="password" id="pwlabel">Password</label><div class="pw"><input id="password" type="password" autocomplete="current-password" placeholder="At least 8 characters"><button type="button" id="show">Show</button></div>
+    <a class="forgot" href="/forgot">Forgot password?</a></div>
     <div class="signup-only"><label for="invite">Invite code</label><input id="invite" autocomplete="off" placeholder="From your early access email"></div>
     <button id="go" type="submit">Sign in</button>
     <div class="err" id="err"></div>
@@ -66,17 +71,32 @@ button:disabled{opacity:.6}
 </div>
 <script>
 (function () {
-  const signup = location.pathname === "/signup" || new URLSearchParams(location.search).has("invite");
+  const path = location.pathname;
+  const params = new URLSearchParams(location.search);
+  const mode = path === "/forgot" ? "forgot" : path === "/reset" ? "reset" : path === "/signup" || params.has("invite") ? "signup" : "login";
+  const signup = mode === "signup";
   const $ = (id) => document.getElementById(id);
+  document.body.classList.add(`mode-${mode}`);
   if (signup) {
-    document.body.classList.add("mode-signup");
     $("title").innerHTML = "Start with <em>one listing.</em>";
-    $("sub").textContent = "Send a listing, get 3 ads to compare. Free for your first 3 ads.";
+    $("sub").textContent = "Send a listing and get ads made for that home, to compare and test. Your first 3 ads are free.";
     $("go").textContent = "Create my account";
     $("password").autocomplete = "new-password";
     $("switch").innerHTML = 'Already have an account? <a href="/login">Sign in</a>';
-    const code = new URLSearchParams(location.search).get("invite");
+    const code = params.get("invite");
     if (code) $("invite").value = code;
+  } else if (mode === "forgot") {
+    $("title").innerHTML = "Forgot your <em>password?</em>";
+    $("sub").textContent = "Enter the email you signed up with and a reset link will be sent to you. During early access it's sent by hand, so it can take a few hours.";
+    $("go").textContent = "Send me a reset link";
+    $("switch").innerHTML = 'Remembered it? <a href="/login">Sign in</a>';
+  } else if (mode === "reset") {
+    $("title").innerHTML = "Choose a new <em>password.</em>";
+    $("sub").textContent = "At least 8 characters. Every other device you're signed in on will be signed out.";
+    $("pwlabel").textContent = "New password";
+    $("password").autocomplete = "new-password";
+    $("go").textContent = "Save and sign in";
+    $("switch").innerHTML = '<a href="/login">Back to sign in</a>';
   } else {
     $("switch").innerHTML = 'Got an invite? <a href="/signup">Create your account</a>';
   }
@@ -89,12 +109,20 @@ button:disabled{opacity:.6}
     e.preventDefault();
     $("err").textContent = "";
     $("go").disabled = true;
-    const body = { email: $("email").value, password: $("password").value };
+    const body = mode === "reset" ? { t: params.get("t"), password: $("password").value } : mode === "forgot" ? { email: $("email").value } : { email: $("email").value, password: $("password").value };
     if (signup) Object.assign(body, { name: $("name").value, business: $("business").value, invite: $("invite").value });
+    const url = { signup: "/api/signup", login: "/api/login", forgot: "/api/forgot", reset: "/api/reset" }[mode];
     try {
-      const res = await fetch(signup ? "/api/signup" : "/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Something went wrong. Try again.");
+      if (mode === "forgot") {
+        const done = document.createElement("div");
+        done.className = "done";
+        done.textContent = `Done. If ${$("email").value.trim()} has an account, a reset link is on its way. It works once, for 48 hours.`;
+        $("f").replaceWith(done);
+        return;
+      }
       location.href = "/";
     } catch (err) {
       $("err").textContent = err.message;

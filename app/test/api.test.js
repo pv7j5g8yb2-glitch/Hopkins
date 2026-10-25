@@ -291,3 +291,57 @@ test("the look of an ad: from the chat in plain words, and from the Style sheet"
   assert.deepEqual(Object.keys(s.json.ads[0].style).filter((k) => ["bg", "accent", "font", "layout", "size"].includes(k)), []);
   assert.equal(s.json.ads[1].style.bg, "#2F5D46");
 });
+
+test("forgot password: the founder makes a one time link, it signs out every other device", async () => {
+  const phone = client(app);
+  const laptop = client(app);
+  await phone("POST", "/api/signup", { email: "forgot@ellery.test", password: "password123", invite: "EARLY1" });
+  assert.equal((await laptop("POST", "/api/login", { email: "forgot@ellery.test", password: "password123" })).status, 200);
+  // Asking says the same thing whether or not the email has an account.
+  const stranger = client(app);
+  assert.equal((await stranger("POST", "/api/forgot", { email: "nobody@ellery.test" })).status, 200);
+  assert.equal((await stranger("POST", "/api/forgot", { email: "forgot@ellery.test" })).status, 200);
+  // The admin sees the ask and makes the link.
+  const boss = client(app);
+  await boss("POST", "/api/login", { email: "boss@hopkins.test", password: "password123" });
+  const ws = (await boss("GET", "/api/admin/workspaces")).json.workspaces.find((w) => w.emails === "forgot@ellery.test");
+  assert.ok(ws.reset_asked);
+  assert.equal((await phone("POST", `/api/admin/users/${ws.user_id}/reset-link`, {})).status, 403, "only admins make links");
+  const { link } = (await boss("POST", `/api/admin/users/${ws.user_id}/reset-link`, {})).json;
+  const t = new URL(link).searchParams.get("t");
+  assert.equal((await stranger("POST", "/api/reset", { t, password: "short" })).status, 400);
+  assert.equal((await stranger("POST", "/api/reset", { t, password: "brandnew123" })).status, 200);
+  assert.equal((await stranger("GET", "/api/me")).json.user.email, "forgot@ellery.test", "signed in with the new password");
+  assert.equal((await stranger("POST", "/api/reset", { t, password: "again12345" })).status, 400, "the link works once");
+  assert.equal((await phone("GET", "/api/me")).status, 401, "other devices are signed out");
+  assert.equal((await laptop("GET", "/api/me")).status, 401);
+  assert.equal((await laptop("POST", "/api/login", { email: "forgot@ellery.test", password: "brandnew123" })).status, 200);
+  // Changing the password in Settings signs the others out too, but not this one.
+  const third = client(app);
+  await third("POST", "/api/login", { email: "forgot@ellery.test", password: "brandnew123" });
+  assert.equal((await laptop("POST", "/api/account/password", { current: "brandnew123", next: "evennewer123" })).status, 200);
+  assert.equal((await laptop("GET", "/api/me")).status, 200);
+  assert.equal((await third("GET", "/api/me")).status, 401);
+});
+
+test("feedback reaches Admin; limits count each visitor on their own behind the proxy", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "fb@ellery.test", password: "password123", invite: "EARLY1", business: "FB Realty" });
+  assert.equal((await c("POST", "/api/feedback", { body: "" })).status, 400);
+  assert.equal((await c("POST", "/api/feedback", { body: "The style sheet is great", page: "#/l/x" })).status, 200);
+  const boss = client(app);
+  await boss("POST", "/api/login", { email: "boss@hopkins.test", password: "password123" });
+  const fb = (await boss("GET", "/api/admin/feedback")).json.feedback;
+  assert.equal(fb[0].body, "The style sheet is great");
+  assert.equal(fb[0].name, "FB Realty");
+  assert.equal((await c("GET", "/api/admin/feedback")).status, 403);
+  // Two visitors through the same proxy, told apart by X-Forwarded-For.
+  const ask = (ip) => app.inject({ method: "POST", url: "/api/forgot", payload: { email: "x@y.test" }, remoteAddress: "10.9.9.9", headers: { "x-forwarded-for": ip } });
+  for (let i = 0; i < 5; i++) assert.equal((await ask("203.0.113.1")).statusCode, 200);
+  assert.equal((await ask("203.0.113.1")).statusCode, 429);
+  assert.equal((await ask("203.0.113.2")).statusCode, 200, "someone else isn't blocked");
+  // Every answer carries the safety headers.
+  const res = await app.inject({ method: "GET", url: "/login" });
+  assert.equal(res.headers["x-content-type-options"], "nosniff");
+  assert.equal(res.headers["x-frame-options"], "DENY");
+});

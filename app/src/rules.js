@@ -237,8 +237,9 @@ export function readIntent(text, { selected = 1, photos = [], ads = [] } = {}) {
       : /\b(which|best|better|winner|pick|choose|recommend)\b/.test(low) ? "which"
       : /\bwhy\b/.test(low) ? "why"
       : /\b(download|save|export|post (it|them) myself)\b/.test(low) ? "download"
+      // "how does this work" asks about Hopkins, not about results, so it's checked first.
+      : /\b(what can you|what do you|how does (this|it|hopkins) work|how do i (start|use)|what is (this|hopkins)|help)\b/.test(low) ? "help"
       : /\b(leads?|results?|work|how long|when)\b/.test(low) ? "results"
-      : /\b(what can you|what do you|how does (this|it|hopkins) work|help)\b/.test(low) ? "help"
       : "other";
     return intent;
   }

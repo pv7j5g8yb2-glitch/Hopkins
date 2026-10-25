@@ -366,6 +366,12 @@ a.row:hover{background:var(--hover)}
 .pop input{-webkit-user-select:text;user-select:text}
 .pop .rename .btn{width:auto;justify-content:center;padding:9px 16px}
 .rename{display:flex;gap:8px;padding:4px 6px 6px}
+.feedback{display:flex;flex-direction:column;gap:8px;padding:4px 6px 6px}
+.feedback textarea{width:100%;font:inherit;font-size:16px;line-height:1.45;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;background:var(--raise);color:var(--ink);resize:vertical;min-height:96px}
+.feedback .btn{align-self:flex-end}
+.fb-list{display:flex;flex-direction:column}
+.fb{padding:14px 0;border-top:1px solid var(--line)}
+.fb p{white-space:pre-wrap;margin-bottom:4px}
 .rename input{flex:1;min-width:0;font-size:16px;padding:11px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--raise);color:var(--ink)}
 .rename input:focus{outline:none;border-color:rgba(42,15,20,.35)}
 .rename .btn{flex:none}

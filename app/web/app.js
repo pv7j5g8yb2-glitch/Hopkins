@@ -277,6 +277,7 @@
       : `<div class="note"><b>Free plan</b><div class="meter"><i style="width:${Math.min(100, (u.adsMade / u.freeLimit) * 100)}%"></i></div>${Math.min(u.adsMade, u.freeLimit)} of ${u.freeLimit} free ads made</div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(S.me.workspace.name)}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
       <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
+      <button data-act="feedbackAsk">${ICON.msg}Send feedback</button>
       <div class="sep"></div><button data-act="logout">${ICON.out}Sign out</button>`;
   }
 
@@ -289,7 +290,7 @@
       : "";
     return `<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
-      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make 3 new versions" : "Make the ads"}</button>
+      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make a new set" : "Make the ads"}</button>
       <button class="danger" data-act="delListingAsk">${ICON.trash}Delete listing</button>`;
   }
 
@@ -384,7 +385,7 @@
     const hero = (m) => {
       const isPlan = m.kind === "plan";
       const pc = photoOrCover(listingOf(m));
-      return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}<span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "3 ads ready"}</span></div>
+      return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}<span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "Ads ready"}</span></div>
         <div class="bd"><div class="tx"><b>${esc(where(m))}</b><p>${esc(isPlan ? "Check the plan and say yes." : m.body)}</p></div><span class="btn">${isPlan ? "Review" : "See ads"}</span></div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
@@ -399,7 +400,7 @@
       body = `<div class="progress"><div class="meter"><i style="width:${brandDone ? 34 : 6}%"></i></div>${brandDone ? "1 of 3 done" : "Let's start"}</div>
         <ol class="steps">
         <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colors, logo and voice.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
-        <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description. You get 3 ads to compare.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
+        <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description. You get ads made for that home.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
         <li><div class="tx"><b>Your yes</b><p>Nothing runs until you say so.</p></div></li></ol>`;
     } else {
       body = `<div class="stats-mini"><div><b>${S.listings.length}</b>${S.listings.length === 1 ? "listing" : "listings"}</div><div><b>${leadsWeek}</b>${leadsWeek === 1 ? "lead" : "leads"} this week</div><div><b>${waiting.length}</b>waiting on you</div></div>
@@ -627,7 +628,7 @@
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. You'll get 3 ads to compare. <button class="link" data-act="example">Try an example</button></p>
+      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. Hopkins makes ads around what's special about it. <button class="link" data-act="example">Try an example</button></p>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> You can still add this listing. Its ads get made once you're on the paid plan.
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Paid plan requested.</span>` : `<button class="link" data-upgrade>Ask for the paid plan</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
@@ -1210,13 +1211,17 @@
 
   async function viewAdmin() {
     const my = current();
-    const { workspaces } = await api("/api/admin/workspaces");
+    const [{ workspaces }, { feedback }] = await Promise.all([api("/api/admin/workspaces"), api("/api/admin/feedback")]);
     if (my !== current()) return;
     main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Admin</h1><p class="lede">Only you see this. Every account on Hopkins, who asked for the paid plan, and the switch that puts an account on it once they've agreed the price.</p></div>
-      <div class="scroll-x"><table class="tbl"><thead><tr><th>Workspace</th><th>Listings</th><th>Ads</th><th>Leads</th><th>Asked to upgrade</th><th>Plan</th></tr></thead><tbody>
-      ${workspaces.map((w) => `<tr><td><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")} · ${ago(w.created_at)}</span></td><td>${w.listings}</td><td>${w.ads}</td><td>${w.leads}</td>
-        <td>${w.upgrade_requested ? ago(w.upgrade_requested) : ""}</td><td><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select></td></tr>`).join("")}
-      </tbody></table></div></div></div>`;
+      <div class="scroll-x"><table class="tbl"><thead><tr><th>Workspace</th><th>Last in</th><th>Listings</th><th>Ads</th><th>Leads</th><th>Asked to upgrade</th><th>Plan</th><th>Password</th></tr></thead><tbody>
+      ${workspaces.map((w) => `<tr><td><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")} · joined ${ago(w.created_at)}</span></td><td>${w.last_seen ? ago(w.last_seen) : "never"}</td><td>${w.listings}</td><td>${w.ads}</td><td>${w.leads}</td>
+        <td>${w.upgrade_requested ? ago(w.upgrade_requested) : ""}</td><td><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select></td>
+        <td>${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Asked ${ago(w.reset_asked)}, make link` : "Reset link"}</button>` : ""}</td></tr>`).join("")}
+      </tbody></table></div>
+      <div class="head" style="margin-top:34px"><h2>Feedback</h2></div>
+      ${feedback.length ? `<div class="fb-list">${feedback.map((f) => `<div class="fb"><p>${esc(f.body)}</p><span class="small">${esc(f.name || "")} · ${esc(f.email || "")} · ${esc(f.page || "")} · ${ago(f.created_at)}</span></div>`).join("")}</div>` : `<p class="lede">Nothing yet. Pilots send it from the account menu, Send feedback.</p>`}
+      </div></div>`;
     $$("[data-ws]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/admin/workspaces/${s.dataset.ws}`, { method: "PATCH", body: { plan: s.value } });
       toast("Saved");
@@ -1313,6 +1318,19 @@
         openPop(t, styleSheet(), { style: true });
         settleSegs();
         drawStylePreview();
+      }
+      else if (act === "resetLink") {
+        const { link } = await api(`/api/admin/users/${t.dataset.user}/reset-link`, { body: {} });
+        // Shown rather than copied straight away: iPhones only allow copying inside the tap itself.
+        openPop(t, `<div class="note"><b>Reset link</b>Send it to them yourself. It works once, for 48 hours, and signs them out everywhere else.</div>
+          <div class="note" style="word-break:break-all;user-select:all;-webkit-user-select:all">${esc(link)}</div>
+          <button data-copy="${esc(link)}" data-copied="Reset link copied">${ICON.copy}Copy link</button>`);
+      }
+      else if (act === "feedbackAsk") {
+        openPop($(".mtop .av") || t, `<div class="note"><b>Send feedback</b>Something broken, confusing or missing? It goes straight to the person building Hopkins.</div>
+          <form class="feedback"><textarea id="fbIn" rows="4" maxlength="3000" placeholder="What happened, or what you'd like"></textarea>
+          <button class="btn" type="submit">Send</button></form>`, { top: true });
+        $("#fbIn").focus();
       }
       else if (act === "renameAsk") {
         const item = S.listings.find((x) => x.id === t.dataset.id) || (S.current && S.current.listing.id === t.dataset.id ? S.current.listing : null);
@@ -1416,6 +1434,18 @@
   window.addEventListener("resize", () => { if (!phone()) closePop(); });
   // Renaming a listing (from its card menu or its ··· menu).
   document.addEventListener("submit", async (e) => {
+    const fb = e.target.closest("form.feedback");
+    if (fb) {
+      e.preventDefault();
+      const body = $("#fbIn").value.trim();
+      if (!body) return;
+      closePop();
+      try {
+        await api("/api/feedback", { body: { body, page: location.hash || "#/today" } });
+        toast("Sent. Thank you");
+      } catch (err) { toast(err.message); }
+      return;
+    }
     const f = e.target.closest("form.rename");
     if (!f) return;
     e.preventDefault();
