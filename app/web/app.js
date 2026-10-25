@@ -1286,15 +1286,32 @@
     const id = f.dataset.id;
     const title = $("#renameIn").value.trim();
     closePop();
+    // The new name shows straight away, everywhere it appears; the save happens behind it and is
+    // undone on screen if it fails.
+    const redraw = (value) => {
+      for (const l of S.listings) if (l.id === id) l.title = value;
+      if (S.current && S.current.listing.id === id) S.current.listing.title = value;
+      if (location.hash.startsWith("#/listings")) viewListings();
+      else if (S.current && S.current.listing.id === id && location.hash.startsWith(`#/l/${id}`)) drawListing(S.current, true);
+      drawSide();
+    };
+    const before = (S.listings.find((l) => l.id === id) || (S.current && S.current.listing) || {}).title || null;
+    redraw(title || null);
     try {
       await api(`/api/listings/${id}`, { method: "PATCH", body: { title } });
-      await loadListings();
-      if (S.current && S.current.listing.id === id) S.current.listing.title = title || null;
       toast(title ? "Renamed" : "Name reset to the address");
-      if (location.hash.startsWith("#/listings")) viewListings();
-      else if (S.current && S.current.listing.id === id) drawListing(S.current, true);
-      drawSide();
-    } catch (err) { toast(err.message); }
+    } catch (err) {
+      redraw(before);
+      toast(err.message);
+    }
+  });
+
+  // On a phone the app's screens behave like an app: pressing and holding never starts selecting
+  // text. Things worth copying (messages, ad text, anything you type in) still can be.
+  const COPYABLE = "input, textarea, .md, .me, .pvb";
+  document.addEventListener("selectstart", (e) => {
+    const el = e.target.nodeType === 1 ? e.target : e.target.parentElement;
+    if (phone() && !(el && el.closest(COPYABLE))) e.preventDefault();
   });
 
   $("#sheetBg").addEventListener("click", () => { if (!(S.heldAt && Date.now() - S.heldAt < 700)) closePop(); });

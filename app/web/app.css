@@ -608,6 +608,9 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .pop{left:8px!important;right:8px;top:auto!important;bottom:calc(8px + var(--safe-b));min-width:0;border-radius:22px;padding:8px 8px 10px;animation:up .25s var(--ease)}
   .pop a,.pop button{padding:13px 12px;font-size:16px;border-radius:12px}
   .pop .rename .btn{width:auto;padding:11px 18px;justify-content:center}
+  body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  input,textarea,.md,.me,.pvb{-webkit-user-select:text;user-select:text}
+  .me,.md{-webkit-touch-callout:default}
   /* a sheet with a text box opens from the top, clear of the keyboard */
   .pop.top{top:calc(10px + var(--safe-t))!important;bottom:auto;animation:down .3s var(--ease)}
   @keyframes down{from{transform:translateY(-30px);opacity:0}}

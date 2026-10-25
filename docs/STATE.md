@@ -166,8 +166,10 @@ personal in here.
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
 * Rename (2026-10-25, Ismael): in a card's press and hold menu and in the listing's ··· menu. Opens
   at the top on a phone (clear of the keyboard), saved as `listings.title`; clearing it goes back
-  to the address. Holding a card no longer starts iPhone text selection (the Listings screen and
-  menus can't be selected, and any selection the press starts is cleared).
+  to the address. The new name shows the moment Save is tapped (the save happens behind it). On a
+  phone, text selection is off across the app like a native app (blocked at `selectstart` too),
+  except messages, ad text and inputs, so holding a card only opens its menu. API answers are sent
+  `Cache-Control: no-store`.
 * No guessed cities (2026-10-25, Ismael): a listing's city comes from the listing or not at all.
   Hopkins used to fill it from the brand's city, so photos of Dubai became "Miami". A listing with
   no address is "Untitled listing". On start, the server clears the brand city from listings whose

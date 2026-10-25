@@ -99,6 +99,12 @@ app.post("/api/logout", async (_, reply) => {
 });
 
 // Everything under /api/ except the routes above and the public lead form needs a session.
+// API answers are always fresh: a browser must never show a list it saw before a change.
+app.addHook("onSend", async (request, reply, payload) => {
+  if (request.url.startsWith("/api/")) reply.header("Cache-Control", "no-store");
+  return payload;
+});
+
 app.addHook("preHandler", async (request, reply) => {
   const path = request.url.split("?")[0];
   if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout"].includes(path) || path.startsWith("/api/l/")) return;
