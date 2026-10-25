@@ -43,7 +43,7 @@
     people: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg>',
     chart: '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
   };
-  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), format: "feed", pending: [], busy: false, showPhotos: false, showIssues: false, seen: {}, fresh: null };
+  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), snaps: {}, snapImg: {}, snapQueue: Promise.resolve(), format: "feed", pending: [], busy: false, showPhotos: false, showIssues: false, seen: {}, fresh: null };
 
   // ---------- helpers ----------
 
@@ -794,6 +794,17 @@
       const mark = isFirst ? (anim ? MARK("settle") : `<img class="m" src="/static/mark.svg" alt="">`) : `<span class="m"></span>`;
       const wrap = (inner) => `<div class="hk${anim}">${mark}<div class="b">${inner}</div></div>`;
       const text = md(m.body);
+      // A reply that changed ads shows them as they were right then, so every round of changes
+      // is visible where it happened. Drawn once into a small image and kept.
+      const snap = m.data && Array.isArray(m.data.snapshot) ? m.data.snapshot : null;
+      if (snap && snap.length) {
+        return wrap(`${text}<div class="vers ${i >= seen ? "reveal" : ""}">${snap.map((a) => {
+          const key = `${m.id}:${a.version}`;
+          S.snaps[key] = a;
+          return `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
+            <img class="snap" data-snap="${key}" alt="Version ${a.version}" ${S.snapImg[key] ? `src="${S.snapImg[key]}"` : ""}><span><b>${a.version}</b> · ${esc(S.me.patterns[a.pattern]?.name || a.pattern)}</span></button>`;
+        }).join("")}</div>`);
+      }
       if (m.kind === "ads" && m === lastAds && p.ads.length) {
         return wrap(`${text}<div class="vers ${reveal ? "reveal" : ""}">${p.ads.map((a) => `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
           <canvas data-mini="${a.version}" width="1080" height="1350"></canvas><span><b>${a.version}</b> · ${esc(S.me.patterns[a.pattern]?.name || a.pattern)}</span></button>`).join("")}</div>`);
@@ -837,6 +848,22 @@
       const ad = adFor(Number(c.dataset.mini));
       if (ad) Creative.render(c, renderOpts(ad, "feed"));
     });
+    // Snapshots render one at a time through one canvas into small JPEGs, so a long chat with
+    // many rounds of changes stays light on a phone.
+    for (const img of $$("img[data-snap]:not([src])")) {
+      const key = img.dataset.snap;
+      S.snapQueue = S.snapQueue.then(async () => {
+        if (!S.snapImg[key]) {
+          const big = S.snapCanvas || (S.snapCanvas = document.createElement("canvas"));
+          await Creative.render(big, renderOpts(S.snaps[key], "feed"));
+          const small = document.createElement("canvas");
+          small.width = 432; small.height = 540;
+          small.getContext("2d").drawImage(big, 0, 0, 432, 540);
+          S.snapImg[key] = small.toDataURL("image/jpeg", 0.85);
+        }
+        for (const el of $$(`img[data-snap="${key}"]`)) el.src = S.snapImg[key];
+      }).catch(() => {});
+    }
   }
 
   function pick(version) {

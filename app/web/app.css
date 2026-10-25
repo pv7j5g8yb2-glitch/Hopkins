@@ -177,10 +177,11 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 @keyframes spin{to{transform:rotate(360deg)}}
 .vers{display:flex;gap:10px;margin-top:14px}
 .vc{width:152px;text-align:left;border-radius:12px;padding:0;transition:transform .2s var(--ease)}
-.vc canvas{display:block;width:100%;height:auto;border-radius:11px;background:var(--side);box-shadow:0 0 0 1px var(--line),0 4px 14px rgba(42,15,20,.08);transition:box-shadow .2s}
+.vc canvas,.vc img.snap{display:block;width:100%;height:auto;border-radius:11px;background:var(--side);box-shadow:0 0 0 1px var(--line),0 4px 14px rgba(42,15,20,.08);transition:box-shadow .2s}
+.vc img.snap{aspect-ratio:4/5;object-fit:cover}
 .vc span{display:block;font-size:13px;color:var(--quiet);margin-top:7px}
 .vc span b{font-weight:600;color:var(--ink)}
-.vc.sel canvas{box-shadow:0 0 0 2px var(--gold),0 8px 20px rgba(142,107,44,.18)}
+.vc.sel canvas,.vc.sel img.snap{box-shadow:0 0 0 2px var(--gold),0 8px 20px rgba(142,107,44,.18)}
 .vc:hover{transform:translateY(-2px)}
 .vers.reveal .vc{animation:up .45s var(--ease) both}
 .vers.reveal .vc:nth-child(2){animation-delay:.12s}.vers.reveal .vc:nth-child(3){animation-delay:.24s}

@@ -62,6 +62,16 @@ async function postMessage(workspaceId, listingId, role, kind, body, data = null
   return msg;
 }
 
+// The ads as they stand right after a change, saved on the reply that made it, so the chat shows
+// each round of changes where it happened (like a chat app showing each new image), not only
+// the latest set far back up the thread.
+async function snapshot(listing, versions) {
+  const ads = await currentAds(await loadListing(listing.workspace_id, listing.id));
+  return ads
+    .filter((a) => !versions || versions.includes(a.version))
+    .map(({ version, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }) => ({ version, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }));
+}
+
 const say = (ws, listingId, body, kind = "text", data = null, needsAction = false) => postMessage(ws.id, listingId, "hopkins", kind, body, data, needsAction);
 
 async function clearActions(listingId) {
@@ -273,7 +283,7 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
         const next = writeVersion(ad.pattern, ctx, { ...ad.style, photoId: ad.photo_id });
         await saveAd(ws, listing, listing.moment, ad.version, { ...ad, ...applyOverrides(next, ad.style) }, ad);
       }
-      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your 3 ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be 3 more, and that's the paid plan.`);
+      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your 3 ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be 3 more, and that's the paid plan.`, "text", { snapshot: await snapshot(listing) });
     }
     // Asking again doesn't stack the same message; the app shows a short note instead.
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
@@ -311,7 +321,7 @@ export async function makeAds(ws, listing, moment = "new", extra = {}, { note = 
   await patchListing(ws.id, listing.id, { moment });
   await clearActions(listing.id);
   const body = [reply || introFor(moment, listing), note].filter(Boolean).join(" ");
-  await say(ws, listing.id, body, "ads", { moment }, true);
+  await say(ws, listing.id, body, "ads", { moment, snapshot: await snapshot(listing) }, true);
 
   // The agent's own description gets the same fair housing check as Hopkins' copy.
   if (moment === "new" && listing.description) {
@@ -401,7 +411,9 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     changed.push(ad.version);
   }
   // New facts with no rewritten copy from the model: rewrite the ads so they carry them.
+  let rewroteAll = false;
   if (r.action === "update_listing" && !changed.length && ads.length && Object.keys(patch).length) {
+    rewroteAll = true;
     const fresh = await loadListing(ws.id, listing.id);
     const ctx = { listing: fresh, photos, brand: ws.brand, moment: fresh.moment };
     for (const ad of ads) {
@@ -410,7 +422,10 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     }
   }
   const suggestion = plainWords(r.suggestion, polish).replace(/\.$/, "");
-  await say(ws, listing.id, reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."), "text", suggestion && !/\b(upgrade|paid plan|pay)\b/i.test(suggestion) ? { suggestion } : null);
+  const data = {};
+  if (suggestion && !/\b(upgrade|paid plan|pay)\b/i.test(suggestion)) data.suggestion = suggestion;
+  if (changed.length || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
+  await say(ws, listing.id, reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
   return { focus: changed.length === 1 ? changed[0] : focus };
 }
 
@@ -508,7 +523,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
       await saveAd(ws, fresh, fresh.moment, ad.version, { ...ad, ...applyOverrides(next, ad.style) }, ad);
     }
     const added = (patch.features || []).filter((k) => !(listing.features || []).includes(k)).map((k) => FEATURES.find((f) => f.key === k)?.name).filter(Boolean);
-    await say(ws, listing.id, added.length ? `Got it, ${added.join(" and ")}. I've rewritten the ads with that in.` : "Got it. I've updated the listing and the ads.");
+    await say(ws, listing.id, added.length ? `Got it, ${added.join(" and ")}. I've rewritten the ads with that in.` : "Got it. I've updated the listing and the ads.", "text", { snapshot: await snapshot(listing) });
     return {};
   }
 
@@ -545,7 +560,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     const flagged = [c.headline, c.overlay].filter(Boolean).flatMap((s) => checkWording(s));
     let reply = `${VERSION_WORD(done)} ${done.length > 1 ? what.replace(/^is /, "are ").replace(/^has /, "have ").replace(/^sounds /, "sound ").replace(/^reads /, "read ") : what}.`;
     if (flagged.length) reply += ` One flag: "${flagged[0].term}" ${flagged[0].why}, so I changed it${flagged[0].suggestion ? ` to "${flagged[0].suggestion}"` : ""}.`;
-    await say(ws, listing.id, reply);
+    await say(ws, listing.id, reply, "text", done.length ? { snapshot: await snapshot(listing, done) } : null);
     return {};
   }
 

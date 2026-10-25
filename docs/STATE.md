@@ -164,6 +164,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Ads in the thread (2026-10-25, Ismael): every reply that changes ads carries a snapshot of the
+  changed versions (`data.snapshot` on the message) and shows them right there, as they were at
+  that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
+  once each into a small JPEG and kept, so long chats stay light on a phone.
 * Admin (2026-10-25, Ismael): only his account (gethopkins@gmail.com) should have it, never the
   public. Admin = the account's email is on `ADMIN_EMAILS` in Render (hopkins-app, Environment),
   checked by the server on every admin request; the menu link only shows for admins too. Emails
