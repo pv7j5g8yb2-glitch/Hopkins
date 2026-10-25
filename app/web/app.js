@@ -1215,7 +1215,7 @@
            <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Paid plan requested. You'll hear back soon.</span>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
-        <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy</a></div></div>
+        <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
     </div></div>`;
     $("#sEmail").addEventListener("input", (e) => $("#sEmailPw").classList.toggle("hidden", e.target.value.trim().toLowerCase() === u.email));
     $("#avFile").addEventListener("change", async (e) => {
