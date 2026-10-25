@@ -580,7 +580,7 @@
         const p = await api("/api/listings", { body: { text, history: S.newChat } });
         if (my !== current()) return;
         $("#typing") && $("#typing").remove();
-        if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; location.hash = `#/l/${p.listing.id}`; return; }
+        if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b"><p>${esc(p.chat.reply)}</p></div></div>`);
         $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
@@ -607,6 +607,8 @@
       await finish();
       await Promise.all([loadMe(), loadListings()]);
       S.fresh = p.listing.id;
+      // The conversation so far is already on screen; only what's new animates in.
+      if (S.newChat.length) S.seen[p.listing.id] = S.newChat.length + 1;
       location.hash = `#/l/${p.listing.id}`;
     }
   }

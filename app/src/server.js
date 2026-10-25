@@ -271,12 +271,14 @@ app.post("/api/listings", async (request, reply) => {
   const { text, photoIds, photoNames } = request.body || {};
   const ids = Array.isArray(photoIds) ? photoIds.filter((x) => typeof x === "string").slice(0, 30) : [];
   if (!clean(text, 5000) && !ids.length) return reply.code(400).send({ error: "Send me photos, a link or the description." });
+  // What was said on the New listing screen before this message.
+  const prior = Array.isArray(request.body.history) ? request.body.history.slice(-12).filter((m) => m && typeof m.body === "string" && m.body.trim() && ["agent", "hopkins"].includes(m.role)).map((m) => ({ role: m.role, body: clean(m.body, 2000) })) : [];
   // No listing in it ("Hello"): answer, and don't make a listing out of it.
   if (!looksLikeListing(clean(text, 5000) || "", ids)) {
-    const prior = Array.isArray(request.body.history) ? request.body.history.slice(-12).filter((m) => m && typeof m.body === "string" && ["agent", "hopkins"].includes(m.role)).map((m) => ({ role: m.role, body: clean(m.body, 2000) })) : [];
     return { chat: { reply: await newChat(request.ws, [...prior, { role: "agent", body: clean(text, 2000) }]) } };
   }
-  const listing = await createListing(request.ws, { text: clean(text, 5000) || "", photoIds: ids, photoNames: photoNames || {} });
+  // The listing's chat starts with that conversation, so it carries on as one thread.
+  const listing = await createListing(request.ws, { text: clean(text, 5000) || "", photoIds: ids, photoNames: photoNames || {}, history: prior });
   return listingPayload(request.ws, listing.id);
 });
 

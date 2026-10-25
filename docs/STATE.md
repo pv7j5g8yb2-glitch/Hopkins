@@ -164,6 +164,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* One thread (2026-10-25, Ismael): whatever was said on the New listing screen before the listing
+  arrived (hello, questions) becomes the start of that listing's chat, so it reads as one
+  conversation instead of jumping to a fresh chat. When the free ads went on a listing that's since
+  been deleted, the upgrade note says "an earlier listing".
 * Cleaning up listings (2026-10-24, Ismael asked): on the Listings page, Select (top right) ticks
   listings and a bar at the bottom deletes them in one go, like Photos. Press and hold a card (right
   click on a laptop) for its menu: Open, Select, Mark as sold or for sale, Delete. Every delete asks

@@ -132,7 +132,7 @@ export async function deleteListing(ws, id) {
   return true;
 }
 
-export async function createListing(ws, { text = "", photoIds = [], photoNames = {} }) {
+export async function createListing(ws, { text = "", photoIds = [], photoNames = {}, history = [] }) {
   const link = (text.match(URL_RE) || [])[0] || null;
   const rest = link ? text.replace(link, " ").trim() : text.trim();
   const linkInfo = link ? await readLink(link) : null;
@@ -158,6 +158,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
     await run(`UPDATE photos SET listing_id = ?, position = ?, label = COALESCE(label, ?) WHERE id = ? AND workspace_id = ?`, [id, i, label, pid, ws.id]);
   }
 
+  for (const m of history) await postMessage(ws.id, id, m.role, "text", m.body);
   const shown = [rest, link].filter(Boolean).join("\n");
   await postMessage(ws.id, id, "agent", "text", shown || "New listing", photoIds.length ? { photos: photoIds } : null);
 

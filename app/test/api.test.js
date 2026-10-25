@@ -198,9 +198,10 @@ test("hello on the new listing screen gets a reply, not a listing and an upgrade
   const again = await c("POST", "/api/listings", { text: "hi", history: [{ role: "agent", body: "Hello" }, { role: "hopkins", body: h.json.chat.reply }] });
   assert.notEqual(again.json.chat.reply, h.json.chat.reply);
   assert.equal((await c("GET", "/api/listings")).json.listings.length, 0);
-  // A real listing still goes straight in.
-  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  // A real listing still goes straight in, and its chat carries on from the conversation so far.
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION, history: [{ role: "agent", body: "Hello" }, { role: "hopkins", body: h.json.chat.reply }] });
   assert.equal(l.json.ads.length, 3);
+  assert.deepEqual(l.json.messages.slice(0, 3).map((m) => [m.role, m.body.slice(0, 12)]), [["agent", "Hello"], ["hopkins", h.json.chat.reply.slice(0, 12)], ["agent", DESCRIPTION.slice(0, 12)]]);
   // The box suggests a next message, and never the one just sent.
   assert.equal(l.json.suggestion, "Which one would you pick?");
   const m = await c("POST", `/api/listings/${l.json.listing.id}/messages`, { text: "Which one would you pick?", version: 1 });
