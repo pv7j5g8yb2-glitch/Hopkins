@@ -125,6 +125,22 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .hk>.m{width:24px;height:24px;flex:none;margin-top:1px}
 .hk>.b{min-width:0;flex:1}
 .hk p{white-space:pre-wrap}
+/* Hopkins' replies, formatted like Claude or ChatGPT */
+.md p{white-space:normal;margin:0 0 .7em}
+.md>:last-child{margin-bottom:0}
+.md strong{font-weight:650;color:var(--ink)}
+.md em{font-style:italic}
+.md ul,.md ol{margin:0 0 .75em;padding-left:1.25em}
+.md li{margin:.2em 0;padding-left:.15em}
+.md li::marker{color:var(--quiet)}
+.md .mdh{font-weight:650;margin:1em 0 .35em}
+.md .mdh:first-child{margin-top:0}
+.mdt{overflow-x:auto;margin:.2em 0 .9em;-webkit-overflow-scrolling:touch}
+.mdt table{border-collapse:collapse;font-size:14px;line-height:1.4;min-width:100%}
+.mdt th{text-align:left;font-weight:650;padding:7px 14px 7px 0;border-bottom:1px solid var(--line2);white-space:nowrap}
+.mdt td{padding:7px 14px 7px 0;border-bottom:1px solid var(--line);vertical-align:top;min-width:96px;max-width:260px}
+.mdt td:first-child{min-width:0}
+.mdt tr:last-child td{border-bottom:0}
 /* the mark while Hopkins thinks: it spins, the two pebbles taking turns; then the gold one rises */
 .mk{overflow:visible}
 .mk path{stroke:none}

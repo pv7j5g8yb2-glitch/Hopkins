@@ -47,16 +47,21 @@
   // ---------- helpers ----------
 
   async function api(path, opts = {}) {
+    const method = opts.method || (opts.body ? "POST" : "GET");
     let res;
-    try {
-      res = await fetch(path, {
-        method: opts.method || (opts.body ? "POST" : "GET"),
-        headers: opts.body ? { "Content-Type": "application/json" } : {},
-        body: opts.body ? JSON.stringify(opts.body) : undefined,
-      });
-    } catch {
-      throw new Error("No connection. Try again.");
+    // While Render swaps in a new version (every push) requests can fail for a minute. Reading is
+    // safe to repeat, so a GET quietly tries again a couple of times before giving up.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        res = await fetch(path, { method, headers: opts.body ? { "Content-Type": "application/json" } : {}, body: opts.body ? JSON.stringify(opts.body) : undefined });
+      } catch {
+        if (method === "GET" && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
+        throw new Error("No connection. Try again.");
+      }
+      if (res.status >= 502 && res.status <= 504 && method === "GET" && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
+      break;
     }
+    if (res.status >= 502 && res.status <= 504) throw new Error("Hopkins is updating. Try again in a moment.");
     if (res.status === 401) { location.href = "/login"; throw new Error("signed out"); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Something went wrong. Try again.");
@@ -115,6 +120,43 @@
     t.addEventListener("pointerup", end);
     t.addEventListener("pointercancel", end);
   })();
+
+  // Hopkins writes Markdown like Claude or ChatGPT: bold, lists, small tables, short headings.
+  // Everything is escaped first, so only these few shapes ever become HTML.
+  function md(src) {
+    const inline = (s) => esc(s)
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,!?:;)]|$)/g, "$1<em>$2</em>");
+    const isList = (l) => /^\s*([-*•]|\d+[.)])\s+/.test(l);
+    const isRow = (l) => /^\s*\|.*\|\s*$/.test(l);
+    const lines = String(src || "").replace(/\r/g, "").split("\n");
+    const out = [];
+    for (let i = 0; i < lines.length; ) {
+      const l = lines[i];
+      if (!l.trim()) { i++; continue; }
+      if (isRow(l) && /^[\s|:-]+$/.test(lines[i + 1] || "")) {
+        const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+        const head = cells(l);
+        const rows = [];
+        for (i += 2; i < lines.length && isRow(lines[i]); i++) rows.push(cells(lines[i]));
+        out.push(`<div class="mdt"><table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+        continue;
+      }
+      if (isList(l)) {
+        const ordered = /^\s*\d+[.)]\s+/.test(l);
+        const items = [];
+        for (; i < lines.length && isList(lines[i]); i++) items.push(lines[i].replace(/^\s*([-*•]|\d+[.)])\s+/, ""));
+        out.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${inline(x)}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+        continue;
+      }
+      const h = l.match(/^\s*#{1,6}\s+(.*)$/);
+      if (h) { out.push(`<p class="mdh">${inline(h[1])}</p>`); i++; continue; }
+      const para = [];
+      for (; i < lines.length && lines[i].trim() && !isList(lines[i]) && !isRow(lines[i]) && !/^\s*#{1,6}\s/.test(lines[i]); i++) para.push(inline(lines[i]));
+      out.push(`<p>${para.join("<br>")}</p>`);
+    }
+    return `<div class="md">${out.join("")}</div>`;
+  }
 
   function ago(iso) {
     const s = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -587,7 +629,7 @@
         $("#typing") && $("#typing").remove();
         if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
-        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b"><p>${esc(p.chat.reply)}</p></div></div>`);
+        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}</div></div>`);
         $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
@@ -604,7 +646,7 @@
         // It wasn't a listing after all: swap the steps for the reply.
         $("#work").closest(".hk").remove();
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
-        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b"><p>${esc(p.chat.reply)}</p></div></div>`);
+        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}</div></div>`);
         $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
@@ -705,7 +747,7 @@
       }
       const mark = isFirst ? (anim ? MARK("settle") : `<img class="m" src="/static/mark.svg" alt="">`) : `<span class="m"></span>`;
       const wrap = (inner) => `<div class="hk${anim}">${mark}<div class="b">${inner}</div></div>`;
-      const text = `<p>${esc(m.body)}</p>`;
+      const text = md(m.body);
       if (m.kind === "ads" && m === lastAds && p.ads.length) {
         return wrap(`${text}<div class="vers ${reveal ? "reveal" : ""}">${p.ads.map((a) => `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
           <canvas data-mini="${a.version}" width="1080" height="1350"></canvas><span><b>${a.version}</b> · ${esc(S.me.patterns[a.pattern]?.name || a.pattern)}</span></button>`).join("")}</div>`);
@@ -1046,7 +1088,7 @@
     const my = current();
     const { workspaces } = await api("/api/admin/workspaces");
     if (my !== current()) return;
-    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Workspaces</h1><p class="lede">Switch a workspace to paid once they've agreed the price.</p></div>
+    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Admin</h1><p class="lede">Only you see this. Every account on Hopkins, who asked for the paid plan, and the switch that puts an account on it once they've agreed the price.</p></div>
       <div class="scroll-x"><table class="tbl"><thead><tr><th>Workspace</th><th>Listings</th><th>Ads</th><th>Leads</th><th>Asked to upgrade</th><th>Plan</th></tr></thead><tbody>
       ${workspaces.map((w) => `<tr><td><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")} · ${ago(w.created_at)}</span></td><td>${w.listings}</td><td>${w.ads}</td><td>${w.leads}</td>
         <td>${w.upgrade_requested ? ago(w.upgrade_requested) : ""}</td><td><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select></td></tr>`).join("")}

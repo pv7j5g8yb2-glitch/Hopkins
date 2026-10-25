@@ -186,6 +186,24 @@ export function polish(text) {
     .trim();
 }
 
+// The same clean up for a chat reply, which is Markdown: lines, list markers and table rows stay
+// as they are; only the words in them are cleaned.
+export function polishChat(text) {
+  return String(text || "")
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) => {
+      if (/^[\s|:-]+$/.test(line) && line.includes("-") && line.includes("|")) return line.trim();
+      if (/^\s*\|.*\|\s*$/.test(line)) return `| ${line.trim().replace(/^\||\|$/g, "").split("|").map((c) => polish(c.trim())).join(" | ")} |`;
+      const m = line.match(/^(\s*(?:[-*•]|\d+[.)])\s+|\s*#{1,6}\s+)?(.*)$/);
+      const lead = (m[1] || "").replace(/^\s*[*•]\s+/, "- ");
+      return lead + polish(m[2]);
+    })
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function houseRuleProblems(text) {
   const problems = [];
   if (/[–—\u2010-\u2015\u2212]|\s-\s|\p{L}-\p{L}/u.test(text)) problems.push("dash");

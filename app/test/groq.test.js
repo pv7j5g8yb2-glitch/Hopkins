@@ -14,6 +14,7 @@ brain.setFetchForTests(async (url, init) => {
   const r = next.shift();
   if (r instanceof Error) throw r;
   if (r === 500) return { ok: false, status: 500, text: async () => "down" };
+  if (typeof r === "string" && r.startsWith("429:")) return { ok: false, status: 429, headers: { get: () => null }, text: async () => `{"error":{"message":"Rate limit reached. Please try again in ${r.slice(4)}s."}}` };
   if (r === "badjson") return { ok: false, status: 400, text: async () => '{"error":{"code":"json_validate_failed"}}' };
   return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(r) } }] }) };
 });
@@ -56,4 +57,17 @@ test("Groq runs the chat when it's the only key", async () => {
   assert.equal(calls.length - before, 2);
   assert.equal(v.json.messages.at(-1).body, "Solar panels are in. I put them in version 3.");
   assert.match(v.json.listing.description, /solar panels/);
+
+  // Over the per minute limit with a short wait: it waits and answers properly.
+  next = ["429:0.2", { reply: "Morning. All three are ready.", action: "none", version: 0, ads: [] }];
+  const w = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "morning", version: 1 });
+  assert.equal(w.json.messages.at(-1).body, "Morning. All three are ready.");
+  // A long wait: it says it's busy instead of pretending not to understand.
+  next = ["429:40"];
+  const busy = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "what do you think of the photos?", version: 1 });
+  assert.match(busy.json.messages.at(-1).body, /a lot of messages at once/);
+  // Something the rules can do still gets done.
+  next = ["429:40"];
+  const done = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "make version 3 shorter", version: 3 });
+  assert.equal(done.json.messages.at(-1).body, "Version 3 is shorter.");
 });

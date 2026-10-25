@@ -109,3 +109,9 @@ test("reads what the agent wants", () => {
   assert.equal(readIntent("how much does it cost?").topic, "plan");
   assert.equal(readIntent("make the ads").kind, "make");
 });
+
+test("chat replies keep their Markdown shape while the words get the house rules", async () => {
+  const { polishChat } = await import("../src/writer.js");
+  const out = polishChat("**Version 2** — my pick.\n\n* move-in ready\n- a two‑week run\n\n| Version | Angle |\n|---|---|\n| 1 | The life — porch |");
+  assert.equal(out, "**Version 2**, my pick.\n\n- move in ready\n- a two week run\n\n| Version | Angle |\n|---|---|\n| 1 | The life, porch |");
+});

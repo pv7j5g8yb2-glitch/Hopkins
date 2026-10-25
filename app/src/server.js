@@ -259,7 +259,7 @@ async function listingPayload(ws, id) {
   ]);
   for (const m of messages) m.data = m.data ? JSON.parse(m.data) : null;
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n), suggestion: suggestionFor(ws, listing, ads, messages) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n), suggestion: suggestionFor(ws, listing, ads, messages, ws.plan === "paid" || (await adsMade(ws.id)) + 3 <= FREE_AD_LIMIT) };
 }
 
 app.get("/api/listings/:id", async (request, reply) => {

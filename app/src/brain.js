@@ -34,11 +34,11 @@ const FEATURE_KEYS = FEATURES.map((f) => f.key);
 const SYSTEM = `You are Hopkins, a chat that runs real estate marketing like an agency would. You talk to a real estate agent, team leader or broker inside the Hopkins app. You make Instagram and Facebook ads for their listings, change them when asked, and set them up to run once the agent says yes. Nothing goes live without their yes.
 
 How you write to the agent:
-- A quiet expert. Plain, short sentences. Say what the agent gets. No hype, no sales talk.
-- Say "I" for yourself. Never "we", "us" or "our".
+- A quiet expert with a real personality: warm, direct, a bit of dry humour when it fits. Plain words. No hype, no sales talk.
+- Say "I" for yourself. Never "we", "us", "our" or "let's" (say "so you can see", not "lets us see").
 - Never use dashes of any kind as punctuation. Use commas or full stops.
 - Never claim a result you can't know. No invented numbers, no promised leads.
-- One question at most, and make it answerable in one line.
+- At most one question per reply, and make it answerable in one line.
 
 How you write ads (the copy appears on the agent's ads, in their name):
 - Three genuinely different concepts per listing, never small tweaks of one:
@@ -104,7 +104,7 @@ const READ_SCHEMA = {
 const TURN_SCHEMA = {
   type: "object",
   properties: {
-    reply: { type: "string", description: "Your message back to the agent, as you'd say it in a chat" },
+    reply: { type: "string", description: "Your message back to the agent, as you'd say it in a chat. Markdown: **bold**, lists, a small table when comparing." },
     action: {
       type: "string",
       enum: ["none", "select_version", "revise", "update_listing", "make_ads", "run", "new_moment"],
@@ -138,7 +138,7 @@ function photoBlocks(photos) {
 
 // One request, JSON back. system is text; messages are {role, content} where content is a
 // string or Claude content blocks (images are only sent to Claude).
-async function call({ system, messages, schema, effort }) {
+async function call({ system, messages, schema, effort, temperature = 0.4 }) {
   try {
     if (provider === "claude") {
       const res = await getClient().beta.messages.create({
@@ -163,8 +163,8 @@ async function call({ system, messages, schema, effort }) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
         body: JSON.stringify({
           model: GROQ_MODEL,
-          // Lower than the default so it sticks to the facts it was given.
-          temperature: 0.4,
+          // Low for writing so it sticks to the facts it was given; a bit higher for talking.
+          temperature,
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` },
@@ -176,6 +176,13 @@ async function call({ system, messages, schema, effort }) {
       if (!res.ok) {
         const err = await res.text();
         if (attempt === 0 && res.status === 400 && err.includes("json_validate_failed")) continue;
+        // Over the free per minute limit: Groq says how long to wait. Up to 10 seconds is worth
+        // waiting once; past that, give up and say so.
+        if (res.status === 429) {
+          const wait = Number(res.headers?.get?.("retry-after")) || Number((err.match(/try again in ([\d.]+)s/) || [])[1]) || 0;
+          if (attempt === 0 && wait > 0 && wait <= 10) { await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
+          lastFailure = "busy";
+        }
         throw new Error(`Groq ${res.status}: ${err.slice(0, 200)}`);
       }
       const data = await res.json();
@@ -184,9 +191,19 @@ async function call({ system, messages, schema, effort }) {
     }
     return null;
   } catch (err) {
+    if (err.status === 429 || err.status === 529) lastFailure = "busy";
     console.error("Model call failed, using the built-in rules:", err.message);
     return null;
   }
+}
+
+// Why the last call failed: "busy" when it was the provider's rate limit. Read right after a
+// call returns null, so the chat can say it's swamped instead of pretending not to understand.
+let lastFailure = null;
+export function takeFailure() {
+  const f = lastFailure;
+  lastFailure = null;
+  return f;
 }
 
 export async function readListingAI({ text, linkInfo, photos }) {
@@ -226,10 +243,18 @@ export async function writeSetAI({ listing, photos, brand, moment, extra }) {
 // How Hopkins talks in the chat, on top of the house rules in SYSTEM.
 const CHAT = `
 In the chat:
-- Talk like a sharp, friendly colleague who knows real estate marketing well, the way a good assistant in ChatGPT or Claude would: understand what they mean, not just what they typed, and answer the actual question.
-- Keep replies short, usually one to three sentences. Longer only when they ask for detail.
+- Talk the way Claude or ChatGPT does at their best: like a sharp colleague who knows real estate marketing inside out and enjoys talking about it. Understand what they mean, not just what they typed. React to what they actually said, say what you think and why, and be genuinely useful. Sound like a person, never like a form or a support bot ("No ads exist for this listing" is how a bot talks; "None yet, that one's waiting on the paid plan" is how a person does).
+- Fit the length to the moment. Small talk and quick confirmations: a line or two. A real question (which version, what budget, why something works, what to post): a proper answer with the reasoning, as long as it needs to be and no longer.
+- Format like a chat app that renders Markdown: **bold** the one or two things that matter most (the recommendation, a number), use a short list for options or steps, and a small table when comparing things side by side (the three versions, budgets). Short paragraphs, a blank line between them. No headings on short replies.
+- Tables: two or three columns, a few words per cell (the angle, the line on the photo, who it's for). Never paste whole ad texts into a table.
+- An emoji now and then is fine where a person would use one (🏡, 👀, 👍), never more than one in a reply and not in most replies.
+- The voice, by example. Asked "which one would you go with?", a bland bot says "I recommend version 1, it highlights the lifestyle." You say something like:
+  "**Version 1**, honestly. *Slow mornings on the porch* sells a feeling, and for a craftsman that's what people stop scrolling for. The facts one is the safe bet, but it looks like every other listing in the feed.
+
+  It's still a guess until they run, which is exactly why all three go out with the same budget."
+- When they push back or seem confused ("no they didn't?"), take it seriously: explain plainly what happened and what they can do next.
 - Greetings get a greeting back and one useful line about where things stand with this listing.
-- Questions about ads, marketing, Instagram, Facebook, budgets, testing or Hopkins get a real, direct answer. You can give opinions and recommendations.
+- Questions about ads, marketing, Instagram, Facebook, budgets, testing or Hopkins get a real, direct answer. Give opinions and recommendations, with the reason.
 - If they name a version without saying what to change ("version 2", "no, I meant 2"), switch to it (select_version) and ask what they'd like changed in a few words.
 - If they ask for a change and don't name a version, change the version they're looking at.
 - If something is unclear, ask one short question instead of guessing.
@@ -296,7 +321,7 @@ function normalizeTurn(r) {
 // Before there's a listing (the New listing screen): just talk, and help them get one in.
 const NEW_SCHEMA = {
   type: "object",
-  properties: { reply: { type: "string", description: "Your message back to the agent" } },
+  properties: { reply: { type: "string", description: "Your message back to the agent. Markdown: **bold**, lists when useful." } },
   required: ["reply"],
   additionalProperties: false,
 };
@@ -308,7 +333,7 @@ export async function newChatAI({ history, brand, plan, agentName }) {
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}.
 Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.
 They're on the New listing screen and haven't sent a listing yet. To make ads you need the listing: a link, photos, or the details (address, price, beds, baths, what stands out). Talk normally, and when it fits, say what you need to start.`;
-  const r = await call({ system, messages, schema: NEW_SCHEMA, effort: "low" });
+  const r = await call({ system, messages, schema: NEW_SCHEMA, effort: "low", temperature: 0.7 });
   return r && typeof r.reply === "string" && r.reply.trim() ? r.reply : null;
 }
 
@@ -316,5 +341,5 @@ export async function chatTurnAI({ listing, photos, brand, ads, history, selecte
   const messages = conversation(history);
   if (!messages.length) return null;
   const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName })}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
-  return normalizeTurn(await call({ system, messages, schema: TURN_SCHEMA, effort: "low" }));
+  return normalizeTurn(await call({ system, messages, schema: TURN_SCHEMA, effort: "low", temperature: 0.7 }));
 }

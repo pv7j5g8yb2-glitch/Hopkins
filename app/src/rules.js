@@ -103,7 +103,8 @@ export function readIntent(text, { selected = 1, photos = [] } = {}) {
   }
 
   // Photos. "use photo 3", "use the kitchen photo", "different picture".
-  if (/\b(photo|picture|pic|image|shot)s?\b/.test(low)) {
+  const asking = /\?\s*$/.test(t) || /^(what|how|why|which|do you|does|is|are|can you tell)\b/.test(low);
+  if (/\b(photo|picture|pic|image|shot)s?\b/.test(low) && !(asking && !/\b(use|swap|change|different|another|try|put|switch)\b/.test(low))) {
     const n = low.match(/\b(?:photo|picture|pic|image|shot)\s*#?\s*(\d{1,2})\b/) || low.match(/\b(\d{1,2})(?:st|nd|rd|th)? (?:photo|picture|pic|image|shot)\b/);
     const ord = low.match(/\b(first|second|third|fourth|fifth|last)\s+(?:photo|picture|pic|image|shot)\b/);
     const label = PHOTO_LABELS.find((l) => new RegExp(`\\b${l === "garden" ? "(garden|yard|backyard)" : l === "living" ? "(living|lounge)" : l === "bathroom" ? "(bathroom|bath)" : l === "exterior" ? "(exterior|outside|front)" : l}\\b`).test(low));

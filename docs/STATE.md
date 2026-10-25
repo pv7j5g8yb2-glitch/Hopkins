@@ -164,6 +164,19 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Chat like Claude or ChatGPT (2026-10-25, Ismael): replies render Markdown (bold, lists, small
+  tables that scroll sideways on a phone, short headings), the model is told to talk like a person
+  with opinions and reasons, fit the length to the question, use an emoji only now and then, with a
+  worked example of the voice. Chat calls run warmer (temperature 0.7) than ad writing (0.4).
+  Live on Groq: real opinions and a clean comparison table, but it still slips into "we" now and
+  then and rarely uses bold; Claude follows these rules more reliably.
+* Groq's free limit is 8,000 tokens a minute and each chat message now uses about 4,000, so two
+  quick messages can hit it. Hopkins waits and retries once when Groq says a few seconds; past
+  that it says it's getting a lot of messages instead of "I didn't follow" (changes the rules can
+  do still happen).
+* Every push redeploys the app; for a minute requests can fail (Ismael saw "Something went wrong"
+  on Admin at 09:01, a minute after a push). Reads now retry quietly; otherwise it says Hopkins is
+  updating. Admin is only for Ismael: every account, who asked to upgrade, and the switch to paid.
 * The message box empties the moment you send (2026-10-25, Ismael); it only comes back if the send
   fails. With the free ads used up, the model is told not to offer to make ads (it had asked
   "would you like to proceed?" when the only answer was the upgrade note).

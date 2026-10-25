@@ -5,10 +5,15 @@
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
 import { parseListingText, readLink, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
-import { writeSet, writeVersion, polish, PATTERNS, MOMENTS } from "./writer.js";
+import { writeSet, writeVersion, polish, polishChat, PATTERNS, MOMENTS } from "./writer.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent } from "./rules.js";
-import { aiEnabled, provider, readListingAI, writeSetAI, chatTurnAI, newChatAI } from "./brain.js";
+import { aiEnabled, provider, readListingAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
+
+// When the model is over its limit, anything the rules can do still gets done; anything that
+// needs real understanding gets an honest "give me a moment" instead of "I didn't follow".
+const BUSY = "Sorry, I'm getting a lot of messages at once. Send that again in a few seconds and I'll give it a proper answer.";
+const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].includes(readIntent(text).kind);
 import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 
@@ -87,7 +92,8 @@ export async function newChat(ws, history) {
   const lastReply = [...history].reverse().find((m) => m.role === "hopkins")?.body;
   if (aiEnabled) {
     const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name });
-    if (reply) return polish(reply);
+    if (reply) return plainWords(reply);
+    if (takeFailure() === "busy" && needsModel(text)) return BUSY;
   }
   const first = (ws.brand.agent_name || "").split(" ")[0];
   const intent = readIntent(text);
@@ -105,14 +111,14 @@ export async function newChat(ws, history) {
 // What the agent will most likely say next, shown in grey in the empty message box. The model
 // writes one with each reply; otherwise it comes from where the listing is at. Never something
 // they just sent, never a nudge to pay.
-export function suggestionFor(ws, listing, ads, messages) {
+export function suggestionFor(ws, listing, ads, messages, canMakeMore = true) {
   const last = messages.at(-1);
   if (!last || last.role !== "hopkins") return "";
   const sent = new Set(messages.filter((m) => m.role === "agent").slice(-6).map((m) => m.body.trim().toLowerCase()));
   const ok = (s) => s && !sent.has(s.toLowerCase());
   if (ok(last.data?.suggestion)) return last.data.suggestion;
   // A saved listing with no ads yet: once they're on the paid plan, making them is the next step.
-  if (!ads.length) return (isPaid(ws) || last.kind !== "upgrade") && ok("Make the ads") ? "Make the ads" : "";
+  if (!ads.length) return canMakeMore && ok("Make the ads") ? "Make the ads" : "";
   if (last.kind === "plan" || last.kind === "upgrade") return "";
   // A fresh set (maybe with a wording note after it) since the agent last spoke.
   const sinceAgent = messages.slice(messages.findLastIndex((m) => m.role === "agent") + 1);
@@ -319,6 +325,10 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
     const plan = { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
     const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name });
     if (r) return applyAI(ws, listing, ads, photos, r, text);
+    if (takeFailure() === "busy" && needsModel(text)) {
+      await say(ws, listing.id, BUSY);
+      return {};
+    }
   }
   return applyRules(ws, listing, ads, photos, text, selected);
 }
@@ -338,7 +348,7 @@ function patchFrom(listing, lp) {
 }
 
 // The words agents use, whatever the model says: it's "the line on the photo", not an overlay.
-const plainWords = (s) => polish(String(s || "").replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
+const plainWords = (s, clean = polishChat) => clean(String(s || "").replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
 
 async function applyAI(ws, listing, ads, photos, r, text) {
   const reply = plainWords(r.reply);
@@ -384,7 +394,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
       await saveAd(ws, fresh, fresh.moment, ad.version, { ...ad, ...applyOverrides(next, ad.style) }, ad);
     }
   }
-  const suggestion = plainWords(r.suggestion).replace(/\.$/, "");
+  const suggestion = plainWords(r.suggestion, polish).replace(/\.$/, "");
   await say(ws, listing.id, reply || (changed.length ? `${VERSION_WORD(changed)} updated.` : "Okay."), "text", suggestion && !/\b(upgrade|paid plan|pay)\b/i.test(suggestion) ? { suggestion } : null);
   return { focus: changed.length === 1 ? changed[0] : focus };
 }
@@ -490,7 +500,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
   if (intent.kind === "revise") {
     const c = intent.changes;
     if (c.photoMissing) {
-      await say(ws, listing.id, `I don't see ${/^photo/.test(c.photoMissing) ? c.photoMissing : `a ${c.photoMissing} photo`} on this listing. Drop it in here and I'll use it.`);
+      await say(ws, listing.id, `I don't see ${/^(photo|that photo)/.test(c.photoMissing) ? c.photoMissing : `a ${c.photoMissing} photo`} on this listing. Drop it in here and I'll use it.`);
       return {};
     }
     const done = [];
