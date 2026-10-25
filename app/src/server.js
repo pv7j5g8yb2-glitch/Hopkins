@@ -15,7 +15,7 @@ import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
 import { KIND_NAMES, MOMENTS } from "./writer.js";
 import { PHOTO_LABELS, formatPrice, factsLine } from "./listing.js";
-import { notifyFounder } from "./notify.js";
+import { notifyFounder, notifyTopic } from "./notify.js";
 import { checkWording } from "./fairhousing.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -26,7 +26,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "app.js", "glass.js", "creative.js", "login.html", "lead.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "app.js", "glass.js", "creative.js", "login.html", "lead.html", "privacy.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -78,6 +78,7 @@ app.get("/", async (request, reply) => {
 });
 app.get("/login", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/signup", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
+app.get("/privacy", async (_, reply) => reply.type(TYPES.html).send(files["privacy.html"]));
 app.get("/reset", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/forgot", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 
@@ -258,6 +259,13 @@ app.post("/api/feedback", async (request, reply) => {
   if (!body) return reply.code(400).send({ error: "Write something first." });
   await run(`INSERT INTO feedback (id, workspace_id, user_id, body, page, created_at) VALUES (?,?,?,?,?,?)`, [randomUUID(), request.ws.id, request.user.id, body, clean(request.body?.page, 120), nowIso()]);
   notifyFounder(`Hopkins feedback · ${request.ws.name}`, body.slice(0, 300), ["speech_balloon"]);
+  return { ok: true };
+});
+
+app.post("/api/alerts/test", async (request, reply) => {
+  if (tooMany(`alerttest:${request.user.id}`, 5)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (!request.ws.brand.alerts_topic) return reply.code(400).send({ error: "Turn lead alerts on first." });
+  notifyTopic(request.ws.brand.alerts_topic, "Hopkins test", "Lead alerts work. New leads will arrive like this.");
   return { ok: true };
 });
 
@@ -507,9 +515,12 @@ app.get("/l/:slug", async (request, reply) => {
   };
   const title = [listing.address || listing.area || "Listing", data.price].filter(Boolean).join(", ");
   // Function replacements, so a "$&" typed into an address can't change the page.
+  // Link previews (iMessage, WhatsApp, Facebook) need a full address for the image.
+  const origin = `${request.protocol}://${request.host}`;
   const html = files["lead.html"]
     .replaceAll("__TITLE__", () => esc(title))
-    .replace("__OG_IMAGE__", () => (photos[0] ? `/photos/${photos[0].id}` : ""))
+    .replace("__OG_DESC__", () => esc([data.facts, listing.area || listing.city, b.business || ws.name].filter(Boolean).join(" · ")))
+    .replace("__OG_IMAGE__", () => (photos[0] ? `${origin}/photos/${photos[0].id}` : ""))
     .replace("__DATA__", () => JSON.stringify(data).replace(/</g, "\\u003c"));
   return reply.type(TYPES.html).header("Cache-Control", "no-cache").send(html);
 });

@@ -366,9 +366,15 @@ a.row:hover{background:var(--hover)}
 .pop input{-webkit-user-select:text;user-select:text}
 .pop .rename .btn{width:auto;justify-content:center;padding:9px 16px}
 .rename{display:flex;gap:8px;padding:4px 6px 6px}
+.steps-small{margin:8px 0 0 18px;color:var(--soft);font-size:14px;line-height:1.7}
 .feedback{display:flex;flex-direction:column;gap:8px;padding:4px 6px 6px}
 .feedback textarea{width:100%;font:inherit;font-size:16px;line-height:1.45;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;background:var(--raise);color:var(--ink);resize:vertical;min-height:96px}
 .feedback .btn{align-self:flex-end}
+.adm{display:flex;flex-direction:column}
+.adm-row{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:14px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.adm-who{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adm-act{display:flex;gap:8px;align-items:center}
+.adm-act select{font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--raise)}
 .fb-list{display:flex;flex-direction:column}
 .fb{padding:14px 0;border-top:1px solid var(--line)}
 .fb p{white-space:pre-wrap;margin-bottom:4px}

@@ -7,8 +7,12 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
 
 ## What works today
 
-* **Accounts.** Invite only sign up (`INVITE_CODES`), email and password, one workspace per
-  business.
+* **Accounts.** Invite only sign up (`INVITE_CODES`; a link like `/signup?invite=CODE` fills the
+  code in), email and password, one workspace per business. Forgot password: the founder is
+  told on his phone and makes a one time reset link in Admin to send by hand (no email service
+  yet). A new password signs out every other device.
+* **Feedback and errors.** Send feedback from the account menu; it shows in Admin and reaches the
+  founder's phone (`NTFY_TOPIC`), as does any server error. Privacy page at `/privacy`.
 * **Brand.** Business name, colors, logo, type, voice. Every ad follows it. Set on first sign in.
 * **A listing in.** Photos (resized in the browser) plus the link or the description. Hopkins
   reads the price, beds, baths, size, address, area and features. Links: it reads what the

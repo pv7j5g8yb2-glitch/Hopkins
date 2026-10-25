@@ -168,6 +168,22 @@ personal in here.
   changed versions (`data.snapshot` on the message) and shows them right there, as they were at
   that moment, like a chat app showing each new image; no scrolling back to the first set. Drawn
   once each into a small JPEG and kept, so long chats stay light on a phone.
+* Pilot readiness check (2026-10-25, Ismael asked for an end to end look before real pilots).
+  Fixed: on Render every request came through its proxy, so the brakes on sign up (10 per 10 min),
+  sign in and the lead form (8 per 10 min) counted every visitor together; a busy hour of real
+  leads would have been refused (`trustProxy`). Added: Forgot password (no email service, so the
+  founder's phone hears about it and Admin makes a one time link, 48 hours, to send by hand); a
+  new password signs out every other device; Send feedback in the account menu (Admin lists it and
+  the founder's phone gets it); server errors alert the founder's phone (at most every 10 minutes)
+  and people see a plain message; safety headers; last seen per account in Admin; lead alerts turn
+  on in one tap (Hopkins makes a private ntfy name, shows the steps, sends a test); a plain privacy
+  page at `/privacy`, linked from sign in, Settings and every lead page; lead page link previews
+  with a full image address. Walked every screen at iPhone size and on a laptop against a slowed
+  server (scratchpad `e2e/pilot.mjs`, `e2e/newbits.mjs`), 28 tests. Founder alerts (resets,
+  feedback, errors, sign ups) need `NTFY_TOPIC` set on Render. Pilots sign up with
+  `/signup?invite=CODE`, which needs `INVITE_CODES` set on Render.
+  Not built, known: emails of any kind, Meta (so free and paid pilots can't run ads, only download
+  them on paid), Stripe, backups beyond what Turso keeps, the Monday report counts Monday in UTC.
 * No more fixed three (2026-10-25, Ismael: "what if the user doesn't want any of the 3... the
   entire process of the ads is way too generic"). Why it felt generic: on Groq the first ads were
   never written by the model, only by fill in the blank templates (switched off 2026-10-24 after

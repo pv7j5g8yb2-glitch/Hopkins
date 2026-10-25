@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · Hopkins</title>
+<link rel="icon" href="/static/mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2A0F14;--soft:#5E4E49;--cream:#F4EBDD;--line:rgba(42,15,20,.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream);color:var(--ink);font-family:"Inter Tight",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:48px 16px 80px}
+main{max-width:640px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:20px;letter-spacing:-.04em;margin-bottom:36px;color:var(--ink);text-decoration:none}
+.logo img{width:28px;height:28px}
+h1{font-size:40px;line-height:1.05;letter-spacing:-.045em;margin-bottom:10px}
+h1 em{font-family:"Instrument Serif",Georgia,serif;font-weight:400;letter-spacing:-.01em}
+.date{color:var(--soft);font-size:14px;margin-bottom:30px}
+h2{font-size:18px;letter-spacing:-.02em;margin:30px 0 8px;padding-top:24px;border-top:1px solid var(--line)}
+p,li{font-size:16px;line-height:1.6;color:var(--soft)}
+ul{margin:8px 0 0 20px}
+a{color:var(--ink)}
+</style>
+</head>
+<body>
+<main>
+  <a class="logo" href="/"><img src="/static/mark.svg" alt="">Hopkins</a>
+  <h1>Privacy, <em>plainly.</em></h1>
+  <p class="date">Last updated 25 October 2026. Hopkins is in early access.</p>
+
+  <p>Hopkins is a chat for running real estate marketing. This page says what it keeps, who else handles it, and how to have it deleted.</p>
+
+  <h2>What Hopkins keeps</h2>
+  <ul>
+    <li>Your account: your name, email, photo if you add one, and your password, stored only as a scrambled hash.</li>
+    <li>Your brand: business name, colours, logo, phone, licence number and the other details you add.</li>
+    <li>Your listings, the photos you upload, your chats with Hopkins and the ads it makes.</li>
+    <li>Leads: what buyers type into a listing's lead page.</li>
+    <li>One cookie, to keep you signed in. No advertising or tracking cookies.</li>
+  </ul>
+
+  <h2>Who else handles it</h2>
+  <ul>
+    <li>To read listings and write ads, the listing details, photos and chat messages are sent to the AI model provider Hopkins uses (Groq or Anthropic). They're used to answer that request.</li>
+    <li>The app runs on Render and the data is stored with Turso.</li>
+    <li>Lead alerts, if you turn them on, go through ntfy and carry no contact details, only that a lead arrived.</li>
+    <li>Fonts load from Google Fonts.</li>
+  </ul>
+  <p>Nothing is sold, and nothing is used to advertise to you.</p>
+
+  <h2>If you fill in a lead page</h2>
+  <p>Your name, phone, email and message go to the agent whose listing it is, so they can reply. They aren't used for anything else. To have them removed, ask that agent, or email the address below.</p>
+
+  <h2>Deleting your data</h2>
+  <p>In the app, Settings, Delete account removes your account and everything in it: listings, photos, chats, ads and leads. Deleting a listing removes it, its chat and its leads.</p>
+
+  <h2>Questions</h2>
+  <p>Email <a href="mailto:gethopkins@gmail.com">gethopkins@gmail.com</a>.</p>
+</main>
+</body>
+</html>

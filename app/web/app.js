@@ -159,6 +159,9 @@
     return `<div class="md">${out.join("")}</div>`;
   }
 
+  // A message as one plain line, for previews: no Markdown marks.
+  const plainText = (s) => String(s || "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)\*([^*]+)\*/g, "$1$2").replace(/^\s*([-*•]|\d+[.)]|#{1,6})\s+/gm, "").replace(/\|/g, " ").replace(/\s+/g, " ").trim();
+
   function ago(iso) {
     const s = (Date.now() - new Date(iso).getTime()) / 1000;
     if (s < 60) return "just now";
@@ -386,12 +389,12 @@
       const isPlan = m.kind === "plan";
       const pc = photoOrCover(listingOf(m));
       return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}<span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "Ads ready"}</span></div>
-        <div class="bd"><div class="tx"><b>${esc(where(m))}</b><p>${esc(isPlan ? "Check the plan and say yes." : m.body)}</p></div><span class="btn">${isPlan ? "Review" : "See ads"}</span></div></a>`;
+        <div class="bd"><div class="tx"><b>${esc(where(m))}</b><p>${esc(isPlan ? "Check the plan and say yes." : plainText(m.body))}</p></div><span class="btn">${isPlan ? "Review" : "See ads"}</span></div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
     const titleFor = (m) => (m.kind === "lead" ? `New lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
     const row = (m) => `<a class="row" href="${m.kind === "report" ? "#/report" : `#/l/${m.listing_id}`}"><span class="ic">${icon(m)}</span>
-      <div class="tx"><b>${esc(titleFor(m))}</b><p>${esc(m.body)}</p></div><span class="when">${ago(m.created_at)}</span></a>`;
+      <div class="tx"><b>${esc(titleFor(m))}</b><p>${esc(plainText(m.body))}</p></div><span class="when">${ago(m.created_at)}</span></a>`;
 
     const leadsWeek = S.inbox.filter((m) => m.kind === "lead").length;
     let body;
@@ -1040,7 +1043,7 @@
     const top = r.patterns.reduce((a, x) => ((x.leads || 0) > (a?.leads || 0) ? x : a), null);
     main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap">
       <p class="small">Last 7 days</p><div class="headline">${esc(r.headline)}</div>
-      <div class="stats"><div class="stat"><span>Leads</span><b>${r.total}</b></div><div class="stat key"><span>Cost per lead</span><b>${r.cpl != null ? money(r.cpl) : "n/a"}</b></div>
+      <div class="stats"><div class="stat"><span>Leads</span><b>${r.total}</b></div><div class="stat key"><span>Cost per lead</span><b>${r.cpl != null ? money(r.cpl) : r.spend > 0 ? "No leads yet" : "Add spend"}</b></div>
         <div class="stat"><span>Asked for a showing</span><b>${r.showings}</b></div><div class="stat"><span>Spend</span><b>${money(r.spend)}</b></div></div>
       <h3>What I'd do next</h3><ul class="next">${r.next.length ? r.next.map((n) => `<li>${esc(n)}</li>`).join("") : "<li>Nothing to change this week.</li>"}</ul>
       <h3>By listing</h3>${r.listings.length ? r.listings.map((x) => `<div class="rl"><div class="tx"><a href="#/l/${x.id}"><b>${esc(x.name)}</b></a>
@@ -1151,17 +1154,19 @@
       <div class="group"><h4>Password</h4><div style="display:flex;flex-direction:column;gap:12px">
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
-      <div class="group"><h4>Notifications</h4>
-        ${fld("sAlerts", "Lead alerts on your phone", b.alerts_topic, "text", "ellery-leads-4821")}
-        <p class="small" style="margin-top:6px">Install the free ntfy app, subscribe to a name only you know, and type the same name here. New leads reach your phone within seconds.</p>
-        <div style="margin-top:12px"><button class="sec-btn" data-act="saveAlerts">Save</button></div></div>
+      <div class="group"><h4>Lead alerts</h4>${b.alerts_topic
+        ? `<p>On. New leads go to your phone through the free ntfy app.</p>
+           <ol class="steps-small"><li>Install ntfy from the App Store or Google Play.</li><li>Tap +, then subscribe to <b>${esc(b.alerts_topic)}</b> <button class="link" data-copy="${esc(b.alerts_topic)}" data-copied="Name copied">Copy</button></li><li>Send a test to check it arrives.</li></ol>
+           <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
+        : `<p class="small">A ping on your phone within seconds of every new lead, through the free ntfy app.</p>
+           <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>Paid plan. Billing starts when your first ad goes live.</p>`
         : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made. Previews only.</p>
-           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Paid plan requested. You'll get an email when your seat is ready.</span>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}</div>`}</div>
+           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Paid plan requested. You'll hear back soon.</span>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
-        <button class="link danger" data-act="deleteAsk">Delete account</button></div></div>
+        <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy</a></div></div>
     </div></div>`;
     $("#sEmail").addEventListener("input", (e) => $("#sEmailPw").classList.toggle("hidden", e.target.value.trim().toLowerCase() === u.email));
     $("#avFile").addEventListener("change", async (e) => {
@@ -1190,9 +1195,15 @@
     } else if (act === "savePw") {
       await api("/api/account/password", { body: { current: val("#sPwCur"), next: val("#sPwNew") } });
       $("#sPwCur").value = ""; $("#sPwNew").value = ""; buzz(6); toast("Password changed");
-    } else if (act === "saveAlerts") {
-      await api("/api/brand", { method: "PUT", body: { alerts_topic: val("#sAlerts") } });
-      await loadMe(); buzz(6); toast("Saved");
+    } else if (act === "alertsOn" || act === "alertsOff") {
+      // A long random name, so nobody else can guess it and read the alerts.
+      const topic = act === "alertsOn" ? `hopkins-${[...crypto.getRandomValues(new Uint8Array(9))].map((x) => "abcdefghijkmnpqrstuvwxyz23456789"[x % 32]).join("")}` : "";
+      await api("/api/brand", { method: "PUT", body: { alerts_topic: topic } });
+      await loadMe(); buzz(6); toast(topic ? "Lead alerts on" : "Lead alerts off");
+      viewSettings();
+    } else if (act === "testAlert") {
+      await api("/api/alerts/test", { body: {} });
+      toast("Test sent. It should arrive in a few seconds");
     } else if (act === "avRemove") {
       await api("/api/account", { method: "PATCH", body: { avatar_id: "" } });
       await loadMe(); drawSide(); viewSettings(); toast("Photo removed");
@@ -1214,11 +1225,10 @@
     const [{ workspaces }, { feedback }] = await Promise.all([api("/api/admin/workspaces"), api("/api/admin/feedback")]);
     if (my !== current()) return;
     main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Admin</h1><p class="lede">Only you see this. Every account on Hopkins, who asked for the paid plan, and the switch that puts an account on it once they've agreed the price.</p></div>
-      <div class="scroll-x"><table class="tbl"><thead><tr><th>Workspace</th><th>Last in</th><th>Listings</th><th>Ads</th><th>Leads</th><th>Asked to upgrade</th><th>Plan</th><th>Password</th></tr></thead><tbody>
-      ${workspaces.map((w) => `<tr><td><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")} · joined ${ago(w.created_at)}</span></td><td>${w.last_seen ? ago(w.last_seen) : "never"}</td><td>${w.listings}</td><td>${w.ads}</td><td>${w.leads}</td>
-        <td>${w.upgrade_requested ? ago(w.upgrade_requested) : ""}</td><td><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select></td>
-        <td>${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Asked ${ago(w.reset_asked)}, make link` : "Reset link"}</button>` : ""}</td></tr>`).join("")}
-      </tbody></table></div>
+      <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
+          <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "lead" : "leads"}${w.upgrade_requested ? ` · <b>asked to upgrade ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
+          <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select>
+          ${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Reset asked ${ago(w.reset_asked)}` : "Reset link"}</button>` : ""}</div></div>`).join("")}</div>
       <div class="head" style="margin-top:34px"><h2>Feedback</h2></div>
       ${feedback.length ? `<div class="fb-list">${feedback.map((f) => `<div class="fb"><p>${esc(f.body)}</p><span class="small">${esc(f.name || "")} · ${esc(f.email || "")} · ${esc(f.page || "")} · ${ago(f.created_at)}</span></div>`).join("")}</div>` : `<p class="lede">Nothing yet. Pilots send it from the account menu, Send feedback.</p>`}
       </div></div>`;
@@ -1311,7 +1321,7 @@
     if (t.closest("#pop") && act !== "deleteYes") closePop();
     const l = S.current && S.current.listing;
     try {
-      if (["saveProfile", "saveBiz", "savePw", "saveAlerts", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "listmenu") openPop(t, listingMenu());
       else if (act === "style") {
