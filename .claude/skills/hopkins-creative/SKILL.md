@@ -228,6 +228,11 @@ wording or layout). What to look for:
   other (agent video, just sold carousel, local market data), not small tweaks of one.
 - Nothing goes live without the owner's yes.
 
+## Mockups of Instagram
+
+Any recreated Instagram account, post, ad or story (in reels, carousels, the landing page, the
+app's previews) shows the blue verified badge after the handle (Ismael, 2026-10-25).
+
 ## Never
 
 - Invent results, testimonials, follower counts or numbers. Proof only once it's real

@@ -907,10 +907,12 @@
     const ava = b.logo_id ? `style="background:#fff url(${photoUrl(b.logo_id)}) center/contain no-repeat"` : `style="background:${esc(b.primary || "#1F2A36")}"`;
     const issues = ad.issues || [];
     const short = ad.primary_text.length > 125;
-    const feed = `<div class="igc"><div class="h"><i class="ava" ${ava}></i><div>${esc(handle)}<span>Sponsored</span></div></div><canvas id="big" width="1080" height="1350"></canvas>
+    // Instagram's blue verified badge after the handle, wherever an account is shown (Ismael, 2026-10-25).
+    const tick = `<svg class="verified" viewBox="0 0 20 20" aria-label="Verified"><path fill="#0095F6" d="M10.00 1.40Q12.90 -0.82 14.30 2.55Q17.92 2.08 17.45 5.70Q20.82 7.10 18.60 10.00Q20.82 12.90 17.45 14.30Q17.92 17.92 14.30 17.45Q12.90 20.82 10.00 18.60Q7.10 20.82 5.70 17.45Q2.08 17.92 2.55 14.30Q-0.82 12.90 1.40 10.00Q-0.82 7.10 2.55 5.70Q2.08 2.08 5.70 2.55Q7.10 -0.82 10.00 1.40Z"/><path d="m6.4 10.2 2.4 2.4 4.8-5" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const feed = `<div class="igc"><div class="h"><i class="ava" ${ava}></i><div><span class="hn">${esc(handle)}${tick}</span><span>Sponsored</span></div></div><canvas id="big" width="1080" height="1350"></canvas>
       <div class="cta"><span>${esc(ad.cta)}</span><span>›</span></div>
-      <div class="cp" id="cp"><b>${esc(handle)}</b>${esc(short ? ad.primary_text.slice(0, 125).replace(/\s\S*$/, "") : ad.primary_text)}${short ? '<span class="more" data-act="more">… more</span>' : ""}</div></div>`;
-    const story = `<div class="story"><canvas id="big" width="1080" height="1920"></canvas><div class="bar"><i></i></div><div class="who"><i class="ava" ${ava}></i>${esc(handle)} <span>Sponsored</span></div><div class="go">${esc(ad.cta)}</div></div>`;
+      <div class="cp" id="cp"><b>${esc(handle)}${tick}</b>${esc(short ? ad.primary_text.slice(0, 125).replace(/\s\S*$/, "") : ad.primary_text)}${short ? '<span class="more" data-act="more">… more</span>' : ""}</div></div>`;
+    const story = `<div class="story"><canvas id="big" width="1080" height="1920"></canvas><div class="bar"><i></i></div><div class="who"><i class="ava" ${ava}></i>${esc(handle)}${tick} <span>Sponsored</span></div><div class="go">${esc(ad.cta)}</div></div>`;
     const tabs = `<div class="seg" data-seg="ver">${p.ads.map((a) => `<button data-pick="${a.version}" class="${a.version === v ? "on" : ""}">Ad ${a.version}</button>`).join("")}</div>`;
     const fmt = `<div class="seg" data-seg="fmt"><button data-fmt="feed" class="${S.format === "feed" ? "on" : ""}" title="Feed post">Feed</button><button data-fmt="story" class="${S.format === "story" ? "on" : ""}" title="Story">Story</button></div>`;
     // On a phone the two formats are drawn as their shapes, so the ad names get the room.

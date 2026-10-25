@@ -290,6 +290,10 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .igc{width:100%;max-width:340px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--line),0 14px 34px rgba(42,15,20,.1)}
 .igc .h{display:flex;align-items:center;gap:9px;padding:9px 11px;font-size:13px;font-weight:600}
 .igc .h span{display:block;font-size:11px;font-weight:400;color:#8b8b8b}
+.igc .h span.hn{display:flex;align-items:center;font-size:13px;font-weight:600;color:inherit}
+.verified{width:13px;height:13px;margin-left:3px;flex:none;display:inline-block;vertical-align:-2px}
+.cp b .verified{margin-right:0}
+.story .who .verified{width:12px;height:12px;margin-left:-3px}
 .ava{width:28px;height:28px;border-radius:50%;flex:none;background:#ddd center/cover}
 .igc canvas{display:block;width:100%;height:auto}
 .igc .cta{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;font-size:13px;font-weight:600;background:#f4f4f4}

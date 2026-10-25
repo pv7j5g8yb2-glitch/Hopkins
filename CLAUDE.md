@@ -129,6 +129,10 @@ What content and ad creative actually works on Instagram for real estate lives i
 for @gethopkins and for what the product makes for customers. When Ismael sends new
 examples of what's winning, add the learning to its log with the date.
 
+**Instagram mockups (Ismael, 2026-10-25):** wherever an Instagram account, post, ad or story is
+recreated (the app's ad previews, reels, posts, the landing page), put Instagram's blue verified
+badge after the handle.
+
 ## Product decisions (Hopkins)
 
 The product's code is in `app/` (its README says what works and how to run it).
