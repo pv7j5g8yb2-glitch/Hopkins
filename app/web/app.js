@@ -1278,6 +1278,104 @@
   // versions, Feed and Story, the Style sheet's "this one or all 3"); on a phone they're glass.
   // Screens redraw on every choice, so where each lens was is remembered and it slides from
   // there. Only transform and width animate, which keeps it smooth.
+  // On a phone the pills move like the tab bar's lens (glass.js): on a spring that overshoots a
+  // touch, stretching along its path and squashing as it lands, swelling under a finger, and
+  // following a finger dragged across them. The state lives per row of pills, so the glide
+  // carries on when the screen redraws mid move. On a laptop they slide with a CSS transition.
+  const SPR = {};
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function drawSpring(s) {
+    if (!s.el) return;
+    const speed = Math.min(1, Math.abs(s.v) / 1800);
+    const sx = 1 + speed * 0.28 + s.press * 0.12;
+    const sy = 1 - speed * 0.12 + s.press * 0.2;
+    s.el.style.width = `${s.w}px`;
+    s.el.style.transform = `translateX(${s.x}px) scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
+  }
+  function stepSpring(s, t) {
+    const dt = Math.min(0.032, (t - (s.last || t)) / 1000) || 0.016;
+    s.last = t;
+    const k = s.drag ? 900 : 380, c = s.drag ? 48 : 26;
+    s.v += (-k * (s.x - s.tx) - c * s.v) * dt;
+    s.x += s.v * dt;
+    s.wv += (-k * (s.w - s.tw) - c * s.wv) * dt;
+    s.w += s.wv * dt;
+    s.pv += (-520 * (s.press - s.pt) - 30 * s.pv) * dt;
+    s.press += s.pv * dt;
+    drawSpring(s);
+    const still = Math.abs(s.x - s.tx) < 0.2 && Math.abs(s.v) < 4 && Math.abs(s.w - s.tw) < 0.2 && Math.abs(s.wv) < 4 && Math.abs(s.press - s.pt) < 0.002 && Math.abs(s.pv) < 0.02;
+    if (still && !s.drag) {
+      Object.assign(s, { x: s.tx, w: s.tw, v: 0, wv: 0, press: s.pt, pv: 0, running: false, last: 0 });
+      drawSpring(s);
+      return;
+    }
+    requestAnimationFrame((t2) => stepSpring(s, t2));
+  }
+  function kickSpring(s) {
+    if (reduceMotion) { Object.assign(s, { x: s.tx, w: s.tw, press: s.pt }); drawSpring(s); return; }
+    if (!s.running) { s.running = true; s.last = 0; requestAnimationFrame((t) => stepSpring(s, t)); }
+  }
+
+  // A finger on a row of pills: the lens swells and follows it, and lands on the nearest pill.
+  let segDrag = null;
+  const pillAt = (seg, clientX) => {
+    const r = seg.getBoundingClientRect();
+    const x = clientX - r.left + seg.scrollLeft;
+    let best = null, d = Infinity;
+    for (const b of seg.querySelectorAll(":scope > button")) {
+      const dist = Math.abs(b.offsetLeft + b.offsetWidth / 2 - x);
+      if (dist < d) { d = dist; best = b; }
+    }
+    return best;
+  };
+  function followPill(drag, clientX) {
+    const { seg, s } = drag;
+    const pills = [...seg.querySelectorAll(":scope > button")];
+    const b = pillAt(seg, clientX);
+    if (!b) return;
+    const r = seg.getBoundingClientRect();
+    s.tw = b.offsetWidth;
+    const min = pills[0].offsetLeft, max = pills.at(-1).offsetLeft + pills.at(-1).offsetWidth - s.tw;
+    s.tx = Math.max(min, Math.min(max, clientX - r.left + seg.scrollLeft - s.tw / 2));
+  }
+  function bindPillDrag(seg, key) {
+    if (seg.dataset.drag) return;
+    seg.dataset.drag = "1";
+    seg.addEventListener("pointerdown", (e) => {
+      // A row long enough to scroll sideways keeps the finger for scrolling.
+      if (!phone() || seg.scrollWidth > seg.clientWidth + 2 || !SPR[key]) return;
+      const s = SPR[key];
+      segDrag = { seg, s, id: e.pointerId, startX: e.clientX, lastX: e.clientX, moved: false };
+      s.drag = true;
+      s.pt = 1;
+      s.el.classList.add("press");
+      followPill(segDrag, e.clientX);
+      kickSpring(s);
+    });
+  }
+  window.addEventListener("pointermove", (e) => {
+    if (!segDrag || e.pointerId !== segDrag.id) return;
+    if (e.clientX) segDrag.lastX = e.clientX;
+    if (Math.abs(segDrag.lastX - segDrag.startX) > 6) segDrag.moved = true;
+    followPill(segDrag, segDrag.lastX);
+  }, { passive: true });
+  const endPill = (e) => {
+    if (!segDrag || e.pointerId !== segDrag.id) return;
+    const { seg, s, moved, lastX } = segDrag;
+    segDrag = null;
+    s.drag = false;
+    s.pt = 0;
+    const el = s.el;
+    setTimeout(() => el && el.classList.remove("press"), 140);
+    const b = pillAt(seg, lastX);
+    if (b) { s.tx = b.offsetLeft; s.tw = b.offsetWidth; }
+    kickSpring(s);
+    // A drag that ends on another pill picks it (a plain tap is picked by its own click).
+    if (moved && b && !b.classList.contains("on")) b.click();
+  };
+  window.addEventListener("pointerup", endPill, true);
+  window.addEventListener("pointercancel", endPill, true);
+
   function settleSegs() {
     for (const seg of $$(".seg[data-seg]")) {
       const on = seg.querySelector(":scope > button.on");
@@ -1292,6 +1390,25 @@
       const key = `${seg.dataset.seg}:${seg.parentElement ? seg.parentElement.className : ""}`;
       const x = on.offsetLeft, w = on.offsetWidth;
       const prev = S.segPos[key];
+      S.segPos[key] = { x, w };
+      // A long row of names keeps the chosen one in view.
+      if (seg.scrollWidth > seg.clientWidth) {
+        if (x < seg.scrollLeft) seg.scrollLeft = x - 8;
+        else if (x + w > seg.scrollLeft + seg.clientWidth) seg.scrollLeft = x + w - seg.clientWidth + 8;
+      }
+      lens.style.opacity = "1";
+      if (phone() && seg.closest(".mtop, .mbar, .pop")) {
+        // The same glass as the tab bar: its rim, its sheen and its lens.
+        seg.classList.add("lg", "pill-glass");
+        lens.style.transition = "none";
+        const st = SPR[key] || (SPR[key] = { x: prev ? prev.x : x, w: prev ? prev.w : w, v: 0, wv: 0, press: 0, pv: 0, pt: 0 });
+        st.el = lens;
+        if (!st.drag) { st.tx = x; st.tw = w; }
+        drawSpring(st);
+        kickSpring(st);
+        bindPillDrag(seg, key);
+        continue;
+      }
       if (!lens.dataset.placed) {
         lens.style.transition = "none";
         lens.style.transform = `translateX(${(prev || { x }).x}px)`;
@@ -1300,15 +1417,8 @@
         lens.style.transition = "";
         lens.dataset.placed = "1";
       }
-      lens.style.opacity = "1";
       lens.style.transform = `translateX(${x}px)`;
       lens.style.width = `${w}px`;
-      S.segPos[key] = { x, w };
-      // A long row of names keeps the chosen one in view.
-      if (seg.scrollWidth > seg.clientWidth) {
-        if (x < seg.scrollLeft) seg.scrollLeft = x - 8;
-        else if (x + w > seg.scrollLeft + seg.clientWidth) seg.scrollLeft = x + w - seg.clientWidth + 8;
-      }
     }
   }
 

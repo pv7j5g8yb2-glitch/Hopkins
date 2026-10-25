@@ -238,9 +238,12 @@ personal in here.
 * Room labels (2026-10-25): the "Label, exterior, living" dropdown under each photo is gone (Ismael
   didn't see what it was for). Photos are numbered instead, so "use photo 3" works; labels are
   still guessed from file names behind the scenes so "use the kitchen photo" works too.
-* Glass on the Ads screen (2026-10-25): the Chat/Ads switch, the version tabs, Feed/Story and the
-  Style sheet's Version/All 3 have the glass with a sliding highlight (CSS transform, no layout
-  work, so no lag). Over a dark photo the version and Feed/Story controls turn dark with light
+* Glass on the Ads screen (2026-10-25): the Chat/Ads switch, the Ad 1/2/3 tabs, Feed/Story and the
+  Style sheet's This ad/All 3 have the glass. Update (Ismael: "don't have the same feel and
+  gliding effect as the nav bar"): on phones they now use the tab bar's own material (rim, sheen,
+  faint lens at rest, clear glass under a finger) and its physics (spring that overshoots a touch,
+  stretch while moving, swell when pressed, follow a dragged finger and land on the nearest
+  pill), in `settleSegs` in app.js. Laptops keep a plain slide. Over a dark photo the version and Feed/Story controls turn dark with light
   labels, like the tab bar (`glass.js` samples the ad canvas under them).
 * Admin (2026-10-25, Ismael): only his account (gethopkins@gmail.com) should have it, never the
   public. Admin = the account's email is on `ADMIN_EMAILS` in Render (hopkins-app, Environment),

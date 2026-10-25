@@ -661,6 +661,15 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .mbar .seg[data-seg=ver]>button{flex:none;white-space:nowrap}
   .mbar .fmt-icons{flex:none}
   .mbar .fmt-icons>button{display:flex;align-items:center;justify-content:center;padding:6px 9px}
+  /* Pills in the tab bar's glass (settleSegs adds .lg): the labels sit above its rim and sheen,
+     and the lens is the tab bar's: a faint tint at rest, clear glass while a finger is on it. */
+  .seg.pill-glass{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .seg.pill-glass>button{z-index:4}
+  .seg.pill-glass .seg-lens{position:absolute;z-index:1;background:rgba(42,15,20,.075)!important;box-shadow:none!important;transform-origin:50% 50%;transition:background .25s,box-shadow .25s!important}
+  .seg.pill-glass .seg-lens.press{background:rgba(255,255,255,.3)!important;-webkit-backdrop-filter:blur(1.5px) saturate(1.6) brightness(1.08);backdrop-filter:blur(1.5px) saturate(1.6) brightness(1.08);
+    box-shadow:0 8px 22px -4px rgba(42,15,20,.22),inset 0 0 0 .6px rgba(255,255,255,.9),inset 0 1.5px 1px -.5px #fff,inset 0 -1px 1px -.5px rgba(255,255,255,.7),inset 0 0 14px -4px rgba(255,255,255,.8)!important}
+  .seg.pill-glass.dark .seg-lens{background:rgba(255,255,255,.16)!important}
+  .seg.pill-glass>button.on{font-weight:600}
   .mbar .seg.lensed{transition:background-color .25s}
   .mbar .seg.lensed>button{transition:color .25s}
   .lg-now,.lg-now>*{transition:none!important}
