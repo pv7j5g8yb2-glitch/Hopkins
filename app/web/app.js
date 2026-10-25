@@ -437,7 +437,7 @@
     const ta = $("#ta"), comp = $("#comp");
     S.pending = [];
     const showSug = (on) => {
-      on = on && Boolean(suggestion) && !ta.value.trim() && !S.pending.length;
+      on = on && Boolean(suggestion) && !ta.value.trim() && !S.pending.length && !S.busy;
       comp.classList.toggle("has-sug", on);
       ta.placeholder = on ? suggestion : ta.dataset.normal;
     };
@@ -487,15 +487,20 @@
       const text = ta.value.trim();
       if (!text && !S.pending.length) return;
       S.busy = true;
-      $("#send").disabled = true;
       buzz(8);
       ta.blur();
+      // The box empties the moment it's sent, like any chat; the message is already in the
+      // thread. Only if it fails to send does it come back, so nothing is lost.
+      const pending = S.pending;
+      ta.value = "";
+      S.pending = [];
+      grow();
+      drawAtt();
+      $("#send").disabled = true;
       try {
-        await onSend(text, S.pending.map((p) => p.file));
-        ta.value = "";
-        S.pending = [];
-        grow();
+        await onSend(text, pending.map((p) => p.file));
       } catch (err) {
+        if (ta.isConnected && !ta.value) { ta.value = text; S.pending = pending; grow(); }
         toast(err.message);
       } finally {
         S.busy = false;

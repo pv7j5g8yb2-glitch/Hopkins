@@ -164,6 +164,9 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* The message box empties the moment you send (2026-10-25, Ismael); it only comes back if the send
+  fails. With the free ads used up, the model is told not to offer to make ads (it had asked
+  "would you like to proceed?" when the only answer was the upgrade note).
 * One thread (2026-10-25, Ismael): whatever was said on the New listing screen before the listing
   arrived (hello, questions) becomes the start of that listing's chat, so it reads as one
   conversation instead of jumping to a fresh chat. When the free ads went on a listing that's since

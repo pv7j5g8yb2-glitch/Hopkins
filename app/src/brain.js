@@ -248,7 +248,8 @@ function contextText({ listing, photos, brand, ads, selectedVersion, plan, agent
   if (listing.description) facts.agent_description = listing.description;
   return `Context (the current state, not something the agent wrote):
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. Brand voice: ${brand.voice || "plain"}.
-Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.
+Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.${!plan.paid && plan.adsMade >= plan.limit ? `
+The free ads are used up (deleted listings still count). No new ads can be made on this account until it's on the paid plan, so never offer to make them or ask if they want to go ahead; changes to ads that already exist are still free.` : ""}
 Listing: ${JSON.stringify(facts)}
 Photos: ${photos.length ? photos.map((p, i) => `${i + 1} ${p.label || "unlabelled"}`).join(", ") : "none yet"}
 Ads: ${ads.length ? "" : "none yet"}
