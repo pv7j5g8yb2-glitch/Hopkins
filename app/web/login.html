@@ -44,11 +44,13 @@ button:disabled{opacity:.6}
 .switch a{color:var(--cream);font-weight:600}
 .signup-only{display:none}
 .mode-signup .signup-only{display:block}
-.forgot{display:block;margin-top:10px;font-size:13.5px;color:var(--rose);text-decoration:none}
-.forgot:hover{color:var(--cream)}
+.forgot{display:block;margin-top:12px;padding:13px;border:1px solid var(--oxl);border-radius:12px;background:var(--ox2);color:var(--cream);font-size:16px;font-weight:600;text-align:center;text-decoration:none;transition:border-color .15s,background .15s}
+.forgot:hover{border-color:var(--rose)}
+.forgot:active{transform:scale(.98)}
 .mode-forgot .pw-field,.mode-reset .email-field,.mode-signup .forgot,.mode-forgot .forgot,.mode-reset .forgot{display:none}
 .done{margin-top:18px;background:var(--ox2);border:1px solid var(--oxl);border-radius:12px;padding:14px 16px;font-size:15px;line-height:1.5}
-.foot{margin-top:40px;font-size:12.5px;color:#9C807A;line-height:1.5}
+.foot{margin-top:40px;font-size:12.5px;color:#9C807A;line-height:1.5;display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.foot a{color:var(--cream)}
 </style>
 </head>
 <body>
@@ -61,13 +63,14 @@ button:disabled{opacity:.6}
     <div class="signup-only"><label for="business">Business, team or brokerage</label><input id="business" autocomplete="organization" placeholder="Ellery Realty"></div>
     <div class="email-field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="you@yourbrokerage.com"></div>
     <div class="pw-field"><label for="password" id="pwlabel">Password</label><div class="pw"><input id="password" type="password" autocomplete="current-password" placeholder="At least 8 characters"><button type="button" id="show">Show</button></div>
-    <a class="forgot" href="/forgot">Forgot password?</a></div>
+</div>
     <div class="signup-only"><label for="invite">Invite code</label><input id="invite" autocomplete="off" placeholder="From your early access email"></div>
     <button id="go" type="submit">Sign in</button>
+    <a class="forgot" href="/forgot">Forgot password?</a>
     <div class="err" id="err"></div>
   </form>
   <div class="switch" id="switch"></div>
-  <p class="foot">Not on the list yet? <a href="https://waitlist.kirmistudio.com" style="color:var(--cream)">Join the waitlist</a>.<br><a href="/privacy" style="color:var(--cream)">Privacy</a></p>
+  <p class="foot"><span>Not on the list yet? <a href="https://waitlist.kirmistudio.com">Join the waitlist</a>.</span><a href="/privacy">Privacy</a></p>
 </div>
 <script>
 (function () {
