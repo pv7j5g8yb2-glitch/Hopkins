@@ -169,6 +169,20 @@
   }
 
   const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
+  // A listing with no photo gets a cover made from its own details instead of an empty square,
+  // in the brand's style: oxblood ground, the price in gold (the number that matters), the
+  // facts in cream, and the two pebbles drawn large and faint, placed differently per listing.
+  const PEBBLES = `<path fill="#5B4873" d="M55.9 85.8C54.8 88.1 52.2 89.9 49.9 91.2C47.6 92.6 44.8 93.5 42.1 93.9C39.4 94.4 35.9 94.8 33.4 93.7C31.0 92.6 29.1 89.4 27.5 87.3C25.9 85.2 25.4 83.2 24.0 81.0C22.7 78.9 20.2 76.8 19.5 74.3C18.7 71.8 18.8 68.5 19.6 66.0C20.5 63.4 22.3 60.3 24.6 58.9C27.0 57.4 30.9 57.0 33.8 57.5C36.6 57.9 39.2 60.5 41.7 61.7C44.1 62.9 46.4 63.2 48.6 64.6C50.7 66.0 53.2 67.9 54.5 70.0C55.9 72.2 56.2 75.1 56.4 77.7C56.7 80.3 57.0 83.5 55.9 85.8Z"/><path fill="#D7AE62" d="M97.0 31.0C98.4 33.8 99.0 36.2 100.4 39.5C101.7 42.7 105.3 46.7 105.1 50.5C104.9 54.3 102.0 59.3 99.0 62.3C95.9 65.2 90.8 67.3 86.7 68.2C82.7 69.1 78.3 68.5 74.7 67.7C71.2 67.0 68.2 65.4 65.3 63.8C62.4 62.2 59.8 60.5 57.4 58.1C55.1 55.7 51.8 52.7 51.2 49.4C50.7 46.1 52.8 41.9 54.1 38.3C55.4 34.7 56.8 30.9 59.3 27.7C61.7 24.4 65.2 20.5 68.9 18.8C72.7 17.1 77.8 16.8 81.6 17.5C85.4 18.1 89.2 20.3 91.7 22.6C94.3 24.8 95.5 28.2 97.0 31.0Z"/>`;
+  function cover(l) {
+    const h = [...String(l.id)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+    const x = -18 + (h % 40), y = -30 + ((h >> 6) % 45), turn = (h >> 11) % 360;
+    const facts = [l.beds && `${l.beds} bed`, l.baths && `${l.baths} bath`, l.sqft && `${Number(l.sqft).toLocaleString("en-US")} sq ft`].filter(Boolean).join(" · ");
+    const big = l.price ? money(l.price) : "";
+    return `<svg class="cv-art" viewBox="0 0 120 120" style="left:${x}%;top:${y}%;transform:rotate(${turn}deg)">${PEBBLES}</svg>
+      ${big || facts ? `<div class="cv-t">${big ? `<b>${esc(big)}</b>` : ""}${facts ? `<span>${esc(facts)}</span>` : ""}</div>` : ""}`;
+  }
+  const photoOrCover = (l, thumb) => (l && l.photo_id ? { cls: "", style: `background-image:url(${photoUrl(l.photo_id, thumb)})`, inner: "" } : { cls: " cover", style: "", inner: l ? cover(l) : "" });
+
   const listingName = (l) => l.title || l.address || l.area || l.city || "Untitled listing";
   const photoUrl = (id, thumb) => (id ? `/photos/${id}${thumb ? "?thumb=1" : ""}` : null);
   const paid = () => S.me.workspace.plan === "paid";
@@ -296,7 +310,7 @@
     $$("[data-badge]").forEach((b) => (b.textContent = waiting || ""));
     $("#lists").innerHTML = S.listings.length
       ? S.listings.map((l) => `<a class="li ${route[0] === "l" && route[1] === l.id ? "on" : ""}" href="#/l/${l.id}">
-          <i class="th" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
+          <i class="th${l.photo_id ? "" : " cover-mini"}" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
           <div class="nm"><b>${esc(listingName(l))}</b><span>${esc(sideLine(l))}</span></div>${l.waiting ? '<i class="dotw" title="Waiting on you"></i>' : ""}</a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
     $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(S.me.workspace.name)}</b><span>${paid() ? "Paid plan" : "Free plan"}</span></span>${ICON.chev}</button>`;
@@ -363,11 +377,11 @@
     const waiting = S.inbox.filter((m) => m.needs_action);
     const recent = S.inbox.filter((m) => !m.needs_action);
     const listingOf = (m) => S.listings.find((x) => x.id === m.listing_id);
-    const bg = (m) => { const l = listingOf(m); return l && l.photo_id ? `background-image:url(${photoUrl(l.photo_id)})` : ""; };
     const where = (m) => m.title || m.address || m.area || m.city || "Your listing";
     const hero = (m) => {
       const isPlan = m.kind === "plan";
-      return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph" style="${bg(m)}"><span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "3 ads ready"}</span></div>
+      const pc = photoOrCover(listingOf(m));
+      return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}<span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "3 ads ready"}</span></div>
         <div class="bd"><div class="tx"><b>${esc(where(m))}</b><p>${esc(isPlan ? "Check the plan and say yes." : m.body)}</p></div><span class="btn">${isPlan ? "Review" : "See ads"}</span></div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
@@ -402,9 +416,9 @@
     const sel = S.selecting && S.listings.length;
     document.body.classList.toggle("selecting", Boolean(sel));
     if (!sel) S.picked = new Set();
-    const card = (l, i) => `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id)})` : ""}">${sel ? `<i class="tick">${ICON.check}</i>` : ""}
+    const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}
       ${l.status === "sold" ? `<span class="chip green">Sold</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
-      <div class="bd"><b>${esc(listingName(l))}</b><span>${esc([l.price ? money(l.price) : "", l.leads ? `${l.leads} ${l.leads === 1 ? "lead" : "leads"}` : ""].filter(Boolean).join(" · ") || "Draft")}</span></div></a>`;
+      <div class="bd"><b>${esc(listingName(l))}</b><span>${esc([l.photo_id && l.price ? money(l.price) : "", l.leads ? `${l.leads} ${l.leads === 1 ? "lead" : "leads"}` : ""].filter(Boolean).join(" · ") || (l.photo_id ? "Draft" : "No photos yet"))}</span></div></a>`; };
     const n = S.picked.size;
     const lede = sel ? (n ? `${n} selected` : "Tap the ones to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Every home you market lives here.";
     main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Listings</h1><p class="lede">${lede}</p></div>

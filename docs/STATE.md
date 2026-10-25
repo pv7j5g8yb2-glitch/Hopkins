@@ -164,6 +164,10 @@ personal in here.
   Ismael's verdict on his iPhone before using it anywhere else.
   Update (2026-10-24): he liked it. Also on the other floating things on phones: the message box
   and quick reply pills, the Run it bar, and the bottom sheets. Content (cards, pages) stays solid.
+* Covers (2026-10-25, Ismael): a listing with no photo shows a cover instead of a beige square:
+  oxblood with fine grain, the price big in gold, beds, baths and size in cream, and the two
+  pebbles drawn large and faint, placed differently per listing. Same on Today; sidebar thumbnails
+  show the mark on oxblood. The card line under the name says "No photos yet" instead of the price.
 * Rename (2026-10-25, Ismael): in a card's press and hold menu and in the listing's ··· menu. Opens
   at the top on a phone (clear of the keyboard), saved as `listings.title`; clearing it goes back
   to the address. The new name shows the moment Save is tapped (the save happens behind it). On a
