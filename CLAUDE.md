@@ -166,6 +166,9 @@ The product's code is in `app/` (its README says what works and how to run it).
   listing or an ad never gives any back. Running any ad needs the paid plan too.
 * **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
   invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
+* **Editing messages (Ismael, 2026-10-26):** copy on every message, edit on the latest one sent.
+  An edit makes Hopkins forget the old wording and put the ads back as they were, like ChatGPT
+  and Claude, rather than remembering it.
 * **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.

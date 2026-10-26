@@ -474,3 +474,45 @@ test("pages carry a Content Security Policy that allows their own inline scripts
   assert.match(login.headers["content-security-policy"], /'sha256-[A-Za-z0-9+/=]+'/);
   assert.equal((await app.inject({ method: "GET", url: "/healthz" })).headers["content-security-policy"], undefined);
 });
+
+test("the latest message can be edited: Hopkins forgets the old one and puts the ads back", async () => {
+  const { c } = await signup("edit@ellery.test");
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  const id = l.json.listing.id;
+  const original = l.json.ads.map((a) => a.style.bg ?? null);
+  const before = l.json.messages.length;
+  // The listing's first message made the listing, so it isn't editable.
+  assert.equal(l.json.messages.some((m) => m.editable), false);
+
+  const green = await c("POST", `/api/listings/${id}/messages`, { text: "make all three green with a gold label", version: 1 });
+  const sent = green.json.messages.at(-2);
+  assert.equal(sent.role, "agent");
+  assert.equal(sent.editable, true);
+  assert.equal(green.json.ads[0].style.bg, "#2F5D46");
+
+  // Meant to delete one, not recolour them: the green goes, the old message and its reply go.
+  const edited = await c("POST", `/api/messages/${sent.id}/edit`, { text: "delete the second one", version: 1 });
+  assert.equal(edited.status, 200);
+  assert.deepEqual(edited.json.ads.map((a) => a.style.bg ?? null), original.slice(0, 2));
+  assert.equal(edited.json.ads.length, 2);
+  assert.ok(!edited.json.messages.some((m) => /green/.test(m.body)), "the old wording is gone");
+  assert.equal(edited.json.messages.length, before + 2);
+  const latest = edited.json.messages.at(-2);
+  assert.equal(latest.body, "delete the second one");
+  assert.equal(latest.editable, true);
+
+  // Edited again: the removed ad comes back, and on the free plan the count is as it was.
+  const again = await c("POST", `/api/messages/${latest.id}/edit`, { text: "Which one would you pick?", version: 1 });
+  assert.equal(again.json.ads.length, 3);
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 3);
+  const last = again.json.messages.at(-2);
+
+  // Once something else changed the ads (the Style sheet), the message is no longer editable.
+  await c("PATCH", `/api/listings/${id}/style`, { versions: [1], style: { bg: "#000000" } });
+  assert.equal((await c("GET", `/api/listings/${id}`)).json.messages.some((m) => m.editable), false);
+  assert.equal((await c("POST", `/api/messages/${last.id}/edit`, { text: "make it shorter" })).status, 409);
+  // And nobody else can edit it.
+  const other = await signup("edit2@ellery.test");
+  const mine = await c("POST", `/api/listings/${id}/messages`, { text: "make it shorter", version: 1 });
+  assert.equal((await other.c("POST", `/api/messages/${mine.json.messages.at(-2).id}/edit`, { text: "hi" })).status, 409);
+});

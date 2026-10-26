@@ -25,6 +25,7 @@
     alert: '<svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
     trash: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 11v5M13.5 11v5"/></svg>',
     flag: '<svg viewBox="0 0 24 24"><path d="M6 21V4M6 5h10l-2 3.5 2 3.5H6"/></svg>',
+    x: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg>',
     pen: '<svg viewBox="0 0 24 24"><path d="M5 19h3.5L19 8.5 15.5 5 5 15.5V19zM13.5 7l3.5 3.5"/></svg>',
     chevR: '<svg viewBox="0 0 24 24"><path d="m10 6.5 5.5 5.5-5.5 5.5"/></svg>',
     chev: '<svg class="chev" viewBox="0 0 24 24"><path d="m8 10 4-4 4 4M8 14l4 4 4-4"/></svg>',
@@ -514,7 +515,7 @@
 
   function composerHtml(placeholder) {
     return `<div class="comp-wrap">
-      <form class="comp lg" id="comp"><div class="att" id="att"></div>
+      <form class="comp lg" id="comp"><div id="editbar"></div><div class="att" id="att"></div>
       <div class="row-c"><label class="icon-btn" title="Add photos">${ICON.photo}<input type="file" id="files" accept="image/*" multiple hidden></label>
       <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" data-normal="${esc(placeholder)}" enterkeyhint="send"></textarea>
       <button class="sug-go" id="sugGo" type="button" aria-label="Send this">${ICON.chevR}</button>
@@ -580,6 +581,7 @@
     S.removeFile = (i) => { S.pending.splice(i, 1); drawAtt(); };
     ta.addEventListener("input", () => { grow(); drawAtt(); });
     ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !phone()) { e.preventDefault(); comp.requestSubmit(); } });
+    ta.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.editing) { e.preventDefault(); stopEdit(); } });
     $("#files").addEventListener("change", (e) => { add(e.target.files); e.target.value = ""; });
     $("#att").addEventListener("click", (e) => { const i = e.target.dataset.rm; if (i !== undefined) S.removeFile(Number(i)); });
     const zone = comp.closest(".chat") || comp;
@@ -659,6 +661,7 @@
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml("Paste a link or describe the home")}</section>`;
+    bindReveal();
     const dropEl = $("#drop");
     $("#dropFiles").addEventListener("change", (e) => { S.addFiles(e.target.files); e.target.value = ""; });
     dropEl.addEventListener("dragover", (e) => { e.preventDefault(); dropEl.classList.add("drag"); });
@@ -680,7 +683,8 @@
     async function create(text, files) {
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
-      $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>` : ""));
+      $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>${msgActs("", false, true)}` : ""));
+      latestActs();
       // Only a message that looks like a listing shows the listing steps. Anything else ("Hello")
       // gets the thinking mark and a reply; the server decides for sure.
       const listingish = files.length || /https?:\/\/|\d|\b(bed|bath|sq|condo|house|home|cottage|villa|apartment|townhouse|pool|kitchen|garden|yard|listing for|just listed)/i.test(text);
@@ -692,7 +696,8 @@
         $("#typing") && $("#typing").remove();
         if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
-        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}</div></div>`);
+        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
+        latestActs();
         $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
@@ -709,7 +714,8 @@
         // It wasn't a listing after all: swap the steps for the reply.
         $("#work").closest(".hk").remove();
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
-        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}</div></div>`);
+        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
+        latestActs();
         $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
@@ -735,6 +741,7 @@
 
   function drawListing(p, keepScroll) {
     S.current = p;
+    S.editing = null;
     const l = p.listing;
     if (!S.selected[l.id]) S.selected[l.id] = 1;
     const prevScroll = keepScroll && $("#msgs") ? $("#msgs").scrollTop : null;
@@ -752,6 +759,7 @@
         <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section>
       <section class="pv" id="pv"></section></div>`;
     S.seen[l.id] = p.messages.length;
+    bindReveal();
     const msgs = $("#msgs");
     msgs.style.scrollBehavior = "auto";
     msgs.scrollTop = prevScroll ?? msgs.scrollHeight;
@@ -770,6 +778,7 @@
           return viewListing(l.id);
         }
       }
+      if (S.editing) return sendEdit(S.editing.id, text);
       await say(text);
     }, { suggestion: p.suggestion });
   }
@@ -796,6 +805,107 @@
     drawListing(next);
     refreshSide();
     // Asked again for something the free plan doesn't do: the card, not the same note again.
+    if (next.upgrade) upgradeSheet(next.upgrade);
+  }
+
+  // ---------- copy and edit under a message ----------
+
+  // Copy under every message, and Edit under the latest one you sent, like Claude or ChatGPT.
+  // The latest message on each side shows them; tap any other message to bring them up.
+  const msgActs = (attr, editable, mine) => `<div class="mact${mine ? " me-act" : ""}" ${attr}><button type="button" data-act="copyMsg" aria-label="Copy">${ICON.copy}</button>${editable ? `<button type="button" data-act="editMsg" aria-label="Edit">${ICON.pen}</button>` : ""}</div>`;
+
+  // Only the newest of yours and the newest of Hopkins' show their buttons without a tap.
+  function latestActs() {
+    const t = $("#thread");
+    if (!t) return;
+    $$(".mact.on", t).forEach((r) => r.classList.remove("on"));
+    const mine = $$(".mact.me-act", t).at(-1);
+    const his = $$(".hk .mact", t).at(-1);
+    [mine, his].forEach((r) => r && r.classList.add("on"));
+  }
+
+  function bindReveal() {
+    const t = $("#thread");
+    if (!t) return;
+    latestActs();
+    t.addEventListener("click", (e) => {
+      if (e.target.closest("button, a, input, textarea, canvas, img, .vers, .plan, .mact") || getSelection().toString()) return;
+      const msg = e.target.closest(".me, .hk");
+      if (!msg) return;
+      const row = msg.classList.contains("me") ? msg.nextElementSibling : $(".mact", msg);
+      if (!row || !row.classList.contains("mact")) return;
+      $$(".mact.show", t).forEach((r) => r !== row && r.classList.remove("show"));
+      row.classList.toggle("show");
+    });
+  }
+
+  // What gets copied: your words as you wrote them, Hopkins' without the bold and list marks.
+  const copyable = (s) => String(s || "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)\*([^*\n]+)\*/g, "$1$2").replace(/^#{1,6}\s+/gm, "").replace(/^\s*[-*]\s+/gm, "• ").trim();
+
+  function copyMsg(btn) {
+    const row = btn.closest(".mact");
+    let text = "";
+    if (row.classList.contains("me-act")) text = $(".tx", row.previousElementSibling)?.textContent || "";
+    else if (row.dataset.mid) text = copyable(S.current?.messages.find((m) => m.id === row.dataset.mid)?.body);
+    else if (row.dataset.nc) text = copyable(S.newChat[Number(row.dataset.nc)]?.body);
+    // Written inside the tap itself: iPhones refuse a copy that comes later.
+    navigator.clipboard.writeText(text).then(() => {
+      buzz(6);
+      btn.innerHTML = ICON.check;
+      btn.classList.add("done");
+      clearTimeout(btn._t);
+      btn._t = setTimeout(() => { btn.innerHTML = ICON.copy; btn.classList.remove("done"); }, 1400);
+    }, () => toast("Couldn't copy that"));
+  }
+
+  // Editing your latest message: its words go back in the box, with a bar saying so. Sending
+  // replaces it, and Hopkins answers the new wording as if the old one was never said.
+  function startEdit(m, text = m.body) {
+    const ta = $("#ta");
+    const row = $(`#thread .mact[data-mid="${m.id}"]`);
+    if (!ta || !row) return;
+    S.editing = { id: m.id, before: S.editing ? S.editing.before : ta.value };
+    $$("#thread .me.editing").forEach((e) => e.classList.remove("editing"));
+    row.previousElementSibling.classList.add("editing");
+    $("#editbar").innerHTML = `<div class="editing-bar">${ICON.pen}<span>Editing your message</span><button type="button" data-act="cancelEdit" aria-label="Stop editing">${ICON.x}</button></div>`;
+    ta.value = text;
+    ta.dispatchEvent(new Event("input"));
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+
+  function stopEdit(restore = true) {
+    if (!S.editing) return;
+    const ta = $("#ta");
+    if (restore && ta) { ta.value = S.editing.before; ta.dispatchEvent(new Event("input")); }
+    S.editing = null;
+    if ($("#editbar")) $("#editbar").innerHTML = "";
+    $$("#thread .me.editing").forEach((e) => e.classList.remove("editing"));
+  }
+
+  async function sendEdit(id, text) {
+    const l = S.current.listing;
+    const i = S.current.messages.findIndex((m) => m.id === id);
+    const old = S.current.messages[i];
+    stopEdit(false);
+    // The old message and everything after it leave straight away; the new one takes its place.
+    let n = $(`#thread .mact[data-mid="${id}"]`)?.previousElementSibling;
+    while (n) { const next = n.nextElementSibling; n.remove(); n = next; }
+    showTyping(text);
+    const my = current();
+    let next;
+    try {
+      next = await api(`/api/messages/${id}/edit`, { body: { text, version: S.selected[l.id] } });
+    } catch (err) {
+      // Nothing changed: the chat comes back as it was, still editing, with the new words kept.
+      if (my === current()) { drawListing(S.current, true); if (old) startEdit(old, text); }
+      throw err;
+    }
+    if (my !== current()) return;
+    S.seen[l.id] = i;
+    if (next.focus && next.ads.some((a) => a.version === next.focus)) S.selected[l.id] = next.focus;
+    drawListing(next);
+    refreshSide();
     if (next.upgrade) upgradeSheet(next.upgrade);
   }
 
@@ -837,10 +947,10 @@
         const body = photos && m.body === "New listing" ? "" : m.body;
         if (!body) return photos;
         const long = body.length > 180;
-        return `${photos}<div class="me${anim}${long ? " clamp" : ""}"><span class="tx">${esc(body)}</span>${long ? `<button class="more-btn" data-act="expand">Show more</button>` : ""}</div>`;
+        return `${photos}<div class="me${anim}${long ? " clamp" : ""}"><span class="tx">${esc(body)}</span>${long ? `<button class="more-btn" data-act="expand">Show more</button>` : ""}</div>${msgActs(`data-mid="${m.id}"`, m.editable, true)}`;
       }
       const mark = isFirst ? (anim ? MARK("settle") : `<img class="m" src="/static/mark.svg" alt="">`) : `<span class="m"></span>`;
-      const wrap = (inner) => `<div class="hk${anim}">${mark}<div class="b">${inner}</div></div>`;
+      const wrap = (inner, acts = true) => `<div class="hk${anim}">${mark}<div class="b">${inner}${acts ? msgActs(`data-mid="${m.id}"`, false) : ""}</div></div>`;
       const text = md(m.body);
       // A reply that changed ads shows them as they were right then, so every round of changes
       // is visible where it happened. Drawn once into a small image and kept.
@@ -868,7 +978,7 @@
         return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Ask for the paid plan"}</button>
           ${asked ? `<span class="small">You'll get an email when your seat is ready.</span>` : ""}</div>`);
       }
-      if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`);
+      if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
       if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open leads</a></div>`);
       return wrap(text);
     }).join("");
@@ -1480,6 +1590,9 @@
     if (t.closest("#pop") && act !== "deleteYes") closePop();
     const l = S.current && S.current.listing;
     try {
+      if (act === "copyMsg") return copyMsg(t);
+      if (act === "editMsg") { const m = S.current?.messages.find((x) => x.id === t.closest(".mact").dataset.mid); if (m) { buzz(5); startEdit(m); } return; }
+      if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "listmenu") openPop(t, listingMenu());

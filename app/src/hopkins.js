@@ -598,7 +598,8 @@ async function changeSetNow(ws, listing, ads, photos, r, text) {
 export async function handleMessage(ws, listingId, text, selected = 1) {
   const listing = await loadListing(ws.id, listingId);
   if (!listing) return null;
-  await postMessage(ws.id, listingId, "agent", "text", text);
+  const sent = await postMessage(ws.id, listingId, "agent", "text", text);
+  await keepUndo(listingId, sent.id);
   const ads = await currentAds(listing);
   const photos = await loadPhotos(listing.id, aiEnabled);
 
@@ -613,6 +614,49 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
     }
   }
   return applyRules(ws, listing, ads, photos, text, selected);
+}
+
+// ---------- editing a sent message ----------
+
+// The agent's latest message can be edited, like in ChatGPT or Claude, and Hopkins forgets the
+// old wording: that message and everything after it go (lead notes stay), the listing and its
+// ads go back to how they were before it, and the new wording gets a fresh answer. Remembering
+// the old one would leave the model acting on both. Only the latest message, and only while
+// nothing else has changed the ads since (a Style change, a new set from the menu, an approved
+// run, a deleted photo), so undoing it never undoes something else.
+async function keepUndo(listingId, messageId) {
+  await forgetUndo(listingId);
+  const listing = await get(`SELECT * FROM listings WHERE id = ?`, [listingId]);
+  const ads = await all(`SELECT * FROM ads WHERE listing_id = ?`, [listingId]);
+  await run(`UPDATE messages SET undo = ? WHERE id = ?`, [JSON.stringify({ listing, ads }), messageId]);
+}
+
+export const forgetUndo = (listingId) => run(`UPDATE messages SET undo = NULL WHERE listing_id = ? AND undo IS NOT NULL`, [listingId]);
+
+const COLUMN = /^[a-z_]+$/;
+
+export async function editMessage(ws, messageId, text, selected = 1) {
+  const msg = await get(`SELECT * FROM messages WHERE id = ? AND workspace_id = ? AND role = 'agent' AND undo IS NOT NULL`, [messageId, ws.id]);
+  if (!msg || !(await loadListing(ws.id, msg.listing_id))) return null;
+  const { listing: was, ads } = JSON.parse(msg.undo);
+  await oneAtATime(ws, async () => {
+    // On the free plan, ads the old message made still count as made, and ads it removed come
+    // back without being counted twice: an edit never gives free ads back or costs any.
+    const now = await all(`SELECT id FROM ads WHERE listing_id = ?`, [msg.listing_id]);
+    const before = new Set(ads.map((a) => a.id));
+    const after = new Set(now.map((a) => a.id));
+    const shift = now.filter((a) => !before.has(a.id)).length - ads.filter((a) => !after.has(a.id)).length;
+    if (shift) await run(`UPDATE workspaces SET ads_removed = MAX(0, ads_removed + ?) WHERE id = ?`, [shift, ws.id]);
+    await run(`DELETE FROM ads WHERE listing_id = ? AND workspace_id = ?`, [msg.listing_id, ws.id]);
+    for (const a of ads) {
+      const cols = Object.keys(a).filter((k) => COLUMN.test(k));
+      await run(`INSERT INTO ads (${cols.join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`, cols.map((k) => a[k]));
+    }
+    const cols = Object.keys(was).filter((k) => COLUMN.test(k) && !["id", "workspace_id", "slug", "created_at", "updated_at", "untitled_no"].includes(k));
+    await run(`UPDATE listings SET ${cols.map((k) => `${k} = ?`).join(", ")} WHERE id = ? AND workspace_id = ?`, [...cols.map((k) => was[k]), msg.listing_id, ws.id]);
+  });
+  await run(`DELETE FROM messages WHERE listing_id = ? AND created_at >= ? AND kind != 'lead'`, [msg.listing_id, msg.created_at]);
+  return handleMessage(ws, msg.listing_id, text, selected);
 }
 
 // The model's facts, kept only where they're real values and actually different.
@@ -953,6 +997,8 @@ export async function confirmRun(ws, listingId, messageId) {
   }
   const msg = await get(`SELECT * FROM messages WHERE id = ? AND listing_id = ? AND kind = 'plan'`, [messageId, listingId]);
   if (!msg) return null;
+  // Approved ads can't be undone by editing a message.
+  await forgetUndo(listingId);
   const plan = safeJson(msg.data, null);
   const ads = (await currentAds(listing)).filter((a) => plan.versions.includes(a.version));
   const now = nowIso();

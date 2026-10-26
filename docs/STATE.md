@@ -409,3 +409,11 @@ personal in here.
   the app, inline ones by hash); the whole pilot walkthrough ran with no blocked loads. (4) The
   lead form refuses archived listings, like the page already did. Not done: database backups
   depend on the Turso plan (check the dashboard), and photos aren't resized on the server.
+* Copy and edit (2026-10-26, Ismael): small Copy and Edit icons under messages, like ChatGPT and
+  Claude. The latest message on each side shows them; tap any other to bring them up. Edit is on
+  the latest message you sent: it goes back in the box with an "Editing your message" bar, and
+  sending replaces it. Hopkins forgets the old wording (chosen over remembering it, so the model
+  never acts on both): the message and its replies go, the listing and ads go back to how they
+  were before it (`messages.undo`), and on free the ad count never goes down or up from an edit.
+  Not offered once the ads changed another way since (Style, a new set, an approved run, a
+  deleted photo). Checked on an iPhone sized screen and a laptop against a slowed server.

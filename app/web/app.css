@@ -133,6 +133,24 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .hk>.m{width:24px;height:24px;flex:none;margin-top:1px}
 .hk>.b{min-width:0;flex:1}
 .hk p{white-space:pre-wrap}
+.me{transition:opacity .2s var(--ease)}
+/* Copy, and Edit on your latest message: quiet icons under a message, there when wanted. */
+.mact{display:none;gap:2px}
+.mact.on,.mact.show{display:flex;animation:fade .25s var(--ease)}
+.mact.me-act{align-self:flex-end;margin:-15px -5px 0 0}
+.hk .mact{margin:4px 0 0 -7px}
+.mact button{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--quiet);transition:background .15s,color .15s,transform .12s var(--ease)}
+.mact button svg{width:16px;height:16px}
+.mact button:hover{background:var(--hover);color:var(--ink)}
+.mact button:active{transform:scale(.86)}
+.mact button.done{color:var(--ink)}
+.mact button.done svg{animation:pop .35s var(--spring)}
+.me.editing{animation:none;opacity:.4}
+.editing-bar{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--soft);padding:2px 0 7px;margin:0 2px 6px 0;border-bottom:1px solid var(--line)}
+.editing-bar svg{width:14px;height:14px}
+.editing-bar button{margin-left:auto;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--quiet)}
+.editing-bar button:hover{background:var(--hover);color:var(--ink)}
+.editing-bar button svg{width:15px;height:15px}
 /* Hopkins' replies, formatted like Claude or ChatGPT */
 .md p{white-space:normal;margin:0 0 .7em}
 .md>:last-child{margin-bottom:0}
