@@ -390,3 +390,10 @@ personal in here.
 * Phone app: not first. Web app first (works in a phone browser), then push notifications for
   approvals and new leads once teams have live ads, a native app only when teams ask or approvals
   are being lost.
+* Outside review (2026-10-26): another AI reviewed the zip (62/100). Three of its points were
+  right and are fixed: reset links and the lead page's share address now come from `APP_URL`
+  or Render's own `RENDER_EXTERNAL_URL`, never from the request's Host header; uploaded photos
+  are checked by their first bytes, not just the type the browser claims; a failed database
+  migration is now logged (only "duplicate column" is ignored). Its failed test run was its own
+  partial npm install (all 32 tests pass). Still open, low priority: rate limits trust
+  X-Forwarded-For, two free plan requests at the same instant could both pass, no CSP header.

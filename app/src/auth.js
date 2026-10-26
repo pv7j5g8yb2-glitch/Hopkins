@@ -70,8 +70,8 @@ export async function changePassword(reply, userId, password) {
   setSession(reply, userId, Number(u.session_ver));
 }
 
-// Password reset links. There's no email service yet, so the founder makes the link in Admin
-// and sends it himself. Only a hash of the token is stored; the link works once, for 48 hours.
+// Password reset links, emailed when Resend is set up (mail.js), otherwise made by the founder
+// in Admin. Only a hash of the token is stored; the link works once, for 48 hours.
 const sha = (t) => createHash("sha256").update(t).digest("hex");
 export async function makeResetLink(userId, base) {
   const token = randomBytes(24).toString("base64url");

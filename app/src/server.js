@@ -96,6 +96,11 @@ function tooMany(key, max = 10, windowMs = 10 * 60 * 1000) {
   return recent.length > max;
 }
 
+// The app's public address, for links that leave the app (reset emails, link previews). Never
+// taken from the request in production: a forged Host header would otherwise put a stranger's
+// site in a reset email. APP_URL wins; Render sets RENDER_EXTERNAL_URL by itself.
+const appUrl = (request) => (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || (process.env.NODE_ENV === "production" ? "" : `${request.protocol}://${request.host}`)).replace(/\/$/, "");
+
 const clean = (v, max = 200) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 
 app.post("/api/signup", async (request, reply) => {
@@ -133,7 +138,7 @@ app.post("/api/forgot", async (request, reply) => {
   if (!email || !EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
   const user = await get(`SELECT id FROM users WHERE email = ?`, [email]);
   if (user) {
-    const sent = mailReady() && (await sendMail({ to: email, ...resetEmail(await makeResetLink(user.id, `${request.protocol}://${request.host}`)) }));
+    const sent = mailReady() && (await sendMail({ to: email, ...resetEmail(await makeResetLink(user.id, appUrl(request))) }));
     if (!sent) {
       await run(`UPDATE users SET reset_asked = ? WHERE id = ?`, [nowIso(), user.id]);
       notifyFounder("Hopkins: password reset asked", "Someone asked to reset their password. Open Admin to make their reset link.", ["key"]);
@@ -296,6 +301,9 @@ app.post("/api/photos", { bodyLimit: 12_000_000 }, async (request, reply) => {
   if (typeof data !== "string" || !["image/jpeg", "image/png", "image/webp"].includes(mime)) return reply.code(400).send({ error: "That file isn't a photo I can use." });
   const buf = Buffer.from(data, "base64");
   if (buf.length > 6_000_000) return reply.code(413).send({ error: "That photo is too big." });
+  // The bytes have to be the image they say they are, whatever the browser claimed.
+  const looks = { "image/jpeg": buf[0] === 0xff && buf[1] === 0xd8, "image/png": buf.subarray(0, 4).toString("hex") === "89504e47", "image/webp": buf.subarray(0, 4).toString() === "RIFF" && buf.subarray(8, 12).toString() === "WEBP" };
+  if (!looks[mime]) return reply.code(400).send({ error: "That file isn't a photo I can use." });
   if (listingId && !(await loadListing(request.ws.id, listingId))) return reply.code(404).send({ error: "No such listing." });
   const id = randomUUID();
   const pos = listingId ? Number((await get(`SELECT COALESCE(MAX(position), -1) + 1 AS p FROM photos WHERE listing_id = ?`, [listingId])).p) : 0;
@@ -495,7 +503,7 @@ app.get("/api/admin/workspaces", async (request, reply) => {
 app.post("/api/admin/users/:id/reset-link", async (request, reply) => {
   if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
   if (!(await get(`SELECT id FROM users WHERE id = ?`, [request.params.id]))) return reply.code(404).send({ error: "No such account." });
-  return { link: await makeResetLink(request.params.id, `${request.protocol}://${request.host}`) };
+  return { link: await makeResetLink(request.params.id, appUrl(request)) };
 });
 
 app.get("/api/admin/feedback", async (request, reply) => {
@@ -530,7 +538,7 @@ app.get("/l/:slug", async (request, reply) => {
   const title = [listing.address || listing.area || "Listing", data.price].filter(Boolean).join(", ");
   // Function replacements, so a "$&" typed into an address can't change the page.
   // Link previews (iMessage, WhatsApp, Facebook) need a full address for the image.
-  const origin = `${request.protocol}://${request.host}`;
+  const origin = appUrl(request);
   const html = files["lead.html"]
     .replaceAll("__TITLE__", () => esc(title))
     .replace("__OG_DESC__", () => esc([data.facts, listing.area || listing.city, b.business || ws.name].filter(Boolean).join(" · ")))
