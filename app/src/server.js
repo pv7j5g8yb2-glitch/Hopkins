@@ -9,7 +9,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities, restyle, numberUntitled, editMessage, forgetUndo,
+  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, suggestionFor, forgetGuessedCities, restyle, numberUntitled, editMessage, firstMessageId,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { aiEnabled } from "./brain.js";
@@ -361,8 +361,6 @@ app.patch("/api/photos/:id", async (request, reply) => {
 });
 
 app.delete("/api/photos/:id", async (request) => {
-  const photo = await get(`SELECT listing_id FROM photos WHERE id = ? AND workspace_id = ?`, [request.params.id, request.ws.id]);
-  if (photo?.listing_id) await forgetUndo(photo.listing_id);
   await run(`UPDATE ads SET photo_id = NULL WHERE photo_id = ? AND workspace_id = ?`, [request.params.id, request.ws.id]);
   await run(`DELETE FROM photos WHERE id = ? AND workspace_id = ?`, [request.params.id, request.ws.id]);
   return { ok: true };
@@ -394,7 +392,9 @@ async function listingPayload(ws, id) {
     all(`SELECT id, role, kind, body, data, needs_action, created_at, undo IS NOT NULL AS editable FROM messages WHERE listing_id = ? ORDER BY created_at`, [id]),
     get(`SELECT COUNT(*) AS n FROM leads WHERE listing_id = ?`, [id]),
   ]);
-  for (const m of messages) { m.data = m.data ? JSON.parse(m.data) : null; m.editable = Boolean(m.editable); }
+  // Every message the agent sent can be edited, except one from before an approved run.
+  const first = await firstMessageId(listing);
+  for (const m of messages) { m.data = m.data ? JSON.parse(m.data) : null; m.editable = Boolean(m.editable) || m.id === first; }
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
   return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n), suggestion: suggestionFor(ws, listing, ads, messages, ws.plan === "paid" || (await adsMade(ws.id)) + 1 <= FREE_AD_LIMIT) };
 }
@@ -429,8 +429,6 @@ app.patch("/api/listings/:id", async (request, reply) => {
   if (b.title !== undefined) patch.title = clean(b.title, 80) || null;
   for (const k of ["price", "beds", "baths", "sqft", "spend"]) if (b[k] !== undefined) patch[k] = Number(b[k]) >= 0 ? Number(b[k]) : null;
   if (b.status && ["active", "sold", "archived"].includes(b.status)) patch.status = b.status;
-  // Changed outside the chat: editing the last message mustn't undo this.
-  await forgetUndo(listing.id);
   await patchListing(request.ws.id, listing.id, patch);
   // A new price or a new open house is a reason to advertise: Hopkins brings the ads.
   const fresh = await loadListing(request.ws.id, listing.id);
@@ -480,7 +478,6 @@ app.patch("/api/listings/:id/style", async (request, reply) => {
   if (!listing) return reply.code(404).send({ error: "No such listing." });
   const versions = (Array.isArray(request.body?.versions) ? request.body.versions : [1, 2, 3, 4, 5]).map(Number).filter((v) => [1, 2, 3, 4, 5].includes(v));
   const step = Number(request.body?.sizeStep) || 0;
-  await forgetUndo(listing.id);
   await restyle(request.ws, listing, versions, request.body?.style || {}, Math.max(-0.3, Math.min(0.3, step)));
   return listingPayload(request.ws, listing.id);
 });
@@ -489,7 +486,6 @@ app.post("/api/listings/:id/remake", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
   if (!listing) return reply.code(404).send({ error: "No such listing." });
   // A new set keeps the number of ads the listing has now.
-  await forgetUndo(listing.id);
   await makeAds(request.ws, listing, listing.moment, {}, { count: (await currentAds(listing)).length || null });
   return listingPayload(request.ws, listing.id);
 });

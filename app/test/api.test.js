@@ -475,14 +475,12 @@ test("pages carry a Content Security Policy that allows their own inline scripts
   assert.equal((await app.inject({ method: "GET", url: "/healthz" })).headers["content-security-policy"], undefined);
 });
 
-test("the latest message can be edited: Hopkins forgets the old one and puts the ads back", async () => {
+test("any message can be edited: Hopkins forgets the old one and puts the ads back", async () => {
   const { c } = await signup("edit@ellery.test");
   const l = await c("POST", "/api/listings", { text: DESCRIPTION });
   const id = l.json.listing.id;
   const original = l.json.ads.map((a) => a.style.bg ?? null);
   const before = l.json.messages.length;
-  // The listing's first message made the listing, so it isn't editable.
-  assert.equal(l.json.messages.some((m) => m.editable), false);
 
   const green = await c("POST", `/api/listings/${id}/messages`, { text: "make all three green with a gold label", version: 1 });
   const sent = green.json.messages.at(-2);
@@ -499,20 +497,40 @@ test("the latest message can be edited: Hopkins forgets the old one and puts the
   assert.equal(edited.json.messages.length, before + 2);
   const latest = edited.json.messages.at(-2);
   assert.equal(latest.body, "delete the second one");
-  assert.equal(latest.editable, true);
 
-  // Edited again: the removed ad comes back, and on the free plan the count is as it was.
+  // A Style change after it is undone too when an earlier message is edited, and the removed ad
+  // comes back without the free count moving.
+  await c("PATCH", `/api/listings/${id}/style`, { versions: [1], style: { bg: "#000000" } });
+  await c("POST", `/api/listings/${id}/messages`, { text: "make it shorter", version: 1 });
   const again = await c("POST", `/api/messages/${latest.id}/edit`, { text: "Which one would you pick?", version: 1 });
   assert.equal(again.json.ads.length, 3);
+  assert.deepEqual(again.json.ads.map((a) => a.style.bg ?? null), original);
   assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 3);
-  const last = again.json.messages.at(-2);
+  assert.ok(!again.json.messages.some((m) => m.body === "make it shorter"));
 
-  // Once something else changed the ads (the Style sheet), the message is no longer editable.
-  await c("PATCH", `/api/listings/${id}/style`, { versions: [1], style: { bg: "#000000" } });
-  assert.equal((await c("GET", `/api/listings/${id}`)).json.messages.some((m) => m.editable), false);
-  assert.equal((await c("POST", `/api/messages/${last.id}/edit`, { text: "make it shorter" })).status, 409);
-  // And nobody else can edit it.
+  // Nobody else can edit it.
   const other = await signup("edit2@ellery.test");
-  const mine = await c("POST", `/api/listings/${id}/messages`, { text: "make it shorter", version: 1 });
-  assert.equal((await other.c("POST", `/api/messages/${mine.json.messages.at(-2).id}/edit`, { text: "hi" })).status, 409);
+  assert.equal((await other.c("POST", `/api/messages/${again.json.messages.at(-2).id}/edit`, { text: "hi" })).status, 409);
+});
+
+test("the message that made the listing can be edited: the listing is read again, same ads", async () => {
+  const { c } = await signup("editfirst@ellery.test");
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  const id = l.json.listing.id;
+  const first = l.json.messages.find((m) => m.role === "agent");
+  assert.equal(first.editable, true);
+  const adIds = l.json.ads.map((a) => a.id);
+  await c("POST", `/api/listings/${id}/messages`, { text: "make it shorter", version: 1 });
+
+  // Got the price wrong.
+  const fixed = await c("POST", `/api/messages/${first.id}/edit`, { text: DESCRIPTION.replace("$649,000", "$625,000") });
+  assert.equal(fixed.status, 200);
+  assert.equal(fixed.json.listing.price, 625000);
+  assert.match(fixed.json.messages.find((m) => m.role === "agent").body, /\$625,000/);
+  assert.ok(!fixed.json.messages.some((m) => m.body === "make it shorter"), "what came after it is gone");
+  assert.equal(fixed.json.messages.filter((m) => m.kind === "ads").length, 1);
+  // The same ads, written again: their links and the free count don't change.
+  assert.deepEqual(fixed.json.ads.map((a) => a.id), adIds);
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 3);
+  assert.equal(fixed.json.listing.slug, l.json.listing.slug);
 });

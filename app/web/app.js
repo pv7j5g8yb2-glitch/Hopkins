@@ -669,6 +669,13 @@
     dropEl.addEventListener("drop", (e) => { e.preventDefault(); dropEl.classList.remove("drag"); S.addFiles(e.dataTransfer.files); });
     $("#dropGrid").addEventListener("click", (e) => { const i = e.target.dataset.rm; if (i !== undefined) { e.preventDefault(); S.removeFile(Number(i)); } });
     bindComposer(async (text, files) => {
+      if (S.editing && S.editing.nc != null) {
+        const at = Number(S.editing.nc);
+        let n = $(`#thread .mact.me-act[data-nc="${at}"]`)?.previousElementSibling;
+        stopEdit(false);
+        while (n) { const next = n.nextElementSibling; n.remove(); n = next; }
+        S.newChat.length = at;
+      }
       // Clear the box straight away so it doesn't look like nothing happened.
       const ta = $("#ta");
       ta.value = "";
@@ -683,7 +690,7 @@
     async function create(text, files) {
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
-      $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>${msgActs("", false, true)}` : ""));
+      $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>${msgActs(`data-nc="${S.newChat.length}"`, true, true)}` : ""));
       latestActs();
       // Only a message that looks like a listing shows the listing steps. Anything else ("Hello")
       // gets the thinking mark and a reply; the server decides for sure.
@@ -810,7 +817,7 @@
 
   // ---------- copy and edit under a message ----------
 
-  // Copy under every message, and Edit under the latest one you sent, like Claude or ChatGPT.
+  // Copy under every message, and Edit under the ones you sent, like Claude or ChatGPT.
   // The latest message on each side shows them; tap any other message to bring them up.
   const msgActs = (attr, editable, mine) => `<div class="mact${mine ? " me-act" : ""}" ${attr}><button type="button" data-act="copyMsg" aria-label="Copy">${ICON.copy}</button>${editable ? `<button type="button" data-act="editMsg" aria-label="Edit">${ICON.pen}</button>` : ""}</div>`;
 
@@ -858,15 +865,18 @@
     }, () => toast("Couldn't copy that"));
   }
 
-  // Editing your latest message: its words go back in the box, with a bar saying so. Sending
-  // replaces it, and Hopkins answers the new wording as if the old one was never said.
-  function startEdit(m, text = m.body) {
+  // Editing a message you sent: its words go back in the box, with a bar saying so, and it and
+  // everything after it fade. Sending replaces them, and Hopkins answers the new wording as if
+  // the old one was never said.
+  function startEdit(row, text) {
     const ta = $("#ta");
-    const row = $(`#thread .mact[data-mid="${m.id}"]`);
     if (!ta || !row) return;
-    S.editing = { id: m.id, before: S.editing ? S.editing.before : ta.value };
-    $$("#thread .me.editing").forEach((e) => e.classList.remove("editing"));
+    const before = S.editing ? S.editing.before : ta.value;
+    stopEdit(false);
+    S.editing = { id: row.dataset.mid, nc: row.dataset.nc, before };
     row.previousElementSibling.classList.add("editing");
+    let n = row;
+    while ((n = n.nextElementSibling)) n.classList.add("fading");
     $("#editbar").innerHTML = `<div class="editing-bar">${ICON.pen}<span>Editing your message</span><button type="button" data-act="cancelEdit" aria-label="Stop editing">${ICON.x}</button></div>`;
     ta.value = text;
     ta.dispatchEvent(new Event("input"));
@@ -880,7 +890,7 @@
     if (restore && ta) { ta.value = S.editing.before; ta.dispatchEvent(new Event("input")); }
     S.editing = null;
     if ($("#editbar")) $("#editbar").innerHTML = "";
-    $$("#thread .me.editing").forEach((e) => e.classList.remove("editing"));
+    $$("#thread .editing, #thread .fading").forEach((e) => e.classList.remove("editing", "fading"));
   }
 
   async function sendEdit(id, text) {
@@ -891,14 +901,18 @@
     // The old message and everything after it leave straight away; the new one takes its place.
     let n = $(`#thread .mact[data-mid="${id}"]`)?.previousElementSibling;
     while (n) { const next = n.nextElementSibling; n.remove(); n = next; }
-    showTyping(text);
+    // The message that made the listing reads it again and writes the ads again: show that work.
+    let finish = null;
+    if (old?.data?.first) { $("#thread").insertAdjacentHTML("beforeend", `<div class="me in"><span class="tx">${esc(text)}</span></div>`); finish = showWork(["Reading the listing again", "Writing the ads again", "Checking the wording"]); }
+    else showTyping(text);
     const my = current();
     let next;
     try {
       next = await api(`/api/messages/${id}/edit`, { body: { text, version: S.selected[l.id] } });
+      if (finish) await finish();
     } catch (err) {
       // Nothing changed: the chat comes back as it was, still editing, with the new words kept.
-      if (my === current()) { drawListing(S.current, true); if (old) startEdit(old, text); }
+      if (my === current()) { drawListing(S.current, true); startEdit($(`#thread .mact[data-mid="${id}"]`), text); }
       throw err;
     }
     if (my !== current()) return;
@@ -1591,7 +1605,12 @@
     const l = S.current && S.current.listing;
     try {
       if (act === "copyMsg") return copyMsg(t);
-      if (act === "editMsg") { const m = S.current?.messages.find((x) => x.id === t.closest(".mact").dataset.mid); if (m) { buzz(5); startEdit(m); } return; }
+      if (act === "editMsg") {
+        const row = t.closest(".mact");
+        const m = row.dataset.mid && S.current?.messages.find((x) => x.id === row.dataset.mid);
+        buzz(5);
+        return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
+      }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());

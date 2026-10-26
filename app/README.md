@@ -38,12 +38,14 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
   roughly 5,000 to 8,000 text tokens plus about 5,500 for the photos, a chat turn 2,000 to 3,000.
   The server logs the tokens of every call. Any failure falls back to the built-in reader,
   writer and rules, which cover the common requests but are not a conversation.
-* **Copy and edit.** Every message has Copy (your words as written, Hopkins' without the bold).
-  The latest message you sent also has Edit: the words go back in the box, and sending replaces
-  the message. Hopkins forgets the old wording: that message and everything after it go (lead
-  notes stay), the listing and its ads go back to how they were, and the new wording gets a fresh
-  answer. Edit is offered only while nothing else has changed the ads since (Style, a new set
-  from the menu, an approved run, a deleted photo), so an edit never undoes something else.
+* **Copy and edit.** Every message has Copy (your words as written, Hopkins' without the bold),
+  and every message you sent has Edit, on the New listing screen too. The words go back in the
+  box, the message and everything after it fade, and sending replaces them. Hopkins forgets the
+  old wording: the message and what followed go (lead notes stay), and the listing and its ads go
+  back to how they were before it (each message keeps that in `messages.undo`), Style changes
+  made since included. Editing the message that made the listing reads the listing again and
+  writes its ads again over the same ones, so their links stay. An approved run is the one thing
+  an edit can't go back past. On the free plan an edit never adds to or takes from the 3 ads.
 * **Hopkins messages first.** A new price or open house brings 3 new ads on its own. The Today
   page lists what's waiting on the agent; on Mondays the report is waiting as a message.
 * **Fair housing.** Every line (Hopkins' and the agent's) is checked; problem wording is

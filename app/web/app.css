@@ -145,7 +145,8 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .mact button:active{transform:scale(.86)}
 .mact button.done{color:var(--ink)}
 .mact button.done svg{animation:pop .35s var(--spring)}
-.me.editing{animation:none;opacity:.4}
+.me.editing,.thread .fading{animation:none;opacity:.4}
+.thread .fading{opacity:.3;transition:opacity .2s var(--ease)}
 .editing-bar{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--soft);padding:2px 0 7px;margin:0 2px 6px 0;border-bottom:1px solid var(--line)}
 .editing-bar svg{width:14px;height:14px}
 .editing-bar button{margin-left:auto;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--quiet)}

@@ -417,3 +417,10 @@ personal in here.
   were before it (`messages.undo`), and on free the ad count never goes down or up from an edit.
   Not offered once the ads changed another way since (Style, a new set, an approved run, a
   deleted photo). Checked on an iPhone sized screen and a laptop against a slowed server.
+* Edit on every message (2026-10-26, Ismael: "the edit button still isn't there"): it had only
+  been on the latest follow up, so the message that made the listing had none. Now every
+  message the agent sent has Edit, on the New listing screen too. Each message keeps the listing
+  and ads as they were before it; editing rewinds to that point (Style changes since included).
+  Editing the first message reads the listing again and rewrites its ads in place (same ads,
+  links and free count). Only an approved run blocks editing what came before it. The messages
+  that will be replaced fade while editing.

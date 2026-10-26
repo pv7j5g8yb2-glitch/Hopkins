@@ -210,38 +210,42 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   for (const m of history) await postMessage(ws.id, id, m.role, "text", m.body);
   const shown = [rest, link].filter(Boolean).join("\n");
   // Photos sent on their own are just photos, with no made up words.
-  await postMessage(ws.id, id, "agent", "text", shown, photoIds.length ? { photos: photoIds } : null);
-
-  // With a model, it reads the listing and labels the photos better than the rules can.
-  let missing = null;
-  if (aiEnabled) {
-    let photos = await loadPhotos(id, true);
-    // Groq's text model can't see; its vision model notes what's in the first photos, so the
-    // ads can lead with what's really there.
-    const seen = await seePhotosAI(photos);
-    for (const p of seen || []) await run(`UPDATE photos SET label = COALESCE(?, label), seen = ? WHERE id = ?`, [p.label, p.seen || null, p.id]);
-    if (seen) photos = await loadPhotos(id, true);
-    const r = await readListingAI({ text: rest, linkInfo, photos });
-    if (r) {
-      const patch = {};
-      for (const k of LISTING_FIELDS) if (r.listing[k] && !(typeof r.listing[k] === "number" && r.listing[k] <= 0)) patch[k] = r.listing[k];
-      if (r.listing.features?.length) patch.features = [...new Set([...(listing.features || []), ...r.listing.features])];
-      await patchListing(ws.id, id, patch);
-      for (const [i, label] of (r.photo_labels || []).entries()) if (photos[i] && label) await run(`UPDATE photos SET label = ? WHERE id = ?`, [label, photos[i].id]);
-      for (const [i, note] of (r.photo_notes || []).entries()) if (photos[i] && note) await run(`UPDATE photos SET seen = ? WHERE id = ?`, [String(note).slice(0, 160), photos[i].id]);
-      missing = r.missing || null;
-    }
-  }
+  await postMessage(ws.id, id, "agent", "text", shown, { first: true, ...(photoIds.length ? { photos: photoIds } : {}) });
+  const missing = await readListing(ws, id, { rest, linkInfo, features: listing.features, look: true });
 
   await numberUntitled(ws.id);
   const fresh = await loadListing(ws.id, id);
   if (link && !linkInfo && !fresh.price && !rest) {
-    await say(ws, id, "I couldn't open that link (a lot of listing sites block other apps). Paste the description, or tell me the price, beds, baths and the best thing about it, and I'll make the ads.");
+    await say(ws, id, LINK_BLOCKED);
     return fresh;
   }
-  if (!missing && !fresh.price) missing = "What's the asking price?";
-  await makeAds(ws, fresh, "new", {}, { note: missing, count: countFrom(rest) });
+  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest) });
   return fresh;
+}
+
+const LINK_BLOCKED = "I couldn't open that link (a lot of listing sites block other apps). Paste the description, or tell me the price, beds, baths and the best thing about it, and I'll make the ads.";
+
+// With a model, it reads the listing and labels the photos better than the rules can. Returns
+// the question to ask if something important is missing.
+async function readListing(ws, id, { rest, linkInfo, features = [], look = false }) {
+  if (!aiEnabled) return null;
+  let photos = await loadPhotos(id, true);
+  // Groq's text model can't see; its vision model notes what's in the first photos, so the
+  // ads can lead with what's really there.
+  if (look) {
+    const seen = await seePhotosAI(photos);
+    for (const p of seen || []) await run(`UPDATE photos SET label = COALESCE(?, label), seen = ? WHERE id = ?`, [p.label, p.seen || null, p.id]);
+    if (seen) photos = await loadPhotos(id, true);
+  }
+  const r = await readListingAI({ text: rest, linkInfo, photos });
+  if (!r) return null;
+  const patch = {};
+  for (const k of LISTING_FIELDS) if (r.listing[k] && !(typeof r.listing[k] === "number" && r.listing[k] <= 0)) patch[k] = r.listing[k];
+  if (r.listing.features?.length) patch.features = [...new Set([...(features || []), ...r.listing.features])];
+  await patchListing(ws.id, id, patch);
+  for (const [i, label] of (r.photo_labels || []).entries()) if (photos[i] && label) await run(`UPDATE photos SET label = ? WHERE id = ?`, [label, photos[i].id]);
+  for (const [i, note] of (r.photo_notes || []).entries()) if (photos[i] && note) await run(`UPDATE photos SET seen = ? WHERE id = ?`, [String(note).slice(0, 160), photos[i].id]);
+  return r.missing || null;
 }
 
 // A listing's name: the agent's own, else the address or area or city, else "Untitled 1",
@@ -447,12 +451,15 @@ function oneAtATime(ws, fn) {
 
 export const makeAds = (ws, ...args) => oneAtATime(ws, () => makeAdsNow(ws, ...args));
 
-async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null, aiSet = null, count = null, brief = "" } = {}) {
+async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null, aiSet = null, count = null, brief = "", inPlace = false } = {}) {
   const existing = await all(`SELECT * FROM ads WHERE listing_id = ? AND moment = ? ORDER BY version`, [listing.id, moment]);
-  const want = Math.max(1, Math.min(MAX_ADS, count || (aiSet?.ads?.length) || 3));
+  // inPlace: the listing's first message was edited, so its ads are written again over the same
+  // ones. That's a change to ads already made, not new ads, on either plan.
+  inPlace = inPlace && existing.length > 0;
+  const want = inPlace ? existing.length : Math.max(1, Math.min(MAX_ADS, count || (aiSet?.ads?.length) || 3));
   // On the free plan a new set is new ads, even when it replaces the old ones, so it needs free
   // ads left. Changes to existing ads stay included (they go through the chat, not here).
-  const room = isPaid(ws) ? want : Math.min(want, FREE_AD_LIMIT - (await adsMade(ws.id)));
+  const room = isPaid(ws) || inPlace ? want : Math.min(want, FREE_AD_LIMIT - (await adsMade(ws.id)));
   if (room < 1) {
     // On the free plan a new price or open house can't bring more ads, but the ones it has
     // still get the new facts: changes to those are included.
@@ -495,7 +502,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
   }
   // Paid: a new set replaces the old ads in place, so their links (and the leads they bring)
   // carry on. Free: the old ones go and still count, so a new set uses up free ads like any.
-  const reuse = isPaid(ws);
+  const reuse = isPaid(ws) || inPlace;
   if (!reuse && existing.length) await removeAds(ws, listing, existing);
   for (const ad of set) {
     await saveAd(ws, listing, moment, ad.version, { ...ad, style: {} }, reuse ? existing.find((e) => e.version === ad.version) : null);
@@ -618,14 +625,14 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
 
 // ---------- editing a sent message ----------
 
-// The agent's latest message can be edited, like in ChatGPT or Claude, and Hopkins forgets the
+// Any message the agent sent can be edited, like in ChatGPT or Claude, and Hopkins forgets the
 // old wording: that message and everything after it go (lead notes stay), the listing and its
 // ads go back to how they were before it, and the new wording gets a fresh answer. Remembering
-// the old one would leave the model acting on both. Only the latest message, and only while
-// nothing else has changed the ads since (a Style change, a new set from the menu, an approved
-// run, a deleted photo), so undoing it never undoes something else.
+// the old one would leave the model acting on both. Each message keeps the listing and ads as
+// they were before it (`undo`). An approved run is the one thing an edit can't go back past.
+// The message that made the listing has nothing before it: editing it reads the listing again
+// and writes its ads again over the same ones (editFirst).
 async function keepUndo(listingId, messageId) {
-  await forgetUndo(listingId);
   const listing = await get(`SELECT * FROM listings WHERE id = ?`, [listingId]);
   const ads = await all(`SELECT * FROM ads WHERE listing_id = ?`, [listingId]);
   await run(`UPDATE messages SET undo = ? WHERE id = ?`, [JSON.stringify({ listing, ads }), messageId]);
@@ -635,9 +642,23 @@ export const forgetUndo = (listingId) => run(`UPDATE messages SET undo = NULL WH
 
 const COLUMN = /^[a-z_]+$/;
 
+// The message that made the listing (marked first). Listings from before 2026-10-26 aren't
+// marked: there it's the last thing the agent said in the second the listing was made, since
+// the conversation before it was saved in the same moment and anything new came after a reply.
+export async function firstMessageId(listing) {
+  if (await get(`SELECT 1 FROM launches WHERE listing_id = ?`, [listing.id])) return null;
+  const marked = await get(`SELECT id FROM messages WHERE listing_id = ? AND role = 'agent' AND data LIKE '%"first":true%' LIMIT 1`, [listing.id]);
+  if (marked) return marked.id;
+  const limit = new Date(new Date(listing.created_at).getTime() + 1000).toISOString();
+  const m = await get(`SELECT id FROM messages WHERE listing_id = ? AND role = 'agent' AND created_at <= ? ORDER BY created_at DESC LIMIT 1`, [listing.id, limit]);
+  return m?.id || null;
+}
+
 export async function editMessage(ws, messageId, text, selected = 1) {
-  const msg = await get(`SELECT * FROM messages WHERE id = ? AND workspace_id = ? AND role = 'agent' AND undo IS NOT NULL`, [messageId, ws.id]);
-  if (!msg || !(await loadListing(ws.id, msg.listing_id))) return null;
+  const msg = await get(`SELECT * FROM messages WHERE id = ? AND workspace_id = ? AND role = 'agent'`, [messageId, ws.id]);
+  const listing = msg && (await loadListing(ws.id, msg.listing_id));
+  if (!listing) return null;
+  if (!msg.undo) return (await firstMessageId(listing)) === msg.id ? editFirst(ws, listing, msg, text) : null;
   const { listing: was, ads } = JSON.parse(msg.undo);
   await oneAtATime(ws, async () => {
     // On the free plan, ads the old message made still count as made, and ads it removed come
@@ -649,14 +670,39 @@ export async function editMessage(ws, messageId, text, selected = 1) {
     if (shift) await run(`UPDATE workspaces SET ads_removed = MAX(0, ads_removed + ?) WHERE id = ?`, [shift, ws.id]);
     await run(`DELETE FROM ads WHERE listing_id = ? AND workspace_id = ?`, [msg.listing_id, ws.id]);
     for (const a of ads) {
+      // A photo deleted since leaves the ad on its first photo, not a missing one.
+      if (a.photo_id && !(await get(`SELECT 1 FROM photos WHERE id = ?`, [a.photo_id]))) a.photo_id = null;
       const cols = Object.keys(a).filter((k) => COLUMN.test(k));
       await run(`INSERT INTO ads (${cols.join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`, cols.map((k) => a[k]));
     }
-    const cols = Object.keys(was).filter((k) => COLUMN.test(k) && !["id", "workspace_id", "slug", "created_at", "updated_at", "untitled_no"].includes(k));
+    const cols = Object.keys(was).filter((k) => COLUMN.test(k) && !["id", "workspace_id", "slug", "created_at", "updated_at", "untitled_no", "title", "status", "spend"].includes(k));
     await run(`UPDATE listings SET ${cols.map((k) => `${k} = ?`).join(", ")} WHERE id = ? AND workspace_id = ?`, [...cols.map((k) => was[k]), msg.listing_id, ws.id]);
   });
   await run(`DELETE FROM messages WHERE listing_id = ? AND created_at >= ? AND kind != 'lead'`, [msg.listing_id, msg.created_at]);
   return handleMessage(ws, msg.listing_id, text, selected);
+}
+
+// The first message, edited: the listing is read again from the new words (the agent's own name
+// for it, its status and its page address stay), and its ads are written again in place.
+async function editFirst(ws, listing, msg, text) {
+  await run(`DELETE FROM messages WHERE listing_id = ? AND created_at >= ? AND kind != 'lead'`, [listing.id, msg.created_at]);
+  const link = (text.match(URL_RE) || [])[0] || null;
+  const rest = link ? text.replace(link, " ").trim() : text.trim();
+  const linkInfo = link ? await readLink(link) : null;
+  const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
+  const parsed = parseListingText(source);
+  const facts = { address: null, city: null, area: null, price: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
+  await run(`UPDATE listings SET address = ?, city = ?, area = ?, price = ?, beds = ?, baths = ?, sqft = ?, home_type = ?, open_house = ?, features = ?, description = ?, link = ?, moment = 'new', updated_at = ? WHERE id = ? AND workspace_id = ?`,
+    [facts.address, facts.city, facts.area, facts.price, facts.beds, facts.baths, facts.sqft, facts.home_type, facts.open_house, JSON.stringify(facts.features || []), source || null, link, nowIso(), listing.id, ws.id]);
+  await postMessage(ws.id, listing.id, "agent", "text", [rest, link].filter(Boolean).join("\n"), { ...safeJson(msg.data, {}), first: true });
+  const missing = await readListing(ws, listing.id, { rest, linkInfo, features: facts.features });
+  const fresh = await loadListing(ws.id, listing.id);
+  if (link && !linkInfo && !fresh.price && !rest) {
+    await say(ws, listing.id, LINK_BLOCKED);
+    return {};
+  }
+  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest), inPlace: true });
+  return { focus: 1 };
 }
 
 // The model's facts, kept only where they're real values and actually different.
@@ -1105,7 +1151,7 @@ export async function inbox(ws) {
      ORDER BY messages.created_at DESC LIMIT 30`,
     [ws.id, new Date(Date.now() - 7 * 86400_000).toISOString()]
   );
-  return items.map((m) => ({ ...m, data: safeJson(m.data, null) }));
+  return items.map((m) => ({ ...m, undo: undefined, data: safeJson(m.data, null) }));
 }
 
 export { MOMENTS, formatPrice };
