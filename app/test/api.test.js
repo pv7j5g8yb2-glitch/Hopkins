@@ -435,3 +435,23 @@ test("pilots who sign up with an invite code start on the paid plan", async () =
   process.env.PILOT_PLAN = "free";
   assert.equal(me.workspace.plan, "paid");
 });
+
+test("password guessing is counted per account, whatever address it claims", async () => {
+  await client(app)("POST", "/api/signup", { email: "guess@ellery.test", password: "password123", invite: "EARLY1" });
+  // Every try from a new client, as a script faking X-Forwarded-For would look.
+  for (let i = 0; i < 10; i++) assert.equal((await client(app)("POST", "/api/login", { email: "guess@ellery.test", password: `wrong${i}` })).status, 401);
+  assert.equal((await client(app)("POST", "/api/login", { email: "Guess@ellery.test", password: "password123" })).status, 429);
+  // Other accounts aren't held up.
+  assert.equal((await client(app)("POST", "/api/login", { email: "x@nobody.test", password: "whatever1" })).status, 401);
+});
+
+test("pages carry a Content Security Policy that allows their own inline scripts", async () => {
+  for (const url of ["/login", "/privacy"]) {
+    const r = await app.inject({ method: "GET", url });
+    assert.match(r.headers["content-security-policy"], /script-src 'self'/);
+    assert.match(r.headers["content-security-policy"], /frame-ancestors 'none'/);
+  }
+  const login = await app.inject({ method: "GET", url: "/login" });
+  assert.match(login.headers["content-security-policy"], /'sha256-[A-Za-z0-9+/=]+'/);
+  assert.equal((await app.inject({ method: "GET", url: "/healthz" })).headers["content-security-policy"], undefined);
+});

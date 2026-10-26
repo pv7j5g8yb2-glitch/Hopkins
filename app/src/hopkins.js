@@ -431,7 +431,23 @@ async function rewriteAds(ws, listing, ads, photos, why, extra = {}) {
 
 // A new set of ads for a listing: count of them (3 unless the agent asked otherwise), each its
 // own idea. brief is what the agent asked for, if anything.
-export async function makeAds(ws, listing, moment = "new", extra = {}, { note = null, aiSet = null, count = null, brief = "" } = {}) {
+// On the free plan, counting the ads left and saving new ones mustn't interleave: with the model
+// answering in between, three listings sent at once all saw 3 free ads left and made 9 (found
+// 2026-10-26). One at a time per account; paid accounts have no limit to protect, so they never
+// wait. Held in memory, which is right while Hopkins runs on one server.
+const queues = new Map();
+function oneAtATime(ws, fn) {
+  if (isPaid(ws)) return fn();
+  const next = (queues.get(ws.id) || Promise.resolve()).then(fn);
+  const tail = next.catch(() => {});
+  queues.set(ws.id, tail);
+  tail.then(() => { if (queues.get(ws.id) === tail) queues.delete(ws.id); });
+  return next;
+}
+
+export const makeAds = (ws, ...args) => oneAtATime(ws, () => makeAdsNow(ws, ...args));
+
+async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null, aiSet = null, count = null, brief = "" } = {}) {
   const existing = await all(`SELECT * FROM ads WHERE listing_id = ? AND moment = ? ORDER BY version`, [listing.id, moment]);
   const want = Math.max(1, Math.min(MAX_ADS, count || (aiSet?.ads?.length) || 3));
   // On the free plan a new set is new ads, even when it replaces the old ones, so it needs free
@@ -532,8 +548,11 @@ async function removeAds(ws, listing, gone) {
   return moved;
 }
 
-// More ads, or fewer, from the chat.
-async function changeSet(ws, listing, ads, photos, r, text) {
+// More ads, or fewer, from the chat. After waiting its turn it looks at the ads again, since
+// another request may have changed them.
+const changeSet = (ws, listing, ads, ...args) => oneAtATime(ws, async () => changeSetNow(ws, listing, await currentAds(listing), ...args));
+
+async function changeSetNow(ws, listing, ads, photos, r, text) {
   const reply = plainWords(r.reply);
   if (r.action === "remove_ads") {
     const gone = ads.filter((a) => r.remove.includes(a.version) || (!r.remove.length && a.version === r.version));

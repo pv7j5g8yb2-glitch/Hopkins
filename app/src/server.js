@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -37,6 +37,23 @@ files["manifest.webmanifest"] = readFileSync(join(WEB, "manifest.webmanifest"), 
 // trustProxy: on Render every request arrives through its proxy, so the visitor's address is in
 // X-Forwarded-For. Without it, every visitor looked like the same one and the brakes below
 // (sign up, sign in, lead form) counted everyone together.
+// What a page may load: scripts only from this server, plus the small inline scripts in the
+// login and lead pages by their hashes (worked out here, so editing them can't break it). Even if
+// someone got text onto a page that looked like code, the browser wouldn't run it.
+const inlineScripts = ["login.html", "lead.html"].flatMap((f) => [...files[f].matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash("sha256").update(m[1]).digest("base64")}'`));
+const CSP = [
+  "default-src 'self'",
+  `script-src 'self' ${inlineScripts.join(" ")}`,
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join("; ");
+
 export const app = Fastify({ logger: process.env.NODE_ENV !== "test", bodyLimit: 1_000_000, trustProxy: true });
 await app.register(cookie, { secret: COOKIE_SECRET });
 
@@ -46,6 +63,7 @@ app.addHook("onSend", async (request, reply, payload) => {
   reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
   reply.header("X-Frame-Options", "DENY");
   if (process.env.NODE_ENV === "production") reply.header("Strict-Transport-Security", "max-age=15552000");
+  if (String(reply.getHeader("content-type") || "").startsWith("text/html")) reply.header("Content-Security-Policy", CSP);
   return payload;
 });
 
@@ -85,14 +103,19 @@ app.get("/forgot", async (_, reply) => reply.type(TYPES.html).send(files["login.
 
 // ---------- accounts ----------
 
-// A light brake on password guessing and scripted sign ups, kept in memory only.
+// A light brake on password guessing and scripted sign ups, kept in memory only. Render passes
+// on whatever X-Forwarded-For a visitor sends, so the address can be faked: the brakes that
+// matter (sign in, forgot password, the lead form) also count per email or per listing, which
+// can't be. When the list gets long the oldest entries go, never the whole list, so a flood of
+// made up addresses can't wipe everyone's count.
 const hits = new Map();
-function tooMany(key, max = 10, windowMs = 10 * 60 * 1000) {
+function tooMany(key, max = 10, windowMs = 10 * 60 * 1000, { count = true } = {}) {
   const now = Date.now();
   const recent = (hits.get(key) || []).filter((t) => now - t < windowMs);
-  recent.push(now);
-  hits.set(key, recent);
-  if (hits.size > 5000) hits.clear();
+  if (count) recent.push(now);
+  hits.delete(key);
+  if (recent.length) hits.set(key, recent);
+  if (hits.size > 50_000) for (const k of [...hits.keys()].slice(0, 10_000)) hits.delete(k);
   return recent.length > max;
 }
 
@@ -122,7 +145,11 @@ app.post("/api/login", async (request, reply) => {
   const { email, password } = request.body || {};
   if (tooMany(`login:${request.ip}`, 20)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   const user = typeof email === "string" ? await get(`SELECT * FROM users WHERE email = ?`, [email.trim().toLowerCase()]) : null;
+  // Wrong passwords for one account: 10 in 10 minutes, from anywhere, then it waits.
+  const who = `login-email:${typeof email === "string" ? email.trim().toLowerCase() : ""}`;
+  if (tooMany(who, 9, undefined, { count: false })) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   if (!user || typeof password !== "string" || !(await verifyPassword(password, user.pass_hash))) {
+    tooMany(who, 9);
     return reply.code(401).send({ error: "That email and password don't match." });
   }
   setSession(reply, user.id, Number(user.session_ver) || 0);
@@ -136,6 +163,9 @@ app.post("/api/forgot", async (request, reply) => {
   if (tooMany(`forgot:${request.ip}`, 5)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   const email = clean(request.body?.email, 200)?.toLowerCase();
   if (!email || !EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
+  // At most 3 reset emails an hour to one address, so nobody can flood an inbox or use up the
+  // day's emails. The answer looks the same either way.
+  if (tooMany(`forgot-email:${email}`, 3, 60 * 60 * 1000)) return { ok: true };
   const user = await get(`SELECT id FROM users WHERE email = ?`, [email]);
   if (user) {
     const sent = mailReady() && (await sendMail({ to: email, ...resetEmail(await makeResetLink(user.id, appUrl(request))) }));
@@ -550,7 +580,10 @@ app.get("/l/:slug", async (request, reply) => {
 app.post("/api/l/:slug/lead", async (request, reply) => {
   if (tooMany(`lead:${request.ip}`, 8)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   const listing = await get(`SELECT * FROM listings WHERE slug = ?`, [request.params.slug]);
-  if (!listing) return reply.code(404).send({ error: "This listing isn't available any more." });
+  if (!listing || listing.status === "archived") return reply.code(404).send({ error: "This listing isn't available any more." });
+  // A script can fake its address, not the listing: 30 leads an hour on one listing is far more
+  // than a real one gets.
+  if (tooMany(`lead-listing:${listing.id}`, 30, 60 * 60 * 1000)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
   const b = request.body || {};
   if (b.website) return { ok: true }; // the hidden field only scripts fill in
   const name = clean(b.name, 80);

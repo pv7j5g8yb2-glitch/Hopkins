@@ -400,3 +400,12 @@ personal in here.
 * Pilots on paid (2026-10-26, Ismael): every sign up with an invite code now starts on the paid
   plan, so pilots never meet the free limit or the upgrade card. Accounts made before this stay
   as they were and are switched in Admin. `PILOT_PLAN=free` brings back free sign ups later.
+* Review gaps closed (2026-10-26): (1) the free plan race was real: with a slow model, three
+  listings sent at once made 9 free ads. Ad making is now one at a time per free account (paid
+  never waits). (2) Render passes on a faked X-Forwarded-For, so wrong passwords now also count
+  per account (10 in 10 minutes), reset emails per address (3 an hour, which also protects
+  Resend's 100 a day) and leads per listing (30 an hour); a flood of fake addresses can no
+  longer wipe the counts. (3) Every page now sends a Content Security Policy (scripts only from
+  the app, inline ones by hash); the whole pilot walkthrough ran with no blocked loads. (4) The
+  lead form refuses archived listings, like the page already did. Not done: database backups
+  depend on the Turso plan (check the dashboard), and photos aren't resized on the server.

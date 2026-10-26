@@ -9,7 +9,9 @@ const brain = await import("../src/brain.js");
 
 const calls = [];
 let next = [];
+let delay = 0;
 brain.setFetchForTests(async (url, init) => {
+  if (delay) await new Promise((x) => setTimeout(x, delay));
   calls.push({ url, body: JSON.parse(init.body), auth: init.headers.Authorization });
   const r = next.shift();
   if (r instanceof Error) throw r;
@@ -118,4 +120,18 @@ test("Groq writes the first ads: its own ideas and names, checked against the fa
   const rm = await c("POST", `/api/listings/${id}/messages`, { text: "get rid of the price one", version: 2 });
   assert.deepEqual(rm.json.ads.map((x) => [x.version, x.name]), [[1, "Wraparound porch"], [2, "The kitchen"]], "numbered again from 1");
   assert.equal(rm.json.messages.at(-1).body, "Removed **Ad 2**. What was Ad 3 is now Ad 2.");
+});
+
+test("listings sent at the same moment can't get past the 3 free ads", async () => {
+  // A slow model, like the live one: each request waits for an answer between counting the
+  // free ads left and saving new ones.
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "race@test.com", password: "password123", invite: "EARLY1" });
+  next = [];
+  delay = 150;
+  const text = (n) => ({ text: `${n} Elm St, Austin, 3 bed 2 bath, $585,000, big back yard` });
+  await Promise.all([c("POST", "/api/listings", text(12)), c("POST", "/api/listings", text(14)), c("POST", "/api/listings", text(16))]);
+  delay = 0;
+  const me = (await c("GET", "/api/me")).json;
+  assert.ok(me.usage.adsMade <= 3, `made ${me.usage.adsMade} ads on the free plan`);
 });
