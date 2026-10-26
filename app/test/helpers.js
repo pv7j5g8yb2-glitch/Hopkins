@@ -12,6 +12,8 @@ export async function boot(extraEnv = {}) {
     INVITE_CODES: "EARLY1",
     ADMIN_EMAILS: "boss@hopkins.test,owner@hopkins.test",
     NTFY_TOPIC: "",
+    // Most tests check the free plan; the pilot default (paid) has its own test.
+    PILOT_PLAN: "free",
     ...extraEnv,
   });
   const { app } = await import("../src/server.js");

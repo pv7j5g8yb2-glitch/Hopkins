@@ -46,12 +46,17 @@ export function isAdmin(user) {
   return Boolean(user && admins.includes(user.email.toLowerCase()));
 }
 
-export async function createAccount({ email, password, name, business }) {
+// Everyone signing up with an invite code is a pilot user, and pilots start on the paid plan
+// (Ismael, 2026-10-26). PILOT_PLAN=free puts new sign ups on the free plan instead, for when
+// sign ups open to everyone.
+export const pilotPlan = () => (process.env.PILOT_PLAN === "free" ? "free" : "paid");
+
+export async function createAccount({ email, password, name, business, plan = "free" }) {
   const wsId = randomUUID();
   const userId = randomUUID();
   const now = nowIso();
   const brand = { business: business || "", agent_name: name || "", voice: "plain", primary: "#1F2A36", accent: "#C8A96A", font: "modern" };
-  await run(`INSERT INTO workspaces (id, name, brand, created_at) VALUES (?,?,?,?)`, [wsId, business || name || email, JSON.stringify(brand), now]);
+  await run(`INSERT INTO workspaces (id, name, plan, brand, created_at) VALUES (?,?,?,?,?)`, [wsId, business || name || email, plan === "paid" ? "paid" : "free", JSON.stringify(brand), now]);
   await run(`INSERT INTO users (id, workspace_id, email, name, pass_hash, created_at) VALUES (?,?,?,?,?,?)`, [userId, wsId, email.toLowerCase(), name || null, await hashPassword(password), now]);
   return userId;
 }

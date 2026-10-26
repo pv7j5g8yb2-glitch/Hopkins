@@ -426,3 +426,12 @@ test("with email set up, forgot password emails the link straight away", async (
   assert.equal((await stranger("POST", "/api/reset", { t, password: "fromemail123" })).status, 200);
   assert.equal((await stranger("GET", "/api/me")).json.user.email, "mailme@ellery.test");
 });
+
+test("pilots who sign up with an invite code start on the paid plan", async () => {
+  delete process.env.PILOT_PLAN;
+  const c = client(app);
+  assert.equal((await c("POST", "/api/signup", { email: "pilot@ellery.test", password: "password123", invite: "EARLY1" })).status, 200);
+  const me = (await c("GET", "/api/me")).json;
+  process.env.PILOT_PLAN = "free";
+  assert.equal(me.workspace.plan, "paid");
+});

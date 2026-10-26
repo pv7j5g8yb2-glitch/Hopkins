@@ -90,6 +90,7 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 | `GROQ_API_KEY` | Free alternative for the chat when there's no Anthropic key (console.groq.com). |
 | `HOPKINS_MODEL`, `GROQ_MODEL` | Override the models (defaults `claude-opus-5-5`, `openai/gpt-oss-120b`). |
 | `GROQ_BACKUP_MODELS`, `GROQ_VISION_MODEL` | Groq models to try when the main one is over its limit (default `openai/gpt-oss-20b,qwen/qwen3.8-27b`), and the one that sees photos (default `qwen/qwen3.8-27b`). |
+| `PILOT_PLAN` | Optional. Everyone who signs up with an invite code is a pilot and starts on the paid plan. Set to `free` to put new sign ups on the free plan instead. |
 | `APP_URL` | Optional. The address used in reset links and lead page previews, like `https://hopkins-app.onrender.com`. Render sets `RENDER_EXTERNAL_URL` itself, which is used when this is empty. |
 | `RESEND_API_KEY`, `MAIL_FROM` | Email through Resend (free: 3,000 a month, 100 a day). With both set, Forgot password emails the reset link straight away. `MAIL_FROM` is a sender on a domain verified in Resend, like `Hopkins <hello@kirmistudio.com>`. Without them, the founder makes the link in Admin. |
 | `NTFY_TOPIC` | The founder's phone alerts: new accounts, upgrade requests, approvals. |

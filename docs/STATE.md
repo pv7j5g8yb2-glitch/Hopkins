@@ -397,3 +397,6 @@ personal in here.
   migration is now logged (only "duplicate column" is ignored). Its failed test run was its own
   partial npm install (all 32 tests pass). Still open, low priority: rate limits trust
   X-Forwarded-For, two free plan requests at the same instant could both pass, no CSP header.
+* Pilots on paid (2026-10-26, Ismael): every sign up with an invite code now starts on the paid
+  plan, so pilots never meet the free limit or the upgrade card. Accounts made before this stay
+  as they were and are switched in Admin. `PILOT_PLAN=free` brings back free sign ups later.

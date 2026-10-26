@@ -164,6 +164,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   downloaded. Changes to those 3 are included. After that, strictly nothing new without upgrading
   to a solo or team plan: no new set, no extra ad, no ads for another listing, and deleting a
   listing or an ad never gives any back. Running any ad needs the paid plan too.
+* **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
+  invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
 * **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.
