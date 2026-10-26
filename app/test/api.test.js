@@ -132,6 +132,25 @@ test("workspaces can't see each other's listings, and only admins see admin", as
   assert.equal((await b.c("POST", `/api/listings/${created.json.listing.id}/messages`, { text: "run it" })).status, 404);
   assert.equal((await b.c("GET", "/api/admin/workspaces")).status, 403);
   assert.equal((await b.c("GET", "/api/listings")).json.listings.length, 0);
+  // Every other way in to a listing that isn't theirs: nothing found, nothing changed.
+  const id = created.json.listing.id;
+  for (const [method, url, body] of [["PATCH", `/api/listings/${id}`, { price: 1 }], ["PATCH", `/api/listings/${id}/style`, { style: { bg: "#000000" } }], ["POST", `/api/listings/${id}/remake`, {}], ["POST", `/api/listings/${id}/run`, { budget: 100, days: 7 }], ["DELETE", `/api/listings/${id}`]]) {
+    assert.equal((await b.c(method, url, body)).status, 404, `${method} ${url}`);
+  }
+  assert.equal((await b.c("POST", "/api/listings/delete", { ids: [id] })).json.deleted, 0);
+  // Their photos, messages and leads can't be relabelled, deleted or moved either.
+  const photo = (await a.c("POST", "/api/photos", { data: TINY_JPEG, mime: "image/jpeg", listingId: id })).json.id;
+  await b.c("PATCH", `/api/photos/${photo}`, { label: "kitchen" });
+  await b.c("DELETE", `/api/photos/${photo}`);
+  const msg = created.json.messages.at(-1).id;
+  await b.c("POST", `/api/messages/${msg}/dismiss`);
+  const after = (await a.c("GET", `/api/listings/${id}`)).json;
+  assert.equal(after.listing.price, created.json.listing.price);
+  assert.equal(after.ads.length, created.json.ads.length);
+  const kept = after.photos.find((p) => p.id === photo);
+  assert.ok(kept, "the photo is still there");
+  assert.notEqual(kept.label, "kitchen");
+  assert.equal(after.messages.find((m) => m.id === msg).needs_action, created.json.messages.at(-1).needs_action);
 });
 
 test("the lead page escapes what agents type", async () => {
