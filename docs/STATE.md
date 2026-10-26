@@ -42,6 +42,10 @@ personal in here.
   Hopkins, the launch reel). Latest versions have the slam-in hooks, the talking voice and the
   fixed voice timing. After those, pin Reel 5, with Reels 1 and 3 beside it.
 * Captions for posting are in `reports/hopkins-brand/reels/Captions and posting order.md`.
+* Reel 6 (2026-10-26, Ismael's format "X things before your next ad, each more niche"): 7 Meta
+  listing ad tips from the Housing category to the 90 day lead download limit, a depth meter on
+  the right that drops a level per point, 63s voice. Source `content/reels/r6.html`, caption in
+  `reports/hopkins-brand/reels/Reel 6 caption.md`. Not posted yet.
 * Turn on Instagram's AI label when posting (the voice is AI made).
 * The bio had a "Backed by @ycombinator" line. It was flagged: only keep it if Hopkins is actually
   in YC, and then add the batch (for example "YC F26").
@@ -59,9 +63,13 @@ personal in here.
   about 0.15s of the voice. Ismael found the old voice's pronunciation and timing bad; this is the fix.
 * Open question to Ismael: voice future reels with ElevenLabs (connected to his account, about
   1,000 characters a reel, free plan about 10,000 a month) instead of Kokoro. No answer yet.
-* Setup in a fresh container: `pip install kokoro soundfile transformers faster-whisper`, plus
-  `espeak-ng`. ffmpeg is at
-  `/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2`.
+* Setup in a fresh container: Kokoro won't build on the default Python 3.13, so make a 3.11 venv:
+  `uv venv -p 3.11 vovenv && VIRTUAL_ENV=$PWD/vovenv uv pip install kokoro soundfile transformers
+  faster-whisper "numpy<2.3"`, plus `apt-get install espeak-ng`. Run `vovenv/bin/python vo.py rN`,
+  and render with `PY=vovenv/bin/python node rec.mjs ...` so the sound mix uses the same Python.
+  `rec.mjs` uses the imageio ffmpeg when it's installed
+  (`/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2`),
+  else the system ffmpeg.
   Playwright's Chromium can't decode H.264, so check videos by extracting frames with ffmpeg.
 * Rendered mp4s and covers live in `reports/hopkins-brand/reels/`, which is not in git. A new
   container won't have them; Ismael has the sent copies, and they can be re-rendered from source.

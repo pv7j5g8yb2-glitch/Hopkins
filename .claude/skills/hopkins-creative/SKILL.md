@@ -245,6 +245,14 @@ app's previews) shows the blue verified badge after the handle (Ismael, 2026-10-
 
 ## Log
 
+- 2026-10-26 (reels, format): "X things to know before your next ad, and they get more niche as I
+  go" (Ismael's pick). The hook isn't a sound or a slap, it's a promise of depth: seven numbered
+  cards slam in as a stack, fan out on "niche" to show card 7, "Nobody tells you this one", and a
+  depth meter on the right plunges to the bottom. The meter stays on screen and drops one level per
+  point, so the open question (how niche does 7 get?) carries people to the end. The points must
+  really get more niche: account setup first, the 90 day lead download limit last. Every claim
+  checked against Meta's own rules before writing.
+
 - 2026-10-19 (reels, voice): Reels 2, 3 and 5 rewritten from narrator voice into talking to a friend
   ("Be honest, does your listing ad say this?", "This department store guy, John Wanamaker",
   "or you, on a Sunday night in Ads Manager"). See "How reels talk".

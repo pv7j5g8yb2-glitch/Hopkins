@@ -33,6 +33,7 @@ FIXES = [
     (r"\bChatGPT\b", "Chat G P T"),
     (r"\bA/B\b", "A B"),
     (r"\bHUD\b", "H U D"),
+    (r"\bCRM\b", "C R M"),
     (r"(\d)%", r"\1 percent"),
 ]
 def spoken(text):
