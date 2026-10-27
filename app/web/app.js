@@ -686,6 +686,7 @@
         if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
+        typeOut([$("#thread .hk:last-child")], $("#msgs"));
           $("#ta").placeholder = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
@@ -703,6 +704,7 @@
         $("#work").closest(".hk").remove();
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
+        typeOut([$("#thread .hk:last-child")], $("#msgs"));
           $("#ta").placeholder = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
@@ -750,6 +752,7 @@
     msgs.style.scrollBehavior = "auto";
     msgs.scrollTop = prevScroll ?? msgs.scrollHeight;
     msgs.style.scrollBehavior = "";
+    if (prevScroll == null) typeOut($$("#thread .hk.in"), msgs);
     drawMiniCards();
     drawPreview();
     settleSegs();
@@ -900,6 +903,92 @@
     const shown = urls.slice(0, 6);
     const extra = urls.length - shown.length;
     return `<div class="sent n${Math.min(shown.length, 3)}${anim}">${shown.map((u, i) => `<i style="background-image:url(${u})">${extra && i === shown.length - 1 ? `<b>+${extra}</b>` : ""}</i>`).join("")}</div>`;
+  }
+
+  // Hopkins' new replies write themselves out word by word, like ChatGPT (Ismael, 2026-10-27).
+  // The reply arrives whole (it's checked before it's sent), so the writing happens here. Every
+  // word is laid out from the start and only fades in, so nothing reflows and nothing jumps;
+  // timing follows the clock, not the frame rate, so a slow phone finishes on time; a long
+  // reply speeds up so it never takes more than about 2 seconds. A tap, a new message, leaving
+  // the screen or switching apps finishes it at once. The ad cards, buttons and Copy follow the
+  // text. Reduced motion shows replies whole.
+  const TYPE = { perWord: 30, maxMs: 2000, fade: 160 };
+  function typeOut(nodes, scroller) {
+    if (S.typing) S.typing.finish();
+    nodes = nodes.filter((n) => n.isConnected && $(".md", n));
+    if (!nodes.length || reduceMotion) return;
+    const runs = nodes.map((n) => {
+      const words = [];
+      const walk = document.createTreeWalker($(".md", n), NodeFilter.SHOW_TEXT);
+      const texts = [];
+      while (walk.nextNode()) if (walk.currentNode.nodeValue.trim()) texts.push(walk.currentNode);
+      for (const t of texts) {
+        const frag = document.createDocumentFragment();
+        for (const part of t.nodeValue.split(/(\s+)/)) {
+          if (!part) continue;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); continue; }
+          const w = document.createElement("span");
+          w.className = "tw";
+          w.textContent = part;
+          frag.appendChild(w);
+          words.push(w);
+        }
+        t.replaceWith(frag);
+      }
+      // Everything after the text (ad cards, buttons, Copy) waits for it.
+      const later = [...$(".b", n).children].filter((c) => !c.classList.contains("md"));
+      later.forEach((c) => c.classList.add("tw-later"));
+      return { words, later, step: Math.min(TYPE.perWord, TYPE.maxMs / Math.max(1, words.length)) };
+    });
+    let start = performance.now(), ri = 0, wi = 0, raf = 0, follow = true, done = false;
+    const stopFollow = () => { follow = false; };
+    scroller.addEventListener("wheel", stopFollow, { passive: true });
+    scroller.addEventListener("touchmove", stopFollow, { passive: true });
+    // Start where the reply starts, so its first words are on screen.
+    const first = nodes[0];
+    const top = first.offsetTop - scroller.offsetTop - 140;
+    if (top < scroller.scrollTop) scroller.scrollTop = Math.max(0, top);
+    const keepInView = (el) => {
+      if (!follow || !el) return;
+      const r = el.getBoundingClientRect(), box = scroller.getBoundingClientRect();
+      const comp = $(".comp-wrap");
+      const bottom = Math.min(box.bottom, comp ? comp.getBoundingClientRect().top : box.bottom) - 24;
+      if (r.bottom > bottom) scroller.scrollTop += r.bottom - bottom;
+    };
+    const finishRun = (run) => { run.words.forEach((w) => w.classList.add("on")); run.later.forEach((c) => c.classList.remove("tw-later")); };
+    const finish = () => {
+      if (done) return;
+      done = true;
+      cancelAnimationFrame(raf);
+      runs.slice(ri).forEach(finishRun);
+      scroller.removeEventListener("wheel", stopFollow);
+      scroller.removeEventListener("touchmove", stopFollow);
+      document.removeEventListener("visibilitychange", onHide);
+      $("#thread")?.removeEventListener("click", finish);
+      if (follow) scroller.scrollTop = scroller.scrollHeight;
+      if (S.typing === handle) S.typing = null;
+    };
+    const onHide = () => { if (document.hidden) finish(); };
+    const tick = (now) => {
+      if (done) return;
+      if (!scroller.isConnected) return finish();
+      const run = runs[ri];
+      const shown = Math.min(run.words.length, Math.floor((now - start) / run.step) + 1);
+      for (; wi < shown; wi++) run.words[wi].classList.add("on");
+      keepInView(run.words[wi - 1]);
+      if (wi >= run.words.length) {
+        run.later.forEach((c) => c.classList.remove("tw-later"));
+        keepInView(run.later.at(-1));
+        ri++; wi = 0; start = now + 120;
+        if (ri >= runs.length) return finish();
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    const handle = { finish };
+    S.typing = handle;
+    document.addEventListener("visibilitychange", onHide);
+    $("#thread")?.addEventListener("click", finish);
+    raf = requestAnimationFrame(tick);
   }
 
   function messagesHtml(p, seen, reveal) {

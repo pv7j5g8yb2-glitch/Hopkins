@@ -455,3 +455,11 @@ personal in here.
   side, the rest hidden until tapped, which nobody found. Now every message shows Copy and every
   message you sent shows Edit, permanently. Selecting part of a message works on phone and laptop.
   Checked on an iPhone sized screen: copying and editing an older message both work.
+* Replies write themselves out (2026-10-27, Ismael): new Hopkins replies appear word by word like
+  ChatGPT (`typeOut` in app.js). The reply arrives whole (it's fact checked first), so this is in
+  the app: every word is laid out from the start and only fades in (no reflow), timing follows the
+  clock so slow phones finish on time, a long reply speeds up to stay within about 2 seconds, and
+  ad cards, buttons and Copy appear after the text. A tap, a new message, leaving the screen or
+  switching apps finishes it at once; reduced motion shows replies whole. Measured on an iPhone
+  sized screen: 86 words in 2.0s, and 211 words in 2.1s with the processor at a quarter speed,
+  with an even rate and no change in the reply's height.
