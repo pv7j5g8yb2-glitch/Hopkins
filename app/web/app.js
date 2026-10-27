@@ -652,6 +652,15 @@
 
   const EXAMPLE = "Just listed: 412 Oak Street in Riverside, Austin, TX. 3 bed, 2 bath, 1,840 sq ft craftsman with a wraparound porch, renovated kitchen with a quartz island, fenced backyard and a home office. $649,000";
 
+  const LISTINGISH = [
+    /https?:\/\//i,
+    /\$\s?\d|\b\d[\d,.]*\s?(k|m|million)\b|\b\d{3},\d{3}\b/i,
+    /\b\d+(\.\d)?\s*(bed|bd|br|bath|ba)(room)?s?\b/i,
+    /\b[\d,]+\s*(sq\.?\s*f(ee|oo)?t|sqft|square f(ee|oo)t|sf)\b/i,
+    /\b\d+\s+[a-z]+(\s[a-z]+)?\s+(st|street|ave|avenue|rd|road|dr|drive|ln|lane|blvd|boulevard|way|ct|court|pl|place|terrace|crescent)\b/i,
+    /\b(just listed|new listing|for sale|listing for)\b/i,
+  ];
+
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
@@ -692,9 +701,11 @@
       $(".intro").style.display = "none";
       $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>${msgActs(`data-nc="${S.newChat.length}"`, true, true)}` : ""));
       latestActs();
-      // Only a message that looks like a listing shows the listing steps. Anything else ("Hello")
-      // gets the thinking mark and a reply; the server decides for sure.
-      const listingish = files.length || /https?:\/\/|\d|\b(bed|bath|sq|condo|house|home|cottage|villa|apartment|townhouse|pool|kitchen|garden|yard|listing for|just listed)/i.test(text);
+      // Only a message that looks like a listing shows the listing steps. Anything else ("Hello",
+      // "what's 1+2?") gets the thinking mark and a reply; the server decides for sure. A number on
+      // its own isn't a listing (2026-10-27): it takes a price, beds, baths, size, a street
+      // address, a link or photos, the same things the server looks for.
+      const listingish = files.length || LISTINGISH.some((re) => re.test(text));
       if (!listingish) {
         showTyping();
         const my = current();
@@ -709,7 +720,7 @@
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
-      const finish = showWork([...(files.length ? [`Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}`] : []), "Reading the listing", ...(files.length ? ["Picking the best photo for each ad"] : []), "Writing 3 different ads", "Checking the wording"]);
+      const finish = showWork([...(files.length ? [`Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}`] : []), "Reading the listing", ...(files.length ? ["Picking the best photo for each ad"] : []), "Writing the ads", "Checking the wording"]);
       const photoIds = [], photoNames = {};
       for (const f of files) {
         const r = await uploadPhoto(f);

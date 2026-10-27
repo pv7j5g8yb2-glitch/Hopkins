@@ -432,3 +432,7 @@ personal in here.
   Editing the first message reads the listing again and rewrites its ads in place (same ads,
   links and free count). Only an approved run blocks editing what came before it. The messages
   that will be replaced fade while editing.
+* New listing screen guess (2026-10-27, Ismael: "what's 1+2?" showed "Reading the listing" and
+  "Writing 3 different ads"): the app guessed a listing from any digit. It now needs what the
+  server looks for (a price, beds, baths, size, a street address, a link or photos), so questions
+  get the thinking mark and an answer. The step reads "Writing the ads", since the count varies.
