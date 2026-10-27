@@ -195,3 +195,24 @@ test("\"no you didn't\" gets the ads' real look, not an apology for a change tha
   assert.doesNotMatch(body, /let me fix/i);
   assert.match(body, /All three ads have a grey background/);
 });
+
+test("\"the same\" in a chat from before looks were remembered copies the ad that was just changed", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "oldchat@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  const ad = (v) => ({ ...l.json.ads.find((x) => x.version === v), kind: "life", photo_number: 0 });
+  const style = (o) => ({ bg: "", accent: "", text: "", font: "", layout: "", size: 0, align: "", focus: "", fade: "", reset: false, ...o });
+  const turn = (reply, ads) => ({ reply, action: "revise", version: 0, remove: [], moment: "none", ads, listing_patch: null, budget: 0, days: 0 });
+  // Ad 2 went grey with nothing kept on a reply, like Ismael's chat from before 2026-10-27.
+  await c("PATCH", `/api/listings/${id}/style`, { versions: [2], style: { bg: "#5F6368" } });
+  // The model sends no look at all: the change still comes from Ad 2.
+  // It also rewrote the words, which nobody asked for: they stay as they were.
+  next = [turn("Ad 1 updated to focus on the low price.", [{ ...ad(1), overlay: "Rewritten for no reason.", style: style({}) }, { ...ad(3), style: style({}) }])];
+  const r = await c("POST", `/api/listings/${id}/messages`, { text: "I said now do the fucking same for ads 1 and 3 asshole!", version: 1 });
+  assert.deepEqual(r.json.ads.map((x) => x.style.bg), ["#5F6368", "#5F6368", "#5F6368"]);
+  assert.equal(r.json.ads[0].overlay, l.json.ads[0].overlay);
+  assert.match(r.json.messages.at(-1).body, /grey background/);
+  assert.doesNotMatch(r.json.messages.at(-1).body, /didn't change anything/);
+});

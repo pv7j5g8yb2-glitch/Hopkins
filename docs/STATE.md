@@ -480,3 +480,11 @@ personal in here.
 * Open question to Ismael (2026-10-27): free form image edits like ChatGPT or Nano Banana need an
   image model; Google's Gemini 2.5 Flash Image is about $0.04 an image (aggregator sites, checked
   2026-10-27), no clear free tier. Not added. Edits must never change the property itself.
+* Grey bug, round two (2026-10-27, Ismael's live chat): "the same for ad 1 and 3" still did
+  nothing there, because Ad 2 went grey before the fix, so no look was kept on that reply. Now
+  "the same" falls back to the look of the most recently changed other ad; "do the fucking same"
+  style wording counts (not only "the same"); a look only "the same" keeps the words as they were
+  (the model had rewritten both ads' copy too); and "grey color background" no longer lets a label
+  colour through ("color" alone counted as asking for the label). Rerun live with Groq on a phone
+  sized screen: Ad 2 grey, "now do the same for ad 1 and 3", "no you didn't": all three grey,
+  every reply true, words untouched.

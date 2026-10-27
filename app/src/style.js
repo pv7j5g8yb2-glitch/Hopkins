@@ -91,7 +91,9 @@ export const softenColour = (h) => (h && HARSH[h.toUpperCase()] ? COLOUR_WORDS[H
 // for. Each part only changes when the agent's message is about it.
 const ASKED = {
   bg: /colou?r|background|bg|backdrop|look|style|luxur|brand|dark|light|tone|\b(black|white|navy|blue|green|red|burgundy|maroon|cream|beige|grey|gray|pink|purple|plum|brown|teal|sage|olive|gold|orange|yellow|charcoal|ivory|sand|wine|rust|terracotta|emerald|slate|#[0-9a-f]{3,6})\b/,
-  accent: /accent|label|price|highlight|gold|colou?r|luxur|brand|look|style/,
+  // "grey color background" is about the background, not the label (2026-10-27: it let a
+  // black label through). Plural "colours" still means the whole look.
+  accent: /accent|label|price|highlight|colou?rs\b|luxur|brand|look|style/,
   // Only when a colour is said near the words, not for "put the text at the top".
   text: /(text|words|writing|letters|headline|title|font)( colou?r)?\s+(in |to |be |is |that's |)?(black|white|cream|ivory|gold|navy|dark|light|#[0-9a-f]{3,6}|[a-z]+ colou?r)|\b(black|white|cream|ivory|gold|navy|dark|light|#[0-9a-f]{3,6})\s+(text|words|writing|letters|headline|title|font)|font colou?r|text colou?r|readab|contrast|hard to read|can't read/,
   font: /font|serif|classic|modern|type|typeface|luxur|elegant|editorial|bold|look|style/,

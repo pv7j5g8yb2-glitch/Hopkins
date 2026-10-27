@@ -323,11 +323,25 @@ function lookNow(ads) {
 }
 
 const LOOK_WORDS = new RegExp(`\\b(background|label|colou?r|font|serif|layout|frame|fade|bigger|smaller|text size|centered|centred|${Object.keys(COLOUR_WORDS).join("|")})\\b`, "i");
-export const refersBack = (text) => /\b(the same|same (thing|look|colou?r|for|on|as)|do that|that too|this too|those too|as well|match(ing)?|copy (that|it|the look)|like (ad|version|number) ?[1-5])\b/i.test(String(text || ""));
-async function lastLook(listingId) {
+export const refersBack = (text) => {
+  const t = String(text || "").toLowerCase();
+  return /\b(do that|that too|this too|those too|as well|match(ing)?|copy (that|it|the look)|like (ad|version|number) ?[1-5])\b/.test(t)
+    || /\b(do|did|make|apply|give|put|want|need)\b[^.?!]{0,30}\bsame\b/.test(t)
+    || /\bsame\b[^.?!]{0,16}\b(for|on|to|with)\b\s*(ads?|versions?|v|number|the|them|all|both|[1-5])\b/.test(t)
+    || /\bsame (look|colou?rs?|style|background|thing)\b/.test(t);
+};
+// The last look change: kept on the reply that made it, or, for chats from before that was kept
+// (Ismael's live chat, 2026-10-27), the look of the most recently changed ad that isn't one of
+// the ads being asked about ("ad 2 grey", then "the same for ad 1 and 3" copies ad 2).
+async function lastLook(listingId, ads = [], named = null) {
   const rows = await all(`SELECT data FROM messages WHERE listing_id = ? AND role = 'hopkins' AND data LIKE '%"look":%' ORDER BY created_at DESC LIMIT 1`, [listingId]);
   const look = rows[0] ? JSON.parse(rows[0].data).look : null;
-  return look && Object.keys(look).length ? look : null;
+  if (look && Object.keys(look).length) return look;
+  const others = ads.filter((a) => !named || !named.includes(a.version))
+    .map((a) => ({ a, look: Object.fromEntries(STYLE_KEYS.filter((k) => k !== "size" && a.style?.[k] != null).map((k) => [k, a.style[k]])) }))
+    .filter((x) => Object.keys(x.look).length)
+    .sort((x, y) => String(y.a.updated_at).localeCompare(String(x.a.updated_at)));
+  return others[0]?.look || null;
 }
 // The look keys that changed between two styles (what "the same" repeats later).
 function lookDiff(before = {}, after = {}) {
@@ -797,20 +811,24 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   let ruled = text ? readStyle(text.toLowerCase()) : null;
   // "The same for ad 1 and 3": the last look change, as if the agent had named it again.
   let askText = text;
+  let again = null;
   if (refersBack(text) && (!ruled || !Object.keys(ruled.style).length)) {
-    const again = await lastLook(listing.id);
+    again = await lastLook(listing.id, ads, named);
     if (again) { ruled = { style: again, sizeStep: 0 }; askText = `${text} ${sayLook(again)}`; }
   }
   const ruledColours = ruled && !ruled.vague ? Object.fromEntries(["bg", "accent", "text"].filter((k) => ruled.style[k]).map((k) => [k, ruled.style[k]])) : {};
-  let overrode = false;
+  // "The same" about a look is only a look change: the words stay exactly as they are (the model
+  // once rewrote both ads' copy as well, 2026-10-27).
+  const lookOnly = Boolean(again) && !/\b(shorter|longer|headline|wording|words|copy|rewrite|write|line|caption|warmer|punchier|tone)\b/i.test(text || "");
+  let overrode = lookOnly;
   const unreadable = {};
   for (const a of r.ads || []) {
     const ad = ads.find((x) => x.version === a.version);
     if (!ad) continue;
     if (named && !named.includes(ad.version)) { overrode = true; continue; }
-    const next = guarded({ ...ad, ...normalizeAI(a, photos, ad, text) }, ad, { listing: { ...listing, ...patch }, photos, extra: text });
+    const next = lookOnly ? { ...ad } : guarded({ ...ad, ...normalizeAI(a, photos, ad, text) }, ad, { listing: { ...listing, ...patch }, photos, extra: text });
     const wanted = modelStyle(a.style, text, { filter: false });
-    const look = modelStyle(a.style, askText);
+    const look = modelStyle(a.style, refersBack(text) && askText === text ? `${text} ${sayLook(wanted)}` : askText);
     for (const k of ["bg", "accent", "text"]) {
       if (ruledColours[k] && look[k] !== ruledColours[k]) look[k] = ruledColours[k];
       else if (!ruledColours[k] && look[k] && Object.values(ruledColours).includes(look[k])) delete look[k];
@@ -839,7 +857,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
       overrode = true;
     }
   }
-  const copyChanged = (r.ads || []).some((a) => {
+  const copyChanged = !lookOnly && (r.ads || []).some((a) => {
     const ad = ads.find((x) => x.version === a.version);
     return ad && (!named || named.includes(ad.version)) && ["headline", "primary_text", "overlay"].some((k) => a[k] && polish(cleanWording(String(a[k]))) !== ad[k]);
   });
@@ -896,8 +914,8 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
   if (intent.kind === "run") return proposeRun(ws, listing, { versions: intent.versions, budget: intent.budget, days: intent.days });
 
   if (intent.kind !== "style" && refersBack(text) && ads.length) {
-    const again = await lastLook(listing.id);
     const versions = namedVersions(text, ads);
+    const again = await lastLook(listing.id, ads, versions);
     if (again && versions?.length) Object.assign(intent, { kind: "style", style: again, sizeStep: 0, versions });
   }
   if (intent.kind === "remove" && ads.length) return changeSet(ws, listing, ads, photos, { action: "remove_ads", remove: intent.versions, ads: [], reply: "" }, text);
