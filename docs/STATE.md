@@ -529,3 +529,12 @@ personal in here.
   from the leads table for the last 7 days, not from the inbox's newest 30 items. The cards below
   show only the photo (or cover) and the name: no "Ads ready" tag, no "See ads" button.
   The Monday report no longer shows in "This week" on Today; it lives on Report. New leads still do.
+* Report redone like Screen Time (2026-10-27, Ismael: "too confusing and overloaded"): one card
+  with the week's leads as a big number, showings and the change on the week before under it, and
+  7 day bars (today in gold, days in the viewer's own time). "Next" is at most two lines: every
+  listing with ads waiting becomes one line, then the first other suggestion. "By listing" shows
+  only listings that are running or have leads, each a thin bar (top one gold) and a count; a tap
+  opens a sheet with its leads, showings, cost per lead and the spend box (the only place spend is
+  typed now). "What's winning" is one split bar with a legend, shown only once there are leads.
+  Cost per lead is now spend over all of a listing's leads (spend is a running total), not over
+  this week's. The 4 boxes and the 6 spend inputs are gone. Checked at iPhone and laptop size.

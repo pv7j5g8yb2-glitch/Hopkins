@@ -1317,7 +1317,11 @@ export async function weeklyReport(ws, days = 7) {
      WHERE leads.workspace_id = ? AND leads.created_at >= ? ORDER BY leads.created_at DESC`,
     [ws.id, since]
   );
-  const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, status, spend, moment, created_at FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
+  const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, status, spend, moment, created_at, (SELECT id FROM photos WHERE listing_id = listings.id ORDER BY position LIMIT 1) AS photo_id FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
+  // For the chart and the comparison: the week before, and every lead so far per listing (spend
+  // is typed in as a running total, so cost per lead is spend over all its leads, not this week's).
+  const before = await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, new Date(Date.now() - 2 * days * 86400_000).toISOString(), since]);
+  const allTime = Object.fromEntries((await all(`SELECT listing_id, COUNT(*) AS n FROM leads WHERE workspace_id = ? GROUP BY listing_id`, [ws.id])).map((r) => [r.listing_id, Number(r.n)]));
   const launched = await all(`SELECT DISTINCT listing_id FROM launches WHERE workspace_id = ?`, [ws.id]);
   const launchedIds = new Set(launched.map((r) => r.listing_id));
   const drafts = await all(`SELECT DISTINCT listing_id FROM ads WHERE workspace_id = ? AND status = 'draft'`, [ws.id]);
@@ -1329,8 +1333,8 @@ export async function weeklyReport(ws, days = 7) {
     for (const x of ls) if (x.version) byVersion[`Ad ${x.version}`] = (byVersion[`Ad ${x.version}`] || 0) + 1;
     const spend = Number(l.spend || 0);
     return {
-      id: l.id, name: listingTitle(l), status: l.status, leads: ls.length,
-      showings: ls.filter((x) => x.wants === "showing").length, spend, cpl: spend > 0 && ls.length ? Math.round((spend / ls.length) * 100) / 100 : null,
+      id: l.id, name: listingTitle(l), status: l.status, leads: ls.length, photo_id: l.photo_id || null, allLeads: allTime[l.id] || 0,
+      showings: ls.filter((x) => x.wants === "showing").length, spend, cpl: spend > 0 && allTime[l.id] ? Math.round((spend / allTime[l.id]) * 100) / 100 : null,
       byVersion, running: launchedIds.has(l.id), drafts: draftIds.has(l.id),
     };
   });
@@ -1352,7 +1356,7 @@ export async function weeklyReport(ws, days = 7) {
   const headline = total
     ? `${total} ${total === 1 ? "lead" : "leads"}${spend > 0 ? `, $${Math.round((spend / total) * 100) / 100} each` : ""}${showings ? `, ${showings} asked for a showing` : ""}.`
     : "No leads this week.";
-  return { since, days, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), patterns, next: next.slice(0, 5) };
+  return { since, days, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), patterns, next: next.slice(0, 5) };
 }
 
 // Hopkins messages first: on a Monday, the first time the app is opened, the report is

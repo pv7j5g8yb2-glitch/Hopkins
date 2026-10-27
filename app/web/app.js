@@ -1329,29 +1329,72 @@
     if (!r.total && !r.listings.some((x) => x.running)) {
       main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap"><div class="head"><h1>Report</h1></div>
         ${soon(`Your <span class="serif">Monday report.</span>`, "Every Monday: the leads each listing brought, what they cost, which ad won, and what to do next.",
-          `<div class="headline">7 leads, $21 each.</div><div class="stats"><div class="stat"><span>Leads</span><b>7</b></div><div class="stat key"><span>Cost per lead</span><b>$21</b></div><div class="stat"><span>Asked for a showing</span><b>3</b></div><div class="stat"><span>Spend</span><b>$147</b></div></div>`)}</div></div>`;
+          `<div class="rp-sum"><div class="rp-big"><b>7</b> leads</div><p class="rp-sub">3 asked for a showing</p><div class="rp-chart">${[1, 0, 2, 1, 0, 1, 2].map((n, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${n * 50}%"></i></span><span class="rp-dl">${"MTWTFSS"[i]}</span></div>`).join("")}</div></div>`)}</div></div>`;
       return;
     }
+    S.report = r;
+    // Like Screen Time (Ismael, 2026-10-27): one big number with the week as bars, then the one
+    // or two things worth doing, then each running listing as a thin bar. Spend and cost per lead
+    // sit behind a tap on the listing instead of a box on every row.
+    const DAY = 86400_000;
+    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+    const days = [...Array(7)].map((_, i) => new Date(today0.getTime() - (6 - i) * DAY));
+    const counts = days.map(() => 0);
+    for (const t of r.times || []) {
+      const at = new Date(t).getTime();
+      // Anything from before the first bar's midnight (still inside the 7 days) counts on it.
+      const i = days.findLastIndex((d) => at >= d.getTime());
+      counts[Math.max(0, i)]++;
+    }
+    const peak = Math.max(1, ...counts);
+    const bars = days.map((d, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${counts[i] ? Math.max(8, (counts[i] / peak) * 100) : 0}%"></i></span><span class="rp-dl">${esc(d.toLocaleDateString(undefined, { weekday: "narrow" }))}</span></div>`).join("");
+    const diff = r.total - (r.lastWeek || 0);
+    const vs = diff > 0 ? `${diff} more than the week before` : diff < 0 ? `${-diff} fewer than the week before` : r.total ? "Same as the week before" : "";
+    const sub = [r.showings ? `${r.showings} asked for a showing` : "", vs].filter(Boolean).join(" · ");
+
+    // What to do next: ads waiting for a yes become one line, then the first other suggestion.
+    const waitingOn = r.listings.filter((x) => x.drafts && x.status === "active").length;
+    const other = r.next.find((n) => !/aren't approved yet/.test(n));
+    const otherOn = other && r.listings.find((x) => other.includes(x.name));
+    const next = [
+      waitingOn ? `<a href="#/today"><span>${waitingOn} ${waitingOn === 1 ? "listing has" : "listings have"} ads waiting for your yes</span>${ICON.chevr}</a>` : "",
+      other ? `<a href="${otherOn ? `#/l/${otherOn.id}` : "#/listings"}"><span>${esc(other)}</span>${ICON.chevr}</a>` : "",
+    ].filter(Boolean).join("");
+
+    const rows = r.listings.filter((x) => x.running || x.leads || x.allLeads).sort((a, b) => b.leads - a.leads || b.allLeads - a.allLeads);
+    const most = Math.max(1, ...rows.map((x) => x.leads));
+    const row = (x, i) => `<button class="rp-row" data-act="reportListing" data-id="${x.id}">
+        <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i><span class="rp-mid"><b>${esc(x.name)}</b><span class="rp-track"><i class="${i === 0 && x.leads ? "top" : ""}" style="width:${x.leads ? Math.max(4, (x.leads / most) * 100) : 0}%"></i></span></span>
+        <span class="rp-n">${x.leads}</span>${ICON.chevr}</button>`;
+
+    // Which kind of ad brings the leads, as one bar split by kind, only once there are leads.
     const pats = S.me.kinds || {};
-    const most = Math.max(1, ...r.patterns.map((x) => x.leads || 0));
-    const top = r.patterns.reduce((a, x) => ((x.leads || 0) > (a?.leads || 0) ? x : a), null);
+    const won = r.patterns.filter((x) => x.leads > 0).sort((a, b) => b.leads - a.leads);
+    const wonTotal = won.reduce((n, x) => n + x.leads, 0);
+    const SEG = ["var(--gold)", "var(--plum)", "var(--lilac)", "#C3A9A2", "var(--bronze)"];
+    const winning = wonTotal ? `<h3>What's winning</h3><div class="rp-split">${won.map((x, i) => `<i style="width:${(x.leads / wonTotal) * 100}%;background:${SEG[i % SEG.length]}"></i>`).join("")}</div>
+      <div class="rp-legend">${won.map((x, i) => `<span><i style="background:${SEG[i % SEG.length]}"></i>${esc(pats[x.pattern] || x.pattern)} <b>${x.leads}</b></span>`).join("")}</div>` : "";
+
     main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap">
-      <p class="small">Last 7 days</p><div class="headline">${esc(r.headline)}</div>
-      <div class="stats"><div class="stat"><span>Leads</span><b>${r.total}</b></div><div class="stat key"><span>Cost per lead</span><b>${r.cpl != null ? money(r.cpl) : r.spend > 0 ? "No leads yet" : "Add spend"}</b></div>
-        <div class="stat"><span>Asked for a showing</span><b>${r.showings}</b></div><div class="stat"><span>Spend</span><b>${money(r.spend)}</b></div></div>
-      <h3>What I'd do next</h3><ul class="next">${r.next.length ? r.next.map((n) => `<li>${esc(n)}</li>`).join("") : "<li>Nothing to change this week.</li>"}</ul>
-      <h3>By listing</h3>${r.listings.length ? r.listings.map((x) => `<div class="rl"><div class="tx"><a href="#/l/${x.id}"><b>${esc(x.name)}</b></a>
-          <div class="small">${x.leads} ${x.leads === 1 ? "lead" : "leads"} · ${x.showings} ${x.showings === 1 ? "showing" : "showings"}${x.cpl != null ? ` · <b style="color:var(--bronze)">${money(x.cpl)} a lead</b>` : ""}</div></div>
-          <input type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$ spent" data-spend="${x.id}" aria-label="Spend on ${esc(x.name)}"></div>`).join("")
-        + `<p class="small" style="margin-top:10px">Spend fills in on its own once Meta is connected. Until then, type it in.</p>` : `<p class="small">No listings yet.</p>`}
-      <h3>What's winning</h3>
-      ${r.patterns.length ? r.patterns.map((x) => `<div class="bar-row ${top && x === top && x.leads ? "win" : ""}"><span class="nm">${esc(pats[x.pattern] || x.pattern)}</span><span class="track"><i style="width:${((x.leads || 0) / most) * 100}%"></i></span><span class="n">${x.leads || 0} ${x.leads === 1 ? "lead" : "leads"}</span></div>`).join("")
-        : `<p class="small">Every ad you approve is recorded here with the leads it brought, so you can see which kind of ad wins.</p>`}
+      <div class="head"><h1>Report</h1><p class="lede">Last 7 days</p></div>
+      <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "lead" : "leads"}</div>${sub ? `<p class="rp-sub">${esc(sub)}</p>` : ""}
+        <div class="rp-chart" role="img" aria-label="Leads each day: ${counts.join(", ")}">${bars}</div></section>
+      ${next ? `<h3>Next</h3><div class="rp-next">${next}</div>` : ""}
+      ${rows.length ? `<h3>By listing</h3><div class="rp-list">${rows.map(row).join("")}</div>` : ""}
+      ${winning}
     </div></div>`;
-    $$("[data-spend]").forEach((i) => i.addEventListener("change", async () => {
-      await api(`/api/listings/${i.dataset.spend}`, { method: "PATCH", body: { spend: Number(i.value) || 0 } });
-      viewReport();
-    }));
+  }
+
+  // One listing's week, and its spend, in a sheet: the only place spend is typed in until Meta
+  // fills it.
+  function reportSheet(t) {
+    const x = S.report && S.report.listings.find((l) => l.id === t.dataset.id);
+    if (!x) return;
+    openPop(t, `<div class="note"><b>${esc(x.name)}</b>Last 7 days</div>
+      <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per lead</div></div>
+      <form class="spendf" data-id="${x.id}"><label for="spendIn">Spent on its ads so far</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
+      <p class="small">Fills in on its own once Meta is connected.</p></form>
+      <div class="sep"></div><a href="#/l/${x.id}">${ICON.eye}Open listing</a>`, { top: true });
   }
 
   // ---------- Brand ----------
@@ -1736,6 +1779,7 @@
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
+      else if (act === "reportListing") reportSheet(t);
       else if (act === "toWaiting") {
         // The first thing waiting is right below; a tap brings it into view.
         e.preventDefault();
@@ -1871,6 +1915,18 @@
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
   window.addEventListener("resize", () => { if (!phone()) closePop(); });
   // Renaming a listing (from its card menu or its ··· menu).
+  document.addEventListener("submit", async (e) => {
+    const f = e.target.closest("form.spendf");
+    if (!f) return;
+    e.preventDefault();
+    const spend = Number($("#spendIn").value) || 0;
+    closePop();
+    try {
+      await api(`/api/listings/${f.dataset.id}`, { method: "PATCH", body: { spend } });
+      toast("Spend saved");
+      if (location.hash.startsWith("#/report")) viewReport();
+    } catch (err) { toast(err.message); }
+  });
   document.addEventListener("submit", async (e) => {
     const fb = e.target.closest("form.feedback");
     if (fb) {
