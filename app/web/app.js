@@ -1415,21 +1415,6 @@
     const diff = r.total - (r.lastWeek || 0);
     const vs = diff > 0 ? `${diff} more than the week before` : diff < 0 ? `${-diff} fewer than the week before` : r.total ? "Same as the week before" : "";
     const sub = [r.showings ? `${r.showings} asked for a showing` : "", vs].filter(Boolean).join(" · ");
-    // What to do next: ads waiting for a yes become one line, then the first other suggestion.
-    const waitingOn = r.listings.filter((x) => x.drafts && x.status === "active").length;
-    const other = r.next.find((n) => !/aren't approved yet/.test(n));
-    const otherOn = other && r.listings.find((x) => other.includes(x.name));
-    const next = !thisWeek ? "" : [
-      waitingOn ? `<a href="#/today"><span>${waitingOn} ${waitingOn === 1 ? "listing has" : "listings have"} ads waiting for your yes</span>${ICON.chevr}</a>` : "",
-      other ? `<a href="${otherOn ? `#/l/${otherOn.id}` : "#/listings"}"><span>${esc(other)}</span>${ICON.chevr}</a>` : "",
-    ].filter(Boolean).join("");
-
-    const rows = r.listings.filter((x) => x.running || x.leads || x.allLeads).sort((a, b) => b.leads - a.leads || b.allLeads - a.allLeads);
-    const most = Math.max(1, ...rows.map((x) => x.leads));
-    const row = (x, i) => `<button class="rp-row" data-act="reportListing" data-id="${x.id}">
-        <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i><span class="rp-mid"><b>${esc(listingName(S.listings.find((l) => l.id === x.id) || { title: x.name }))}</b><span class="rp-track"><i class="${i === 0 && x.leads ? "top" : ""}" style="width:${x.leads ? Math.max(4, (x.leads / most) * 100) : 0}%"></i></span></span>
-        <span class="rp-n">${x.leads}</span>${ICON.chevr}</button>`;
-
     // Which kind of ad brings the leads, as one bar split by kind, only once there are leads.
     const pats = S.me.kinds || {};
     const won = r.patterns.filter((x) => x.leads > 0).sort((a, b) => b.leads - a.leads);
@@ -1442,11 +1427,48 @@
       <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>
       <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "lead" : "leads"}</div>${sub ? `<p class="rp-sub">${esc(sub)}</p>` : ""}
         <div class="rp-chart" role="img" aria-label="Leads each day: ${counts.join(", ")}">${bars}</div></section>
-      ${next ? `<h3>Next</h3><div class="rp-next">${next}</div>` : ""}
-      ${rows.length ? `<h3>By listing</h3><div class="rp-list">${rows.map(row).join("")}</div>` : ""}
+      ${r.listings.length ? boardHtml(r) : ""}
       ${winning}
     </div></div>`;
   }
+
+  // The listings, ranked: best first by what's picked (leads, showings, cost per lead, or newest),
+  // filtered to all, running or with leads. The pick is remembered on this device.
+  const SORTS = [["leads", "Most leads"], ["showings", "Most showings"], ["cpl", "Lowest cost per lead"], ["newest", "Newest"]];
+  const FILTERS = [["all", "All"], ["running", "Running"], ["leads", "With leads"]];
+  try { S.repSort = localStorage.getItem("hk.repSort") || "leads"; S.repFilter = localStorage.getItem("hk.repFilter") || "all"; } catch { S.repSort = "leads"; S.repFilter = "all"; }
+  if (!SORTS.some(([k]) => k === S.repSort)) S.repSort = "leads";
+  if (!FILTERS.some(([k]) => k === S.repFilter)) S.repFilter = "all";
+  function boardHtml(r) {
+    const made = (x) => (S.listings.find((l) => l.id === x.id) || {}).created_at || "";
+    const pass = { all: () => true, running: (x) => x.running, leads: (x) => x.leads > 0 };
+    const count = (k) => r.listings.filter(pass[k]).length;
+    const by = S.repSort;
+    const rows = r.listings.filter(pass[S.repFilter]).sort((a, b) =>
+      by === "newest" ? made(b).localeCompare(made(a))
+        : by === "cpl" ? (a.cpl == null) - (b.cpl == null) || (a.cpl ?? 0) - (b.cpl ?? 0) || b.leads - a.leads
+          : by === "showings" ? b.showings - a.showings || b.leads - a.leads
+            : b.leads - a.leads || b.showings - a.showings || b.allLeads - a.allLeads);
+    const value = (x) => (by === "showings" ? x.showings : by === "cpl" ? x.cpl : x.leads);
+    const best = by === "cpl" ? Math.min(...rows.map((x) => x.cpl).filter((v) => v != null)) : Math.max(1, ...rows.map((x) => value(x) || 0));
+    const width = (x) => { const v = value(x); if (!v) return 0; return Math.max(4, by === "cpl" ? (best / v) * 100 : (v / best) * 100); };
+    const ranked = by !== "newest";
+    const row = (x, i) => {
+      const v = value(x), lead = ranked && i === 0 && v;
+      const facts = [by !== "showings" && x.showings ? `${x.showings} ${x.showings === 1 ? "showing" : "showings"}` : "", by !== "leads" && by !== "newest" && x.leads ? `${x.leads} ${x.leads === 1 ? "lead" : "leads"}` : "", by !== "cpl" && x.cpl != null ? `${money(x.cpl)} a lead` : ""].filter(Boolean).join(" · ");
+      const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a lead" : "") : v === 1 ? "lead" : "leads";
+      return `<button class="rb-row${v ? "" : " zero"}" data-act="reportListing" data-id="${x.id}">
+        ${ranked ? `<span class="rb-rank${lead ? " first" : ""}">${v ? i + 1 : ""}</span>` : ""}
+        <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i>
+        <span class="rb-mid"><b>${esc(listingName(S.listings.find((l) => l.id === x.id) || { title: x.name }))}</b>
+          <span class="rb-track"><i class="${lead ? "top" : ""}" style="width:${width(x)}%"></i></span>${facts ? `<span class="rb-facts">${esc(facts)}</span>` : ""}</span>
+        <span class="rb-n"><b>${by === "cpl" ? (v != null ? esc(money(v)) : "") : v || 0}</b><em>${unit}</em></span></button>`;
+    };
+    return `<section class="rb" id="board"><div class="rb-head"><h3>Listings</h3><button class="rb-sort" data-act="repSort">${esc(SORTS.find(([k]) => k === by)[1])}${ICON.chev}</button></div>
+      <div class="rb-filters">${FILTERS.map(([k, label]) => `<button class="${S.repFilter === k ? "on" : ""}" data-act="repFilter" data-k="${k}">${label}<span>${count(k)}</span></button>`).join("")}</div>
+      <div class="rb-list">${rows.length ? rows.map(row).join("") : `<p class="rb-empty">None this week.</p>`}</div></section>`;
+  }
+  const redrawBoard = () => { const b = $("#board"); if (b && S.report) b.outerHTML = boardHtml(S.report); };
 
   // Every week since the account started, as a calendar: months newest first, each row a Monday to
   // Sunday week. A tap anywhere on a row picks that week.
@@ -1849,7 +1871,7 @@
       buzz(5);
       return viewListings();
     }
-    if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=limenu],[data-act=dlmenu],[data-act=repCal]")) closePop();
+    if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=limenu],[data-act=dlmenu],[data-act=repCal],[data-act=repSort]")) closePop();
     const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
     const act = t.dataset.act;
@@ -1876,6 +1898,13 @@
         viewReport();
       }
       else if (act === "repCal") weekCalendar(t);
+      else if (act === "repSort") openPop(t, `<div class="note"><b>Sort by</b></div>${SORTS.map(([k, label]) => `<button data-act="repSortPick" data-k="${k}">${S.repSort === k ? ICON.check : "<i class=\"ck\"></i>"}${label}</button>`).join("")}`);
+      else if (act === "repSortPick" || act === "repFilter") {
+        if (act === "repSortPick") S.repSort = t.dataset.k; else S.repFilter = t.dataset.k;
+        try { localStorage.setItem("hk.repSort", S.repSort); localStorage.setItem("hk.repFilter", S.repFilter); } catch {}
+        buzz(4);
+        redrawBoard();
+      }
       else if (act === "repPick") {
         S.repMonday = new Date(Number(t.dataset.mon));
         S.repFollow = sameDay(S.repMonday, mondayOf(new Date()));

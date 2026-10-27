@@ -558,6 +558,36 @@ body.soon-leads [data-nav=leads].on,body.soon-report [data-nav=report].on{opacit
 .rp-track i{display:block;height:100%;border-radius:3px;background:var(--plum)}
 .rp-track i.top{background:var(--gold)}
 .rp-n{font-size:17px;font-weight:700;letter-spacing:-.03em;min-width:22px;text-align:right;font-variant-numeric:tabular-nums}
+/* The listings board: ranked, sortable, filtered */
+.rb{margin-top:34px}
+.rb-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rb-head h3{margin:0}
+.rb-sort{display:inline-flex;align-items:center;gap:5px;font-size:13.5px;color:var(--soft);padding:6px 8px;margin-right:-8px;border-radius:9px}
+.rb-sort svg{width:13px;height:13px;color:var(--quiet)}
+.rb-sort:hover{background:var(--hover)}
+.rb-filters{display:flex;gap:6px;margin:12px 0 6px;overflow-x:auto;scrollbar-width:none}
+.rb-filters::-webkit-scrollbar{display:none}
+.rb-filters button{flex:none;display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 11px;border-radius:999px;background:var(--side);color:var(--soft);transition:background .15s,color .15s}
+.rb-filters button span{font-size:12px;color:var(--quiet);font-variant-numeric:tabular-nums}
+.rb-filters button.on{background:var(--ink);color:var(--bg)}
+.rb-filters button.on span{color:rgba(251,248,243,.6)}
+.rb-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 2px;border-bottom:1px solid var(--line);text-align:left;transition:background .15s}
+.rb-row:active{background:var(--hover)}
+.rb-row.zero{opacity:.55}
+.rb-rank{width:22px;height:22px;flex:none;display:grid;place-items:center;font-size:13px;font-weight:600;color:var(--quiet);font-variant-numeric:tabular-nums;border-radius:50%}
+.rb-rank.first{background:var(--gold);color:var(--ox)}
+.rb-row .th{width:40px;height:40px;border-radius:10px;background:#e8dfd2 center/cover;flex:none}
+.rb-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.rb-mid b{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-track{height:5px;border-radius:3px;background:var(--side);overflow:hidden}
+.rb-track i{display:block;height:100%;border-radius:3px;background:var(--plum);transition:width .35s var(--ease)}
+.rb-track i.top{background:var(--gold)}
+.rb-facts{font-size:12.5px;color:var(--quiet);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:-1px}
+.rb-n{flex:none;min-width:44px;text-align:right;display:flex;flex-direction:column;align-items:flex-end;line-height:1.05}
+.rb-n b{font-size:20px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.rb-n em{font-style:normal;font-size:11.5px;color:var(--quiet);margin-top:2px}
+.rb-empty{font-size:14px;color:var(--quiet);padding:14px 2px}
+.pop .ck{width:17px;height:17px;flex:none}
 .rp-split{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;background:var(--side)}
 .rp-split i{display:block;height:100%}
 .rp-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:13.5px;color:var(--soft)}
@@ -838,6 +868,7 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .pop.top{top:calc(10px + var(--safe-t))!important;bottom:auto;animation:down .3s var(--ease)}
   @keyframes down{from{transform:translateY(-30px);opacity:0}}
   .pop svg{width:20px;height:20px}
+  .pop .ck{width:20px;height:20px}
   .pop .grab{display:block;width:36px;height:5px;border-radius:3px;background:var(--line2);margin:2px auto 8px;position:relative}
   /* a bigger place to put a thumb than the 5px bar itself */
   .pop .grab:before{content:"";position:absolute;inset:-14px -60px}

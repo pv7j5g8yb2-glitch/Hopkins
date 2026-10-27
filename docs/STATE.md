@@ -576,3 +576,9 @@ personal in here.
   they were made, everywhere a name appears (`numberNames`).
 * "Anytime", not "any time" (2026-10-27, Ismael), in the app, Hopkins' replies, the waitlist page
   and the reel and film sources. Settings reads "Billed monthly. Cancel anytime."
+* Report listings board (2026-10-27, Ismael): "Next" is gone. "Listings" is a ranking: rank number
+  (1st in a gold circle), photo, name, a thin bar against the best, a short line of the other
+  numbers, and the sorted number on the right. Sort: Most leads, Most showings, Lowest cost per
+  lead, Newest (no ranks). Filters: All, Running, With leads, each with its count. Every listing
+  shows, the ones at 0 faded and unranked. Sort and filter are remembered on the device. A tap
+  still opens the listing's sheet with spend.
