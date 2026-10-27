@@ -517,3 +517,5 @@ personal in here.
   rename, feedback, the Pro card) follows the finger and closes on a swipe down, or up for the ones
   that open at the top. A short flick is enough, a small pull springs back, taps and sideways swipes
   (colour swatches) still work. Checked on an iPhone sized screen with real touch events.
+* Listings without a photo (2026-10-27, Ismael): the oxblood cover shows only the ground and
+  pebbles, no price or beds and baths on it, on Today and Listings.
