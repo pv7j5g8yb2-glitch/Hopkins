@@ -129,7 +129,8 @@ export async function readLink(url) {
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
-    const html = (await res.text()).slice(0, 600_000);
+    // Zillow pages run to about 800 KB, with the photo list near the end.
+    const html = (await res.text()).slice(0, 3_000_000);
     const meta = (name) => {
       const re = new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']*)["']|<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${name}["']`, "i");
       const m = html.match(re);
@@ -139,7 +140,110 @@ export async function readLink(url) {
     const description = meta("og:description") || meta("description");
     const image = meta("og:image");
     if (!title && !description) return null;
-    return { title: title ? decode(title).trim() : null, description: description || null, image: image || null };
+    const facts = pageFacts(html);
+    return { title: title ? decode(title).trim() : null, description: [description, facts].filter(Boolean).join("\n") || null, image: image || null, photos: photosFrom(html) };
+  } catch {
+    return null;
+  }
+}
+
+// The listing's own photos from its page (2026-10-27), at most 12, so a link alone is enough.
+// Zillow keeps them in the page's data (property.responsivePhotos, inside __NEXT_DATA__), each
+// in several sizes: 1152 wide for the ads (they're 1080 wide) and 384 for the thumbnail. The page also holds
+// nearby homes' photos, which are left alone. Other sites usually list theirs in schema.org
+// JSON-LD; failing that, the page's og:image.
+export function photosFrom(html, max = 12) {
+  const out = [];
+  const add = (url, thumb = null) => {
+    if (typeof url === "string" && /^https:\/\//.test(url) && !out.some((p) => p.url === url)) out.push({ url: decode(url), thumb: thumb ? decode(thumb) : null });
+  };
+  const nd = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (nd) {
+    try {
+      for (const ph of firstArray(JSON.parse(nd[1]), "responsivePhotos") || []) {
+        const sizes = (ph.mixedSources?.jpeg || []).filter((j) => j.url).sort((a, b) => a.width - b.width);
+        const upTo = (w) => (sizes.filter((j) => j.width <= w).pop() || sizes[0])?.url;
+        add(upTo(1152) || ph.url, upTo(384));
+      }
+    } catch {}
+  }
+  if (!out.length) {
+    for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+      try { images(JSON.parse(m[1]), add); } catch {}
+    }
+  }
+  if (!out.length) for (const m of html.matchAll(/<meta[^>]+(?:property|name)=["']og:image(?::url)?["'][^>]*content=["']([^"']+)["']/gi)) add(m[1]);
+  return out.slice(0, max);
+}
+
+// The listing's facts from Zillow's page data: price, beds, baths, size, year and the agent's own
+// description, which its title and summary leave out (Hopkins asked for a price the page had).
+export function pageFacts(html) {
+  const nd = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!nd) return null;
+  let p;
+  try { p = firstOwner(JSON.parse(nd[1]), "responsivePhotos"); } catch { return null; }
+  if (!p) return null;
+  const n = (v) => (typeof v === "number" && v > 0 ? v : null);
+  const place = [p.streetAddress, p.city, p.state].filter((x) => typeof x === "string" && x).join(", ");
+  const bits = [
+    place && `${place}.`,
+    n(p.price) && `Price $${n(p.price).toLocaleString("en-US")}.`,
+    [n(p.bedrooms) && `${p.bedrooms} bed`, n(p.bathrooms) && `${p.bathrooms} bath`, n(p.livingArea) && `${n(p.livingArea).toLocaleString("en-US")} sq ft`].filter(Boolean).join(", ").replace(/.$/, "$&."),
+    n(p.yearBuilt) && `Built in ${p.yearBuilt}.`,
+    typeof p.description === "string" && p.description.slice(0, 2500),
+  ].filter(Boolean);
+  return bits.length ? bits.join(" ") : null;
+}
+
+// The object that holds a non empty array under `key` (Zillow's property).
+function firstOwner(o, key, depth = 0) {
+  if (depth > 12 || o == null) return null;
+  if (typeof o === "string") {
+    if (o.length > 50 && o[0] === "{" && o.includes(`"${key}"`)) { try { return firstOwner(JSON.parse(o), key, depth + 1); } catch { return null; } }
+    return null;
+  }
+  if (typeof o !== "object") return null;
+  if (Array.isArray(o[key]) && o[key].length) return o;
+  for (const k in o) { const r = firstOwner(o[k], key, depth + 1); if (r) return r; }
+  return null;
+}
+
+// The first non empty array under `key`, looking inside JSON kept as text too (Zillow nests
+// its property data as a JSON string).
+function firstArray(o, key, depth = 0) {
+  if (depth > 12 || o == null) return null;
+  if (typeof o === "string") {
+    if (o.length > 50 && o[0] === "{" && o.includes(`"${key}"`)) { try { return firstArray(JSON.parse(o), key, depth + 1); } catch { return null; } }
+    return null;
+  }
+  if (typeof o !== "object") return null;
+  if (Array.isArray(o[key]) && o[key].length) return o[key];
+  for (const k in o) { const r = firstArray(o[k], key, depth + 1); if (r) return r; }
+  return null;
+}
+
+function images(o, add, depth = 0) {
+  if (depth > 8 || !o || typeof o !== "object") return;
+  if (Array.isArray(o)) { o.forEach((x) => images(x, add, depth + 1)); return; }
+  const im = o.image || o.photo;
+  for (const x of Array.isArray(im) ? im : im ? [im] : []) typeof x === "string" ? add(x) : add(x?.url || x?.contentUrl);
+  for (const k in o) if (k !== "image" && k !== "photo") images(o[k], add, depth + 1);
+}
+
+// One photo from a link: only real JPEG, PNG or WebP files, at most 6 MB, from a public address.
+export async function downloadImage(url) {
+  let u;
+  try { u = new URL(url); } catch { return null; }
+  if (u.protocol !== "https:" || /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1)/.test(u.hostname)) return null;
+  try {
+    const res = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0 (compatible; HopkinsBot/0.1)", Accept: "image/jpeg,image/png,image/webp" }, signal: AbortSignal.timeout(10000) });
+    if (!res.ok || Number(res.headers.get("content-length") || 0) > 6_000_000) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 6_000_000) return null;
+    const mime = buf[0] === 0xff && buf[1] === 0xd8 ? "image/jpeg" : buf.subarray(0, 4).toString("hex") === "89504e47" ? "image/png"
+      : buf.subarray(0, 4).toString() === "RIFF" && buf.subarray(8, 12).toString() === "WEBP" ? "image/webp" : null;
+    return mime ? { buf, mime } : null;
   } catch {
     return null;
   }

@@ -4,7 +4,7 @@
 
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
-import { parseListingText, readLink, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
+import { parseListingText, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
@@ -207,6 +207,9 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
     await run(`UPDATE photos SET listing_id = ?, position = ?, label = COALESCE(label, ?) WHERE id = ? AND workspace_id = ?`, [id, i, label, pid, ws.id]);
   }
 
+  // A link with no photos sent: the listing's own photos come from its page.
+  if (!photoIds.length && linkInfo?.photos?.length) await importPhotos(ws, id, linkInfo.photos);
+
   for (const m of history) await postMessage(ws.id, id, m.role, "text", m.body);
   const shown = [rest, link].filter(Boolean).join("\n");
   // Photos sent on their own are just photos, with no made up words.
@@ -221,6 +224,17 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   }
   await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest) });
   return fresh;
+}
+
+// Photos from the listing's page, downloaded once and kept like uploaded ones, in the page's order.
+async function importPhotos(ws, listingId, list) {
+  const got = await Promise.all(list.map(async (p) => ({ full: await downloadImage(p.url), thumb: p.thumb ? await downloadImage(p.thumb) : null })));
+  let pos = Number((await get(`SELECT COALESCE(MAX(position), -1) + 1 AS p FROM photos WHERE listing_id = ?`, [listingId])).p);
+  for (const { full, thumb } of got) {
+    if (!full) continue;
+    await run(`INSERT INTO photos (id, workspace_id, listing_id, kind, label, position, mime, data, thumb, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [randomUUID(), ws.id, listingId, "listing", null, pos++, full.mime, full.buf, thumb?.mime === "image/jpeg" ? thumb.buf : null, nowIso()]);
+  }
 }
 
 const LINK_BLOCKED = "I couldn't open that link (a lot of listing sites block other apps). Paste the description, or tell me the price, beds, baths and the best thing about it, and I'll make the ads.";
@@ -375,6 +389,9 @@ function setProblems(ads, ctx) {
     .join(". ");
 }
 
+// "**1** highlights the porch" reads as a typo: a bare bold number is always "**Ad 1**".
+export const adNumbers = (text) => text.replace(/\bAd \*\*([1-5])\*\*/g, "**Ad $1**").replace(/(?<!Ad )\*\*([1-5])\*\*/g, "**Ad $1**");
+
 // A set written by the model, checked, fixed once if needed, and laid over the built-in
 // writer's set (used for anything the model left out or got wrong). Returns { ads, reply }.
 async function writtenSet(ctx, built, { count, brief = "", keep = [], extra = "" } = {}) {
@@ -392,7 +409,7 @@ async function writtenSet(ctx, built, { count, brief = "", keep = [], extra = ""
     const a = r.ads.find((x) => x.version === b.version) || r.ads[i];
     return a ? { ...b, ...guarded({ ...b, ...normalizeAI(a, ctx.photos, b) }, b, guardCtx), version: b.version } : b;
   });
-  return { ads, reply: r.reply ? polishChat(r.reply) : null };
+  return { ads, reply: r.reply ? adNumbers(polishChat(r.reply)) : null };
 }
 
 // How many ads the agent asked for in so many words ("just one ad", "two ads"), else null.
@@ -689,6 +706,7 @@ async function editFirst(ws, listing, msg, text) {
   const link = (text.match(URL_RE) || [])[0] || null;
   const rest = link ? text.replace(link, " ").trim() : text.trim();
   const linkInfo = link ? await readLink(link) : null;
+  if (linkInfo?.photos?.length && !(await get(`SELECT 1 FROM photos WHERE listing_id = ? AND kind = 'listing'`, [listing.id]))) await importPhotos(ws, listing.id, linkInfo.photos);
   const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
   const parsed = parseListingText(source);
   const facts = { address: null, city: null, area: null, price: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };

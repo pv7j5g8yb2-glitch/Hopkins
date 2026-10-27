@@ -720,7 +720,7 @@
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
-      const finish = showWork([...(files.length ? [`Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}`] : []), "Reading the listing", ...(files.length ? ["Picking the best photo for each ad"] : []), "Writing the ads", "Checking the wording"]);
+      const finish = showWork([...(files.length ? [`Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}`] : []), "Reading the listing", ...(!files.length && /https?:\/\//i.test(text) ? ["Getting the photos from the link"] : []), ...(files.length ? ["Picking the best photo for each ad"] : []), "Writing the ads", "Checking the wording"]);
       const photoIds = [], photoNames = {};
       for (const f of files) {
         const r = await uploadPhoto(f);

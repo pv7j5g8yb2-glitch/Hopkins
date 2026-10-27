@@ -136,3 +136,22 @@ test("chat replies keep their Markdown shape while the words get the house rules
   const out = polishChat("**Version 2** — my pick.\n\n* move-in ready\n- a two‑week run\n\n| Version | Angle |\n|---|---|\n| 1 | The life — porch |");
   assert.equal(out, "**Version 2**, my pick.\n\n- move in ready\n- a two week run\n\n| Version | Angle |\n|---|---|\n| 1 | The life, porch |");
 });
+
+test("a listing page's own photos and facts: Zillow's page data, else JSON-LD, else og:image", async () => {
+  const { photosFrom, pageFacts } = await import("../src/listing.js");
+  const shot = (id) => ({ url: `https://photos.zillowstatic.com/fp/${id}-p_d.jpg`, mixedSources: { jpeg: [192, 384, 1152, 1536].map((w) => ({ url: `https://photos.zillowstatic.com/fp/${id}-cc_ft_${w}.jpg`, width: w })) } });
+  const property = { streetAddress: "12 Elm St", city: "Austin", state: "TX", price: 585000, bedrooms: 3, bathrooms: 2, livingArea: 1840, yearBuilt: 1998,
+    description: "Big back yard with a pecan tree.", responsivePhotos: [shot("aaa"), shot("bbb")] };
+  // Zillow keeps the property as JSON text inside the page data, next to nearby homes' photos.
+  const cache = JSON.stringify({ "ViewQuery{zpid}": { property, nearby: { responsivePhotos: [shot("zzz")] } } });
+  const zillow = `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { componentProps: { gdpClientCache: cache } } } })}</script></html>`;
+  assert.deepEqual(photosFrom(zillow), [
+    { url: "https://photos.zillowstatic.com/fp/aaa-cc_ft_1152.jpg", thumb: "https://photos.zillowstatic.com/fp/aaa-cc_ft_384.jpg" },
+    { url: "https://photos.zillowstatic.com/fp/bbb-cc_ft_1152.jpg", thumb: "https://photos.zillowstatic.com/fp/bbb-cc_ft_384.jpg" },
+  ]);
+  assert.equal(pageFacts(zillow), "12 Elm St, Austin, TX. Price $585,000. 3 bed, 2 bath, 1,840 sq ft. Built in 1998. Big back yard with a pecan tree.");
+  const ld = `<script type="application/ld+json">{"@type":"SingleFamilyResidence","image":["https://x.test/1.jpg",{"url":"https://x.test/2.jpg"}]}</script><meta property="og:image" content="https://x.test/og.jpg">`;
+  assert.deepEqual(photosFrom(ld).map((p) => p.url), ["https://x.test/1.jpg", "https://x.test/2.jpg"]);
+  assert.deepEqual(photosFrom(`<meta property="og:image" content="https://x.test/og.jpg">`).map((p) => p.url), ["https://x.test/og.jpg"]);
+  assert.deepEqual(photosFrom(`<meta property="og:image" content="http://insecure.test/a.jpg">`), []);
+});

@@ -358,7 +358,7 @@ const SET_SCHEMA = {
   properties: {
     insight: { type: "string", description: "First, in one or two sentences: what's genuinely different about this home and who is most likely to buy it. This decides the ideas." },
     ads: { type: "array", items: SET_AD_SCHEMA },
-    reply: { type: "string", description: "To the agent, like a colleague handing them over: what you noticed about the home and what each ad tries, calling them Ad 1, Ad 2 and so on (bold the numbers), in two to four plain sentences. No question about running, posting or paying; at most a short invite to change anything." },
+    reply: { type: "string", description: "To the agent, like a colleague handing them over: what you noticed about the home and what each ad tries, calling them **Ad 1**, **Ad 2** and so on (always the word Ad with its number, both in bold, never a bare number), in two to four plain sentences. No question about running, posting or paying; at most a short invite to change anything." },
   },
   required: ["insight", "ads", "reply"],
   additionalProperties: false,

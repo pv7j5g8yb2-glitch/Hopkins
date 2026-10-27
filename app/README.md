@@ -16,7 +16,11 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
 * **Brand.** Business name, colors, logo, type, voice. Every ad follows it. Set on first sign in.
 * **A listing in.** Photos (resized in the browser) plus the link or the description. Hopkins
   reads the price, beds, baths, size, address, area and features. Links: it reads what the
-  page says about itself; most portals block that, and then it asks for the details.
+  page says about itself, and with no photos sent it brings in up to 12 of the listing's own
+  photos from the page. Zillow works fully (checked 2026-10-27): the photos (1152 wide, with
+  384 wide thumbnails), price, beds, baths, size, year built and the agent's description, from
+  the page's own data, leaving out the nearby homes' photos on the same page. Other sites: photos
+  from schema.org JSON-LD, else og:image. A site that blocks the request gets asked for the details.
 * **Ads out, each its own idea.** Hopkins works out what's different about this home and who'd
   buy it, then picks ideas that fit (3 by default, or as many as the agent asks for, up to 5).
   Each ad is named after its idea ("Wraparound porch", "Under $650K"), and the agent can add

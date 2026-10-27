@@ -436,3 +436,10 @@ personal in here.
   "Writing 3 different ads"): the app guessed a listing from any digit. It now needs what the
   server looks for (a price, beds, baths, size, a street address, a link or photos), so questions
   get the thinking mark and an answer. The step reads "Writing the ads", since the count varies.
+* Photos from a link (2026-10-27, Ismael: a Zillow link only gave the address, beds, baths and
+  size): Hopkins now brings in up to 12 of the listing's own photos from the page when no photos
+  are sent, plus the price, year built and the agent's own description, from Zillow's page data
+  (`photosFrom`, `pageFacts` in listing.js). Pages are read up to 3 MB (Zillow's run to 800 KB with
+  the photos near the end; the old 600 KB cut was why). Tested on a live Zillow listing with Groq:
+  12 photos in under a second, ads on the real porch and front, price read. The first reply's
+  "**1** highlights" is now always "**Ad 1**". Other portals (Redfin, Realtor.com) untested.
