@@ -77,7 +77,7 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
 
 Approved ads wait with the status "waiting on Meta". Nothing pretends to be live. Next: the
 Meta app (Marketing API, Housing category, lead ads), App Review, and pulling real spend and
-leads in. Billing (Stripe) isn't built yet. Pro is paid monthly from the day they pay.
+leads in. Billing (Stripe) isn't built yet. Pro is billed monthly from the day they sign up.
 
 ## Run it
 
