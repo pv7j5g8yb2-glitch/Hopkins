@@ -285,7 +285,66 @@
     pop.style.left = left + "px";
     pop.style.top = (below ? r.bottom + 6 : r.top - h - 6) + "px";
   }
-  const closePop = () => { $("#pop").classList.remove("on"); $("#sheetBg").classList.remove("on"); };
+  const closePop = () => {
+    const pop = $("#pop");
+    pop.classList.remove("on");
+    pop.style.transform = pop.style.transition = "";
+    $("#sheetBg").classList.remove("on");
+    $("#sheetBg").style.opacity = "";
+  };
+
+  // On a phone every sheet can be swiped away like an iOS one: down for a sheet at the bottom, up
+  // for one at the top (Ismael, 2026-10-27). It follows the finger, the backdrop fades with it, and
+  // a short flick is enough. Taps, scrolling inside the sheet and sideways swipes are left alone.
+  (function swipeSheets() {
+    const pop = $("#pop"), bg = $("#sheetBg");
+    let y0 = 0, x0 = 0, dy = 0, drag = false, armed = false, up = false, v = 0, lastY = 0, lastT = 0;
+    pop.addEventListener("touchstart", (e) => {
+      if (!phone() || !pop.classList.contains("on") || e.touches.length > 1) return;
+      up = pop.classList.contains("top");
+      // Inside a sheet that has scrolled, a pull only scrolls it back, unless it starts on the handle.
+      armed = Boolean(e.target.closest(".grab")) || (up ? true : pop.scrollTop <= 0);
+      y0 = lastY = e.touches[0].clientY; x0 = e.touches[0].clientX; lastT = Date.now(); dy = 0; v = 0; drag = false;
+    }, { passive: true });
+    pop.addEventListener("touchmove", (e) => {
+      if (!armed) return;
+      const my = e.touches[0].clientY - y0, mx = e.touches[0].clientX - x0;
+      if (!drag) {
+        if (Math.abs(my) < 6 && Math.abs(mx) < 6) return;
+        // Sideways (the colour swatches) or the wrong way: not a dismiss.
+        if (Math.abs(mx) > Math.abs(my) || (up ? my > 0 : my < 0)) { armed = false; return; }
+        drag = true;
+        pop.style.transition = "none";
+        document.activeElement?.blur?.();
+      }
+      e.preventDefault();
+      // How fast the finger is going right now, so a quick flick at the end counts.
+      const now = Date.now(), y = e.touches[0].clientY;
+      if (now > lastT) { v = 0.6 * ((y - lastY) / (now - lastT)) + 0.4 * v; lastY = y; lastT = now; }
+      dy = up ? Math.min(0, my) : Math.max(0, my);
+      pop.style.transform = `translateY(${dy}px)`;
+      bg.style.opacity = String(Math.max(0, 1 - Math.abs(dy) / (pop.offsetHeight || 400)));
+    }, { passive: false });
+    const end = () => {
+      if (!drag) { armed = false; return; }
+      drag = armed = false;
+      const dist = Math.abs(dy), speed = up ? -v : v;
+      if (dist > Math.min(120, pop.offsetHeight * 0.3) || (speed > 0.4 && dist > 20)) {
+        pop.style.transition = "transform .22s cubic-bezier(.2,.8,.2,1)";
+        pop.style.transform = `translateY(${up ? -(pop.offsetHeight + 40) : pop.offsetHeight + 40}px)`;
+        bg.style.transition = "opacity .22s";
+        bg.style.opacity = "0";
+        buzz(5);
+        setTimeout(() => { bg.style.transition = ""; closePop(); }, 220);
+      } else {
+        pop.style.transition = "transform .3s cubic-bezier(.2,1.2,.3,1)";
+        pop.style.transform = "";
+        bg.style.opacity = "";
+      }
+    };
+    pop.addEventListener("touchend", end);
+    pop.addEventListener("touchcancel", end);
+  })();
   // The sidebar ••• a menu came from, so Rename and Delete open in the same place.
   const from = (id) => (S.menuFrom && S.menuFrom.isConnected && S.menuFrom.dataset.id === id ? S.menuFrom : null);
 

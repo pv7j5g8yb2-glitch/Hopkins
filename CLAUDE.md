@@ -143,7 +143,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   text weights, no extra explanations on screen. Check new screens against this before shipping.
 * **Phones first (Ismael, 2026-10-24):** most use will be on a phone. Design and check every screen at
   iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar, the main
-  action fixed at the bottom within thumb reach, menus as bottom sheets, inputs at 16px (smaller makes
+  action fixed at the bottom within thumb reach, menus as bottom sheets that swipe away (down, or up
+  for a sheet at the top, Ismael 2026-10-27), inputs at 16px (smaller makes
   iPhones zoom), room for the home bar, no suggested replies or reply chips: the empty box says "Ask Hopkins anything" until there's a conversation, then "Reply to Hopkins" (Ismael, 2026-10-27), show the work while
   Hopkins thinks, small rewards on real moments (approved, first ads), never a blank screen.
 * **Checking a fix (lesson, 2026-10-24):** test against a slowed down server (the live one on Render

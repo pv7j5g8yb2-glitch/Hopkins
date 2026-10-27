@@ -770,7 +770,10 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .pop.top{top:calc(10px + var(--safe-t))!important;bottom:auto;animation:down .3s var(--ease)}
   @keyframes down{from{transform:translateY(-30px);opacity:0}}
   .pop svg{width:20px;height:20px}
-  .pop .grab{display:block;width:36px;height:5px;border-radius:3px;background:var(--line2);margin:2px auto 8px}
+  .pop .grab{display:block;width:36px;height:5px;border-radius:3px;background:var(--line2);margin:2px auto 8px;position:relative}
+  /* a bigger place to put a thumb than the 5px bar itself */
+  .pop .grab:before{content:"";position:absolute;inset:-14px -60px}
+  .pop.on{touch-action:pan-y;will-change:transform}
   .sheet-bg{position:fixed;inset:0;z-index:85;background:rgba(42,15,20,.28);animation:fade .2s}
   .sheet-bg.on{display:block}
   /* on phones the banner is glass, full width like iOS */
