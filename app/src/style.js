@@ -3,7 +3,8 @@
 // the chat (a model or the built-in rules) or the Style sheet, so nothing odd ever gets saved.
 
 export const LAYOUTS = ["fade", "top", "split", "card", "frame"];
-const ENUMS = { font: ["modern", "classic"], layout: LAYOUTS, align: ["left", "center"], focus: ["top", "center", "bottom"], fade: ["light", "normal", "strong"] };
+// face: the agent's own photo in the bottom right corner (2026-10-27, Ismael asked for his face).
+const ENUMS = { font: ["modern", "classic"], layout: LAYOUTS, align: ["left", "center"], focus: ["top", "center", "bottom"], fade: ["light", "normal", "strong"], face: ["on", "off"] };
 const COLOURS = ["bg", "accent", "text"];
 export const STYLE_KEYS = [...COLOURS, ...Object.keys(ENUMS), "size"];
 
@@ -77,6 +78,7 @@ export function describeStyle(style = {}) {
   if (style.font) parts.push(`${style.font} font`);
   if (style.size) parts.push(`text size ${style.size}x`);
   if (style.align) parts.push(`${style.align} aligned`);
+  if (style.face === "on") parts.push("the agent's photo in the bottom right corner");
   if (style.focus) parts.push(`photo shows the ${style.focus}`);
   if (style.fade) parts.push(`${style.fade} fade`);
   return parts.join(", ") || "brand defaults";
@@ -97,11 +99,13 @@ const ASKED = {
   // Only when a colour is said near the words, not for "put the text at the top".
   text: /(text|words|writing|letters|headline|title|font)( colou?r)?\s+(in |to |be |is |that's |)?(black|white|cream|ivory|gold|navy|dark|light|#[0-9a-f]{3,6}|[a-z]+ colou?r)|\b(black|white|cream|ivory|gold|navy|dark|light|#[0-9a-f]{3,6})\s+(text|words|writing|letters|headline|title|font)|font colou?r|text colou?r|readab|contrast|hard to read|can't read/,
   font: /font|serif|classic|modern|type|typeface|luxur|elegant|editorial|bold|look|style/,
-  layout: /layout|top|bottom|split|card|frame|border|fade|full|bleed|block|photo (above|on top)|arrange|design/,
+  // "My face in the bottom right" is about the photo of them, not the layout.
+  layout: /layout|\b(top|bottom)\b(?!\s*(right|left|corner))|split|card|frame|border|fade|full|bleed|block|photo (above|on top)|arrange|design/,
   size: /big|small|size|larger|tiny|huge|bolder/,
   align: /cent(er|re)|left|align|middle/,
   focus: /crop|sky|roof|show more|top of the photo|bottom of the photo|focus|photo higher|photo lower|lawn|driveway/,
   fade: /fade|overlay|gradient|tint|shadow|darker|lighter|dim/,
+  face: /face|headshot|my (photo|picture|pic)|(photo|picture|pic) of me|myself|me in the/,
 };
 export function onlyAsked(changes, message = "") {
   if (changes.reset) return changes;
@@ -131,6 +135,7 @@ export function sayLook(changes = {}, sizeStep = 0) {
   if (changes.align) parts.push(changes.align === "center" ? "centered text" : "left aligned text");
   if (changes.focus) parts.push(changes.focus === "center" ? "the photo centered" : `more of the ${changes.focus} of the photo`);
   if (changes.fade) parts.push(`a ${changes.fade === "normal" ? "normal" : changes.fade === "light" ? "lighter" : "stronger"} fade`);
+  if (changes.face) parts.push(changes.face === "on" ? "your photo in the bottom right corner" : "no photo of you");
   if (!parts.length) return "the new look";
   return parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
 }

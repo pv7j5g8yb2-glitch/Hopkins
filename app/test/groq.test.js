@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { boot, client } from "./helpers.js";
+import { boot, client, TINY_JPEG } from "./helpers.js";
 
 // With only GROQ_API_KEY set (the free option), the chat goes to Groq. A fake fetch stands in
 // for the API so this checks the request and what Hopkins does with the answer.
@@ -56,7 +56,7 @@ test("Groq runs the chat when it's the only key", async () => {
   const before = calls.length;
   const v = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "it also has solar panels", version: 3 });
   assert.equal(calls.length - before, 2);
-  assert.equal(v.json.messages.at(-1).body, "Solar panels are in. I put them in version 3.");
+  assert.equal(v.json.messages.at(-1).body, 'On **Ad 3**, the line on the photo now reads "Solar on the roof."');
   assert.match(v.json.listing.description, /solar panels/);
 
   // Over the per minute limit with a short wait: it waits and answers properly.
@@ -215,4 +215,97 @@ test("\"the same\" in a chat from before looks were remembered copies the ad tha
   assert.equal(r.json.ads[0].overlay, l.json.ads[0].overlay);
   assert.match(r.json.messages.at(-1).body, /grey background/);
   assert.doesNotMatch(r.json.messages.at(-1).body, /didn't change anything/);
+});
+
+test("exact edits: a dictated line goes in as typed, only the line changes, and the full stop comes off and stays off", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "exact@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  const three = l.json.ads[2];
+  const calls0 = calls.length;
+  // Dictated: no model call, only Ad 3's line changes, exactly as typed.
+  const d = await c("POST", `/api/listings/${id}/messages`, { text: `change the text of ${three.overlay.replace(/\.$/, "").toLowerCase()} to $10,000/mo`, version: 1 });
+  assert.equal(calls.length, calls0, "no model call for an exact edit");
+  assert.equal(d.json.ads[2].overlay, "$10,000/mo");
+  assert.equal(d.json.ads[2].primary_text, three.primary_text);
+  assert.equal(d.json.messages.at(-1).body, 'On **Ad 3**, the line on the photo now reads "$10,000/mo".');
+  // A described change isn't taken literally.
+  next = [500, 500, 500];
+  const m = await c("POST", `/api/listings/${id}/messages`, { text: "change the line to mention the yard", version: 1 });
+  assert.notEqual(m.json.ads[0].overlay, "mention the yard");
+  // The full stop comes off Ad 1, and a later model edit that echoes the line doesn't put it back.
+  const dot = await c("POST", `/api/listings/${id}/messages`, { text: "remove the dot", version: 1 });
+  assert.doesNotMatch(dot.json.ads[0].overlay, /\.$/);
+  const line = dot.json.ads[0].overlay;
+  const turn = (ads) => ({ reply: "Ad 1 is navy now.", action: "revise", version: 1, remove: [], moment: "none", ads, listing_patch: null, budget: 0, days: 0 });
+  next = [turn([{ ...dot.json.ads[0], kind: "life", photo_number: 0, overlay: line, style: { bg: "#1F2A44", accent: "", text: "", font: "", layout: "", size: 0, align: "", focus: "", fade: "", reset: false } }])];
+  const navy = await c("POST", `/api/listings/${id}/messages`, { text: "make ad 1 navy", version: 1 });
+  assert.equal(navy.json.ads[0].overlay, line);
+  assert.equal(navy.json.messages.at(-1).body, "**Ad 1** now has a navy background.");
+});
+
+test("a reply never claims an old change as new", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "claims@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  next = [{ reply: "I set both Ad 1 and Ad 3 to a grey background and removed the period.", action: "none", version: 0, remove: [], moment: "none", ads: [], listing_patch: null, budget: 0, days: 0 }];
+  const r = await c("POST", `/api/listings/${l.json.listing.id}/messages`, { text: "wtf are you saying mannnn", version: 1 });
+  const body = r.json.messages.at(-1).body;
+  assert.doesNotMatch(body, /I set both/);
+  assert.match(body, /haven't changed anything/);
+});
+
+test("the agent's photo on an ad: asks for it first when there isn't one, puts it on when there is, and Hopkins never blames \"the platform\"", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "face@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  const ad = (v) => ({ ...l.json.ads.find((x) => x.version === v), kind: "life", photo_number: 0 });
+  const style = (o) => ({ bg: "", accent: "", text: "", font: "", layout: "", size: 0, align: "", focus: "", fade: "", face: "", reset: false, ...o });
+  const turn = (reply, ads) => ({ reply, action: ads.length ? "revise" : "none", version: 0, remove: [], moment: "none", ads, listing_patch: null, budget: 0, days: 0 });
+  // No photo of them yet: nothing goes on, and the reply says where to add one.
+  next = [turn("The platform only lets me use the photos you already uploaded.", [])];
+  const no = await c("POST", `/api/listings/${id}/messages`, { text: "can you add a picture of my face in the bottom right", version: 1 });
+  assert.doesNotMatch(no.json.messages.at(-1).body, /platform/i);
+  assert.match(no.json.messages.at(-1).body, /Settings, Profile/);
+  assert.ok(no.json.ads.every((x) => x.style.face !== "on"));
+  // With their photo added, the model's face: on goes through and the reply says so.
+  const av = await c("POST", "/api/photos", { data: TINY_JPEG, mime: "image/jpeg", kind: "avatar", name: "me.jpg" });
+  await c("PATCH", "/api/account", { avatar_id: av.json.id });
+  next = [turn("Done.", [{ ...ad(1), style: style({ face: "on" }) }])];
+  const yes = await c("POST", `/api/listings/${id}/messages`, { text: "now add my face in the bottom right of ad 1", version: 1 });
+  assert.equal(yes.json.ads[0].style.face, "on");
+  assert.match(yes.json.messages.at(-1).body, /\*\*Ad 1\*\* now has your photo in the bottom right corner/);
+  // Without the model, the rules read it too.
+  next = [500, 500, 500];
+  const rules = await c("POST", `/api/listings/${id}/messages`, { text: "put my headshot on ad 2", version: 2 });
+  assert.equal(rules.json.ads[1].style.face, "on");
+});
+
+test("a copied line keeps its own punctuation, and asking for a face in the bottom right isn't a layout change", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "copy@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  const three = l.json.ads[2];
+  // "close to ..." style lines: the dictated split comes after the ad's real line.
+  const said = `change the text of ${three.overlay.replace(/\.$/, "").toLowerCase()} to santa monica to $10,000/mo`;
+  const d = await c("POST", `/api/listings/${id}/messages`, { text: said, version: 1 });
+  assert.equal(d.json.ads[2].overlay, "santa monica to $10,000/mo");
+  const again = await c("POST", `/api/listings/${id}/messages`, { text: "change the text of santa monica to $10,000/mo to Near the beach for $10,000/mo", version: 1 });
+  assert.equal(again.json.ads[2].overlay, "Near the beach for $10,000/mo");
+  const ad = (v) => ({ ...again.json.ads.find((x) => x.version === v), kind: "life", photo_number: 0 });
+  const style = (o) => ({ bg: "", accent: "", text: "", font: "", layout: "", size: 0, align: "", focus: "", fade: "", face: "", reset: false, ...o });
+  next = [{ reply: "Done.", action: "revise", version: 1, remove: [], moment: "none", ads: [{ ...ad(1), overlay: "Near the beach for $10,000/mo.", style: style({}) }], listing_patch: null, budget: 0, days: 0 }];
+  const copy = await c("POST", `/api/listings/${id}/messages`, { text: "now change it for ad 1 too", version: 1 });
+  assert.equal(copy.json.ads[0].overlay, "Near the beach for $10,000/mo");
+  next = [{ reply: "Done.", action: "revise", version: 1, remove: [], moment: "none", ads: [1, 2, 3].map((v) => ({ ...ad(v), overlay: copy.json.ads[v - 1].overlay, style: style({ layout: "fade" }) })), listing_patch: null, budget: 0, days: 0 }];
+  const face = await c("POST", `/api/listings/${id}/messages`, { text: "can you add a picture of my face in the bottom right", version: 1 });
+  assert.deepEqual(face.json.ads.map((x) => x.style.layout), copy.json.ads.map((x) => x.style.layout));
+  assert.match(face.json.messages.at(-1).body, /^To put your photo on the ads, add it first/);
 });

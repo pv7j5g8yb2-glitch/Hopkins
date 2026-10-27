@@ -50,6 +50,7 @@ export function readStyle(low) {
   else if (/\b(show|crop|see|keep)\b.*\b(more of )?(the )?(bottom|lawn|garden|ground|driveway|front door)\b/.test(low)) style.focus = "bottom";
   if (/\b(lighter|less|softer|subtle|weaker)\b.*\b(fade|overlay|shadow|gradient|tint)\b/.test(low)) style.fade = "light";
   else if (/\b(stronger|darker|more|heavier)\b.*\b(fade|overlay|gradient|tint)\b/.test(low)) style.fade = "strong";
+  if (/\b(my (face|photo|picture|pic|headshot)|(photo|picture|pic) of (me|myself)|headshot|me in the (corner|ad))\b/.test(low)) style.face = /\b(remove|take (off|out|away)|without|no|delete|hide|get rid)\b/.test(low) ? "off" : "on";
   const clean = cleanStyle(style);
   if (!Object.keys(clean).length && !sizeStep) {
     // Asked for a different look with nothing specific: say what's possible, briefly.
@@ -67,6 +68,9 @@ export function targetVersions(text, selected, ads = []) {
 
 // The versions a message names ("version 2", "the first one", "all of them"), or null when it
 // names none.
+// "change the line to mention the pool" describes a line; it isn't one.
+export const DESCRIBES = /^(something|anything|more|less|a bit|a little|be|sound|feel|look|make|the same|warmer|shorter|longer|punchier|catchier|better|different|another|mention|include|talk|focus|say something|highlight|feature|reflect|show|use|emphasi[sz]e|match|fit|reference|lead|point|sell|call out|play up)\b/i;
+
 export function namedVersions(text, ads = []) {
   const t = String(text || "").toLowerCase();
   // An ad called by its name ("the porch one", "make Under $650K shorter").
@@ -159,11 +163,13 @@ export function readIntent(text, { selected = 1, photos = [], ads = [] } = {}) {
     return intent;
   }
 
-  // Headline or the line on the image, given in quotes or after "to".
+  // Headline or the line on the image, given in quotes or after "to". "To mention the yard"
+  // describes a line and isn't taken as one.
   const q = quoted(t);
   const after = (word) => {
     const m = t.match(new RegExp(`${word}\\s*(?:to|:|=|say|says|should say|reads?)\\s*(.+)$`, "i"));
-    return m ? m[1].replace(/^["“']|["”'.]$/g, "").trim() : null;
+    const v = m ? m[1].replace(/^["“']|["”'.]$/g, "").trim() : null;
+    return v && !DESCRIBES.test(v) ? v : null;
   };
   if (/\bheadline\b/.test(low) && (q || after("headline"))) {
     intent.kind = "revise";

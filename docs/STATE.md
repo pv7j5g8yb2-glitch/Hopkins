@@ -488,3 +488,18 @@ personal in here.
   colour through ("color" alone counted as asking for the label). Rerun live with Groq on a phone
   sized screen: Ad 2 grey, "now do the same for ad 1 and 3", "no you didn't": all three grey,
   every reply true, words untouched.
+* Truth, round three (2026-10-27, Ismael's screenshots: "removed the period" with the period still
+  there, "grey" on navy ads, old changes reported as new, the full stop put back on "$10,000/mo",
+  the caption rewritten when only the line was asked for, "The platform only lets me use the
+  photos you already uploaded"). Now:
+  * every reply about a change is built from the ads before and after (`editParts`, `sayEdits`);
+    when nothing changed the reply says so and shows where the ads are (`stateNow`);
+  * exact edits skip the model (`directEdit`): "remove the dot", "change the text of X to Y"
+    (the split comes after the ad's real line, so "close to santa monica to $10,000/mo" works);
+  * the line keeps the full stop as the agent has it (`lineFor`): copied from another ad it is
+    exactly that ad's, never a full stop added after "/mo";
+  * Hopkins talks as itself (`asItself` plus the prompt);
+  * the agent's own photo can go on the ads: style `face`, a round photo bottom right with a white
+    ring, from their profile photo. Without one, Hopkins says where to add it (Settings, Profile).
+    "bottom right" no longer counts as asking for a new layout.
+  Rerun live with Groq on a phone sized, slowed server: every reply true, his face on all three.

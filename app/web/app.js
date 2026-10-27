@@ -1051,6 +1051,7 @@
       ad, brand: b, format,
       photo: photoUrl(ad.photo_id),
       logo: b.logo_id ? photoUrl(b.logo_id) : null,
+      face: S.me.user.avatar_id ? photoUrl(S.me.user.avatar_id) : null,
       watermark: false,
       price: l.price ? (l.price >= 1e6 ? `$${(l.price / 1e6).toFixed(2).replace(/\.?0+$/, "")}M` : money(l.price)) : "",
       place: l.area || l.city || "",

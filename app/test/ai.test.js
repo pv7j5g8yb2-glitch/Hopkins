@@ -50,7 +50,8 @@ test("Claude reads the listing and writes the set; Hopkins cleans what comes bac
   next = [{ reply: "Version 2 is tighter now.", action: "revise", moment: "none", ads: [ad(2, "Your own pool, on the bay.")], listing_patch: LISTING, budget: 0, days: 0 }];
   const t = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "tighten the second one", version: 2 });
   assert.equal(t.json.ads.find((a) => a.version === 2).overlay, "Your own pool, on the bay.");
-  assert.equal(t.json.messages.at(-1).body, "Version 2 is tighter now.");
+  // The reply says what really changed, from the ad itself.
+  assert.equal(t.json.messages.at(-1).body, 'On **Ad 2**, the line on the photo now reads "Your own pool, on the bay."');
 
   // The model gets the conversation as a real back and forth and the state as context.
   const req = calls.at(-1);

@@ -193,10 +193,10 @@
   const HEX = /^#[0-9a-f]{6}$/i;
 
   async function render(canvas, opts) {
-    const { ad, brand = {}, format = "feed", photo, logo, watermark: wm } = opts;
+    const { ad, brand = {}, format = "feed", photo, logo, face, watermark: wm } = opts;
     const st = ad.style || {};
     await loadFonts();
-    const [img, logoImg] = await Promise.all([loadImage(photo), loadImage(logo)]);
+    const [img, logoImg, faceImg] = await Promise.all([loadImage(photo), loadImage(logo), st.face === "on" ? loadImage(face) : null]);
     const W = 1080, H = format === "story" ? 1920 : 1350;
     canvas.width = W;
     canvas.height = H;
@@ -339,6 +339,21 @@
       ctx.font = '400 30px "Inter Tight"';
       // The Top layout puts its words at the top, so the note goes lower down there.
       ctx.fillText("Your photo goes here", 72, layout === "top" ? H * 0.62 : 120 + safeTop);
+      ctx.restore();
+    }
+    if (faceImg) {
+      // The agent's own photo, a round crop in the bottom right corner.
+      const r = 64, cx = W - 72 - r, cy = H - 72 - safeBottom - 24;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 5, 0, Math.PI * 2);
+      ctx.fillStyle = light;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      const s = Math.max((r * 2) / faceImg.width, (r * 2) / faceImg.height);
+      ctx.drawImage(faceImg, cx - (faceImg.width * s) / 2, cy - (faceImg.height * s) / 2, faceImg.width * s, faceImg.height * s);
       ctx.restore();
     }
     grain(ctx, W, H, 14);

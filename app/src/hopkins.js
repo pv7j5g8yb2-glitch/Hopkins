@@ -8,7 +8,7 @@ import { parseListingText, readLink, downloadImage, formatPrice, priceBand, labe
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
-import { readIntent, readStyle, namedVersions } from "./rules.js";
+import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
 import { aiEnabled, provider, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
 
@@ -375,6 +375,52 @@ function sayChanges(items, unreadable = {}, brandBg = "#1F2A36", ads = []) {
   return lines.join(" ");
 }
 
+// What changed on one ad, in words, from the ad itself before and after.
+function editParts(before = {}, after = {}) {
+  const parts = [];
+  const look = lookDiff(before.style, after.style);
+  const step = Math.round(((Number(after.style?.size) || 1) - (Number(before.style?.size) || 1)) * 100) / 100;
+  if (Object.keys(look).length || step) parts.push({ look: true, text: sayLook(look, step) });
+  if (after.photo_id && before.photo_id !== after.photo_id) parts.push({ text: "a different photo" });
+  if (after.overlay !== before.overlay) parts.push({ text: `the line on the photo reads "${after.overlay}"` });
+  if (after.headline !== before.headline) parts.push({ text: `the headline reads "${after.headline}"` });
+  if (after.primary_text !== before.primary_text) parts.push({ text: "new caption text" });
+  return parts;
+}
+// The reply for a change, written from the ads, never from what the model says it did
+// (2026-10-27: "removed the period" with the period still there, "grey" on navy ads).
+function sayEdits(edits, ads) {
+  const groups = [];
+  for (const e of edits) {
+    const parts = editParts(e.before, e.after);
+    if (!parts.length) continue;
+    const key = JSON.stringify(parts);
+    const g = groups.find((x) => x.key === key);
+    if (g) g.versions.push(e.version);
+    else groups.push({ key, parts, versions: [e.version] });
+  }
+  return groups.map(({ parts, versions }) => {
+    const who = VERSION_WORD(versions, ads);
+    const many = versions.length > 1;
+    if (parts[0].look) {
+      const rest = parts.slice(1).map((p) => p.text.replace(/ reads /, " now reads "));
+      return `${who} now ${many ? "have" : "has"} ${parts[0].text}${rest.length ? `, and ${rest.join(", and ")}` : ""}.`;
+    }
+    const said = parts.map((p) => p.text.replace(/ reads /, " now reads ")).join(", and ");
+    return `On ${who}, ${said}.`;
+  }).map((t) => t.replace(/([.!?]")\.$/, "$1")).join(" ");
+}
+// The agent's own photo can only go on once they've added one; until then Hopkins says where.
+const hasAgentPhoto = async (ws) => Boolean(await get(`SELECT 1 FROM users WHERE workspace_id = ? AND avatar_id IS NOT NULL`, [ws.id]));
+const ADD_PHOTO = "To put your photo on the ads, add it first: Settings, Profile, Change photo. Then ask me again and it goes on.";
+
+// Where the ads are now: their looks and their lines.
+function stateNow(ads) {
+  const lines = ads.map((a) => `**Ad ${a.version}** "${a.overlay}"`).join(", ");
+  return `${lookNow(ads)} The lines on the photos: ${lines}.`;
+}
+const CLAIMS = /\b(I(?:'ve| have)? (set|changed|updated|removed|added|made|gave|switched|applied|swapped|replaced|fixed|turned|moved|put)|updated|(is|are) now|now (has|have|reads|read|uses|use|shows|show))\b/i;
+
 // An ad's name in sentence case ("Porch Life" becomes "Porch life"); place names, prices and
 // acronyms keep their capitals.
 function adName(raw, keep = []) {
@@ -383,7 +429,29 @@ function adName(raw, keep = []) {
   return words.map((w, i) => (i && titled && /^[A-Z][a-z]/.test(w) && !keep.includes(w) ? w.toLowerCase() : w)).join(" ");
 }
 
-function normalizeAI(ad, photos, fallback, message = "") {
+// The line on the photo. Hopkins' own lines end with a full stop, but never one the agent didn't
+// want: words the agent dictated keep their own ending, unchanged words keep theirs, a line that
+// ends in a number or a price gets none, and "remove the dot" takes it off (2026-10-27: the full
+// stop was added back to "$10,000/mo" every time).
+const DOT_OFF = /\b(remove|take (out|off|away)|delete|drop|get rid of|lose|no|without)\b[^?!]{0,30}\b(dot|period|full ?stop|punctuation)\b/i;
+const bareLine = (t) => String(t || "").replace(/[.!?]+$/, "").trim().toLowerCase();
+function lineFor(raw, current, message = "", others = []) {
+  let t = String(raw || "").trim();
+  if (!t) return current;
+  const said = String(message || "");
+  // Copied from another ad ("now change it for ad 1 too"): exactly as that ad has it.
+  const copied = others.find((o) => o && bareLine(o) === bareLine(t));
+  if (current && bareLine(t) === bareLine(current)) t = current;
+  else if (copied) t = copied;
+  else if (said && bareLine(t) && said.toLowerCase().includes(bareLine(t))) {
+    const i = said.toLowerCase().indexOf(bareLine(t));
+    t = t.replace(/[.!?]+$/, "") + (said[i + bareLine(t).length] === "." ? "." : "");
+  } else if (/(^|\s)[a-z']+$/i.test(t) && t.split(/\s+/).length >= 3) t += ".";
+  if (DOT_OFF.test(said)) t = t.replace(/\.+$/, "");
+  return t;
+}
+
+function normalizeAI(ad, photos, fallback, message = "", others = []) {
   const photo = ad.photo_number > 0 ? photos[ad.photo_number - 1] : null;
   const clean = (s, max) => polish(cleanWording(String(s || ""))).slice(0, max);
   return {
@@ -392,7 +460,7 @@ function normalizeAI(ad, photos, fallback, message = "") {
     pattern: KINDS.includes(ad.kind) ? ad.kind : fallback.pattern || "other",
     headline: clean(ad.headline, 60) || fallback.headline,
     primary_text: clean(ad.primary_text, 600) || fallback.primary_text,
-    overlay: (clean(ad.overlay, 60).replace(/([^.!?])$/, "$1.")) || fallback.overlay,
+    overlay: lineFor(clean(ad.overlay, 60), fallback.overlay, message, others),
     // "New ·" with nothing after it: the model left the place blank.
     kicker: clean(ad.kicker, 50).replace(/\s*[·•|,]\s*$/, "") || fallback.kicker || "",
     photo_id: photo ? photo.id : fallback.photo_id,
@@ -652,18 +720,69 @@ async function changeSetNow(ws, listing, ads, photos, r, text) {
   return { focus: added[0] };
 }
 
+// Two edits too exact to leave to the model (2026-10-27: it said "removed the period" and didn't,
+// and rewrote the caption when only the line was asked for): taking the full stop off the line,
+// and a line the agent dictates ("change the text of balcony moments await to $10,000/mo").
+// Done here, exactly as typed, nothing else touched.
+const DICTATE = [
+  /\b(?:change|make|set|replace|update|edit|switch|turn)\s+(?:the\s+)?(?:text|line|words?|wording|overlay|headline|title|big line|main line|line on (?:the )?photo)(?:\s+(?:of|on|for|in)\s+(.+?))?\s+(?:to|into|with|so it says|to say|to read|as)\s+(.+?)\s*$/i,
+  /\b(?:change|replace|switch|turn)\s+["“'](.+?)["”']\s+(?:to|with|into)\s+(.+?)\s*$/i,
+];
+async function directEdit(ws, listing, ads, text, selected) {
+  if (!ads.length || !text) return null;
+  const everyAd = /\b(both|all|every|each|them)\b/i.test(text) ? ads.map((a) => a.version) : null;
+  let targets = null, change = null;
+  if (DOT_OFF.test(text) && !/\b(colou?r|background|font|layout|label|shorter|longer|photo)\b/i.test(text)) {
+    targets = namedVersions(text, ads) || everyAd || [selected];
+    change = (ad) => ({ overlay: String(ad.overlay || "").replace(/\.+$/, "") });
+  } else {
+    for (const re of DICTATE) {
+      let m = text.match(re);
+      if (!m) continue;
+      // "change the text of close to santa monica to $10,000/mo": the old line has its own "to",
+      // so the split comes after the words of a line an ad really has.
+      if (m[1]) {
+        const low = text.toLowerCase();
+        const own = ads.map((a) => bareLine(a.overlay)).filter((b) => b && low.includes(b)).sort((x, y) => y.length - x.length)[0];
+        const rest = own && text.slice(low.indexOf(own) + own.length).match(/^[.!?]?["”']?\s+(?:to|into|with|so it says|to say|to read|as)\s+(.+?)\s*$/i);
+        if (rest) m = [m[0], own, rest[1]];
+      }
+      const line = m[2].trim().replace(/^["“']+|["”']+$/g, "").trim();
+      if (!line || line.length > 60 || DESCRIBES.test(line) || (!/["“”']/.test(m[2]) && line.split(/\s+/).length > 8)) return null;
+      const which = m[1] ? m[1].replace(/^["“']+|["”']+$/g, "") : "";
+      const byLine = which ? ads.filter((a) => bareLine(a.overlay) && (bareLine(a.overlay).includes(bareLine(which)) || bareLine(which).includes(bareLine(a.overlay)))).map((a) => a.version) : [];
+      targets = byLine.length ? byLine : (which && namedVersions(which, ads)) || namedVersions(text.replace(m[2], ""), ads) || everyAd || [selected];
+      change = () => ({ overlay: line });
+      break;
+    }
+  }
+  if (!change) return null;
+  const before = ads.filter((a) => targets.includes(a.version));
+  if (!before.length) return null;
+  for (const ad of before) await saveAd(ws, listing, listing.moment, ad.version, { ...ad, ...change(ad) }, ad);
+  const after = await currentAds(listing);
+  const edits = before.map((b) => ({ version: b.version, before: b, after: after.find((a) => a.version === b.version) }));
+  const said = sayEdits(edits, ads);
+  const shown = before.map((a) => a.version);
+  await say(ws, listing.id, said || `There's no full stop on ${VERSION_WORD(shown, ads).replace(/^Ad /, "ad ")} to take off. ${stateNow(before)}`, "text", { snapshot: await snapshot(listing, shown) });
+  return { focus: shown.length === 1 ? shown[0] : undefined };
+}
+
 export async function handleMessage(ws, listingId, text, selected = 1) {
   const listing = await loadListing(ws.id, listingId);
   if (!listing) return null;
   const sent = await postMessage(ws.id, listingId, "agent", "text", text);
   await keepUndo(listingId, sent.id);
+  const direct = await directEdit(ws, listing, await currentAds(listing), text, selected);
+  if (direct) return direct;
   const ads = await currentAds(listing);
   const photos = await loadPhotos(listing.id, aiEnabled);
 
   if (aiEnabled) {
     const history = await all(`SELECT role, body, data FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
     const plan = { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
-    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name });
+    const agentPhoto = await hasAgentPhoto(ws);
+    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto });
     if (r) return applyAI(ws, listing, ads, photos, r, text);
     if (takeFailure() === "busy" && needsModel(text)) {
       await say(ws, listing.id, BUSY, "text", { busy: true });
@@ -771,7 +890,13 @@ function patchFrom(listing, lp) {
 }
 
 // The words agents use, whatever the model says: it's "the line on the photo", not an overlay.
-const plainWords = (s, clean = polishChat) => clean(String(s || "").replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
+// Hopkins speaks as itself: "the platform only lets me" is "I can only" (Ismael, 2026-10-27:
+// does Claude ever say "Anthropic doesn't let me"?).
+const asItself = (s) => String(s || "")
+  .replace(/\b[Tt]he (platform|system|app|software|tool) only (lets|allows) me( to)?\s+/g, "I can only ")
+  .replace(/\b[Tt]he (platform|system|app|software|tool) (doesn't|does not|won't|will not|can't|cannot) (let|allow) me( to)?\s+/g, "I can't ")
+  .replace(/\b(I'm|I am) not (allowed|permitted) to\b/g, "I can't");
+const plainWords = (s, clean = polishChat) => clean(asItself(s).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
 
 async function applyAI(ws, listing, ads, photos, r, text) {
   const reply = plainWords(r.reply);
@@ -821,18 +946,20 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   // once rewrote both ads' copy as well, 2026-10-27).
   const lookOnly = Boolean(again) && !/\b(shorter|longer|headline|wording|words|copy|rewrite|write|line|caption|warmer|punchier|tone)\b/i.test(text || "");
   let overrode = lookOnly;
+  let needPhoto = false;
   const unreadable = {};
   for (const a of r.ads || []) {
     const ad = ads.find((x) => x.version === a.version);
     if (!ad) continue;
     if (named && !named.includes(ad.version)) { overrode = true; continue; }
-    const next = lookOnly ? { ...ad } : guarded({ ...ad, ...normalizeAI(a, photos, ad, text) }, ad, { listing: { ...listing, ...patch }, photos, extra: text });
+    const next = lookOnly ? { ...ad } : guarded({ ...ad, ...normalizeAI(a, photos, ad, text, ads.map((x) => x.overlay)) }, ad, { listing: { ...listing, ...patch }, photos, extra: [text, ...ads.map((x) => x.overlay)].join(" ") });
     const wanted = modelStyle(a.style, text, { filter: false });
     const look = modelStyle(a.style, refersBack(text) && askText === text ? `${text} ${sayLook(wanted)}` : askText);
     for (const k of ["bg", "accent", "text"]) {
       if (ruledColours[k] && look[k] !== ruledColours[k]) look[k] = ruledColours[k];
       else if (!ruledColours[k] && look[k] && Object.values(ruledColours).includes(look[k])) delete look[k];
     }
+    if (look.face === "on" && !(await hasAgentPhoto(ws))) { delete look.face; needPhoto = true; }
     const { changes: safe, dropped } = keepReadable(look, ad.style, ws.brand?.primary);
     if (dropped.length) unreadable[ad.version] = dropped.map((k) => [k, look[k]]);
     next.style = mergeStyle(ad.style || {}, safe);
@@ -857,21 +984,31 @@ async function applyAI(ws, listing, ads, photos, r, text) {
       overrode = true;
     }
   }
+  // Their own photo goes on (or comes off) when they ask, whatever the model did: it once
+  // answered "the platform only lets me use the photos you uploaded" (2026-10-27).
+  const face = !lookOnly && readStyle(text || "")?.style?.face;
+  if (face === "on" && !(await hasAgentPhoto(ws))) needPhoto = true;
+  else if (face) {
+    const fresh = await currentAds(listing);
+    const missing = (named || ads.map((a) => a.version)).filter((v) => {
+      const on = fresh.find((x) => x.version === v)?.style?.face === "on";
+      return fresh.some((x) => x.version === v) && (face === "on" ? !on : on);
+    });
+    if (missing.length) {
+      await restyle(ws, listing, missing, { face });
+      changed.push(...missing.filter((v) => !changed.includes(v)));
+      changed.sort();
+      overrode = true;
+    }
+  }
   const copyChanged = !lookOnly && (r.ads || []).some((a) => {
     const ad = ads.find((x) => x.version === a.version);
     return ad && (!named || named.includes(ad.version)) && ["headline", "primary_text", "overlay"].some((k) => a[k] && polish(cleanWording(String(a[k]))) !== ad[k]);
   });
-  let lookReply = null;
   const afterAds = changed.length ? await currentAds(listing) : ads;
-  const diffs = changed.map((v) => ({ version: v, before: ads.find((x) => x.version === v)?.style, after: afterAds.find((x) => x.version === v)?.style }));
-  const lookChanged = diffs.some((d) => Object.keys(lookDiff(d.before, d.after)).length || (Number(d.after?.size) || 1) !== (Number(d.before?.size) || 1));
-  // A reply that talks about the look when nothing about the look changed isn't sent either.
-  const claimsLook = (r.ads || []).length && !lookChanged && !copyChanged && LOOK_WORDS.test(reply || "");
-  if ((overrode || Object.keys(unreadable).length || claimsLook) && changed.length && !copyChanged) {
-    lookReply = sayChanges(diffs, unreadable, ws.brand?.primary, ads) || null;
-    // Never a reply about a change that didn't happen: if nothing moved, say so.
-    if (!lookReply && !lookChanged) lookReply = `That didn't change anything on ${VERSION_WORD(changed, ads).replace(/^Ad /, "ad ")}. Tell me the look you want, like "grey background" or "classic font", and I'll do it. You can also tap Style.`;
-  }
+  const edits = changed.map((v) => ({ version: v, before: ads.find((x) => x.version === v), after: afterAds.find((x) => x.version === v) }));
+  const diffs = edits.map((e) => ({ version: e.version, before: e.before?.style, after: e.after?.style }));
+  const anyChange = edits.some((e) => editParts(e.before, e.after).length);
   // New facts with no rewritten copy from the model: rewrite the ads so they carry them.
   let rewroteAll = false;
   if (r.action === "update_listing" && !changed.length && ads.length && Object.keys(patch).length) {
@@ -879,16 +1016,23 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     await rewriteAds(ws, await loadListing(ws.id, listing.id), ads, photos, `the new facts (${text})`);
   }
   const data = {};
-  if (changed.length || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
+  if (anyChange || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
   const look = diffs.map((d) => lookDiff(d.before, d.after)).find((x) => Object.keys(x).length);
   if (look) data.look = look;
-  if (!lookChanged && !copyChanged && !rewroteAll && CHALLENGE.test(text || "")) {
-    const named = namedVersions(text, ads);
-    const shown = named ? ads.filter((a) => named.includes(a.version)) : ads;
-    await say(ws, listing.id, `Here's where they are now. ${lookNow(shown)} If you're seeing something different, tell me what to change and I'll do it straight away.`, "text", { snapshot: await snapshot(listing, shown.map((a) => a.version)) });
-    return { focus };
-  }
-  await say(ws, listing.id, lookReply || reply || (changed.length ? `${VERSION_WORD(changed, ads)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
+  const notes = [sayChanges([], unreadable, ws.brand?.primary, ads), needPhoto ? ADD_PHOTO : ""].filter(Boolean).join(" ");
+  let out;
+  if (anyChange) out = [sayEdits(edits, ads), notes].filter(Boolean).join(" ");
+  else if (rewroteAll) out = reply || "Done, the ads now carry that.";
+  else if (CHALLENGE.test(text || "") || ((changed.length || CLAIMS.test(reply || "")) && ads.length)) {
+    // Nothing changed this turn: never a reply that says something did.
+    const n = namedVersions(text, ads);
+    const shown = n ? ads.filter((a) => n.includes(a.version)) : ads;
+    out = `${changed.length || CHALLENGE.test(text || "") ? "Nothing changed with that message." : "I haven't changed anything since your last message."} Here's where ${shown.length === 1 ? "it is" : "they are"} now. ${stateNow(shown)} Tell me exactly what to change and I'll do it straight away.`;
+    if (needPhoto) out = ADD_PHOTO;
+    else if (notes) out = notes;
+    data.snapshot = await snapshot(listing, shown.map((a) => a.version));
+  } else out = needPhoto ? ADD_PHOTO : reply || "Okay.";
+  await say(ws, listing.id, out, "text", Object.keys(data).length ? data : null);
   return { focus: changed.length === 1 ? changed[0] : focus };
 }
 
@@ -1043,6 +1187,10 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     return {};
   }
 
+  if (intent.kind === "style" && intent.style.face === "on" && !(await hasAgentPhoto(ws))) {
+    delete intent.style.face;
+    if (!Object.keys(intent.style).length && !intent.sizeStep) { await say(ws, listing.id, ADD_PHOTO); return {}; }
+  }
   if (intent.kind === "style") {
     const done = await restyle(ws, listing, intent.versions, intent.style, intent.sizeStep, { readable: true });
     const first = ads.find((a) => done.includes(a.version));
