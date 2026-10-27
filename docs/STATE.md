@@ -451,3 +451,7 @@ personal in here.
   from the box's edges and a one line box is exactly their height, so all three share one centre
   line; with longer text they stay at the bottom. Measured on iPhone SE, 13, Pro Max, iPad and a
   laptop: same centre line and equal insets on each.
+* Copy and Edit always visible (2026-10-27, Ismael): they were only on the newest message on each
+  side, the rest hidden until tapped, which nobody found. Now every message shows Copy and every
+  message you sent shows Edit, permanently. Selecting part of a message works on phone and laptop.
+  Checked on an iPhone sized screen: copying and editing an older message both work.

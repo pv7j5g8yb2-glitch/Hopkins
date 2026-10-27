@@ -643,7 +643,6 @@
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
-    bindReveal();
     const dropEl = $("#drop");
     $("#dropFiles").addEventListener("change", (e) => { S.addFiles(e.target.files); e.target.value = ""; });
     dropEl.addEventListener("dragover", (e) => { e.preventDefault(); dropEl.classList.add("drag"); });
@@ -673,7 +672,6 @@
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
       $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>${msgActs(`data-nc="${S.newChat.length}"`, true, true)}` : ""));
-      latestActs();
       // Only a message that looks like a listing shows the listing steps. Anything else ("Hello",
       // "what's 1+2?") gets the thinking mark and a reply; the server decides for sure. A number on
       // its own isn't a listing (2026-10-27): it takes a price, beds, baths, size, a street
@@ -688,8 +686,7 @@
         if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
-        latestActs();
-        $("#ta").placeholder = REPLY;
+          $("#ta").placeholder = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
@@ -706,8 +703,7 @@
         $("#work").closest(".hk").remove();
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
-        latestActs();
-        $("#ta").placeholder = REPLY;
+          $("#ta").placeholder = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
@@ -750,7 +746,6 @@
         <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section>
       <section class="pv" id="pv"></section></div>`;
     S.seen[l.id] = p.messages.length;
-    bindReveal();
     const msgs = $("#msgs");
     msgs.style.scrollBehavior = "auto";
     msgs.scrollTop = prevScroll ?? msgs.scrollHeight;
@@ -799,34 +794,11 @@
 
   // ---------- copy and edit under a message ----------
 
-  // Copy under every message, and Edit under the ones you sent, like Claude or ChatGPT.
-  // The latest message on each side shows them; tap any other message to bring them up.
+  // Copy under every message, and Edit under every one you sent, always there (Ismael,
+  // 2026-10-27: hidden until tapped, nobody found them). Edit never expires; the only messages
+  // without it are ones an edit can't go back to (before an approved run, or the chat before
+  // the listing existed). Any part of a message can also be selected and copied as usual.
   const msgActs = (attr, editable, mine) => `<div class="mact${mine ? " me-act" : ""}" ${attr}><button type="button" data-act="copyMsg" aria-label="Copy">${ICON.copy}</button>${editable ? `<button type="button" data-act="editMsg" aria-label="Edit">${ICON.pen}</button>` : ""}</div>`;
-
-  // Only the newest of yours and the newest of Hopkins' show their buttons without a tap.
-  function latestActs() {
-    const t = $("#thread");
-    if (!t) return;
-    $$(".mact.on", t).forEach((r) => r.classList.remove("on"));
-    const mine = $$(".mact.me-act", t).at(-1);
-    const his = $$(".hk .mact", t).at(-1);
-    [mine, his].forEach((r) => r && r.classList.add("on"));
-  }
-
-  function bindReveal() {
-    const t = $("#thread");
-    if (!t) return;
-    latestActs();
-    t.addEventListener("click", (e) => {
-      if (e.target.closest("button, a, input, textarea, canvas, img, .vers, .plan, .mact") || getSelection().toString()) return;
-      const msg = e.target.closest(".me, .hk");
-      if (!msg) return;
-      const row = msg.classList.contains("me") ? msg.nextElementSibling : $(".mact", msg);
-      if (!row || !row.classList.contains("mact")) return;
-      $$(".mact.show", t).forEach((r) => r !== row && r.classList.remove("show"));
-      row.classList.toggle("show");
-    });
-  }
 
   // What gets copied: your words as you wrote them, Hopkins' without the bold and list marks.
   const copyable = (s) => String(s || "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)\*([^*\n]+)\*/g, "$1$2").replace(/^#{1,6}\s+/gm, "").replace(/^\s*[-*]\s+/gm, "• ").trim();

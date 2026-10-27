@@ -134,9 +134,8 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .hk>.b{min-width:0;flex:1}
 .hk p{white-space:pre-wrap}
 .me{transition:opacity .2s var(--ease)}
-/* Copy, and Edit on your latest message: quiet icons under a message, there when wanted. */
-.mact{display:none;gap:2px}
-.mact.on,.mact.show{display:flex;animation:fade .25s var(--ease)}
+/* Copy under every message, Edit under every one you sent: quiet icons, always there. */
+.mact{display:flex;gap:2px}
 .mact.me-act{align-self:flex-end;margin:-15px -5px 0 0}
 .hk .mact{margin:4px 0 0 -7px}
 .mact button{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--quiet);transition:background .15s,color .15s,transform .12s var(--ease)}

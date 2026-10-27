@@ -166,9 +166,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   listing or an ad never gives any back. Running any ad needs the paid plan too.
 * **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
   invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
-* **Editing messages (Ismael, 2026-10-26):** copy on every message, edit on every message the agent
-  sent (he expected it on all of them, the first one especially). An edit makes Hopkins forget
-  the old wording and put the ads back as they were, like ChatGPT and Claude.
+* **Editing messages (Ismael, 2026-10-26, 2026-10-27):** copy on every message, edit on every message
+  the agent sent, both always visible (never hidden until tapped, never expiring), and any part of
+  a message can be selected and copied. An edit makes Hopkins forget the old wording and put the
+  ads back as they were, like ChatGPT and Claude. Only messages an edit can't go back to (before an
+  approved run, or the chat before the listing existed) have no Edit.
 * **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.
