@@ -301,7 +301,7 @@
   function accountMenu() {
     const u = S.me.usage;
     const plan = paid()
-      ? `<div class="note"><b>Pro</b>Billing starts when your first ad goes live.</div>`
+      ? `<div class="note"><b>Pro</b>Paid monthly. Cancel any time.</div>`
       : `<div class="note"><b>Free plan</b><div class="meter"><i style="width:${Math.min(100, (u.adsMade / u.freeLimit) * 100)}%"></i></div>${Math.min(u.adsMade, u.freeLimit)} of ${u.freeLimit} free ads made</div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
       <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
@@ -904,7 +904,7 @@
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
       <img class="upsell-mark" src="/static/mark.svg" alt="">
       <h3>${title}</h3><p>${line}</p>
-      <ul><li><b>From $${S.me.usage.priceFrom} a month</b>, and billing starts when your first ad goes live</li><li>Month to month, cancel any time</li><li>No cut of your ad spend</li><li>30% off the first year if you joined the waitlist</li></ul>
+      <ul><li><b>From $${S.me.usage.priceFrom} a month</b>, paid monthly</li><li>Month to month, cancel any time</li><li>No cut of your ad spend</li><li>30% off the first year if you joined the waitlist</li></ul>
       ${asked ? `<p class="upsell-done">Pro requested. You'll hear back soon.</p>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}
       <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
@@ -1392,7 +1392,7 @@
         : `<p class="small">A ping on your phone within seconds of every new lead, through the free ntfy app.</p>
            <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
       <div class="group"><h4>Plan</h4>${paid()
-        ? `<p>You're on Pro. Billing starts when your first ad goes live.</p>`
+        ? `<p>You're on Pro, paid monthly. Cancel any time.</p>`
         : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
            <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Pro requested. You'll hear back soon.</span>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">

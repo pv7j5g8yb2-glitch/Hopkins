@@ -3,7 +3,7 @@
 // Free: 3 ads in all, with no watermark, and they can be downloaded. Changes to those 3 are
 // included. Any new ad after that (a new set, another ad, another listing's, even after deleting
 // one) or pressing "run it" brings up the upgrade message in the chat.
-// Paid: billing starts when the first ad goes live. Month to month, cancel any time, a flat
+// Pro: paid every month, from the day they pay (Ismael, 2026-10-27). Cancel any time, a flat
 // price with no cut of ad spend. From $299 a month.
 
 import { get } from "./db.js";
@@ -29,7 +29,7 @@ export async function canMake(workspace, count) {
 }
 
 export function upgradeText(reason, { usedOn } = {}) {
-  const tail = `Hopkins is $${PRICE_FROM} a month, and billing only starts when your first ad goes live. Month to month, cancel any time, and no cut of your ad spend. If you joined the waitlist, your first year is 30% off.`;
+  const tail = `Pro is $${PRICE_FROM} a month, paid monthly. Cancel any time, and no cut of your ad spend. If you joined the waitlist, your first year is 30% off.`;
   if (reason === "run") return `Running ads is on Pro. ${tail}`;
   if (reason === "plan") return tail;
   if (reason === "saved") {

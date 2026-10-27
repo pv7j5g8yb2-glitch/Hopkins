@@ -359,8 +359,9 @@ personal in here.
 * Paid accounts can download every ad (feed and story images, copy the text) and post or boost it
   themselves while Meta isn't connected; the approval message says so. Each version's link still
   credits the leads. Free accounts stay previews only (Ismael, 2026-10-22).
-* Open question: billing starts "when the first ad goes live". Does an ad the agent downloads and
-  posts themselves count as live?
+* Billing (Ismael, 2026-10-27): Pro is paid every month from the day they pay, like any
+  subscription. "Billing starts when your first ad goes live" is gone from the app, the chat and
+  Hopkins' prompt.
 * The waitlist is small (no full teams on it yet, Ismael, 2026-10-22). Don't plan around a batch of
   teams; the first users are whoever signs up, solo agents included.
 * Next, in order: (1) deploy it, run Ismael's own test listings through it, then invite whoever is

@@ -182,7 +182,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **The paid plan is called Pro (Ismael, 2026-10-27)** everywhere a user sees it ("Pro", "Ask for
   Pro", "on Pro"), never "paid plan". The account corner and menu show the person's own name, not
   the brokerage they work at.
-* **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
+* **Paid (Ismael, 2026-10-27):** a normal monthly subscription, paid every month from the day they
+  pay. Never say billing waits for the first ad to go live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.
 * **Solo plan:** there will be one for single agents, priced below the team plans. No
