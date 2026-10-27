@@ -508,11 +508,18 @@ app.post("/api/messages/:id/dismiss", async (request) => {
   return { ok: true };
 });
 
+// The viewer's time zone, from their browser (X-Time-Zone), if it's a real one.
+function timeZone(request) {
+  const tz = String(request.headers["x-time-zone"] || "").slice(0, 64);
+  try { if (tz) { new Intl.DateTimeFormat("en-US", { timeZone: tz }); return tz; } } catch {}
+  return "UTC";
+}
+
 // The inbox, plus the week's real lead count from the leads themselves (the inbox only keeps the
 // newest 30 items, so counting lead messages in it could come up short).
 app.get("/api/inbox", async (request) => {
   const since = new Date(Date.now() - 7 * 86400_000).toISOString();
-  const [items, week] = await Promise.all([inbox(request.ws), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ?`, [request.ws.id, since])]);
+  const [items, week] = await Promise.all([inbox(request.ws, timeZone(request)), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ?`, [request.ws.id, since])]);
   return { items, leadsWeek: Number(week?.n || 0) };
 });
 

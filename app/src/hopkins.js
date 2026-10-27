@@ -1361,9 +1361,20 @@ export async function weeklyReport(ws, days = 7) {
 
 // Hopkins messages first: on a Monday, the first time the app is opened, the report is
 // already waiting as a message instead of a page the agent has to remember to open.
-export async function mondayMessage(ws, now = new Date()) {
-  if (now.getUTCDay() !== 1) return;
-  const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+// The agent's own day: the weekday and the instant their midnight was, in their time zone (sent
+// by their browser), so Monday starts at 00:00 where they are, not in UTC.
+export function localDay(now = new Date(), tz = "UTC") {
+  let parts;
+  try { parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" }).formatToParts(now).map((p) => [p.type, p.value])); }
+  catch { return localDay(now, "UTC"); }
+  const since = (Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second)) * 1000 + now.getMilliseconds();
+  return { weekday: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.weekday), midnight: new Date(now.getTime() - since) };
+}
+
+export async function mondayMessage(ws, now = new Date(), tz = "UTC") {
+  const day = localDay(now, tz);
+  if (day.weekday !== 1) return;
+  const startOfDay = day.midnight.toISOString();
   const already = await get(`SELECT id FROM messages WHERE workspace_id = ? AND listing_id IS NULL AND kind = 'report' AND created_at >= ?`, [ws.id, startOfDay]);
   if (already) return;
   const hasListings = await get(`SELECT id FROM listings WHERE workspace_id = ? LIMIT 1`, [ws.id]);
@@ -1372,8 +1383,8 @@ export async function mondayMessage(ws, now = new Date()) {
   await say(ws, null, `Your Monday report. ${r.headline}${r.next[0] ? ` ${r.next[0]}` : ""}`, "report", { headline: r.headline }, false);
 }
 
-export async function inbox(ws) {
-  await mondayMessage(ws);
+export async function inbox(ws, tz) {
+  await mondayMessage(ws, new Date(), tz);
   await numberUntitled(ws.id);
   const items = await all(
     `SELECT messages.*, listings.title, listings.address, listings.area, listings.city, listings.untitled_no FROM messages LEFT JOIN listings ON listings.id = messages.listing_id

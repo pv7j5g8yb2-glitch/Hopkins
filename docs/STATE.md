@@ -550,3 +550,8 @@ personal in here.
   preview. Tap to expand.", "Sample ad", "New ads and leads show up here.", "Pro requested.",
   "Test sent", "Running ads is on Pro.", "Something broken or missing?", and the coming soon lines
   on Leads and Report cut to one short line each. Rule saved in CLAUDE.md.
+* Dates follow each user's own clock (2026-10-27, Ismael): Today's date and greeting, and the
+  Report's day bars, use the phone's time zone and redraw by themselves at 00:00 (and at 12:00 and
+  18:00 for the greeting), also when the app comes back from the background. Every request sends
+  the phone's time zone (X-Time-Zone), so the Monday report starts at the agent's own Monday
+  midnight, not UTC's (`localDay`). Checked with a fake clock at 23:59 in Dublin and Los Angeles.

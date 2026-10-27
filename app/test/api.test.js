@@ -531,3 +531,13 @@ test("the message that made the listing can be edited: the listing is read again
   assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 3);
   assert.equal(fixed.json.listing.slug, l.json.listing.slug);
 });
+
+test("Monday starts at the agent's own midnight, in their time zone", async () => {
+  const { localDay } = await import("../src/hopkins.js");
+  // Monday 02:30 UTC is still Sunday evening in Los Angeles, and already Monday in Dublin.
+  const at = new Date("2026-10-26T02:30:00Z");
+  assert.equal(localDay(at, "America/Los_Angeles").weekday, 0);
+  assert.equal(localDay(at, "Europe/Dublin").weekday, 1);
+  assert.equal(localDay(at, "America/Los_Angeles").midnight.toISOString(), "2026-10-25T07:00:00.000Z");
+  assert.equal(localDay(at, "Not/AZone").weekday, 1);
+});

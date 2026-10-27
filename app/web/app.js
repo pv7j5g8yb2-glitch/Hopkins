@@ -48,6 +48,8 @@
 
   // ---------- helpers ----------
 
+  // The phone's own time zone: the server starts the agent's Monday at their midnight.
+  const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; } })();
   async function api(path, opts = {}) {
     const method = opts.method || (opts.body ? "POST" : "GET");
     let res;
@@ -55,7 +57,7 @@
     // safe to repeat, so a GET quietly tries again a couple of times before giving up.
     for (let attempt = 0; ; attempt++) {
       try {
-        res = await fetch(path, { method, headers: opts.body ? { "Content-Type": "application/json" } : {}, body: opts.body ? JSON.stringify(opts.body) : undefined });
+        res = await fetch(path, { method, headers: { ...(opts.body ? { "Content-Type": "application/json" } : {}), "X-Time-Zone": TZ }, body: opts.body ? JSON.stringify(opts.body) : undefined });
       } catch {
         if (method === "GET" && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
         throw new Error("No connection. Try again.");
@@ -1994,6 +1996,22 @@
 
   $("#sheetBg").addEventListener("click", () => { if (!(S.heldAt && Date.now() - S.heldAt < 700)) closePop(); });
   window.addEventListener("hashchange", route);
+  // The date, the greeting and the report's days follow the phone's clock: at 00:00 (and at noon
+  // and 18:00 for the greeting) the screen on show is redrawn, also when the app comes back from
+  // the background after the day changed.
+  const dayKey = () => { const d = new Date(), h = d.getHours(); return `${d.toDateString()} ${h < 12 ? 0 : h < 18 ? 1 : 2}`; };
+  let shownDay = dayKey();
+  const checkDay = () => {
+    const now = dayKey();
+    if (now === shownDay) return;
+    const newDate = now.split(" ").slice(0, 4).join(" ") !== shownDay.split(" ").slice(0, 4).join(" ");
+    shownDay = now;
+    const view = location.hash.slice(2).split("/")[0] || "today";
+    if (view === "today") (newDate ? viewToday() : drawToday());
+    else if (view === "report" && newDate) viewReport();
+  };
+  setInterval(checkDay, 30000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDay(); });
   try { if (localStorage.getItem("hk.side") === "slim") setSide(true); } catch {}
 
   (async function start() {
