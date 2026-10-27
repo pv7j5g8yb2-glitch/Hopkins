@@ -32,7 +32,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
 /* ---------- sidebar (laptop and desktop) ---------- */
 .shell{display:flex;height:100vh;height:100dvh}
 .side{width:248px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:14px 10px 10px;display:flex;flex-direction:column;overflow-y:auto}
-.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:19px;letter-spacing:-.045em;padding:4px 10px 16px}
+.brandrow{display:flex;align-items:flex-start;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:19px;letter-spacing:-.045em;padding:4px 10px 16px;white-space:nowrap}
+.sidet{margin-top:-2px}
+.sidet:hover{background:var(--hover);color:var(--ink)}
 .brand img{width:26px;height:26px}
 .newc{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding:8px 10px;border-radius:10px;margin-bottom:6px}
 .newc svg{width:17px;height:17px;stroke-width:2}
@@ -50,6 +53,23 @@ svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-l
 .li .nm{min-width:0;flex:1}
 .li .nm b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .li .nm span{display:block;font-size:12px;color:var(--quiet)}
+/* The ••• on each listing: shows on hover and on the open one, like a chat in Claude or ChatGPT. */
+.li{position:relative}
+.li .more{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--soft);flex:none;margin-right:-4px;opacity:0;transition:opacity .12s,background .12s}
+.li .more svg{width:17px;height:17px}
+.li:hover .more,.li.on .more,.li .more:focus-visible{opacity:1}
+.li .more:hover{background:var(--hover);color:var(--ink)}
+@media (hover:none){.li .more{opacity:1}}
+/* Closed, the sidebar is a slim rail: open it again, start a listing, or the account. */
+.side{transition:width .2s var(--ease),padding .2s var(--ease)}
+.shell.slim .side{width:58px;padding:14px 9px 10px;overflow:hidden}
+.shell.slim .brand,.shell.slim .nav,.shell.slim .lab,.shell.slim .lists,.shell.slim .newc span,.shell.slim .acct .nm,.shell.slim .acct svg{display:none}
+.shell.slim .brandrow{justify-content:center;margin-bottom:10px}
+.shell.slim .newc{justify-content:center;padding:9px 0}
+.shell.slim .acct button{justify-content:center;padding:6px 0}
+.ch .rn{display:block;max-width:100%;text-align:left;border-radius:6px;padding:0;margin:0}
+.ch .rn:hover h2{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.mtop .ttl .rn{display:block;max-width:100%;text-align:left;padding:0}
 .dotw{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none;box-shadow:0 0 0 3px rgba(215,174,98,.2)}
 .empty-side{font-size:13px;color:var(--quiet);padding:2px 10px}
 .acct{margin-top:auto;padding-top:10px}

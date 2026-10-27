@@ -503,3 +503,9 @@ personal in here.
     ring, from their profile photo. Without one, Hopkins says where to add it (Settings, Profile).
     "bottom right" no longer counts as asking for a new layout.
   Rerun live with Groq on a phone sized, slowed server: every reply true, his face on all three.
+* Sidebar (2026-10-27, Ismael): each recent listing has a ••• (on hover, and on the open one) with
+  Rename and Delete, in place of the gold "waiting" dot ("Ads ready" under the name still says it).
+  The listing's name at the top of the chat renames it when tapped, on laptop and phone. A
+  sidebar button next to the logo closes it to a slim rail (open again, new listing, account), like
+  Claude and ChatGPT, and it stays closed after a reload. Deleting the open listing goes to
+  Listings. Checked with screenshots at laptop and iPhone size on a slowed server.

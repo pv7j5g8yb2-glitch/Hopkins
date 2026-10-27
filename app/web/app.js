@@ -209,7 +209,7 @@
   // shows a back arrow and the listing, like any messaging app.
   function mtop(title, extra = "", opts = {}) {
     if (opts.back) {
-      return `<div class="mtop"><a class="icon-btn mback" href="${opts.back}" aria-label="Back">${ICON.back}</a><div class="ttl"><b>${esc(title)}</b>${opts.sub ? `<span>${esc(opts.sub)}</span>` : ""}</div>${extra}</div>`;
+      return `<div class="mtop"><a class="icon-btn mback" href="${opts.back}" aria-label="Back">${ICON.back}</a><div class="ttl">${opts.rename ? `<button class="rn" data-act="renameAsk" data-id="${opts.rename}"><b>${esc(title)}</b></button>` : `<b>${esc(title)}</b>`}${opts.sub ? `<span>${esc(opts.sub)}</span>` : ""}</div>${extra}</div>`;
     }
     return `<div class="mtop"><a class="logo" href="#/today"><img src="/static/mark.svg" alt="">Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account" ${avatarStyle()}>${esc(initials())}</button></div>`;
   }
@@ -278,12 +278,23 @@
     const r = anchor.getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
     let left = Math.min(window.innerWidth - w - 8, Math.max(8, r.right - w));
-    if (anchor.closest(".acct")) left = Math.max(8, r.left);
+    if (anchor.closest(".acct,.lists")) left = Math.max(8, r.left);
     const below = r.bottom + 6 + h < window.innerHeight;
     pop.style.left = left + "px";
     pop.style.top = (below ? r.bottom + 6 : r.top - h - 6) + "px";
   }
   const closePop = () => { $("#pop").classList.remove("on"); $("#sheetBg").classList.remove("on"); };
+  // The sidebar ••• a menu came from, so Rename and Delete open in the same place.
+  const from = (id) => (S.menuFrom && S.menuFrom.isConnected && S.menuFrom.dataset.id === id ? S.menuFrom : null);
+
+  // The sidebar opens and closes like Claude's and ChatGPT's; closed, it's a slim rail.
+  function setSide(slim) {
+    $("#shell").classList.toggle("slim", slim);
+    const label = slim ? "Open sidebar" : "Close sidebar";
+    $("#sideT").setAttribute("aria-label", label);
+    $("#sideT").title = label;
+    try { localStorage.setItem("hk.side", slim ? "slim" : ""); } catch {}
+  }
 
   function accountMenu() {
     const u = S.me.usage;
@@ -341,7 +352,7 @@
     $("#lists").innerHTML = S.listings.length
       ? S.listings.map((l) => `<a class="li ${route[0] === "l" && route[1] === l.id ? "on" : ""}" href="#/l/${l.id}">
           <i class="th${l.photo_id ? "" : " cover-mini"}" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
-          <div class="nm"><b>${esc(listingName(l))}</b><span>${esc(sideLine(l))}</span></div>${l.waiting ? '<i class="dotw" title="Waiting on you"></i>' : ""}</a>`).join("")
+          <div class="nm"><b>${esc(listingName(l))}</b><span>${esc(sideLine(l))}</span></div><button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
     $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(S.me.workspace.name)}</b><span>${paid() ? "Paid plan" : "Free plan"}</span></span>${ICON.chev}</button>`;
   }
@@ -507,6 +518,7 @@
     S.selecting = false;
     await Promise.all([loadMe(), loadListings(), loadInbox()]);
     toast(ids.length === 1 ? "Listing deleted" : `${ids.length} listings deleted`);
+    if (S.current && ids.includes(S.current.listing.id)) { S.current = null; location.hash = "#/listings"; }
     if (location.hash.startsWith("#/listings")) viewListings();
     drawSide();
   }
@@ -741,9 +753,9 @@
     const chip = l.status === "sold" ? `<span class="chip green">Sold</span>` : l.moment !== "new" ? `<span class="chip gold">${esc(S.me.moments[l.moment])}</span>` : "";
     const sub = [l.priceText, l.facts].filter(Boolean).join(" · ");
     const firstPhoto = p.photos[0];
-    main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab" data-seg="view"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub })}
+    main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab" data-seg="view"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub, rename: l.id })}
       <div class="lv ${showPv ? "showpv" : ""}" id="lv">
-      <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><h2>${esc(listingName(l))}</h2><span class="sub">${esc(sub)}</span></div>${chip}
+      <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><button class="rn" data-act="renameAsk" data-id="${l.id}" title="Rename"><h2>${esc(listingName(l))}</h2></button><span class="sub">${esc(sub)}</span></div>${chip}
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
         <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section>
       <section class="pv" id="pv"></section></div>`;
@@ -1641,7 +1653,7 @@
       buzz(5);
       return viewListings();
     }
-    if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=dlmenu]")) closePop();
+    if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=limenu],[data-act=dlmenu]")) closePop();
     const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
     const act = t.dataset.act;
@@ -1658,7 +1670,15 @@
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
-      else if (act === "listmenu") openPop(t, listingMenu());
+      else if (act === "listmenu") { S.menuFrom = null; openPop(t, listingMenu()); }
+      else if (act === "limenu") {
+        // The ••• on a listing in the sidebar: rename or delete, like a chat in Claude or ChatGPT.
+        e.preventDefault();
+        S.menuFrom = t;
+        openPop(t, `<button data-act="renameAsk" data-id="${t.dataset.id}">${ICON.pen}Rename</button>
+          <button class="danger" data-act="delOne" data-id="${t.dataset.id}">${ICON.trash}Delete</button>`);
+      }
+      else if (act === "sideToggle") setSide(!$("#shell").classList.contains("slim"));
       else if (act === "style") {
         openPop(t, styleSheet(), { style: true });
         settleSegs();
@@ -1681,7 +1701,7 @@
         const item = S.listings.find((x) => x.id === t.dataset.id) || (S.current && S.current.listing.id === t.dataset.id ? S.current.listing : null);
         if (!item) return;
         // On a phone it opens at the top, so the keyboard doesn't cover it.
-        openPop($(`[data-card="${item.id}"]`) || $("[data-act=listmenu]") || t, `<div class="note"><b>Rename listing</b></div>
+        openPop(from(item.id) || $(`[data-card="${item.id}"]`) || $("[data-act=listmenu]") || t, `<div class="note"><b>Rename listing</b></div>
           <form class="rename" data-id="${item.id}"><input id="renameIn" maxlength="80" value="${esc(listingName(item))}" placeholder="${esc(item.address || "Name this listing")}" autocomplete="off" enterkeyhint="done">
           <button class="btn" type="submit">Save</button></form>`, { top: true });
         // Focused in the same tap, or iOS won't bring up the keyboard.
@@ -1700,7 +1720,7 @@
       } else if (act === "delOne" || act === "delPicked") {
         const ids = act === "delOne" ? [t.dataset.id] : [...S.picked];
         const name = ids.length === 1 ? listingName(S.listings.find((x) => x.id === ids[0]) || {}) : `${ids.length} listings`;
-        openPop(act === "delPicked" ? t : $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, chats, photos and leads go too. It can't be undone.</div>
+        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, chats, photos and leads go too. It can't be undone.</div>
           <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "listing" : `${ids.length} listings`}</button>`);
       } else if (act === "delYes") await deleteListings(t.dataset.ids.split(","));
       else if (act === "delListingAsk") {
@@ -1846,6 +1866,7 @@
 
   $("#sheetBg").addEventListener("click", () => { if (!(S.heldAt && Date.now() - S.heldAt < 700)) closePop(); });
   window.addEventListener("hashchange", route);
+  try { if (localStorage.getItem("hk.side") === "slim") setSide(true); } catch {}
 
   (async function start() {
     try {

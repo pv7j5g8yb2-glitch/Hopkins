@@ -21,8 +21,9 @@
 <body>
 <div class="shell" id="shell">
   <aside class="side" id="side">
-    <a class="brand" href="#/today"><img src="/static/mark.svg" alt=""><span>Hopkins</span></a>
-    <a class="newc" href="#/new"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New listing</a>
+    <div class="brandrow"><a class="brand" href="#/today"><img src="/static/mark.svg" alt=""><span>Hopkins</span></a>
+      <button class="icon-btn sidet" data-act="sideToggle" id="sideT" aria-label="Close sidebar" title="Close sidebar"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg></button></div>
+    <a class="newc" href="#/new" title="New listing"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>New listing</span></a>
     <nav class="nav">
       <a class="nv" data-nav="today" href="#/today">Today<span class="badge" data-badge></span></a>
       <a class="nv" data-nav="listings" href="#/listings">Listings</a>
