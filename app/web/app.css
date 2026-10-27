@@ -370,7 +370,6 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .stats-mini a:active{background:var(--sel)}
 .stats-mini b{font-size:28px;font-weight:700;letter-spacing:-.045em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
 .stats-mini span{font-size:13px;color:var(--quiet);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stats-mini a.hot b{color:var(--bronze,#8E6B2C)}
 .hero{display:block;border-radius:20px;overflow:hidden;background:var(--raise);box-shadow:0 0 0 1px var(--line),var(--shadow);margin-bottom:12px;animation:up .35s var(--ease) both;transition:transform .15s var(--ease)}
 .hero:active{transform:scale(.985)}
 .hero .ph{height:150px;background:var(--side) center/cover;position:relative}

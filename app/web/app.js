@@ -479,11 +479,11 @@
     const recent = S.inbox.filter((m) => !m.needs_action);
     const listingOf = (m) => S.listings.find((x) => x.id === m.listing_id);
     const where = (m) => listingName(m);
+    // Just the home and its name (Ismael, 2026-10-27): the whole card opens it, no tag or button.
     const hero = (m) => {
-      const isPlan = m.kind === "plan";
       const pc = photoOrCover(listingOf(m));
-      return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}<span class="chip ${isPlan ? "gold" : ""}">${isPlan ? "Needs your yes" : "Ads ready"}</span></div>
-        <div class="bd"><div class="tx"><b>${esc(where(m))}</b></div><span class="btn">${isPlan ? "Review" : "See ads"}</span></div></a>`;
+      return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}</div>
+        <div class="bd"><div class="tx"><b>${esc(where(m))}</b></div></div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
     const titleFor = (m) => (m.kind === "lead" ? `New lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
@@ -503,7 +503,7 @@
       body = `<nav class="stats-mini" aria-label="At a glance">
           <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Listing" : "Listings"}</span></a>
           <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
-          <a href="#/today" data-act="toWaiting" class="${waiting.length ? "hot" : ""}"><b>${waiting.length}</b><span>Waiting on you</span></a></nav>
+          <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Waiting on you</span></a></nav>
 
         ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>When a listing comes in, a price changes or a lead arrives, it shows up here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;

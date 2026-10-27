@@ -525,5 +525,6 @@ personal in here.
 * Today header (2026-10-27, Ismael): under the greeting, the day's date instead of "4 things need
   you today" (which repeated the count). The three numbers sit in one even row between hairlines,
   and each is a way in: Listings opens Listings, Leads this week opens Leads, Waiting on you
-  (bronze when above 0) scrolls to the first card. The lead count now comes from the leads
-  table for the last 7 days, not from the inbox's newest 30 items.
+  scrolls to the first card. All three numbers in the same ink (Ismael). The lead count comes
+  from the leads table for the last 7 days, not from the inbox's newest 30 items. The cards below
+  show only the photo (or cover) and the name: no "Ads ready" tag, no "See ads" button.
