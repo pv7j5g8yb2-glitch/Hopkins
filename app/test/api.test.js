@@ -541,3 +541,26 @@ test("Monday starts at the agent's own midnight, in their time zone", async () =
   assert.equal(localDay(at, "America/Los_Angeles").midnight.toISOString(), "2026-10-25T07:00:00.000Z");
   assert.equal(localDay(at, "Not/AZone").weekday, 1);
 });
+
+test("a week is Monday 00:00 to the next Monday 00:00 where the agent is, clock changes included", async () => {
+  const { weekRange } = await import("../src/hopkins.js");
+  // Dublin's clocks went back on Sunday 25 October 2026, so that week is an hour longer.
+  assert.deepEqual(weekRange(new Date("2026-10-21T12:00:00Z"), "Europe/Dublin"), { from: "2026-10-18T23:00:00.000Z", to: "2026-10-26T00:00:00.000Z" });
+  // Los Angeles goes back on 1 November: Monday 26 October is still on summer time.
+  assert.deepEqual(weekRange(new Date("2026-10-28T12:00:00Z"), "America/Los_Angeles"), { from: "2026-10-26T07:00:00.000Z", to: "2026-11-02T08:00:00.000Z" });
+  // Sunday night is still the same week; a minute after midnight is the next one.
+  assert.equal(weekRange(new Date("2026-11-01T23:59:00Z"), "Europe/Dublin").from, "2026-10-26T00:00:00.000Z");
+  assert.equal(weekRange(new Date("2026-11-02T00:01:00Z"), "Europe/Dublin").from, "2026-11-02T00:00:00.000Z");
+  // Weeks back, across a month end.
+  assert.equal(weekRange(new Date("2026-11-04T12:00:00Z"), "UTC", 2).from, "2026-10-19T00:00:00.000Z");
+});
+
+test("the report is one Monday to Sunday week, and a made up range is refused", async () => {
+  const { c } = await signup("weeks@hopkins.test");
+  const r = await c("GET", "/api/report?from=2026-10-26T00:00:00.000Z&to=2026-11-02T00:00:00.000Z");
+  assert.equal(r.status, 200);
+  assert.equal(r.json.since, "2026-10-26T00:00:00.000Z");
+  assert.equal(r.json.until, "2026-11-02T00:00:00.000Z");
+  assert.equal((await c("GET", "/api/report?from=2026-10-26T00:00:00.000Z&to=2026-12-02T00:00:00.000Z")).status, 400);
+  assert.equal((await c("GET", "/api/report?from=nope&to=nope")).status, 400);
+});

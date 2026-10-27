@@ -281,7 +281,7 @@
     const r = anchor.getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
     let left = Math.min(window.innerWidth - w - 8, Math.max(8, r.right - w));
-    if (anchor.closest(".acct,.lists")) left = Math.max(8, r.left);
+    if (anchor.closest(".acct,.lists,.rp-week")) left = Math.max(8, r.left);
     const below = r.bottom + 6 + h < window.innerHeight;
     pop.style.left = left + "px";
     pop.style.top = (below ? r.bottom + 6 : r.top - h - 6) + "px";
@@ -1316,42 +1316,102 @@
 
   // ---------- Monday report ----------
 
+  // ---------- Report: one Monday to Sunday week at a time ----------
+
+  // Weeks run Monday 00:00 to the next Monday 00:00 on the phone's own clock. Any week from the
+  // one the account started in to this one can be picked, with the arrows or the calendar.
+  const dayStart = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const mondayOf = (d) => addDays(dayStart(d), -((d.getDay() + 6) % 7));
+  const sameDay = (a, b) => a.getTime() === b.getTime();
+  const firstMonday = () => mondayOf(S.me.workspace.created_at ? new Date(S.me.workspace.created_at) : new Date());
+  const DM = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+  const MONTH_FIRST = DM.formatToParts(new Date(2026, 0, 5))[0].type === "month";
+  function weekLabel(mon) {
+    const now = mondayOf(new Date());
+    if (sameDay(mon, now)) return "This week";
+    if (sameDay(mon, addDays(now, -7))) return "Last week";
+    const end = addDays(mon, 6);
+    const part = (d, t) => DM.formatToParts(d).find((x) => x.type === t).value;
+    const year = end.getFullYear() !== new Date().getFullYear() ? ` ${end.getFullYear()}` : "";
+    if (mon.getMonth() === end.getMonth()) {
+      const m = part(mon, "month");
+      return (MONTH_FIRST ? `${m} ${mon.getDate()} to ${end.getDate()}` : `${mon.getDate()} to ${end.getDate()} ${m}`) + year;
+    }
+    return `${DM.format(mon)} to ${DM.format(end)}${year}`;
+  }
+  S.repCache = new Map();
+  S.repSeq = 0;
+  function reportFor(mon) {
+    const key = mon.toISOString();
+    const current = sameDay(mon, mondayOf(new Date()));
+    // Past weeks don't change, so they're kept; this week is always fetched fresh.
+    if (!current && S.repCache.has(key)) return Promise.resolve(S.repCache.get(key));
+    return api(`/api/report?from=${encodeURIComponent(key)}&to=${encodeURIComponent(addDays(mon, 7).toISOString())}`).then((r) => { S.repCache.set(key, r); return r; });
+  }
+
   async function viewReport() {
     const my = current();
-    main.innerHTML = `${mtop("Report")}${skeleton()}`;
-    const r = await api("/api/report");
-    if (my !== current()) return;
-    if (!r.total && !r.listings.some((x) => x.running)) {
+    if (S.me.soon && S.me.soon.report) {
       main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap"><div class="head"><h1>Report</h1></div>
         ${soon(`Your <span class="serif">Monday report.</span>`, "Leads, cost per lead and the winning ad, every Monday.",
           `<div class="rp-sum"><div class="rp-big"><b>7</b> leads</div><p class="rp-sub">3 asked for a showing</p><div class="rp-chart">${[1, 0, 2, 1, 0, 1, 2].map((n, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${n * 50}%"></i></span><span class="rp-dl">${"MTWTFSS"[i]}</span></div>`).join("")}</div></div>`)}</div></div>`;
       return;
     }
+    const now = mondayOf(new Date());
+    if (!S.repMonday || S.repMonday > now || S.repMonday < firstMonday()) { S.repMonday = now; S.repFollow = true; }
+    const mon = S.repMonday;
+    const seq = ++S.repSeq;
+    const cached = S.repCache.get(mon.toISOString());
+    // A week seen before shows at once (this week refreshes behind it); a new one shows the
+    // header straight away with the numbers loading under it.
+    if (cached) drawReport(cached, mon);
+    else if (!main.querySelector(".page[data-report]")) main.innerHTML = `${mtop("Report")}${skeleton()}`;
+    else reportHead(mon, true);
+    let r;
+    try { r = await reportFor(mon); }
+    catch (err) { if (seq === S.repSeq && !cached) toast(err.message); return; }
+    if (my !== current() || seq !== S.repSeq) return;
+    drawReport(r, mon);
+    // The week before is one tap away: fetch it now so the arrow is instant.
+    const prev = addDays(mon, -7);
+    if (prev >= firstMonday() && !S.repCache.has(prev.toISOString())) setTimeout(() => reportFor(prev).catch(() => {}), 300);
+  }
+
+  function reportHead(mon, loading = false) {
+    const now = mondayOf(new Date());
+    const head = main.querySelector(".rp-week");
+    const html = `<button class="icon-btn rp-prev" data-act="repPrev" aria-label="Week before" ${mon <= firstMonday() ? "disabled" : ""}>${ICON.chevr}</button>
+      <button class="rp-wl" data-act="repCal" aria-label="Pick a week">${esc(weekLabel(mon))}${ICON.chev}</button>
+      <button class="icon-btn" data-act="repNext" aria-label="Week after" ${mon >= now ? "disabled" : ""}>${ICON.chevr}</button>`;
+    if (head) { head.innerHTML = html; main.querySelector(".page[data-report]")?.classList.toggle("loading", loading); }
+    return html;
+  }
+
+  function drawReport(r, mon) {
     S.report = r;
-    // Like Screen Time (Ismael, 2026-10-27): one big number with the week as bars, then the one
-    // or two things worth doing, then each running listing as a thin bar. Spend and cost per lead
-    // sit behind a tap on the listing instead of a box on every row.
-    const DAY = 86400_000;
-    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
-    const days = [...Array(7)].map((_, i) => new Date(today0.getTime() - (6 - i) * DAY));
+    const today = dayStart(new Date());
+    const thisWeek = sameDay(mon, mondayOf(today));
+    const days = [...Array(7)].map((_, i) => addDays(mon, i));
     const counts = days.map(() => 0);
     for (const t of r.times || []) {
       const at = new Date(t).getTime();
-      // Anything from before the first bar's midnight (still inside the 7 days) counts on it.
       const i = days.findLastIndex((d) => at >= d.getTime());
-      counts[Math.max(0, i)]++;
+      counts[Math.min(6, Math.max(0, i))]++;
     }
     const peak = Math.max(1, ...counts);
-    const bars = days.map((d, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${counts[i] ? Math.max(8, (counts[i] / peak) * 100) : 0}%"></i></span><span class="rp-dl">${esc(d.toLocaleDateString(undefined, { weekday: "narrow" }))}</span></div>`).join("");
+    const bars = days.map((d, i) => {
+      const isToday = thisWeek && sameDay(d, today), later = thisWeek && d > today;
+      return `<div class="rp-day${isToday ? " today" : ""}${later ? " later" : ""}"><span class="rp-bar"><i style="height:${counts[i] ? Math.max(8, (counts[i] / peak) * 100) : 0}%"></i></span><span class="rp-dl">${esc(d.toLocaleDateString(undefined, { weekday: "narrow" }))}</span></div>`;
+    }).join("");
     const diff = r.total - (r.lastWeek || 0);
     const vs = diff > 0 ? `${diff} more than the week before` : diff < 0 ? `${-diff} fewer than the week before` : r.total ? "Same as the week before" : "";
     const sub = [r.showings ? `${r.showings} asked for a showing` : "", vs].filter(Boolean).join(" · ");
-
     // What to do next: ads waiting for a yes become one line, then the first other suggestion.
     const waitingOn = r.listings.filter((x) => x.drafts && x.status === "active").length;
     const other = r.next.find((n) => !/aren't approved yet/.test(n));
     const otherOn = other && r.listings.find((x) => other.includes(x.name));
-    const next = [
+    const next = !thisWeek ? "" : [
       waitingOn ? `<a href="#/today"><span>${waitingOn} ${waitingOn === 1 ? "listing has" : "listings have"} ads waiting for your yes</span>${ICON.chevr}</a>` : "",
       other ? `<a href="${otherOn ? `#/l/${otherOn.id}` : "#/listings"}"><span>${esc(other)}</span>${ICON.chevr}</a>` : "",
     ].filter(Boolean).join("");
@@ -1370,8 +1430,8 @@
     const winning = wonTotal ? `<h3>What's winning</h3><div class="rp-split">${won.map((x, i) => `<i style="width:${(x.leads / wonTotal) * 100}%;background:${SEG[i % SEG.length]}"></i>`).join("")}</div>
       <div class="rp-legend">${won.map((x, i) => `<span><i style="background:${SEG[i % SEG.length]}"></i>${esc(pats[x.pattern] || x.pattern)} <b>${x.leads}</b></span>`).join("")}</div>` : "";
 
-    main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap">
-      <div class="head"><h1>Report</h1><p class="lede">Last 7 days</p></div>
+    main.innerHTML = `${mtop("Report")}<div class="page" data-report><div class="wrap">
+      <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>
       <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "lead" : "leads"}</div>${sub ? `<p class="rp-sub">${esc(sub)}</p>` : ""}
         <div class="rp-chart" role="img" aria-label="Leads each day: ${counts.join(", ")}">${bars}</div></section>
       ${next ? `<h3>Next</h3><div class="rp-next">${next}</div>` : ""}
@@ -1380,12 +1440,35 @@
     </div></div>`;
   }
 
+  // Every week since the account started, as a calendar: months newest first, each row a Monday to
+  // Sunday week. A tap anywhere on a row picks that week.
+  function weekCalendar(t) {
+    const today = dayStart(new Date()), first = firstMonday(), last = mondayOf(today);
+    const wd = [...Array(7)].map((_, i) => addDays(last, i).toLocaleDateString(undefined, { weekday: "narrow" }));
+    const months = [];
+    for (let m = new Date(today.getFullYear(), today.getMonth(), 1); m >= new Date(first.getFullYear(), first.getMonth(), 1) && months.length < 36; m = new Date(m.getFullYear(), m.getMonth() - 1, 1)) months.push(m);
+    const month = (m) => {
+      const end = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+      let rows = "";
+      for (let mon = mondayOf(m); mon <= end; mon = addDays(mon, 7)) {
+        const ok = mon >= first && mon <= last;
+        const on = sameDay(mon, S.repMonday);
+        const cells = [...Array(7)].map((_, i) => { const d = addDays(mon, i); return `<span class="${d.getMonth() !== m.getMonth() ? "out" : ""}${sameDay(d, today) ? " now" : ""}">${d.getDate()}</span>`; }).join("");
+        rows += `<button class="cal-wk${on ? " on" : ""}" data-act="repPick" data-mon="${mon.getTime()}" ${ok ? "" : "disabled"}>${cells}</button>`;
+      }
+      return `<div class="cal-m"><b>${esc(m.toLocaleDateString(undefined, { month: "long", year: "numeric" }))}</b><div class="cal-wd">${wd.map((x) => `<span>${esc(x)}</span>`).join("")}</div>${rows}</div>`;
+    };
+    openPop(t, `<div class="cal">${months.map(month).join("")}</div>`);
+    // Open on the week that's showing.
+    $("#pop .cal-wk.on")?.scrollIntoView({ block: "center" });
+  }
+
   // One listing's week, and its spend, in a sheet: the only place spend is typed in until Meta
   // fills it.
   function reportSheet(t) {
     const x = S.report && S.report.listings.find((l) => l.id === t.dataset.id);
     if (!x) return;
-    openPop(t, `<div class="note"><b>${esc(x.name)}</b>Last 7 days</div>
+    openPop(t, `<div class="note"><b>${esc(x.name)}</b>${esc(weekLabel(S.repMonday))}</div>
       <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per lead</div></div>
       <form class="spendf" data-id="${x.id}"><label for="spendIn">Spent on its ads so far</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
       <p class="small">Fills in once Meta is connected.</p></form>
@@ -1758,7 +1841,7 @@
       buzz(5);
       return viewListings();
     }
-    if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=limenu],[data-act=dlmenu]")) closePop();
+    if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=limenu],[data-act=dlmenu],[data-act=repCal]")) closePop();
     const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
     const act = t.dataset.act;
@@ -1776,6 +1859,21 @@
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "reportListing") reportSheet(t);
+      else if (act === "repPrev" || act === "repNext") {
+        const next = addDays(S.repMonday, act === "repPrev" ? -7 : 7);
+        if (next < firstMonday() || next > mondayOf(new Date())) return;
+        S.repMonday = next;
+        S.repFollow = sameDay(next, mondayOf(new Date()));
+        buzz(4);
+        viewReport();
+      }
+      else if (act === "repCal") weekCalendar(t);
+      else if (act === "repPick") {
+        S.repMonday = new Date(Number(t.dataset.mon));
+        S.repFollow = sameDay(S.repMonday, mondayOf(new Date()));
+        buzz(5);
+        viewReport();
+      }
       else if (act === "toWaiting") {
         // The first thing waiting is right below; a tap brings it into view.
         e.preventDefault();
@@ -1920,6 +2018,7 @@
     try {
       await api(`/api/listings/${f.dataset.id}`, { method: "PATCH", body: { spend } });
       toast("Spend saved");
+      S.repCache.clear();
       if (location.hash.startsWith("#/report")) viewReport();
     } catch (err) { toast(err.message); }
   });
@@ -2001,7 +2100,11 @@
     shownDay = now;
     const view = location.hash.slice(2).split("/")[0] || "today";
     if (view === "today") (newDate ? viewToday() : drawToday());
-    else if (view === "report" && newDate) viewReport();
+    else if (view === "report" && newDate) {
+      // Watching this week when a new one starts: move on with it.
+      if (S.repFollow) S.repMonday = mondayOf(new Date());
+      viewReport();
+    }
   };
   setInterval(checkDay, 30000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDay(); });

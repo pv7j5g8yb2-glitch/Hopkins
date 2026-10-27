@@ -524,8 +524,36 @@ body.soon-leads [data-nav=leads].on,body.soon-report [data-nav=report].on{opacit
 .rp-bar{flex:1;width:100%;max-width:34px;display:flex;align-items:flex-end;border-bottom:1px solid var(--line2)}
 .rp-bar i{display:block;width:100%;border-radius:7px 7px 2px 2px;background:var(--plum);transition:height .5s var(--ease)}
 .rp-day.today .rp-bar i{background:var(--gold)}
-.rp-dl{font-size:12px;color:var(--quiet)}
+.rp-dl{font-size:12px;color:var(--quiet);position:relative}
 .rp-day.today .rp-dl{color:var(--ink);font-weight:600}
+/* Today: a small gold dot under its letter. Days still to come are fainter. */
+.rp-day.today .rp-dl:after{content:"";position:absolute;left:50%;bottom:-7px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--gold)}
+.rp-day.later .rp-dl{opacity:.45}
+.rp-day.later .rp-bar{border-bottom-style:dashed}
+.rp-week{display:flex;align-items:center;gap:2px;margin:6px 0 0 -8px}
+.rp-week .icon-btn:disabled{opacity:.3;cursor:default}
+.rp-prev svg{transform:scaleX(-1)}
+.rp-wl{display:inline-flex;align-items:center;gap:6px;font-size:15px;color:var(--soft);padding:6px 8px;border-radius:9px;min-width:0}
+.rp-wl svg{width:14px;height:14px;color:var(--quiet)}
+.rp-wl:hover{background:var(--hover)}
+.page[data-report].loading .rp-sum,.page[data-report].loading .rp-list,.page[data-report].loading .rp-next{opacity:.45;transition:opacity .15s}
+/* The week calendar */
+.pop .cal{max-height:min(70vh,520px);overflow-y:auto;padding:2px 4px 6px;width:320px;max-width:100%}
+@media (max-width:980px){.pop .cal{width:100%;max-height:62vh}}
+.cal-m{padding:8px 4px 6px}
+.cal-m>b{display:block;font-size:14px;font-weight:600;padding:4px 6px 8px}
+.cal-wd,.cal-wk{display:grid!important;grid-template-columns:repeat(7,1fr);text-align:center;width:100%}
+.cal-wd span{font-size:11.5px;color:var(--quiet);padding-bottom:4px}
+.pop .cal-wk{padding:0!important;border-radius:10px;font-size:14px;text-align:center;justify-items:center}
+@media (max-width:980px){.pop .cal-wk{font-size:16px}}
+.cal-wk span{padding:9px 0;font-variant-numeric:tabular-nums}
+.cal-wk span.out{color:var(--quiet);opacity:.55}
+.cal-wk span.now{font-weight:700;color:var(--bronze)}
+.pop .cal-wk:not(:disabled):hover{background:var(--hover)}
+.pop .cal-wk.on{background:var(--ox);color:var(--cream,#F4EBDD)}
+.pop .cal-wk.on span.out{color:inherit;opacity:.55}
+.pop .cal-wk.on span.now{color:var(--gold)}
+.pop .cal-wk:disabled{opacity:.3;cursor:default}
 .rp-next a,.rp-row{display:flex;align-items:center;gap:12px;width:100%;padding:13px 2px;border-bottom:1px solid var(--line);text-align:left;font-size:15px;transition:background .15s}
 .rp-next a:first-child,.rp-row:first-child{border-top:1px solid var(--line)}
 .rp-next a span{flex:1;min-width:0}

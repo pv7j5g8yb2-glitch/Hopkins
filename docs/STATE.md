@@ -557,3 +557,15 @@ personal in here.
   midnight, not UTC's (`localDay`). Checked with a fake clock at 23:59 in Dublin and Los Angeles.
 * Sidebar (2026-10-27, Ismael): Recent shows only each listing's name, no "Ads ready",
   "Approved" or lead count under it.
+* Report weeks (2026-10-27, Ismael: "always Monday to Sunday, never moves over"): the Report is
+  one calendar week, Monday 00:00 to the next Monday 00:00 on the phone's own clock, exact across
+  clock changes. This week's bars run M to S with today's letter bold over a small gold dot and
+  the days still to come faint. ‹ and › step a week (› stops at this week, ‹ at the week the
+  account started); tapping the week's name ("This week", "Last week", "19 to 25 Oct") opens a
+  calendar of every month since the account started, each row a week, the picked one in oxblood.
+  "Next" only shows on this week. Past weeks are kept once loaded and the week before is fetched
+  ahead, so the arrows are instant; a quick run of taps always lands on the last one asked for.
+  Today's "Leads this week" and the Monday message ("Last week: ...") use the same weeks
+  (`weekRange`, `localDay`, `zonedMidnight` in hopkins.js). Checked on an iPhone sized screen in
+  Dublin time with leads at 23:30 Sunday and 00:30 Monday, a week in September, the first week and
+  three fast taps.

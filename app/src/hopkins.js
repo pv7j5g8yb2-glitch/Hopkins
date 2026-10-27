@@ -1309,18 +1309,19 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
 
 // ---------- the Monday report ----------
 
-export async function weeklyReport(ws, days = 7) {
-  const since = new Date(Date.now() - days * 86400_000).toISOString();
+export async function weeklyReport(ws, range = weekRange()) {
+  const since = range.from, until = range.to;
+  const span = new Date(until).getTime() - new Date(since).getTime();
   const leads = await all(
     `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern, ads.name AS ad_name FROM leads
      JOIN listings ON listings.id = leads.listing_id LEFT JOIN ads ON ads.id = leads.ad_id
-     WHERE leads.workspace_id = ? AND leads.created_at >= ? ORDER BY leads.created_at DESC`,
-    [ws.id, since]
+     WHERE leads.workspace_id = ? AND leads.created_at >= ? AND leads.created_at < ? ORDER BY leads.created_at DESC`,
+    [ws.id, since, until]
   );
   const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, status, spend, moment, created_at, (SELECT id FROM photos WHERE listing_id = listings.id ORDER BY position LIMIT 1) AS photo_id FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
   // For the chart and the comparison: the week before, and every lead so far per listing (spend
   // is typed in as a running total, so cost per lead is spend over all its leads, not this week's).
-  const before = await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, new Date(Date.now() - 2 * days * 86400_000).toISOString(), since]);
+  const before = await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, new Date(new Date(since).getTime() - span).toISOString(), since]);
   const allTime = Object.fromEntries((await all(`SELECT listing_id, COUNT(*) AS n FROM leads WHERE workspace_id = ? GROUP BY listing_id`, [ws.id])).map((r) => [r.listing_id, Number(r.n)]));
   const launched = await all(`SELECT DISTINCT listing_id FROM launches WHERE workspace_id = ?`, [ws.id]);
   const launchedIds = new Set(launched.map((r) => r.listing_id));
@@ -1342,7 +1343,10 @@ export async function weeklyReport(ws, days = 7) {
   const spend = rows.reduce((s, r) => s + r.spend, 0);
   const showings = leads.filter((x) => x.wants === "showing").length;
 
-  const patterns = await all(`SELECT pattern, COUNT(*) AS ads, SUM(leads) AS leads FROM tests WHERE workspace_id = ? GROUP BY pattern`, [ws.id]);
+  // Which kind of ad brought this week's leads.
+  const byKind = {};
+  for (const x of leads) if (x.pattern) byKind[x.pattern] = (byKind[x.pattern] || 0) + 1;
+  const patterns = Object.entries(byKind).map(([pattern, n]) => ({ pattern, leads: n }));
 
   const next = [];
   for (const r of rows) {
@@ -1355,8 +1359,8 @@ export async function weeklyReport(ws, days = 7) {
 
   const headline = total
     ? `${total} ${total === 1 ? "lead" : "leads"}${spend > 0 ? `, $${Math.round((spend / total) * 100) / 100} each` : ""}${showings ? `, ${showings} asked for a showing` : ""}.`
-    : "No leads this week.";
-  return { since, days, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), patterns, next: next.slice(0, 5) };
+    : "No leads.";
+  return { since, until, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), patterns, next: next.slice(0, 5) };
 }
 
 // Hopkins messages first: on a Monday, the first time the app is opened, the report is
@@ -1364,11 +1368,37 @@ export async function weeklyReport(ws, days = 7) {
 // The agent's own day: the weekday and the instant their midnight was, in their time zone (sent
 // by their browser), so Monday starts at 00:00 where they are, not in UTC.
 export function localDay(now = new Date(), tz = "UTC") {
+  const p = zoneParts(now, tz);
+  if (!p) return localDay(now, "UTC");
+  return { weekday: p.weekday, y: p.y, m: p.m, d: p.d, midnight: zonedMidnight(p.y, p.m, p.d, tz) };
+}
+
+// The calendar date and clock of an instant in a time zone, or null for a zone that isn't real.
+function zoneParts(at, tz) {
   let parts;
-  try { parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" }).formatToParts(now).map((p) => [p.type, p.value])); }
-  catch { return localDay(now, "UTC"); }
-  const since = (Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second)) * 1000 + now.getMilliseconds();
-  return { weekday: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.weekday), midnight: new Date(now.getTime() - since) };
+  try { parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" }).formatToParts(at).map((x) => [x.type, x.value])); }
+  catch { return null; }
+  return { weekday: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.weekday), y: Number(parts.year), m: Number(parts.month) - 1, d: Number(parts.day), h: Number(parts.hour), min: Number(parts.minute), s: Number(parts.second) };
+}
+
+// The exact instant a local date starts in a time zone, clock changes included.
+function zonedMidnight(y, m, d, tz) {
+  const wall = Date.UTC(y, m, d);
+  let t = wall;
+  for (let i = 0; i < 3; i++) {
+    const p = zoneParts(new Date(t), tz) || zoneParts(new Date(t), "UTC");
+    const offset = Date.UTC(p.y, p.m, p.d, p.h, p.min, p.s) - Math.floor(t / 1000) * 1000;
+    t = wall - offset;
+  }
+  return new Date(t);
+}
+
+// A Monday to Sunday week in the agent's time zone: this week, or `back` weeks before it.
+export function weekRange(now = new Date(), tz = "UTC", back = 0) {
+  const day = localDay(now, tz);
+  const monday = day.d - ((day.weekday + 6) % 7) - 7 * back;
+  const zone = zoneParts(now, tz) ? tz : "UTC";
+  return { from: zonedMidnight(day.y, day.m, monday, zone).toISOString(), to: zonedMidnight(day.y, day.m, monday + 7, zone).toISOString() };
 }
 
 export async function mondayMessage(ws, now = new Date(), tz = "UTC") {
@@ -1379,8 +1409,8 @@ export async function mondayMessage(ws, now = new Date(), tz = "UTC") {
   if (already) return;
   const hasListings = await get(`SELECT id FROM listings WHERE workspace_id = ? LIMIT 1`, [ws.id]);
   if (!hasListings) return;
-  const r = await weeklyReport(ws);
-  await say(ws, null, `Your Monday report. ${r.headline}${r.next[0] ? ` ${r.next[0]}` : ""}`, "report", { headline: r.headline }, false);
+  const r = await weeklyReport(ws, weekRange(now, tz, 1));
+  await say(ws, null, `Your Monday report. Last week: ${r.headline}${r.next[0] ? ` ${r.next[0]}` : ""}`, "report", { headline: r.headline }, false);
 }
 
 export async function inbox(ws, tz) {

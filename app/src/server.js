@@ -9,7 +9,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, restyle, numberUntitled, editMessage, firstMessageId,
+  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, restyle, numberUntitled, editMessage, firstMessageId,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { FONT_KEYS } from "./style.js";
@@ -230,7 +230,7 @@ app.get("/api/me", async (request) => {
   return {
     soon: { leads: !Number(leadCount.n), report: !Number(leadCount.n) && !Number(launchCount.n) },
     user: { email: request.user.email, name: request.user.name, avatar_id: request.user.avatar_id || null },
-    workspace: { id: ws.id, name: ws.name, plan: ws.plan, brand: ws.brand },
+    workspace: { id: ws.id, name: ws.name, plan: ws.plan, brand: ws.brand, created_at: ws.created_at },
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
     admin: isAdmin(request.user),
     ai: aiEnabled,
@@ -518,8 +518,8 @@ function timeZone(request) {
 // The inbox, plus the week's real lead count from the leads themselves (the inbox only keeps the
 // newest 30 items, so counting lead messages in it could come up short).
 app.get("/api/inbox", async (request) => {
-  const since = new Date(Date.now() - 7 * 86400_000).toISOString();
-  const [items, week] = await Promise.all([inbox(request.ws, timeZone(request)), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ?`, [request.ws.id, since])]);
+  const week0 = weekRange(new Date(), timeZone(request));
+  const [items, week] = await Promise.all([inbox(request.ws, timeZone(request)), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [request.ws.id, week0.from, week0.to])]);
   return { items, leadsWeek: Number(week?.n || 0) };
 });
 
@@ -542,7 +542,16 @@ app.patch("/api/leads/:id", async (request, reply) => {
   return { ok: true };
 });
 
-app.get("/api/report", async (request) => weeklyReport(request.ws));
+// One Monday to Sunday week. The browser sends the week's start and end in its own time zone
+// (exact across clock changes); anything else falls back to this week where the agent is.
+app.get("/api/report", async (request, reply) => {
+  const q = request.query || {};
+  const from = new Date(q.from), to = new Date(q.to);
+  const span = to - from;
+  const ok = !isNaN(from) && !isNaN(to) && span >= 6.9 * 86400_000 && span <= 7.1 * 86400_000;
+  if ((q.from || q.to) && !ok) return reply.code(400).send({ error: "That week doesn't exist." });
+  return weeklyReport(request.ws, ok ? { from: from.toISOString(), to: to.toISOString() } : weekRange(new Date(), timeZone(request)));
+});
 
 // ---------- admin (ADMIN_EMAILS) ----------
 
