@@ -517,42 +517,18 @@
     return `<div class="comp-wrap">
       <form class="comp lg" id="comp"><div id="editbar"></div><div class="att" id="att"></div>
       <div class="row-c"><label class="icon-btn" title="Add photos">${ICON.photo}<input type="file" id="files" accept="image/*" multiple hidden></label>
-      <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" data-normal="${esc(placeholder)}" enterkeyhint="send"></textarea>
-      <button class="sug-go" id="sugGo" type="button" aria-label="Send this">${ICON.chevR}</button>
+      <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" enterkeyhint="send"></textarea>
       <button class="send" id="send" type="submit" aria-label="Send">${ICON.send}</button></div><div class="hint" id="hint"></div></form></div>`;
   }
 
-  // What the empty box says when there's no suggestion (none found, or the model failed): it
-  // fits whatever the conversation is about.
+  // What the empty box says: "Ask Hopkins anything" until there's a conversation, then
+  // "Reply to Hopkins" (Ismael, 2026-10-27, replacing the suggested next message).
+  const ASK = "Ask Hopkins anything";
   const REPLY = "Reply to Hopkins";
 
-  // suggestion: Hopkins' guess at what you'll say next, shown in grey in the empty box like
-  // Claude does. The › sends it as it is; tapping the box puts it away so you can type your own.
-  function bindComposer(onSend, { drop, suggestion } = {}) {
+  function bindComposer(onSend, { drop } = {}) {
     const ta = $("#ta"), comp = $("#comp");
     S.pending = [];
-    const showSug = (on) => {
-      on = on && Boolean(suggestion) && !ta.value.trim() && !S.pending.length && !S.busy;
-      comp.classList.toggle("has-sug", on);
-      ta.placeholder = on ? suggestion : ta.dataset.normal;
-    };
-    showSug(true);
-    S.clearSug = () => { suggestion = ""; showSug(false); };
-    // On a phone, tapping the box means you want to type your own. On a laptop the box is
-    // already focused, so the suggestion stays until you type; Tab drops it in to edit.
-    ta.addEventListener("focus", () => { if (phone()) showSug(false); });
-    ta.addEventListener("blur", () => setTimeout(() => showSug(true), 0));
-    ta.addEventListener("input", () => showSug(!phone()));
-    ta.addEventListener("keydown", (e) => {
-      if (e.key === "Tab" && comp.classList.contains("has-sug")) { e.preventDefault(); ta.value = suggestion; showSug(false); ta.dispatchEvent(new Event("input")); }
-    });
-    $("#sugGo").addEventListener("click", () => {
-      if (S.busy || !suggestion) return;
-      ta.value = suggestion;
-      suggestion = "";
-      showSug(false);
-      comp.requestSubmit();
-    });
     const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(160, ta.scrollHeight) + "px"; };
     // Photos waiting to be sent sit in a tray inside the box, like Claude or ChatGPT: a
     // thumbnail each (× takes one out), a + to add more, and the count. While the big drop
@@ -567,9 +543,6 @@
         : "";
       const pick = comp.querySelector("label.icon-btn");
       if (pick) pick.dataset.count = n || "";
-      // A suggestion doesn't go with photos: it's hidden while any are waiting.
-      if (n) showSug(false);
-      else if (!phone() || document.activeElement !== ta) showSug(true);
       $("#send").disabled = S.busy || (!ta.value.trim() && !S.pending.length);
     };
     const add = (files) => {
@@ -577,7 +550,7 @@
       buzz(5);
       drawAtt();
     };
-    S.addFiles = (files) => { add(files); showSug(false); };
+    S.addFiles = (files) => add(files);
     S.removeFile = (i) => { S.pending.splice(i, 1); drawAtt(); };
     ta.addEventListener("input", () => { grow(); drawAtt(); });
     ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !phone()) { e.preventDefault(); comp.requestSubmit(); } });
@@ -669,7 +642,7 @@
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Paid plan requested.</span>` : `<button class="link" data-upgrade>Ask for the paid plan</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
-      ${composerHtml("Paste a link or describe the home")}</section>`;
+      ${composerHtml(ASK)}</section>`;
     bindReveal();
     const dropEl = $("#drop");
     $("#dropFiles").addEventListener("change", (e) => { S.addFiles(e.target.files); e.target.value = ""; });
@@ -716,7 +689,7 @@
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
         latestActs();
-        $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
+        $("#ta").placeholder = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
@@ -734,7 +707,7 @@
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
         latestActs();
-        $("#ta").placeholder = $("#ta").dataset.normal = REPLY;
+        $("#ta").placeholder = REPLY;
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
@@ -798,7 +771,7 @@
       }
       if (S.editing) return sendEdit(S.editing.id, text);
       await say(text);
-    }, { suggestion: p.suggestion });
+    });
   }
 
   async function say(text) {
@@ -809,13 +782,11 @@
     try {
       next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] } });
     } catch (err) {
-      // No answer (no signal, the server's down): stop thinking and drop the old suggestion,
-      // which belonged to the conversation before this message.
+      // No answer (no signal, the server's down): stop thinking.
       $("#typing") && $("#typing").remove();
       // The message didn't go, so it goes back in the box (the composer keeps it), not in the chat.
       const mine = $$("#thread .me");
       if (mine.length) mine[mine.length - 1].remove();
-      if ($("#ta")) { $("#ta").dataset.normal = REPLY; S.clearSug(); }
       throw err;
     }
     if (my !== current()) return;

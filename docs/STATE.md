@@ -443,3 +443,6 @@ personal in here.
   the photos near the end; the old 600 KB cut was why). Tested on a live Zillow listing with Groq:
   12 photos in under a second, ads on the real porch and front, price read. The first reply's
   "**1** highlights" is now always "**Ad 1**". Other portals (Redfin, Realtor.com) untested.
+* Suggested reply removed (2026-10-27, Ismael): no grey guess in the box and no › button; the model
+  no longer writes one (fewer tokens per reply). The box says "Ask Hopkins anything" on a new
+  chat and "Reply to Hopkins" once there's a conversation. Rule updated in CLAUDE.md.

@@ -120,26 +120,6 @@ export async function newChat(ws, history) {
   return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
 }
 
-// What the agent will most likely say next, shown in grey in the empty message box. The model
-// writes one with each reply; otherwise it comes from where the listing is at. Never something
-// they just sent, never a nudge to pay.
-export function suggestionFor(ws, listing, ads, messages, canMakeMore = true) {
-  const last = messages.at(-1);
-  if (!last || last.role !== "hopkins") return "";
-  const sent = new Set(messages.filter((m) => m.role === "agent").slice(-6).map((m) => m.body.trim().toLowerCase()));
-  const ok = (s) => s && !sent.has(s.toLowerCase());
-  if (ok(last.data?.suggestion)) return last.data.suggestion;
-  // A saved listing with no ads yet: once they're on the paid plan, making them is the next step.
-  if (!ads.length) return canMakeMore && ok("Make the ads") ? "Make the ads" : "";
-  if (last.kind === "plan" || last.kind === "upgrade") return "";
-  // A fresh set (maybe with a wording note after it) since the agent last spoke.
-  const sinceAgent = messages.slice(messages.findLastIndex((m) => m.role === "agent") + 1);
-  const options = sinceAgent.some((m) => m.kind === "ads")
-    ? ["Which one would you pick?", "Make the first one shorter", "Use a different photo"]
-    : ["Make it shorter", "Try another angle", "Use a different photo", "Make it warmer", ...(isPaid(ws) ? ["Run it"] : [])];
-  return options.find(ok) || "";
-}
-
 // Listings made before that fix may carry the brand city as a guess. Clear it where the listing's
 // own words never mention it. Runs at start, and does nothing once they're clean.
 export async function forgetGuessedCities() {
@@ -829,9 +809,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     rewroteAll = true;
     await rewriteAds(ws, await loadListing(ws.id, listing.id), ads, photos, `the new facts (${text})`);
   }
-  const suggestion = plainWords(r.suggestion, polish).replace(/\.$/, "");
   const data = {};
-  if (suggestion && !/\b(upgrade|paid plan|pay)\b/i.test(suggestion)) data.suggestion = suggestion;
   if (changed.length || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
   await say(ws, listing.id, lookReply || reply || (changed.length ? `${VERSION_WORD(changed, ads)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
   return { focus: changed.length === 1 ? changed[0] : focus };

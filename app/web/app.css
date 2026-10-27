@@ -212,13 +212,6 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .acts{display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .lead-card{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
 .comp-wrap{padding:0 28px 18px;background:linear-gradient(transparent,var(--bg) 30%)}
-/* the suggested next message: grey in the empty box, with › to send it */
-.sug-go{display:none;width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;flex:none;align-items:center;justify-content:center;transition:transform .15s var(--spring)}
-.sug-go svg{width:18px;height:18px;stroke-width:2.4}
-.sug-go:active{transform:scale(.88)}
-.comp.has-sug .sug-go{display:flex;animation:pop .2s var(--ease)}
-.comp.has-sug .send{display:none}
-.comp.has-sug textarea::placeholder{color:var(--soft)}
 .comp{max-width:680px;margin:0 auto;border-radius:20px;background:var(--raise);border:1px solid var(--line2);box-shadow:var(--shadow);padding:6px 6px 6px 14px;transition:border-color .15s,box-shadow .15s}
 .comp:focus-within{border-color:rgba(42,15,20,.28);box-shadow:0 1px 2px rgba(42,15,20,.05),0 10px 30px rgba(42,15,20,.09)}
 .comp.drag{border-color:var(--gold);box-shadow:0 0 0 3px rgba(215,174,98,.3)}
