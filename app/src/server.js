@@ -12,6 +12,7 @@ import {
   proposeRun, confirmRun, addLead, weeklyReport, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, restyle, numberUntitled, editMessage, firstMessageId,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
+import { FONT_KEYS } from "./style.js";
 import { aiEnabled } from "./brain.js";
 import { KIND_NAMES, MOMENTS } from "./writer.js";
 import { PHOTO_LABELS, formatPrice, factsLine } from "./listing.js";
@@ -248,7 +249,7 @@ app.put("/api/brand", async (request, reply) => {
     const v = typeof body[k] === "string" ? body[k].trim().slice(0, max) : "";
     if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Colors need to be hex, like #1F2A36." });
     if (k === "voice" && !["plain", "warm", "premium"].includes(v)) continue;
-    if (k === "font" && !["modern", "classic"].includes(v)) continue;
+    if (k === "font" && !FONT_KEYS.includes(v)) continue;
     if (k === "alerts_topic" && v && !/^[A-Za-z0-9_-]{6,64}$/.test(v)) return reply.code(400).send({ error: "The alerts topic can only use letters, numbers, dashes and underscores, 6 to 64 of them." });
     brand[k] = v;
   }

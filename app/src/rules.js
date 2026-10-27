@@ -35,8 +35,14 @@ export function readStyle(low) {
     const role = roleIn(after.split(/\band\b|\bwith\b|,/)[0]) || roleIn(before.split(/\band\b|\bwith\b|,/).at(-1)) || "bg";
     if (!style[role]) style[role] = c.word;
   });
-  if (/\b(serif|classic|elegant|editorial|italic|old style)\b/.test(low) && /\b(font|type|typeface|text|writing|look)\b/.test(low)) style.font = "classic";
-  else if (/\b(sans|modern|bold|clean)\b/.test(low) && /\b(font|type|typeface)\b/.test(low)) style.font = "modern";
+  // The six fonts (web/creative.js FONTS), by the words agents use for them.
+  const typeWords = /\b(font|fonts|type|typeface|text|writing|look|lettering)\b/.test(low);
+  if (typeWords && /\b(elegant|playfair|fancy|luxur(y|ious) font)\b/.test(low)) style.font = "elegant";
+  else if (typeWords && /\b(editorial|magazine|fraunces|soft serif)\b/.test(low)) style.font = "editorial";
+  else if (typeWords && /\b(serif|classic|italic|old style)\b/.test(low)) style.font = "classic";
+  else if (/\b(minimal|minimalist|thin|light)\b/.test(low) && /\b(font|type|typeface)\b/.test(low)) style.font = "minimal";
+  else if (/\b(bold|heavy|chunky|thick|strong)\b/.test(low) && /\b(font|type|typeface)\b/.test(low)) style.font = "bold";
+  else if (/\b(sans|modern|clean)\b/.test(low) && /\b(font|type|typeface)\b/.test(low)) style.font = "modern";
   if (/\b(text|words|line|writing)\b.*\b(at|on|to) the top\b|\btop of the (image|photo|ad)\b/.test(low)) style.layout = "top";
   else if (/\b(split|solid block|photo (on top|above))\b/.test(low)) style.layout = "split";
   else if (/\bcard\b/.test(low)) style.layout = "card";

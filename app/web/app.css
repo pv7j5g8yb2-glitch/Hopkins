@@ -580,7 +580,15 @@ body.soon-leads [data-nav=leads].on,body.soon-report [data-nav=report].on{opacit
 .swatches button:active{transform:scale(.9)}
 .swatches button i{position:absolute;right:-1px;bottom:-1px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg)}
 .logo-up{display:flex;align-items:center;gap:10px}
-.logo-up i{width:84px;height:48px;border-radius:10px;border:1px solid var(--line2);background:var(--raise) center/contain no-repeat;display:block}
+.logo-up i{width:64px;height:64px;border-radius:50%;border:1px solid var(--line2);background:var(--raise) center/cover no-repeat;display:block;flex:none}
+/* Font picker: a sample of each font over its name, three across. */
+.fonts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fontc{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px 10px;border-radius:14px;border:1px solid var(--line2);background:var(--raise);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.fontc input{position:absolute;opacity:0;pointer-events:none}
+.fontc span{font-size:30px;line-height:1.1;color:var(--ink)}
+.fontc em{font-style:normal;font-size:13px;color:var(--soft)}
+.fontc:has(input:checked){border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.fontc:has(input:checked) em{color:var(--ink);font-weight:600}
 details.more summary{cursor:pointer;font-size:14px;font-weight:700;list-style:none;display:flex;align-items:center;gap:6px}
 details.more summary::-webkit-details-marker{display:none}
 details.more summary:after{content:"";width:7px;height:7px;border-right:1.5px solid var(--quiet);border-bottom:1.5px solid var(--quiet);transform:rotate(45deg);margin-top:-3px}

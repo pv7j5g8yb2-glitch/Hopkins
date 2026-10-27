@@ -4,7 +4,9 @@
 
 export const LAYOUTS = ["fade", "top", "split", "card", "frame"];
 // face: the agent's own photo in the bottom right corner (2026-10-27, Ismael asked for his face).
-const ENUMS = { font: ["modern", "classic"], layout: LAYOUTS, align: ["left", "center"], focus: ["top", "center", "bottom"], fade: ["light", "normal", "strong"], face: ["on", "off"] };
+// The fonts the renderer has (web/creative.js FONTS).
+export const FONT_KEYS = ["modern", "classic", "elegant", "editorial", "bold", "minimal"];
+const ENUMS = { font: FONT_KEYS, layout: LAYOUTS, align: ["left", "center"], focus: ["top", "center", "bottom"], fade: ["light", "normal", "strong"], face: ["on", "off"] };
 const COLOURS = ["bg", "accent", "text"];
 export const STYLE_KEYS = [...COLOURS, ...Object.keys(ENUMS), "size"];
 
@@ -98,7 +100,7 @@ const ASKED = {
   accent: /accent|label|price|highlight|colou?rs\b|luxur|brand|look|style/,
   // Only when a colour is said near the words, not for "put the text at the top".
   text: /(text|words|writing|letters|headline|title|font)( colou?r)?\s+(in |to |be |is |that's |)?(black|white|cream|ivory|gold|navy|dark|light|#[0-9a-f]{3,6}|[a-z]+ colou?r)|\b(black|white|cream|ivory|gold|navy|dark|light|#[0-9a-f]{3,6})\s+(text|words|writing|letters|headline|title|font)|font colou?r|text colou?r|readab|contrast|hard to read|can't read/,
-  font: /font|serif|classic|modern|type|typeface|luxur|elegant|editorial|bold|look|style/,
+  font: /font|serif|classic|modern|type|typeface|luxur|elegant|editorial|bold|heavy|minimal|thin|look|style/,
   // "My face in the bottom right" is about the photo of them, not the layout.
   layout: /layout|\b(top|bottom)\b(?!\s*(right|left|corner))|split|card|frame|border|fade|full|bleed|block|photo (above|on top)|arrange|design/,
   size: /big|small|size|larger|tiny|huge|bolder/,
@@ -128,7 +130,7 @@ export function sayLook(changes = {}, sizeStep = 0) {
   if (changes.bg) parts.push(`a ${colour(changes.bg)} background`);
   if (changes.accent) parts.push(`a ${colour(changes.accent)} label`);
   if (changes.text) parts.push(`${colour(changes.text)} text`);
-  if (changes.font) parts.push(changes.font === "classic" ? "the classic serif font" : "the modern bold font");
+  if (changes.font) parts.push(`the ${changes.font} font`);
   if (changes.layout) parts.push(LAYOUT_WORDS[changes.layout]);
   const step = sizeStep || (changes.size ? changes.size - 1 : 0);
   if (step) parts.push(step > 0 ? "bigger text" : "smaller text");

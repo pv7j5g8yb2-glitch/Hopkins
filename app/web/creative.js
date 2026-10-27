@@ -20,16 +20,37 @@
     return images.get(src);
   }
 
-  function loadFonts() {
+  // The fonts an ad's big line can use (Ismael, 2026-10-27: more than modern and classic).
+  // card: how much bigger the line and price sit in the card layout, for fonts that run small.
+  const FONTS = {
+    modern: { family: "Inter Tight", weight: 700, letter: -3, card: 1 },
+    classic: { family: "Instrument Serif", weight: 400, letter: -0.5, card: 1.15 },
+    elegant: { family: "Playfair Display", weight: 600, letter: -1, card: 1 },
+    editorial: { family: "Fraunces", weight: 600, letter: -1.5, card: 1 },
+    bold: { family: "Archivo Black", weight: 400, letter: -2, card: 0.95 },
+    minimal: { family: "DM Sans", weight: 500, letter: -2, card: 1 },
+  };
+  const loaded = new Map();
+  function loadFonts(key = "modern") {
     if (!fontsReady) {
-      fontsReady = Promise.all([
-        document.fonts.load('700 80px "Inter Tight"'),
-        document.fonts.load('400 40px "Inter Tight"'),
-        document.fonts.load('400 80px "Instrument Serif"'),
-        document.fonts.load('italic 400 80px "Instrument Serif"'),
-      ]).catch(() => null);
+      fontsReady = Promise.all([document.fonts.load('700 80px "Inter Tight"'), document.fonts.load('400 40px "Inter Tight"')]).catch(() => null);
     }
-    return fontsReady;
+    const f = FONTS[key] || FONTS.modern;
+    if (!loaded.has(key)) loaded.set(key, document.fonts.load(`${f.weight} 80px "${f.family}"`).catch(() => null));
+    return Promise.all([fontsReady, loaded.get(key)]);
+  }
+
+  // A logo drawn like a profile picture: a circle, the image filling it.
+  function roundLogo(ctx, img, x, y, d) {
+    const r = d / 2, s = Math.max(d / img.width, d / img.height);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x + r, y + r, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(x, y, d, d);
+    ctx.drawImage(img, x + r - (img.width * s) / 2, y + r - (img.height * s) / 2, img.width * s, img.height * s);
+    ctx.restore();
   }
 
   function hexRgb(hex) {
@@ -138,9 +159,8 @@
     const sub = brand.agent_name && brand.business ? brand.business : "";
     let x = 72;
     if (logo) {
-      const h = 64, w = Math.min(200, (logo.width / logo.height) * h);
-      ctx.drawImage(logo, x, y - 48, w, h);
-      x += w + 22;
+      roundLogo(ctx, logo, x, y - 48, 64);
+      x += 64 + 20;
     }
     ctx.fillText(name, x, y);
     if (sub) {
@@ -180,7 +200,7 @@
   //   bg      the colour of the fade, block, card or frame (default: the brand colour)
   //   accent  the small label and the price (default: the brand accent)
   //   text    the big line (default: light or dark, whichever reads on the background)
-  //   font    "modern" (Inter Tight bold) or "classic" (Instrument Serif)
+  //   font    one of FONTS: modern, classic, elegant, editorial, bold, minimal
   //   layout  "fade" (photo full, fades into the colour at the bottom), "top" (the same from
   //           the top), "split" (photo above, solid block below), "card" (photo full, a card
   //           with the price), "frame" (photo framed in the colour, text below)
@@ -195,7 +215,9 @@
   async function render(canvas, opts) {
     const { ad, brand = {}, format = "feed", photo, logo, face, watermark: wm } = opts;
     const st = ad.style || {};
-    await loadFonts();
+    const fontKey = FONTS[st.font] ? st.font : FONTS[brand.font] ? brand.font : "modern";
+    const F = FONTS[fontKey];
+    await loadFonts(fontKey);
     const [img, logoImg, faceImg] = await Promise.all([loadImage(photo), loadImage(logo), st.face === "on" ? loadImage(face) : null]);
     const W = 1080, H = format === "story" ? 1920 : 1350;
     canvas.width = W;
@@ -203,9 +225,9 @@
     const ctx = canvas.getContext("2d");
     const primary = HEX.test(st.bg || "") ? st.bg : brand.primary || "#1F2A36";
     const accent = readableOn(HEX.test(st.accent || "") ? st.accent : brand.accent || "#C8A96A", primary);
-    const classic = (st.font || brand.font) === "classic";
+
     const scale = Math.min(1.4, Math.max(0.7, Number(st.size) || 1));
-    const big = (s) => (classic ? `400 ${Math.round(s)}px "Instrument Serif"` : `700 ${Math.round(s)}px "Inter Tight"`);
+    const big = (s) => `${F.weight} ${Math.round(s)}px "${F.family}"`;
     const light = "#FBF8F3";
     const onPrimary = HEX.test(st.text || "") ? st.text : isDark(primary) ? light : "#1A1A1A";
     const onPhoto = HEX.test(st.text || "") ? st.text : light;
@@ -213,7 +235,7 @@
     // Instagram covers the top and bottom of a story with its own buttons; keep text clear.
     const safeTop = story ? 250 : 0;
     const safeBottom = story ? 330 : 0;
-    const letter = classic ? -0.5 : -3;
+    const letter = F.letter;
     const layout = ["fade", "top", "split", "card", "frame"].includes(st.layout) ? st.layout : LAYOUT_FOR[ad.pattern] || "fade";
     const center = st.align === "center";
     const focus = st.focus === "top" ? 0 : st.focus === "bottom" ? 1 : 0.5;
@@ -282,11 +304,16 @@
       roundRect(ctx, 56, cy, W - 112, cardH, 28);
       ctx.fill();
       const cx = center ? W / 2 : 104;
-      ctx.font = big((classic ? 84 : 72) * scale);
-      drawLines([ad.overlay], cx, cy + 112, 72 * scale, onPrimary);
+      // The line stays inside the card whatever the font's width: one line if it fits at a
+      // readable size, else two smaller ones a little higher, never cut off.
+      ctx.font = big(52);
+      const oneLine = ctx.measureText(ad.overlay || "").width <= W - 208;
+      const t = oneLine ? fitText(ctx, ad.overlay, big, Math.max(52, 72 * F.card * scale), W - 208, 1, 52) : fitText(ctx, ad.overlay, big, 52, W - 208, 2, 34);
+      ctx.font = big(t.size);
+      drawLines(t.lines, cx, cy + (t.lines.length > 1 ? 88 : 112), t.size, onPrimary);
       const price = opts.price || "";
       if (price) {
-        ctx.font = big((classic ? 150 : 132) * scale);
+        ctx.font = big(132 * F.card * scale);
         drawLines([price], center ? cx : 100, cy + 262, 132, accent);
       }
       ctx.font = '400 34px "Inter Tight"';
@@ -301,10 +328,7 @@
       ctx.fillText(brand.agent_name || brand.business || "", cx, cy + cardH - 40);
       ctx.globalAlpha = 1;
       ctx.textAlign = "left";
-      if (logoImg) {
-        const h = 56, w = Math.min(180, (logoImg.width / logoImg.height) * h);
-        ctx.drawImage(logoImg, W - 104 - w, cy + cardH - 40 - h + 12, w, h);
-      }
+      if (logoImg) roundLogo(ctx, logoImg, W - 104 - 56, cy + cardH - 40 - 56 + 12, 56);
     } else if (layout === "top") {
       // Photo full bleed, the line large at the top over a fade from the colour.
       photoAt(0, 0, W, H);
@@ -371,5 +395,5 @@
     ctx.closePath();
   }
 
-  window.Creative = { render, loadImage, LAYOUT_FOR };
+  window.Creative = { render, loadImage, LAYOUT_FOR, FONTS };
 })();

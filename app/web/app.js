@@ -497,7 +497,7 @@
       const brandDone = S.me.workspace.brand.setup_done;
       body = `<div class="progress"><div class="meter"><i style="width:${brandDone ? 34 : 6}%"></i></div>${brandDone ? "1 of 3 done" : "Let's start"}</div>
         <ol class="steps">
-        <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colors, logo and voice.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
+        <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colors, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
         <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description. You get ads made for that home.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
         <li><div class="tx"><b>Your yes</b><p>Nothing runs until you say so.</p></div></li></ol>`;
     } else {
@@ -1178,7 +1178,7 @@
     const ad = adFor(v) || p.ads[0];
     const b = S.me.workspace.brand;
     const handle = (b.instagram || b.business || "your.brand").replace(/^@/, "").toLowerCase().replace(/\s+/g, "");
-    const ava = b.logo_id ? `style="background:#fff url(${photoUrl(b.logo_id)}) center/contain no-repeat"` : `style="background:${esc(b.primary || "#1F2A36")}"`;
+    const ava = b.logo_id ? `style="background:#fff url(${photoUrl(b.logo_id)}) center/cover no-repeat"` : `style="background:${esc(b.primary || "#1F2A36")}"`;
     const issues = ad.issues || [];
     const short = ad.primary_text.length > 125;
     // Instagram's blue verified badge after the handle, wherever an account is shown (Ismael, 2026-10-25).
@@ -1239,7 +1239,7 @@
       <div class="st-row"><span>Background</span>${sw("bg", SWATCH.bg, b.primary || "#1F2A36")}</div>
       <div class="st-row"><span>Label</span>${sw("accent", SWATCH.accent, b.accent || "#C8A96A")}</div>
       <div class="st-row"><span>Text</span>${sw("text", SWATCH.text, null)}</div>
-      <div class="st-row"><span>Font</span>${chips("font", [["modern", "Modern"], ["classic", "Classic"]], st.font || b.font || "modern")}</div>
+      <div class="st-row"><span>Font</span>${chips("font", FONT_CHOICES, st.font || b.font || "modern")}</div>
       <div class="st-row"><span>Text size</span><div class="stc"><button data-stsize="-1" aria-label="Smaller">A−</button><button data-stsize="1" aria-label="Bigger">A+</button></div>${chips("align", [["left", "Left"], ["center", "Center"]], st.align || "left")}</div>
       <div class="st-row"><span>Photo</span>${chips("focus", [["top", "Top"], ["center", "Middle"], ["bottom", "Bottom"]], st.focus || "center")}</div>
       <div class="st-row"><span>Fade</span>${chips("fade", [["light", "Light"], ["normal", "Normal"], ["strong", "Strong"]], st.fade || "normal")}</div>
@@ -1399,6 +1399,8 @@
 
   // ---------- Brand ----------
 
+  // The fonts an ad can use, in the order they're offered (Ismael, 2026-10-27).
+  const FONT_CHOICES = [["modern", "Modern"], ["classic", "Classic"], ["elegant", "Elegant"], ["editorial", "Editorial"], ["bold", "Bold"], ["minimal", "Minimal"]];
   const COUNTRIES = ["United States", "Canada", "Australia", "United Arab Emirates", "United Kingdom", "Ireland", "Somewhere else"];
   // Quick picks that look good on real listing photos: a main color with an accent that suits it.
   const PALETTES = [["#1F2A36", "#C8A96A"], ["#111111", "#E8E2D6"], ["#22352B", "#D9B98A"], ["#2A0F14", "#D7AE62"], ["#2C3E50", "#E07A5F"], ["#3B2F2F", "#C9A27E"], ["#0F3D5E", "#F2C14E"], ["#4A4E69", "#F2E9E4"]];
@@ -1412,12 +1414,11 @@
       <div class="head"><h1>${first ? `Make it <span class="serif">yours</span>` : "Brand"}</h1></div>
       <div class="brandgrid"><form class="form" id="brandForm">
         <div class="group"><h4>Who you are</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
-        <div class="group"><h4>How it looks</h4><div style="display:flex;flex-direction:column;gap:14px">
+        <div class="group"><h4>Branding</h4><div style="display:flex;flex-direction:column;gap:14px">
           <div><div class="colors"><label><input type="color" name="primary" value="${esc(b.primary || "#1F2A36")}">Main color</label><label><input type="color" name="accent" value="${esc(b.accent || "#C8A96A")}">Accent</label></div>
           <div class="swatches">${PALETTES.map(([p1, p2]) => `<button type="button" data-pal="${p1},${p2}" style="background:${p1}" aria-label="Use ${p1} and ${p2}"><i style="background:${p2}"></i></button>`).join("")}</div></div>
-          <div class="logo-up"><i id="logoPrev" style="${b.logo_id ? `background-image:url(${photoUrl(b.logo_id)})` : ""}"></i><label class="sec-btn">Upload logo<input type="file" accept="image/png,image/jpeg,image/webp" hidden id="logoFile"></label>${b.logo_id ? `<button type="button" class="link" id="logoRm">Remove</button>` : ""}</div>
-          ${radio("font", [["modern", "Modern"], ["classic", "Classic serif"]])}</div></div>
-        <div class="group"><h4>How it sounds</h4>${radio("voice", [["plain", "Plain"], ["warm", "Warm"], ["premium", "Quiet luxury"]])}</div>
+          <div class="logo-up"><i id="logoPrev" style="${b.logo_id ? `background-image:url(${photoUrl(b.logo_id)})` : ""}"></i><label class="sec-btn">Upload logo<input type="file" accept="image/png,image/jpeg,image/webp" hidden id="logoFile"></label>${b.logo_id ? `<button type="button" class="link" id="logoRm">Remove</button>` : ""}</div></div></div>
+        <div class="group"><h4>Font</h4><div class="fonts">${FONT_CHOICES.map(([v, l]) => { const f = Creative.FONTS[v]; return `<label class="fontc"><input type="radio" name="font" value="${v}" ${(b.font || "modern") === v ? "checked" : ""}><span style="font-family:'${f.family}';font-weight:${f.weight}">Aa</span><em>${l}</em></label>`; }).join("")}</div></div>
         <div class="group"><details class="more"><summary>More</summary><div class="inner">
           <div class="grid2">${field("phone", "Phone on lead pages", "(512) 555 0100")}<div class="fld"><label for="f_country">Country</label><select id="f_country" name="country">${COUNTRIES.map((c) => `<option ${b.country === c ? "selected" : ""}>${c}</option>`).join("")}</select></div></div>
           ${field("license", "License line", "DRE #01234567", "Small print on your lead pages, where your state asks for it.")}
@@ -1488,7 +1489,7 @@
           <div><button class="sec-btn" data-act="saveProfile">Save profile</button></div></div></div>
       <div class="group"><h4>Business</h4>
         ${fld("sBiz", "Business, team or brokerage", b.business, "text", "Ellery Realty", "organization")}
-        <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="saveBiz">Save</button><a class="link" href="#/brand">Colors, logo and voice</a></div></div>
+        <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="saveBiz">Save</button><a class="link" href="#/brand">Colors, logo and font</a></div></div>
       <div class="group"><h4>Password</h4><div style="display:flex;flex-direction:column;gap:12px">
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>

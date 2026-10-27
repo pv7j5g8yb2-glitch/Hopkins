@@ -538,3 +538,11 @@ personal in here.
   typed now). "What's winning" is one split bar with a legend, shown only once there are leads.
   Cost per lead is now spend over all of a listing's leads (spend is a running total), not over
   this week's. The 4 boxes and the 6 spend inputs are gone. Checked at iPhone and laptop size.
+* Brand page (2026-10-27, Ismael): "How it looks" is now "Branding" (colours and logo), "How it
+  sounds" is gone (the saved voice stays as it was, new accounts write plain), and Font is its own
+  section: six fonts shown as an "Aa" sample over the name, Modern (Inter Tight), Classic
+  (Instrument Serif, was "Classic serif"), Elegant (Playfair Display), Editorial (Fraunces), Bold
+  (Archivo Black), Minimal (DM Sans). The Style sheet, the chat ("elegant font", "bold font") and
+  the model all know the six. The logo shows as a circle like a profile picture everywhere: on the
+  ads (footer and card), the Instagram preview, the Brand page and the lead page. In the card
+  layout the big line now shrinks or goes to two lines to stay inside the card, never cut off.
