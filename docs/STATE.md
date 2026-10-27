@@ -522,3 +522,8 @@ personal in here.
 * 502 on the live app (2026-10-27, 20:12, Ismael's phone): a minute after a push. /healthz now
   says when the running copy started, and a promise that fails without a catch is logged instead
   of stopping the server.
+* Today header (2026-10-27, Ismael): under the greeting, the day's date instead of "4 things need
+  you today" (which repeated the count). The three numbers sit in one even row between hairlines,
+  and each is a way in: Listings opens Listings, Leads this week opens Leads, Waiting on you
+  (bronze when above 0) scrolls to the first card. The lead count now comes from the leads
+  table for the last 7 days, not from the inbox's newest 30 items.

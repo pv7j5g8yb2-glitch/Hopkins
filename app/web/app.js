@@ -395,7 +395,7 @@
       <div class="soon-card"><span class="soon-chip">Coming soon</span><h2>${title}</h2><p>${line}</p></div></div>`;
   }
   async function loadListings() { S.listings = (await api("/api/listings")).listings; }
-  async function loadInbox() { S.inbox = (await api("/api/inbox")).items; S.inboxLoaded = true; }
+  async function loadInbox() { const r = await api("/api/inbox"); S.inbox = r.items; S.leadsWeek = r.leadsWeek; S.inboxLoaded = true; }
 
   // The tab you tapped lights up straight away, before its screen has loaded.
   function markNav() {
@@ -490,7 +490,7 @@
     const row = (m) => `<a class="row" href="${m.kind === "report" ? "#/report" : `#/l/${m.listing_id}`}"><span class="ic">${icon(m)}</span>
       <div class="tx"><b>${esc(titleFor(m))}</b><p>${esc(plainText(m.body))}</p></div><span class="when">${ago(m.created_at)}</span></a>`;
 
-    const leadsWeek = S.inbox.filter((m) => m.kind === "lead").length;
+    const leadsWeek = S.leadsWeek ?? S.inbox.filter((m) => m.kind === "lead").length;
     let body;
     if (!S.listings.length) {
       const brandDone = S.me.workspace.brand.setup_done;
@@ -500,11 +500,16 @@
         <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description. You get ads made for that home.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
         <li><div class="tx"><b>Your yes</b><p>Nothing runs until you say so.</p></div></li></ol>`;
     } else {
-      body = `<div class="stats-mini"><div><b>${S.listings.length}</b>${S.listings.length === 1 ? "listing" : "listings"}</div><div><b>${leadsWeek}</b>${leadsWeek === 1 ? "lead" : "leads"} this week</div><div><b>${waiting.length}</b>waiting on you</div></div>
+      body = `<nav class="stats-mini" aria-label="At a glance">
+          <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Listing" : "Listings"}</span></a>
+          <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
+          <a href="#/today" data-act="toWaiting" class="${waiting.length ? "hot" : ""}"><b>${waiting.length}</b><span>Waiting on you</span></a></nav>
+
         ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>When a listing comes in, a price changes or a lead arrives, it shows up here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
-    const lede = !S.listings.length ? "Three steps to your first ads." : waiting.length ? `${waiting.length} ${waiting.length === 1 ? "thing needs" : "things need"} you today.` : "Nothing needs you right now.";
+    // The count lives in the row below, so the line under the greeting is just the day.
+    const lede = !S.listings.length ? "Three steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
     const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, <span class="serif">${esc(first)}</span>` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
     if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
   }
@@ -1730,6 +1735,11 @@
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
+      else if (act === "toWaiting") {
+        // The first thing waiting is right below; a tap brings it into view.
+        e.preventDefault();
+        $(".hero")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
       else if (act === "listmenu") { S.menuFrom = null; openPop(t, listingMenu()); }
       else if (act === "limenu") {
         // The ••• on a listing in the sidebar: rename or delete, like a chat in Claude or ChatGPT.

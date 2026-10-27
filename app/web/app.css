@@ -361,9 +361,16 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .empty-pv{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:30px;text-align:center;color:var(--quiet);font-size:14px}
 
 /* ---------- Today, listings, lists ---------- */
-.stats-mini{display:flex;gap:22px;margin:-8px 0 26px}
-.stats-mini div{font-size:13px;color:var(--quiet)}
-.stats-mini b{display:block;font-size:22px;font-weight:700;letter-spacing:-.04em;color:var(--ink)}
+/* At a glance: three equal columns between hairlines, each one a way in. */
+.stats-mini{display:grid;grid-template-columns:repeat(3,1fr);margin:-6px 0 24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stats-mini a{display:flex;flex-direction:column;gap:4px;padding:14px 4px 14px 14px;position:relative;transition:background .15s;min-width:0}
+.stats-mini a:first-child{padding-left:2px}
+.stats-mini a+a:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:1px;background:var(--line)}
+.stats-mini a:hover{background:var(--hover)}
+.stats-mini a:active{background:var(--sel)}
+.stats-mini b{font-size:28px;font-weight:700;letter-spacing:-.045em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.stats-mini span{font-size:13px;color:var(--quiet);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats-mini a.hot b{color:var(--bronze,#8E6B2C)}
 .hero{display:block;border-radius:20px;overflow:hidden;background:var(--raise);box-shadow:0 0 0 1px var(--line),var(--shadow);margin-bottom:12px;animation:up .35s var(--ease) both;transition:transform .15s var(--ease)}
 .hero:active{transform:scale(.985)}
 .hero .ph{height:150px;background:var(--side) center/cover;position:relative}
@@ -743,7 +750,7 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .cards{grid-template-columns:1fr 1fr;gap:10px}
   .card-new{min-height:160px}
   .stats{grid-template-columns:1fr 1fr}
-  .stats-mini{margin-top:-6px}
+  .stats-mini{margin-top:-8px}
   .brandgrid{grid-template-columns:1fr;gap:22px}
   .brandprev{position:static;display:flex;gap:14px;align-items:center}
   .brandprev canvas{width:120px;flex:none}

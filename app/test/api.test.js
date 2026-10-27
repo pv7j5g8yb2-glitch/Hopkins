@@ -117,6 +117,8 @@ test("paid: the plan first, then the yes, then the testing record and leads", as
 
   const leads = await c("GET", "/api/leads");
   assert.equal(leads.json.leads[0].version, 1);
+  // Today's "Leads this week" counts the leads themselves.
+  assert.equal((await c("GET", "/api/inbox")).json.leadsWeek, 1);
   await c("PATCH", `/api/listings/${id}`, { spend: 60 });
   const report = await c("GET", "/api/report");
   assert.equal(report.json.total, 1);
