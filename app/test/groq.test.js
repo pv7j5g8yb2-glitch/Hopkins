@@ -134,3 +134,64 @@ test("listings sent at the same moment can't get past the 3 free ads", async () 
   const me = (await c("GET", "/api/me")).json;
   assert.ok(me.usage.adsMade <= 3, `made ${me.usage.adsMade} ads on the free plan`);
 });
+
+test("\"do the same for ad 1 and 3\" really does it, and a reply never claims a change that didn't happen", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "same@test.com", password: "password123", invite: "EARLY1", name: "Ismael" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  const ad = (v) => ({ ...l.json.ads.find((x) => x.version === v), kind: "life", photo_number: 0 });
+  const style = (o) => ({ bg: "", accent: "", text: "", font: "", layout: "", size: 0, align: "", focus: "", fade: "", reset: false, ...o });
+  const turn = (reply, ads) => ({ reply, action: "revise", version: 0, remove: [], moment: "none", ads, listing_patch: null, budget: 0, days: 0 });
+
+  next = [turn("**Ad 2** now has a grey background.", [{ ...ad(2), style: style({ bg: "#5F6368" }) }])];
+  const one = await c("POST", `/api/listings/${id}/messages`, { text: "change for ad 2 into grey color background", version: 1 });
+  assert.equal(one.json.ads.find((x) => x.version === 2).style.bg, "#5F6368");
+
+  // What the live model sent on 2026-10-27: the grey, plus a stray reset that used to wipe it.
+  next = [turn("Ad 1 and Ad 3 now use a grey background.", [{ ...ad(1), style: style({ bg: "#5F6368", reset: true }) }, { ...ad(3), style: style({ bg: "#5F6368", reset: true }) }])];
+  const two = await c("POST", `/api/listings/${id}/messages`, { text: "now do the same for ad 1 and 3", version: 1 });
+  assert.deepEqual(two.json.ads.map((x) => x.style.bg), ["#5F6368", "#5F6368", "#5F6368"]);
+
+  // The model forgets the look entirely: "the same" still means the last change.
+  next = [turn("Done, grey on Ad 1 too.", [{ ...ad(1), style: style({ bg: "" }) }])];
+  await c("POST", `/api/listings/${id}/style`, { versions: [1], style: { bg: "" } });
+  const back = await c("PATCH", `/api/listings/${id}/style`, { versions: [1], style: { bg: null } });
+  assert.equal(back.json.ads[0].style.bg, undefined);
+  const three = await c("POST", `/api/listings/${id}/messages`, { text: "same for ad 1", version: 1 });
+  assert.equal(three.json.ads[0].style.bg, "#5F6368");
+
+  // A claimed change that changes nothing is never reported as done.
+  next = [turn("Ad 3 now has a gold label.", [{ ...ad(3), style: style({ accent: "" }) }])];
+  const none = await c("POST", `/api/listings/${id}/messages`, { text: "make ad 3 look nicer", version: 3 });
+  assert.doesNotMatch(none.json.messages.at(-1).body, /now has a gold label/);
+});
+
+test("without the model, \"the same for ad 1\" repeats the last look change", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "same2@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  next = [500, 500, 500];
+  await c("POST", `/api/listings/${id}/messages`, { text: "make ad 2 navy", version: 1 });
+  next = [500, 500, 500];
+  const r = await c("POST", `/api/listings/${id}/messages`, { text: "do the same for ad 1 and 3", version: 1 });
+  assert.deepEqual(r.json.ads.map((x) => x.style.bg), ["#1F2A44", "#1F2A44", "#1F2A44"]);
+});
+
+test("\"no you didn't\" gets the ads' real look, not an apology for a change that happened", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "didnt@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = l.json.listing.id;
+  next = [500, 500, 500];
+  await c("POST", `/api/listings/${id}/messages`, { text: "make all three grey", version: 1 });
+  next = [{ reply: "You're right, I didn't apply it yet. Let me fix that now.", action: "none", version: 0, remove: [], moment: "none", ads: [], listing_patch: null, budget: 0, days: 0 }];
+  const r = await c("POST", `/api/listings/${id}/messages`, { text: "no you didn't lol?", version: 1 });
+  const body = r.json.messages.at(-1).body;
+  assert.doesNotMatch(body, /let me fix/i);
+  assert.match(body, /All three ads have a grey background/);
+});

@@ -44,7 +44,7 @@
     people: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg>',
     chart: '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
   };
-  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), snaps: {}, snapImg: {}, snapQueue: Promise.resolve(), segPos: {}, styleAll: false, format: "feed", pending: [], busy: false, showPhotos: false, showIssues: false, seen: {}, fresh: null };
+  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), snaps: {}, snapImg: {}, snapQueue: Promise.resolve(), segPos: {}, styleAll: false, format: "feed", pending: [], busy: false, showIssues: false, seen: {}, fresh: null };
 
   // ---------- helpers ----------
 
@@ -762,7 +762,6 @@
         for (const f of files) await uploadPhoto(f, { listingId: l.id });
         $("#hint").textContent = "";
         if (!text) {
-          S.showPhotos = true;
           toast(`Added ${files.length} ${files.length === 1 ? "photo" : "photos"}`);
           return viewListing(l.id);
         }
@@ -1118,12 +1117,10 @@
       <div class="stage" id="stage">${S.format === "feed" ? feed : story}<div class="dots">${p.ads.map((a) => `<i class="${a.version === v ? "on" : ""}"></i>`).join("")}</div></div>
       <div class="pvb">
         <div class="actrow lg"><button class="btn" data-act="run">Run it</button><button class="sec-btn" data-act="style" aria-label="Style">${ICON.brush}<span>Style</span></button><button class="sec-btn" data-act="dlmenu" aria-label="Download">${ICON.down}<span>Download</span></button></div>
-        <div class="status ${issues.length ? "bad" : ""}">${issues.length ? `${ICON.alert}<button data-act="issues">${issues.length} wording ${issues.length === 1 ? "issue" : "issues"} to look at</button>` : `${ICON.check}Fair housing check passed`}<span style="margin-left:auto"></span><button data-act="photos">${S.showPhotos ? "Hide photos" : "Change photo"}</button></div>
+        ${issues.length ? `<div class="status bad">${ICON.alert}<button data-act="issues">${issues.length} wording ${issues.length === 1 ? "issue" : "issues"} to look at</button></div>` : ""}
         ${issues.length && S.showIssues ? `<div class="issues">${issues.map((i) => `"${esc(i.term)}" ${esc(i.why)}${i.suggestion ? `. Try "${esc(i.suggestion)}"` : ""}.`).join("<br>")}</div>` : ""}
-        ${S.showPhotos ? photoStrip(ad) : ""}
       </div>`;
     Creative.render($("#big"), renderOpts(ad, S.format));
-    bindStrip();
     settleSegs();
     // Swipe left or right on the ad to flip between the versions.
     const stage = $("#stage");
@@ -1167,7 +1164,8 @@
       <div class="st-row"><span>Text size</span><div class="stc"><button data-stsize="-1" aria-label="Smaller">A−</button><button data-stsize="1" aria-label="Bigger">A+</button></div>${chips("align", [["left", "Left"], ["center", "Center"]], st.align || "left")}</div>
       <div class="st-row"><span>Photo</span>${chips("focus", [["top", "Top"], ["center", "Middle"], ["bottom", "Bottom"]], st.focus || "center")}</div>
       <div class="st-row"><span>Fade</span>${chips("fade", [["light", "Light"], ["normal", "Normal"], ["strong", "Strong"]], st.fade || "normal")}</div>
-      <button class="st-reset" data-streset="1">Back to the brand look</button>`;
+      <button class="st-reset" data-streset="1">Back to the brand look</button>
+      <p class="st-more">Anything else, just tell Hopkins in the chat.</p>`;
   }
   // The ad as it now looks, small, at the top of the sheet, so a change shows where your eyes are.
   function drawStylePreview() {
@@ -1176,35 +1174,37 @@
     if (c && ad) Creative.render(c, renderOpts(ad, "feed"));
   }
 
-  async function applyStyle(body) {
+  // The Style sheet changes the ad on the spot (Ismael, 2026-10-27: it waited for the server,
+  // slow on Render, then redrew the whole screen). The tapped option and the preview at the top
+  // of the sheet change on the same frame; the big preview and the chat cards follow on the
+  // next one; the server saves in the background, one change after another, and only its last
+  // answer is kept. If a save fails, the listing reloads as it really is.
+  const LOOK_KEYS = ["bg", "accent", "text", "font", "layout", "align", "focus", "fade", "size"];
+  let styleSeq = 0, styleSave = Promise.resolve();
+  function applyStyle(body) {
     const l = S.current.listing;
     const versions = S.styleAll ? S.current.ads.map((a) => a.version) : [S.selected[l.id]];
-    try {
-      const next = await api(`/api/listings/${l.id}/style`, { method: "PATCH", body: { versions, ...body } });
-      S.current = next;
-      buzz(5);
-      drawPreview();
-      drawMiniCards();
-      if ($("#pop").classList.contains("on")) { const sc = $("#pop").scrollTop; $("#pop").innerHTML = `<div class="grab"></div>${styleSheet()}`; $("#pop").scrollTop = sc; settleSegs(); drawStylePreview(); }
-    } catch (err) { toast(err.message); }
+    for (const ad of S.current.ads.filter((a) => versions.includes(a.version))) {
+      const st = { ...(ad.style || {}) };
+      if (body.style.reset) LOOK_KEYS.forEach((k) => delete st[k]);
+      for (const [k, v] of Object.entries(body.style)) {
+        if (k === "reset") continue;
+        if (v == null || v === "") delete st[k];
+        else st[k] = typeof v === "string" && v.startsWith("#") ? v.toUpperCase() : v;
+      }
+      if (body.sizeStep) st.size = Math.round(Math.min(1.4, Math.max(0.7, (Number(st.size) || 1) + body.sizeStep)) * 100) / 100;
+      ad.style = st;
+    }
+    buzz(5);
+    if ($("#pop").classList.contains("on")) { const sc = $("#pop").scrollTop; $("#pop").innerHTML = `<div class="grab"></div>${styleSheet()}`; $("#pop").scrollTop = sc; settleSegs(); drawStylePreview(); }
+    requestAnimationFrame(() => setTimeout(() => { if (S.current?.listing.id === l.id) { drawPreview(); drawMiniCards(); } }, 0));
+    const seq = ++styleSeq;
+    styleSave = styleSave
+      .then(() => api(`/api/listings/${l.id}/style`, { method: "PATCH", body: { versions, ...body } }))
+      .then((next) => { if (seq === styleSeq && S.current?.listing.id === l.id) S.current = next; })
+      .catch((err) => { toast(err.message); if (S.current?.listing.id === l.id) viewListing(l.id, true); });
   }
 
-  function photoStrip(ad) {
-    return `<div class="strip">${S.current.photos.map((ph, i) => `<div class="p ${ad && ad.photo_id === ph.id ? "on" : ""}"><i data-use="${ph.id}" style="background-image:url(${photoUrl(ph.id, true)})" title="Use photo ${i + 1}"><b>${i + 1}</b></i></div>`).join("")}
-      <label class="add" title="Add photos">${ICON.plus}<input type="file" accept="image/*" multiple hidden data-addphotos></label></div>`;
-  }
-
-  function bindStrip() {
-    const l = S.current.listing;
-    const add = $("[data-addphotos]");
-    if (add) add.addEventListener("change", async (e) => {
-      const files = [...e.target.files];
-      toast(`Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}…`);
-      for (const f of files) await uploadPhoto(f, { listingId: l.id });
-      await viewListing(l.id, true);
-      refreshSide();
-    });
-  }
 
   async function refreshSide() {
     await Promise.all([loadMe(), loadListings(), loadInbox()]);
@@ -1724,7 +1724,6 @@
       else if (act === "expand") { const m = t.closest(".me"); m.classList.remove("clamp"); t.remove(); }
       else if (act === "example") { const ta = $("#ta"); ta.value = EXAMPLE; ta.dispatchEvent(new Event("input")); buzz(5); }
       else if (act === "more") { const ad = adFor(S.selected[l.id]); $("#cp").innerHTML = `<b>${esc(($("#cp b") || {}).textContent || "")}</b>${esc(ad.primary_text)}`; }
-      else if (act === "photos") { S.showPhotos = !S.showPhotos; drawPreview(); }
       else if (act === "issues") { S.showIssues = !S.showIssues; drawPreview(); }
       else if (act === "remake" && !paid() && S.me.usage.adsMade >= S.me.usage.freeLimit) upgradeSheet("limit");
       else if (act === "remake") {

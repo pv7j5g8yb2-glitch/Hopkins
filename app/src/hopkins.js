@@ -9,7 +9,7 @@ import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS,
 import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions } from "./rules.js";
-import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS } from "./style.js";
+import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
 import { aiEnabled, provider, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
@@ -291,13 +291,49 @@ function introFor(moment, listing, ads = []) {
 // The model's style for one ad: "" and 0 mean "leave it", "default" means "back to the brand".
 function modelStyle(st, message, { filter = true } = {}) {
   if (!st || typeof st !== "object") return {};
-  if (st.reset === true) return { reset: true };
+  // The model sometimes sets reset by mistake next to a real change ("grey, and reset"), which
+  // wiped the change (2026-10-27). Reset only counts when the agent asked to start over.
+  const askedReset = Boolean(readStyle(String(message || "").toLowerCase())?.style?.reset) || /\b(start over|from scratch|undo (all|every)|back to (how|what) (it|they) (was|were))\b/i.test(message || "");
+  if (st.reset === true && askedReset) return { reset: true };
   const out = {};
   for (const [k, v] of Object.entries(st)) {
     if (k === "reset" || v === "" || v === 0 || v === null || v === undefined) continue;
     out[k] = typeof v === "string" && v.trim().toLowerCase() === "default" ? null : v;
   }
   return filter ? onlyAsked(cleanStyle(out), message) : cleanStyle(out);
+}
+
+// "Do the same for ad 1 and 3", "that too", "like ad 2": a look change that points back at the
+// last one instead of naming it (2026-10-27: it was dropped, and the reply said it was done).
+// "No you didn't", "nothing changed", "it's still navy": the agent says a change didn't happen.
+// When nothing changes in that turn, the answer comes from the ads themselves, never from the
+// model, which once replied "You're right, I didn't apply it. Let me fix that now" about a change
+// it had made (2026-10-27).
+const CHALLENGE = /\b(you didn'?t|didn'?t (change|work|do|happen|apply)|did(n'?t| not) change|nothing (changed|happened)|not (changed|done|applied)|still (the same|looks? the same|navy|blue|green|grey|gray|black|white)|it'?s (still|not)|no change|same as before|where'?s the change)\b/i;
+function lookNow(ads) {
+  const groups = [];
+  for (const a of ads) {
+    const look = Object.fromEntries(STYLE_KEYS.filter((k) => a.style?.[k] != null).map((k) => [k, a.style[k]]));
+    const key = JSON.stringify(look);
+    const g = groups.find((x) => x.key === key);
+    if (g) g.versions.push(a.version);
+    else groups.push({ key, look, versions: [a.version] });
+  }
+  return groups.map((g) => `${VERSION_WORD(g.versions, ads)} ${g.versions.length > 1 ? "have" : "has"} ${Object.keys(g.look).length ? sayLook(g.look) : "your brand colours"}`).join(", and ") + ".";
+}
+
+const LOOK_WORDS = new RegExp(`\\b(background|label|colou?r|font|serif|layout|frame|fade|bigger|smaller|text size|centered|centred|${Object.keys(COLOUR_WORDS).join("|")})\\b`, "i");
+export const refersBack = (text) => /\b(the same|same (thing|look|colou?r|for|on|as)|do that|that too|this too|those too|as well|match(ing)?|copy (that|it|the look)|like (ad|version|number) ?[1-5])\b/i.test(String(text || ""));
+async function lastLook(listingId) {
+  const rows = await all(`SELECT data FROM messages WHERE listing_id = ? AND role = 'hopkins' AND data LIKE '%"look":%' ORDER BY created_at DESC LIMIT 1`, [listingId]);
+  const look = rows[0] ? JSON.parse(rows[0].data).look : null;
+  return look && Object.keys(look).length ? look : null;
+}
+// The look keys that changed between two styles (what "the same" repeats later).
+function lookDiff(before = {}, after = {}) {
+  const out = {};
+  for (const k of STYLE_KEYS) if (k !== "size" && before[k] !== after[k] && after[k] !== undefined) out[k] = after[k];
+  return out;
 }
 
 // What really changed on each version, in words, plus any colour left out because it wouldn't
@@ -510,7 +546,10 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
   if (room < want && !note) note = `That's ${room} of the ${want}: your free ads are used up after ${room === 1 ? "this one" : "these"}.`;
   await patchListing(ws.id, listing.id, { moment });
   await clearActions(listing.id);
-  const body = [reply || introFor(moment, listing, set), note].filter(Boolean).join(" ");
+  // The first set says once how to change the look (Ismael, 2026-10-27: people didn't know).
+  const firstSet = moment === "new" && !(await get(`SELECT 1 FROM messages WHERE listing_id = ? AND kind = 'ads'`, [listing.id]));
+  const tip = firstSet ? 'To change how they look, tap **Style**, or just tell me in your own words, like "grey background", "classic font" or "use the kitchen photo".' : null;
+  const body = [reply || introFor(moment, listing, set), note].filter(Boolean).join(" ") + (tip ? `\n\n${tip}` : "");
   await say(ws, listing.id, body, "ads", { moment, snapshot: await snapshot(listing) }, true);
 
   // The agent's own description gets the same fair housing check as Hopkins' copy.
@@ -755,7 +794,13 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   // When any of that overrides the model, its reply may describe the wrong thing, so Hopkins
   // says what actually changed instead.
   const named = r.action === "revise" ? namedVersions(text, ads) : null;
-  const ruled = text ? readStyle(text.toLowerCase()) : null;
+  let ruled = text ? readStyle(text.toLowerCase()) : null;
+  // "The same for ad 1 and 3": the last look change, as if the agent had named it again.
+  let askText = text;
+  if (refersBack(text) && (!ruled || !Object.keys(ruled.style).length)) {
+    const again = await lastLook(listing.id);
+    if (again) { ruled = { style: again, sizeStep: 0 }; askText = `${text} ${sayLook(again)}`; }
+  }
   const ruledColours = ruled && !ruled.vague ? Object.fromEntries(["bg", "accent", "text"].filter((k) => ruled.style[k]).map((k) => [k, ruled.style[k]])) : {};
   let overrode = false;
   const unreadable = {};
@@ -765,7 +810,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     if (named && !named.includes(ad.version)) { overrode = true; continue; }
     const next = guarded({ ...ad, ...normalizeAI(a, photos, ad, text) }, ad, { listing: { ...listing, ...patch }, photos, extra: text });
     const wanted = modelStyle(a.style, text, { filter: false });
-    const look = modelStyle(a.style, text);
+    const look = modelStyle(a.style, askText);
     for (const k of ["bg", "accent", "text"]) {
       if (ruledColours[k] && look[k] !== ruledColours[k]) look[k] = ruledColours[k];
       else if (!ruledColours[k] && look[k] && Object.values(ruledColours).includes(look[k])) delete look[k];
@@ -799,9 +844,15 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     return ad && (!named || named.includes(ad.version)) && ["headline", "primary_text", "overlay"].some((k) => a[k] && polish(cleanWording(String(a[k]))) !== ad[k]);
   });
   let lookReply = null;
-  if ((overrode || Object.keys(unreadable).length) && changed.length && !copyChanged) {
-    const after = await currentAds(listing);
-    lookReply = sayChanges(changed.map((v) => ({ version: v, before: ads.find((x) => x.version === v)?.style, after: after.find((x) => x.version === v)?.style })), unreadable, ws.brand?.primary, ads) || null;
+  const afterAds = changed.length ? await currentAds(listing) : ads;
+  const diffs = changed.map((v) => ({ version: v, before: ads.find((x) => x.version === v)?.style, after: afterAds.find((x) => x.version === v)?.style }));
+  const lookChanged = diffs.some((d) => Object.keys(lookDiff(d.before, d.after)).length || (Number(d.after?.size) || 1) !== (Number(d.before?.size) || 1));
+  // A reply that talks about the look when nothing about the look changed isn't sent either.
+  const claimsLook = (r.ads || []).length && !lookChanged && !copyChanged && LOOK_WORDS.test(reply || "");
+  if ((overrode || Object.keys(unreadable).length || claimsLook) && changed.length && !copyChanged) {
+    lookReply = sayChanges(diffs, unreadable, ws.brand?.primary, ads) || null;
+    // Never a reply about a change that didn't happen: if nothing moved, say so.
+    if (!lookReply && !lookChanged) lookReply = `That didn't change anything on ${VERSION_WORD(changed, ads).replace(/^Ad /, "ad ")}. Tell me the look you want, like "grey background" or "classic font", and I'll do it. You can also tap Style.`;
   }
   // New facts with no rewritten copy from the model: rewrite the ads so they carry them.
   let rewroteAll = false;
@@ -811,6 +862,14 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   }
   const data = {};
   if (changed.length || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
+  const look = diffs.map((d) => lookDiff(d.before, d.after)).find((x) => Object.keys(x).length);
+  if (look) data.look = look;
+  if (!lookChanged && !copyChanged && !rewroteAll && CHALLENGE.test(text || "")) {
+    const named = namedVersions(text, ads);
+    const shown = named ? ads.filter((a) => named.includes(a.version)) : ads;
+    await say(ws, listing.id, `Here's where they are now. ${lookNow(shown)} If you're seeing something different, tell me what to change and I'll do it straight away.`, "text", { snapshot: await snapshot(listing, shown.map((a) => a.version)) });
+    return { focus };
+  }
   await say(ws, listing.id, lookReply || reply || (changed.length ? `${VERSION_WORD(changed, ads)} updated.` : "Okay."), "text", Object.keys(data).length ? data : null);
   return { focus: changed.length === 1 ? changed[0] : focus };
 }
@@ -836,6 +895,11 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
 
   if (intent.kind === "run") return proposeRun(ws, listing, { versions: intent.versions, budget: intent.budget, days: intent.days });
 
+  if (intent.kind !== "style" && refersBack(text) && ads.length) {
+    const again = await lastLook(listing.id);
+    const versions = namedVersions(text, ads);
+    if (again && versions?.length) Object.assign(intent, { kind: "style", style: again, sizeStep: 0, versions });
+  }
   if (intent.kind === "remove" && ads.length) return changeSet(ws, listing, ads, photos, { action: "remove_ads", remove: intent.versions, ads: [], reply: "" }, text);
   if (intent.kind === "add") return changeSet(ws, listing, ads, photos, { action: "add_ads", remove: [], ads: [], reply: "" }, text);
 
@@ -969,7 +1033,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     const why = dropped.length ? `I left the ${dropped.map((d) => (d === "text" ? "text" : "label")).join(" and ")} colour as it was, because ${dropped.map((d) => colourName(intent.style[d])).join(" and ")} wouldn't be readable on ${colourName(bg)}. A ${contrast(bg, "#FFFFFF") > contrast(bg, "#000000") ? "lighter" : "darker"} one will work.` : "";
     const changedAny = Object.keys(kept).length || intent.sizeStep;
     const reply = [changedAny ? `${VERSION_WORD(done, ads)} ${done.length > 1 ? "now have" : "now has"} ${sayLook(kept, intent.sizeStep)}.` : "", why].filter(Boolean).join(" ");
-    await say(ws, listing.id, reply, "text", { snapshot: await snapshot(listing, done) });
+    await say(ws, listing.id, reply, "text", { snapshot: await snapshot(listing, done), ...(Object.keys(kept).length && !kept.reset ? { look: kept } : {}) });
     return { focus: done.length === 1 ? done[0] : undefined };
   }
 

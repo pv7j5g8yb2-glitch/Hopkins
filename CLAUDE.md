@@ -171,6 +171,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   a message can be selected and copied. An edit makes Hopkins forget the old wording and put the
   ads back as they were, like ChatGPT and Claude. Only messages an edit can't go back to (before an
   approved run, or the chat before the listing existed) have no Edit.
+* **Replies must match what happened (lesson, 2026-10-27):** Hopkins said "grey background applied
+  to Ad 1 and Ad 3" when nothing changed, then apologised for a change it had made. Every look
+  reply is now checked against the ads after the change; when they disagree, the reply comes from
+  the ads, not the model. Keep it that way for anything new Hopkins can change.
 * **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.

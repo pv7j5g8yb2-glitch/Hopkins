@@ -337,7 +337,8 @@
       ctx.globalAlpha = 0.55;
       ctx.fillStyle = onPrimary;
       ctx.font = '400 30px "Inter Tight"';
-      ctx.fillText("Your photo goes here", 72, 120 + safeTop);
+      // The Top layout puts its words at the top, so the note goes lower down there.
+      ctx.fillText("Your photo goes here", 72, layout === "top" ? H * 0.62 : 120 + safeTop);
       ctx.restore();
     }
     grain(ctx, W, H, 14);

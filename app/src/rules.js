@@ -73,7 +73,11 @@ export function namedVersions(text, ads = []) {
   const byName = ads.filter((a) => a.name && a.name.length > 2 && t.includes(a.name.toLowerCase().replace(/^the /, ""))).map((a) => a.version);
   if (/\b(all|every|each)( of them| three| versions?| ads?)?\b|\bthem all\b/.test(t)) return ads.length ? ads.map((a) => a.version) : [1, 2, 3, 4, 5];
   const found = new Set();
-  for (const m of t.matchAll(/\b(?:v|version|ad|number|option|#)\s?([1-5])\b/g)) found.add(Number(m[1]));
+  // A list after the word counts whole: "ad 1 and 3", "ads 1, 2 and 3", "versions 2 & 3"
+  // (2026-10-27: "ad 1 and 3" was read as ad 1 alone).
+  for (const m of t.matchAll(/\b(?:v|versions?|ads?|numbers?|options?|#)\s?([1-5](?:\s*(?:,|and|&|\+|or|plus)\s*(?:(?:v|version|ad|number|option|#)\s?)?[1-5]\b)*)\b/g)) {
+    for (const d of m[1].match(/[1-5]/g)) found.add(Number(d));
+  }
   for (const m of t.matchAll(/\b(first|1st|second|2nd|third|3rd|fourth|4th|fifth|5th|last)\b(?= (one|version|ad|option))/g)) found.add(m[1] === "last" && ads.length ? Math.max(...ads.map((a) => a.version)) : ORDINALS[m[1]]);
   for (const v of byName) found.add(v);
   return found.size ? [...found].sort() : null;

@@ -463,3 +463,20 @@ personal in here.
   switching apps finishes it at once; reduced motion shows replies whole. Measured on an iPhone
   sized screen: 86 words in 2.0s, and 211 words in 2.1s with the processor at a quarter speed,
   with an even rate and no change in the reply's height.
+* Grey background bug (2026-10-27, Ismael's screenshots): "now do the same for ad 1 and 3" did
+  nothing while Hopkins said it was done, then "no you didn't" got an apology and "let me fix that
+  now" about a change it had made. Causes and fixes: (1) the model sent the grey plus a stray
+  "reset", and reset wiped the change; reset now only counts when the agent asks to start over.
+  (2) "ad 1 and 3" was read as ad 1 only; lists ("ad 1 and 3", "ads 1, 2 and 3", "versions 2 & 3")
+  are read whole. (3) "the same", "that too", "like ad 2" repeat the last look change (kept on the
+  reply as `data.look`), with or without the model. (4) A reply about the look is checked against
+  the ads after the change; if nothing changed it says so instead. (5) "No you didn't" with no
+  change in that turn is answered from the ads' real look. Rerun live with Groq: all three grey.
+* Ads tab (2026-10-27, Ismael): "Fair housing check passed" and Change photo removed (a wording
+  warning still shows when there is one; photos change in the chat). The Style sheet changes the
+  ad on the tap (about 5 ms, was the server round trip) and saves in the background in order.
+  The first set of ads ends with how to change the look (Style, or say it), and the Style sheet
+  says anything else can be asked in the chat.
+* Open question to Ismael (2026-10-27): free form image edits like ChatGPT or Nano Banana need an
+  image model; Google's Gemini 2.5 Flash Image is about $0.04 an image (aggregator sites, checked
+  2026-10-27), no clear free tier. Not added. Edits must never change the property itself.
