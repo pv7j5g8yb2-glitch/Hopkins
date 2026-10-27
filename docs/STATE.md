@@ -569,3 +569,8 @@ personal in here.
   (`weekRange`, `localDay`, `zonedMidnight` in hopkins.js). Checked on an iPhone sized screen in
   Dublin time with leads at 23:30 Sunday and 00:30 Monday, a week in September, the first week and
   three fast taps.
+* Thinking and names (2026-10-27, Ismael): the "Reading the listing / Writing the ads / Checking
+  the wording" ticks are gone; a new listing shows only the thinking mark, like every reply, and it
+  stays until the listing replaces it (the listing loads behind it, so no grey placeholder flashes
+  in between). Listings with the same name show as "Naples", "Naples 2", "Naples 3" in the order
+  they were made, everywhere a name appears (`numberNames`).

@@ -199,7 +199,20 @@
   }
   const photoOrCover = (l, thumb) => (l && l.photo_id ? { cls: "", style: `background-image:url(${photoUrl(l.photo_id, thumb)})`, inner: "" } : { cls: " cover", style: "", inner: l ? cover(l) : "" });
 
-  const listingName = (l) => l.title || l.address || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
+  const baseName = (l) => l.title || l.address || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
+  // Two listings with the same name read "Naples" and "Naples 2", then 3 and so on, in the order
+  // they were made, like files on a computer (Ismael, 2026-10-27).
+  S.nameNo = {};
+  function numberNames() {
+    S.nameNo = {};
+    const seen = {};
+    for (const l of [...S.listings].sort((a, b) => String(a.created_at || "").localeCompare(String(b.created_at || "")))) {
+      const key = baseName(l).trim().toLowerCase();
+      seen[key] = (seen[key] || 0) + 1;
+      if (seen[key] > 1) S.nameNo[l.id] = seen[key];
+    }
+  }
+  const listingName = (l) => baseName(l) + (l && S.nameNo[l.id] ? ` ${S.nameNo[l.id]}` : "");
   const photoUrl = (id, thumb) => (id ? `/photos/${id}${thumb ? "?thumb=1" : ""}` : null);
   const paid = () => S.me.workspace.plan === "paid";
 
@@ -396,7 +409,7 @@
     return `<div class="soon"><div class="soon-prev" aria-hidden="true">${preview}</div>
       <div class="soon-card"><span class="soon-chip">Coming soon</span><h2>${title}</h2><p>${line}</p></div></div>`;
   }
-  async function loadListings() { S.listings = (await api("/api/listings")).listings; }
+  async function loadListings() { S.listings = (await api("/api/listings")).listings; numberNames(); }
   async function loadInbox() { const r = await api("/api/inbox"); S.inbox = r.items; S.leadsWeek = r.leadsWeek; S.inboxLoaded = true; }
 
   // The tab you tapped lights up straight away, before its screen has loaded.
@@ -673,25 +686,14 @@
     $("#msgs").scrollTop = $("#msgs").scrollHeight;
   }
 
-  // Shows the work as it happens. Each step ticks off on its own; the last one waits for the
-  // real answer, so it never says "done" before it is.
-  function showWork(steps) {
+  // While Hopkins works: the thinking mark on its own, the same as for any reply (Ismael,
+  // 2026-10-27: no list of steps).
+  function showWork() {
     const t = $("#thread");
-    t.insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("think")}<div class="b"><ul class="work" id="work">${steps.map((s) => `<li><i></i>${esc(s)}</li>`).join("")}</ul></div></div>`);
+    t.insertAdjacentHTML("beforeend", `<div class="hk in" id="work">${MARK("think")}<div class="b"></div></div>`);
     $("#msgs").scrollTop = $("#msgs").scrollHeight;
-    const items = $$("#work li");
-    let i = 0;
-    const tick = () => {
-      items.forEach((el, k) => { el.className = k < i ? "done" : k === i ? "now" : ""; });
-    };
-    tick();
-    const timer = setInterval(() => { if (i < items.length - 1) { i++; tick(); } }, 900);
-    return async () => {
-      clearInterval(timer);
-      for (; i < items.length; i++) { tick(); await new Promise((r) => setTimeout(r, 160)); }
-      items.forEach((el) => (el.className = "done"));
-      await new Promise((r) => setTimeout(r, 350));
-    };
+    // It stays until the reply is drawn over it, so a slow server never leaves a blank gap.
+    return async () => {};
   }
 
   // ---------- a new listing ----------
@@ -764,7 +766,7 @@
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
-      const finish = showWork([...(files.length ? [`Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}`] : []), "Reading the listing", ...(!files.length && /https?:\/\//i.test(text) ? ["Getting the photos from the link"] : []), ...(files.length ? ["Picking the best photo for each ad"] : []), "Writing the ads", "Checking the wording"]);
+      const finish = showWork();
       const photoIds = [], photoNames = {};
       for (const f of files) {
         const r = await uploadPhoto(f);
@@ -773,7 +775,7 @@
       }
       const p = await api("/api/listings", { body: { text, photoIds, photoNames, history: S.newChat } });
       if (p.chat) {
-        // It wasn't a listing after all: swap the steps for the reply.
+        // It wasn't a listing after all: the reply takes the thinking mark's place.
         $("#work").closest(".hk").remove();
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
         $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
@@ -783,7 +785,10 @@
         return;
       }
       await finish();
-      await Promise.all([loadMe(), loadListings()]);
+      // The listing loads while the chat and the thinking mark are still on screen, then takes
+      // their place in one go: no grey placeholder in between.
+      const [, , full] = await Promise.all([loadMe(), loadListings(), api(`/api/listings/${p.listing.id}`).catch(() => null)]);
+      if (full) S.ready = full;
       S.fresh = p.listing.id;
       // The conversation so far is already on screen; only what's new animates in.
       if (S.newChat.length) S.seen[p.listing.id] = S.newChat.length + 1;
@@ -795,6 +800,9 @@
 
   async function viewListing(id, keepScroll) {
     const my = current();
+    const ready = S.ready && S.ready.listing.id === id ? S.ready : null;
+    S.ready = null;
+    if (ready) return drawListing(ready, keepScroll);
     if (!S.current || S.current.listing.id !== id) main.innerHTML = `${mtop("", "", { back: "#/listings" })}${skeleton()}`;
     const p = await api(`/api/listings/${id}`);
     if (my !== current()) return;
@@ -932,7 +940,7 @@
     while (n) { const next = n.nextElementSibling; n.remove(); n = next; }
     // The message that made the listing reads it again and writes the ads again: show that work.
     let finish = null;
-    if (old?.data?.first) { $("#thread").insertAdjacentHTML("beforeend", `<div class="me in"><span class="tx">${esc(text)}</span></div>`); finish = showWork(["Reading the listing again", "Writing the ads again", "Checking the wording"]); }
+    if (old?.data?.first) { $("#thread").insertAdjacentHTML("beforeend", `<div class="me in"><span class="tx">${esc(text)}</span></div>`); finish = showWork(); }
     else showTyping(text);
     const my = current();
     let next;
@@ -1419,7 +1427,7 @@
     const rows = r.listings.filter((x) => x.running || x.leads || x.allLeads).sort((a, b) => b.leads - a.leads || b.allLeads - a.allLeads);
     const most = Math.max(1, ...rows.map((x) => x.leads));
     const row = (x, i) => `<button class="rp-row" data-act="reportListing" data-id="${x.id}">
-        <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i><span class="rp-mid"><b>${esc(x.name)}</b><span class="rp-track"><i class="${i === 0 && x.leads ? "top" : ""}" style="width:${x.leads ? Math.max(4, (x.leads / most) * 100) : 0}%"></i></span></span>
+        <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i><span class="rp-mid"><b>${esc(listingName(S.listings.find((l) => l.id === x.id) || { title: x.name }))}</b><span class="rp-track"><i class="${i === 0 && x.leads ? "top" : ""}" style="width:${x.leads ? Math.max(4, (x.leads / most) * 100) : 0}%"></i></span></span>
         <span class="rp-n">${x.leads}</span>${ICON.chevr}</button>`;
 
     // Which kind of ad brings the leads, as one bar split by kind, only once there are leads.
@@ -2045,6 +2053,7 @@
     // undone on screen if it fails.
     const redraw = (value) => {
       for (const l of S.listings) if (l.id === id) l.title = value;
+      numberNames();
       if (S.current && S.current.listing.id === id) S.current.listing.title = value;
       if (location.hash.startsWith("#/listings")) viewListings();
       else if (S.current && S.current.listing.id === id && location.hash.startsWith(`#/l/${id}`)) drawListing(S.current, true);
