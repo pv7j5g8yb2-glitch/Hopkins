@@ -414,16 +414,9 @@
     $("#lists").innerHTML = S.listings.length
       ? S.listings.map((l) => `<a class="li ${route[0] === "l" && route[1] === l.id ? "on" : ""}" href="#/l/${l.id}">
           <i class="th${l.photo_id ? "" : " cover-mini"}" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
-          <div class="nm"><b>${esc(listingName(l))}</b><span>${esc(sideLine(l))}</span></div><button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
+          <div class="nm"><b>${esc(listingName(l))}</b></div><button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
     $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? "Pro" : "Free plan"}</span></span>${ICON.chev}</button>`;
-  }
-
-  function sideLine(l) {
-    if (l.status === "sold") return "Sold";
-    if (l.waiting) return "Ads ready";
-    if (l.approved) return l.leads ? `${l.leads} ${l.leads === 1 ? "lead" : "leads"}` : "Approved";
-    return l.price ? money(l.price) : "";
   }
 
   // ---------- routing ----------

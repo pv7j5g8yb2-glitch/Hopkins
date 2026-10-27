@@ -555,3 +555,5 @@ personal in here.
   18:00 for the greeting), also when the app comes back from the background. Every request sends
   the phone's time zone (X-Time-Zone), so the Monday report starts at the agent's own Monday
   midnight, not UTC's (`localDay`). Checked with a fake clock at 23:59 in Dublin and Los Angeles.
+* Sidebar (2026-10-27, Ismael): Recent shows only each listing's name, no "Ads ready",
+  "Approved" or lead count under it.
