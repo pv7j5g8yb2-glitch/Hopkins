@@ -574,3 +574,5 @@ personal in here.
   stays until the listing replaces it (the listing loads behind it, so no grey placeholder flashes
   in between). Listings with the same name show as "Naples", "Naples 2", "Naples 3" in the order
   they were made, everywhere a name appears (`numberNames`).
+* "Anytime", not "any time" (2026-10-27, Ismael), in the app, Hopkins' replies, the waitlist page
+  and the reel and film sources. Settings reads "Billed monthly. Cancel anytime."

@@ -189,14 +189,15 @@ The product's code is in `app/` (its README says what works and how to run it).
   the brokerage they work at.
 * **Paid (Ismael, 2026-10-27):** a normal monthly subscription, billed every month from the day they
   sign up. Never say billing waits for the first ad to go live. In copy it's "billed monthly", never
-  "paid monthly" (Ismael, 2026-10-27). Month to month, cancel any time,
+  "paid monthly" (Ismael, 2026-10-27). Month to month, cancel anytime ("anytime", never "any
+  time", Ismael 2026-10-27),
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.
 * **Solo plan:** there will be one for single agents, priced below the team plans. No
   price set yet. Teams and brokerages get early access first.
 * **Waitlist offer:** 30% off the first year.
 * **Autopilot:** optional. The owner sets a monthly budget and goal once, Hopkins makes,
-  tests and runs ads within it, reports every Monday, and can be paused any time. The
+  tests and runs ads within it, reports every Monday, and can be paused anytime. The
   default stays approving every ad.
 * **Agency offer:** don't ask teams to fire their agency. Run Hopkins next to it on one
   listing for a month, compare cost per lead, keep whichever wins.

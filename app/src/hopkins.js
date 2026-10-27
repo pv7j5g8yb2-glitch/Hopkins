@@ -115,7 +115,7 @@ export async function newChat(ws, history) {
     intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos whenever you're ready."]
     : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`]
     : intent.kind === "question" && intent.topic === "help" ? [`I make ads for each listing, each a different idea, so you can test them against each other. You change them with me here, and nothing runs until you say yes. ${ask}`]
-    : intent.kind === "thanks" ? ["Any time."]
+    : intent.kind === "thanks" ? ["Anytime."]
     : [`I need a listing to start. ${ask}`, `I didn't catch a listing in that. Paste the link or add the photos and I'll take it from there.`];
   return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
 }
@@ -1212,7 +1212,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
   }
 
   if (intent.kind === "thanks") {
-    await say(ws, listing.id, await fresh(listing.id, ["When you're happy with them, say run it and I'll show you the plan first.", "Any time."]));
+    await say(ws, listing.id, await fresh(listing.id, ["When you're happy with them, say run it and I'll show you the plan first.", "Anytime."]));
     return {};
   }
 
