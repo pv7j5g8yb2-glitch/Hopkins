@@ -202,6 +202,8 @@
   const photoUrl = (id, thumb) => (id ? `/photos/${id}${thumb ? "?thumb=1" : ""}` : null);
   const paid = () => S.me.workspace.plan === "paid";
 
+  // The person, not the brokerage they work at (Ismael, 2026-10-27).
+  const myName = () => S.me.user.name || S.me.workspace.brand?.agent_name || S.me.user.email.split("@")[0];
   const initials = () => (S.me.user.name || S.me.user.email).split(/[\s@.]+/).map((w) => w[0]).join("").slice(0, 2);
   // Your profile photo if you've added one, your initials if not.
   const avatarStyle = () => (S.me.user.avatar_id ? `style="background:#ddd url(${photoUrl(S.me.user.avatar_id, true)}) center/cover;color:transparent"` : "");
@@ -299,9 +301,9 @@
   function accountMenu() {
     const u = S.me.usage;
     const plan = paid()
-      ? `<div class="note"><b>Paid plan</b>Billing starts when your first ad goes live.</div>`
+      ? `<div class="note"><b>Pro</b>Billing starts when your first ad goes live.</div>`
       : `<div class="note"><b>Free plan</b><div class="meter"><i style="width:${Math.min(100, (u.adsMade / u.freeLimit) * 100)}%"></i></div>${Math.min(u.adsMade, u.freeLimit)} of ${u.freeLimit} free ads made</div>`;
-    return `<div class="note" style="padding-bottom:2px"><b>${esc(S.me.workspace.name)}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
+    return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
       <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
       <button data-act="feedbackAsk">${ICON.msg}Send feedback</button>
       <div class="sep"></div><button data-act="logout">${ICON.out}Sign out</button>`;
@@ -354,7 +356,7 @@
           <i class="th${l.photo_id ? "" : " cover-mini"}" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
           <div class="nm"><b>${esc(listingName(l))}</b><span>${esc(sideLine(l))}</span></div><button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
-    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(S.me.workspace.name)}</b><span>${paid() ? "Paid plan" : "Free plan"}</span></span>${ICON.chev}</button>`;
+    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? "Pro" : "Free plan"}</span></span>${ICON.chev}</button>`;
   }
 
   function sideLine(l) {
@@ -650,8 +652,8 @@
     S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. Hopkins makes ads around what's special about it. <button class="link" data-act="example">Try an example</button></p>
-      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> You can still add this listing. Its ads get made once you're on the paid plan.
-        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Paid plan requested.</span>` : `<button class="link" data-upgrade>Ask for the paid plan</button>`}</div>` : ""}</div>
+      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> You can still add this listing. Its ads get made once you're on Pro.
+        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="link" data-upgrade>Ask for Pro</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
@@ -897,13 +899,13 @@
     const asked = S.me.workspace.brand.upgrade_requested;
     const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : `That's your <span class="serif">3 free ads.</span>`;
     const line = reason === "run"
-      ? "Putting ads in front of buyers is on the paid plan. Your ads stay here, ready."
-      : "New ads are on the paid plan. Changes to the ads you have stay free.";
+      ? "Putting ads in front of buyers is on Pro. Your ads stay here, ready."
+      : "New ads are on Pro. Changes to the ads you have stay free.";
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
       <img class="upsell-mark" src="/static/mark.svg" alt="">
       <h3>${title}</h3><p>${line}</p>
       <ul><li><b>From $${S.me.usage.priceFrom} a month</b>, and billing starts when your first ad goes live</li><li>Month to month, cancel any time</li><li>No cut of your ad spend</li><li>30% off the first year if you joined the waitlist</li></ul>
-      ${asked ? `<p class="upsell-done">Paid plan requested. You'll hear back soon.</p>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}
+      ${asked ? `<p class="upsell-done">Pro requested. You'll hear back soon.</p>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}
       <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
 
@@ -1043,7 +1045,7 @@
       }
       if (m.kind === "upgrade") {
         const asked = S.me.workspace.brand.upgrade_requested;
-        return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Ask for the paid plan"}</button>
+        return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Ask for Pro"}</button>
           ${asked ? `<span class="small">You'll get an email when your seat is ready.</span>` : ""}</div>`);
       }
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
@@ -1390,9 +1392,9 @@
         : `<p class="small">A ping on your phone within seconds of every new lead, through the free ntfy app.</p>
            <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
       <div class="group"><h4>Plan</h4>${paid()
-        ? `<p>Paid plan. Billing starts when your first ad goes live.</p>`
+        ? `<p>You're on Pro. Billing starts when your first ad goes live.</p>`
         : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
-           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Paid plan requested. You'll hear back soon.</span>` : `<button class="btn" data-upgrade>Ask for the paid plan</button>`}</div>`}</div>
+           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Pro requested. You'll hear back soon.</span>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
         <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
@@ -1453,7 +1455,7 @@
     const my = current();
     const [{ workspaces }, { feedback }] = await Promise.all([api("/api/admin/workspaces"), api("/api/admin/feedback")]);
     if (my !== current()) return;
-    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Admin</h1><p class="lede">Only you see this. Every account on Hopkins, who asked for the paid plan, and the switch that puts an account on it once they've agreed the price.</p></div>
+    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Admin</h1><p class="lede">Only you see this. Every account on Hopkins, who asked for Pro, and the switch that puts an account on it once they've agreed the price.</p></div>
       <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
           <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "lead" : "leads"}${w.upgrade_requested ? ` · <b>asked to upgrade ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
           <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select>
@@ -1753,7 +1755,7 @@
         S.fresh = l.id;
         const next = await api(`/api/listings/${l.id}/remake`, { body: {} });
         drawListing(next);
-        if (!next.ads.length && next.messages.length === before) toast("Making ads needs the paid plan");
+        if (!next.ads.length && next.messages.length === before) toast("Making ads needs Pro");
         refreshSide();
       }
       else if (t.dataset.say) { if (!S.busy) { S.busy = true; buzz(6); try { await say(t.dataset.say); } finally { S.busy = false; } } }

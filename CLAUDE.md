@@ -179,6 +179,9 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the
   system only allows". Claude never says "Anthropic doesn't let me". Hopkins says "I can't" or "I
   can only", and when something needs a step from the agent, it says the step.
+* **The paid plan is called Pro (Ismael, 2026-10-27)** everywhere a user sees it ("Pro", "Ask for
+  Pro", "on Pro"), never "paid plan". The account corner and menu show the person's own name, not
+  the brokerage they work at.
 * **Paid:** billing starts when the first ad goes live. Month to month, cancel any time,
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.

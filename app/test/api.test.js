@@ -212,7 +212,7 @@ test("hello on the new listing screen gets a reply, not a listing and an upgrade
   assert.equal(h.status, 200);
   assert.equal(h.json.listing, undefined);
   assert.match(h.json.chat.reply, /^Hi Sam\. Send me a listing/);
-  assert.ok(!/paid plan|\$299/.test(h.json.chat.reply));
+  assert.ok(!/paid plan|\bPro\b|\$299/.test(h.json.chat.reply));
   // Asked again, it doesn't say the same thing word for word.
   const again = await c("POST", "/api/listings", { text: "hi", history: [{ role: "agent", body: "Hello" }, { role: "hopkins", body: h.json.chat.reply }] });
   assert.notEqual(again.json.chat.reply, h.json.chat.reply);

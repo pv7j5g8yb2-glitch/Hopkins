@@ -318,7 +318,7 @@ app.post("/api/alerts/test", async (request, reply) => {
 
 app.post("/api/upgrade-request", async (request) => {
   const ws = request.ws;
-  notifyFounder("Hopkins: upgrade request", `${ws.name} asked for the paid plan. Their account email is in the admin view.`, ["moneybag"]);
+  notifyFounder("Hopkins: upgrade request", `${ws.name} asked for Pro. Their account email is in the admin view.`, ["moneybag"]);
   await run(`UPDATE workspaces SET brand = json_set(brand, '$.upgrade_requested', ?) WHERE id = ?`, [nowIso(), ws.id]);
   return { ok: true };
 });

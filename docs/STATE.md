@@ -509,3 +509,6 @@ personal in here.
   sidebar button next to the logo closes it to a slim rail (open again, new listing, account), like
   Claude and ChatGPT, and it stays closed after a reload. Deleting the open listing goes to
   Listings. Checked with screenshots at laptop and iPhone size on a slowed server.
+* Pro and names (2026-10-27, Ismael): the paid plan reads "Pro" in the app, the chat and Hopkins'
+  own replies; the account corner and menu show the person's name (their own, then the agent name
+  in Brand, then their email) instead of the brokerage. Checked at laptop and iPhone size.

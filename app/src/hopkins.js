@@ -582,7 +582,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
     if (current.length && (moment === "price" || moment === "open_house")) {
       const photos = await loadPhotos(listing.id, aiEnabled);
       await rewriteAds(ws, listing, current, photos, moment === "price" ? "the new price" : "the open house", extra);
-      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be new ads, and that's the paid plan.`, "text", { snapshot: await snapshot(listing) });
+      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be new ads, and that needs Pro.`, "text", { snapshot: await snapshot(listing) });
     }
     // Asking again doesn't stack the same message; the app shows a short note instead.
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
