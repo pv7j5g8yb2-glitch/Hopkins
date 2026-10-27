@@ -141,6 +141,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   software platform. Keep every feature, but hide the secondary ones: one main action per screen
   (gold), everything else in a "more" menu or the account menu, hairlines instead of boxes, two
   text weights, no extra explanations on screen. Check new screens against this before shipping.
+* **Words on screen are short (Ismael, 2026-10-27):** serious software, not a novel. A label or
+  hint is a few words ("Live preview. Tap to expand.", "Pro requested.", "Test sent"), no
+  explaining how it works, no reassurance, no second sentence unless it's a warning. Check every
+  new string against this before shipping.
 * **Phones first (Ismael, 2026-10-24):** most use will be on a phone. Design and check every screen at
   iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar, the main
   action fixed at the bottom within thumb reach, menus as bottom sheets that swipe away (down, or up

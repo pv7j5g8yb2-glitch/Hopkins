@@ -498,7 +498,7 @@
       body = `<div class="progress"><div class="meter"><i style="width:${brandDone ? 34 : 6}%"></i></div>${brandDone ? "1 of 3 done" : "Let's start"}</div>
         <ol class="steps">
         <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colors, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
-        <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description. You get ads made for that home.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
+        <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
         <li><div class="tx"><b>Your yes</b><p>Nothing runs until you say so.</p></div></li></ol>`;
     } else {
       body = `<nav class="stats-mini" aria-label="At a glance">
@@ -506,7 +506,7 @@
           <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
           <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Waiting on you</span></a></nav>
 
-        ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>When a listing comes in, a price changes or a lead arrives, it shows up here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
+        ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>New ads and leads show up here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     // The count lives in the row below, so the line under the greeting is just the day.
@@ -715,8 +715,8 @@
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add the photos, then paste the link or describe the home. Hopkins makes ads around what's special about it. <button class="link" data-act="example">Try an example</button></p>
-      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> You can still add this listing. Its ads get made once you're on Pro.
+      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add photos, then paste the link or describe the home. <button class="link" data-act="example">Try an example</button></p>
+      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing need Pro.
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="link" data-upgrade>Ask for Pro</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
@@ -963,13 +963,13 @@
     const asked = S.me.workspace.brand.upgrade_requested;
     const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : `That's your <span class="serif">3 free ads.</span>`;
     const line = reason === "run"
-      ? "Putting ads in front of buyers is on Pro. Your ads stay here, ready."
-      : "New ads are on Pro. Changes to the ads you have stay free.";
+      ? "Running ads is on Pro."
+      : "New ads are on Pro. Changes stay free.";
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
       <img class="upsell-mark" src="/static/mark.svg" alt="">
       <h3>${title}</h3><p>${line}</p>
       <ul><li><b>From $${S.me.usage.priceFrom} a month</b>, billed monthly</li><li>Month to month, cancel any time</li><li>No cut of your ad spend</li><li>30% off the first year if you joined the waitlist</li></ul>
-      ${asked ? `<p class="upsell-done">Pro requested. You'll hear back soon.</p>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}
+      ${asked ? `<p class="upsell-done">Pro requested.</p>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}
       <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
 
@@ -1309,7 +1309,7 @@
       <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}. Tap to call or text.</p>` : ""}</div>
       ${leads.length ? `<div class="list" style="border-top:0">${leads.map(item).join("")}</div>`
-        : soon(`Every lead, <span class="serif">in one place.</span>`, "When your ads run, everyone who asks about a listing lands here, with the ad that brought them, ready to call or text.",
+        : soon(`Every lead, <span class="serif">in one place.</span>`, "Everyone who asks about a listing, and the ad that brought them.",
             `<div class="list" style="border-top:0">${[["JM", "Jordan M.", "Wants a showing", "Ad 1 · 2m ago"], ["PS", "Priya S.", "Has a question", "Ad 3 · 1h ago"], ["AR", "Alex R.", "Wants a showing", "Ad 1 · yesterday"]].map(([i, n, w, m]) => `<div class="lead"><span class="av">${i}</span><div class="tx"><b>${n}</b><p>${w}</p><div class="small">${m}</div></div></div>`).join("")}</div>`)}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
@@ -1328,7 +1328,7 @@
     if (my !== current()) return;
     if (!r.total && !r.listings.some((x) => x.running)) {
       main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap"><div class="head"><h1>Report</h1></div>
-        ${soon(`Your <span class="serif">Monday report.</span>`, "Every Monday: the leads each listing brought, what they cost, which ad won, and what to do next.",
+        ${soon(`Your <span class="serif">Monday report.</span>`, "Leads, cost per lead and the winning ad, every Monday.",
           `<div class="rp-sum"><div class="rp-big"><b>7</b> leads</div><p class="rp-sub">3 asked for a showing</p><div class="rp-chart">${[1, 0, 2, 1, 0, 1, 2].map((n, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${n * 50}%"></i></span><span class="rp-dl">${"MTWTFSS"[i]}</span></div>`).join("")}</div></div>`)}</div></div>`;
       return;
     }
@@ -1393,7 +1393,7 @@
     openPop(t, `<div class="note"><b>${esc(x.name)}</b>Last 7 days</div>
       <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per lead</div></div>
       <form class="spendf" data-id="${x.id}"><label for="spendIn">Spent on its ads so far</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
-      <p class="small">Fills in on its own once Meta is connected.</p></form>
+      <p class="small">Fills in once Meta is connected.</p></form>
       <div class="sep"></div><a href="#/l/${x.id}">${ICON.eye}Open listing</a>`, { top: true });
   }
 
@@ -1424,7 +1424,7 @@
           ${field("license", "License line", "DRE #01234567", "Small print on your lead pages, where your state asks for it.")}
         </div></details></div>
         <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
-      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="See the preview bigger"></canvas><p class="small">${phone() ? "Live preview. Tap it to see it bigger." : "A sample ad. Yours use your listing photos."}</p></div></div></div></div>`;
+      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="See the preview bigger"></canvas><p class="small">${phone() ? "Live preview. Tap to expand." : "Sample ad"}</p></div></div></div></div>`;
     const form = $("#brandForm");
     let logoId = b.logo_id || "";
     const sample = () => {
@@ -1494,15 +1494,15 @@
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
       <div class="group"><h4>Lead alerts</h4>${b.alerts_topic
-        ? `<p>On. New leads go to your phone through the free ntfy app.</p>
+        ? `<p>On. New leads go to your phone.</p>
            <ol class="steps-small"><li>Install ntfy from the App Store or Google Play.</li><li>Tap +, then subscribe to <b>${esc(b.alerts_topic)}</b> <button class="link" data-copy="${esc(b.alerts_topic)}" data-copied="Name copied">Copy</button></li><li>Send a test to check it arrives.</li></ol>
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
-        : `<p class="small">A ping on your phone within seconds of every new lead, through the free ntfy app.</p>
+        : `<p class="small">A ping on your phone for every new lead.</p>
            <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>You're on Pro, billed monthly. Cancel any time.</p>`
         : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
-           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Pro requested. You'll hear back soon.</span>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}</div>`}</div>
+           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
         <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
@@ -1542,12 +1542,12 @@
       viewSettings();
     } else if (act === "testAlert") {
       await api("/api/alerts/test", { body: {} });
-      toast("Test sent. It should arrive in a few seconds");
+      toast("Test sent");
     } else if (act === "avRemove") {
       await api("/api/account", { method: "PATCH", body: { avatar_id: "" } });
       await loadMe(); drawSide(); viewSettings(); toast("Photo removed");
     } else if (act === "deleteAsk") {
-      openPop(t, `<div class="note"><b>Delete your account?</b>This deletes your listings, ads, leads and photos for good. It can't be undone.</div>
+      openPop(t, `<div class="note"><b>Delete your account?</b>Listings, ads, leads and photos go for good.</div>
         <div style="padding:6px 10px 4px"><div class="fld"><label for="delPw">Your password</label><input id="delPw" type="password" autocomplete="current-password"></div></div>
         <button class="danger" data-act="deleteYes">${ICON.alert}Delete everything</button>`);
       setTimeout(() => $("#delPw") && $("#delPw").focus(), 50);
@@ -1808,7 +1808,7 @@
           <button data-copy="${esc(link)}" data-copied="Reset link copied">${ICON.copy}Copy link</button>`);
       }
       else if (act === "feedbackAsk") {
-        openPop($(".mtop .av") || t, `<div class="note"><b>Send feedback</b>Something broken, confusing or missing? It goes straight to the person building Hopkins.</div>
+        openPop($(".mtop .av") || t, `<div class="note"><b>Send feedback</b>Something broken or missing?</div>
           <form class="feedback"><textarea id="fbIn" rows="4" maxlength="3000" placeholder="What happened, or what you'd like"></textarea>
           <button class="btn" type="submit">Send</button></form>`, { top: true });
         $("#fbIn").focus();

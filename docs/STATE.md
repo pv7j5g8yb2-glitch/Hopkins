@@ -546,3 +546,7 @@ personal in here.
   the model all know the six. The logo shows as a circle like a profile picture everywhere: on the
   ads (footer and card), the Instagram preview, the Brand page and the lead page. In the card
   layout the big line now shrinks or goes to two lines to stay inside the card, never cut off.
+* Shorter words on screen (2026-10-27, Ismael: "too talkative, sounds like a novel"): "Live
+  preview. Tap to expand.", "Sample ad", "New ads and leads show up here.", "Pro requested.",
+  "Test sent", "Running ads is on Pro.", "Something broken or missing?", and the coming soon lines
+  on Leads and Report cut to one short line each. Rule saved in CLAUDE.md.
