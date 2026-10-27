@@ -446,3 +446,8 @@ personal in here.
 * Suggested reply removed (2026-10-27, Ismael): no grey guess in the box and no › button; the model
   no longer writes one (fewer tokens per reply). The box says "Ask Hopkins anything" on a new
   chat and "Reply to Hopkins" once there's a conversation. Rule updated in CLAUDE.md.
+* Message box (2026-10-27, Ismael): the photo icon is a "+" like Claude and ChatGPT (it opens the
+  phone's own picker: library, camera, files). The + and the send button sit the same distance
+  from the box's edges and a one line box is exactly their height, so all three share one centre
+  line; with longer text they stay at the bottom. Measured on iPhone SE, 13, Pro Max, iPad and a
+  laptop: same centre line and equal insets on each.

@@ -516,7 +516,7 @@
   function composerHtml(placeholder) {
     return `<div class="comp-wrap">
       <form class="comp lg" id="comp"><div id="editbar"></div><div class="att" id="att"></div>
-      <div class="row-c"><label class="icon-btn" title="Add photos">${ICON.photo}<input type="file" id="files" accept="image/*" multiple hidden></label>
+      <div class="row-c"><label class="icon-btn add" title="Add photos" aria-label="Add photos">${ICON.plus}<input type="file" id="files" accept="image/*" multiple hidden></label>
       <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" enterkeyhint="send"></textarea>
       <button class="send" id="send" type="submit" aria-label="Send">${ICON.send}</button></div><div class="hint" id="hint"></div></form></div>`;
   }
