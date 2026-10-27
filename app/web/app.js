@@ -1418,14 +1418,14 @@
     // going is set against the same stretch of last week (Monday up to this moment), never a
     // whole week. From nothing, there's no percentage to give, so it says "Up from 0".
     const prev = r.lastWeek || 0;
-    const against = r.soFar ? "vs this time last week" : "vs the week before";
+    const against = "vs last week";
     const pct = prev ? Math.round(((r.total - prev) / prev) * 100) : null;
     const delta = !r.total && !prev ? ""
       : pct === null ? `<span class="rp-delta up">${ICON.up}Up from 0</span> ${against}`
         : pct > 0 ? `<span class="rp-delta up">${ICON.up}${pct}%</span> ${against}`
           : pct < 0 ? `<span class="rp-delta down">${ICON.down}${-pct}%</span> ${against}`
             : `<span class="rp-delta">No change</span> ${against}`;
-    const sub = [delta, r.showings ? esc(`${r.showings} asked for a showing`) : ""].filter(Boolean).join(" · ");
+    const sub = delta;
     // Which kind of ad brings the leads, as one bar split by kind, only once there are leads.
     const pats = S.me.kinds || {};
     const won = r.patterns.filter((x) => x.leads > 0).sort((a, b) => b.leads - a.leads);
@@ -1468,13 +1468,12 @@
     const row = (x, i) => {
       const v = value(x), lead = ranked && i === 0 && v;
       const medal = ranked && v && i < 3 ? ` m${i + 1}` : "";
-      const facts = [by !== "showings" && x.showings ? `${x.showings} ${x.showings === 1 ? "showing" : "showings"}` : "", by !== "leads" && by !== "newest" && x.leads ? `${x.leads} ${x.leads === 1 ? "Lead" : "Leads"}` : "", by !== "cpl" && x.cpl != null ? `${money(x.cpl)} a Lead` : ""].filter(Boolean).join(" · ");
       const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a Lead" : "") : v === 1 ? "Lead" : "Leads";
       return `<button class="rb-row${v ? "" : " zero"}" data-act="reportListing" data-id="${x.id}">
         ${ranked ? `<span class="rb-rank${medal}">${v ? i + 1 : ""}</span>` : ""}
         <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i>
         <span class="rb-mid"><b>${esc(listingName(S.listings.find((l) => l.id === x.id) || { title: x.name }))}</b>
-          <span class="rb-track"><i class="${lead ? "top" : ""}" style="width:${width(x)}%"></i></span>${facts ? `<span class="rb-facts">${esc(facts)}</span>` : ""}</span>
+          <span class="rb-track"><i class="${lead ? "top" : ""}" style="width:${width(x)}%"></i></span></span>
         <span class="rb-n"><b>${by === "cpl" ? (v != null ? esc(money(v)) : "") : v || 0}</b><em>${unit}</em></span></button>`;
     };
     return `<section class="rb" id="board"><div class="rb-head"><h3>Listings</h3><button class="rb-sort" data-act="repSort">${esc(SORTS.find(([k]) => k === by)[1])}${ICON.chev}</button></div>

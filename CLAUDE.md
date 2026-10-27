@@ -141,6 +141,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   software platform. Keep every feature, but hide the secondary ones: one main action per screen
   (gold), everything else in a "more" menu or the account menu, hairlines instead of boxes, two
   text weights, no extra explanations on screen. Check new screens against this before shipping.
+* **The whole platform (Ismael, 2026-10-27):** extremely straightforward, less talkative, minimal
+  and professional. On screens Hopkins is named in the third person ("Hopkins makes the ads"),
+  never "I". Hopkins' chat replies are one or two plain sentences unless more is asked for: no
+  small talk, no enthusiasm, no filler, no offers of more help.
 * **Words on screen are short (Ismael, 2026-10-27):** serious software, not a novel. A label or
   hint is a few words ("Live preview. Tap to expand.", "Pro requested.", "Test sent"), no
   explaining how it works, no reassurance, no second sentence unless it's a warning. Check every

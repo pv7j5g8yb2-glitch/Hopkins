@@ -592,3 +592,10 @@ personal in here.
   model's replies (`capLeads`, noun only). Checked on a slowed server at iPhone and laptop size:
   6 vs 2 so far reads up 200% (last week's 3 later Leads rightly left out), 5 vs 10 reads down
   50%, 10 vs 0 reads up from 0.
+* Report, round four (2026-10-27, Ismael: "too bloated"): the card shows only the number, a
+  clear gap, "Leads", then the arrow and percentage centred on one line with "vs last week" (the
+  showings line is gone). Listing rows are rank, photo, name, bar and number only (no showings or
+  cost per Lead under the name). The week arrows sit evenly either side of the week's name.
+  Hopkins' chat prompt now asks for one or two plain sentences, professional, no filler.
+  Open question to Ismael: should Hopkins' chat replies also talk about itself in the third
+  person, or keep "I" like Claude and ChatGPT (only screens use the third person for now)?
