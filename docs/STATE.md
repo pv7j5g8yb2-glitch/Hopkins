@@ -519,3 +519,6 @@ personal in here.
   (colour swatches) still work. Checked on an iPhone sized screen with real touch events.
 * Listings without a photo (2026-10-27, Ismael): the oxblood cover shows only the ground and
   pebbles, no price or beds and baths on it, on Today and Listings.
+* 502 on the live app (2026-10-27, 20:12, Ismael's phone): a minute after a push. /healthz now
+  says when the running copy started, and a promise that fails without a catch is logged instead
+  of stopping the server.

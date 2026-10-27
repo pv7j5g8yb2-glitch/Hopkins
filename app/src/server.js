@@ -81,7 +81,10 @@ app.setErrorHandler((err, request, reply) => {
   return reply.code(500).send({ error: "Something went wrong on my side. Try again in a moment." });
 });
 
-app.get("/healthz", async () => ({ ok: true }));
+// How long this copy of the server has been up, so a restart (a deploy, or a crash) can be told
+// apart from the outside without the Render dashboard.
+const STARTED = new Date().toISOString();
+app.get("/healthz", async () => ({ ok: true, started: STARTED }));
 
 for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
@@ -612,6 +615,9 @@ app.post("/api/l/:slug/lead", async (request, reply) => {
 
 // Tests load the app without opening a port (NO_LISTEN covers tests that run as production).
 if (process.env.NODE_ENV !== "test" && !process.env.NO_LISTEN) {
+  // A promise somewhere that fails without a catch is logged, not allowed to take the whole
+  // server down (Node stops the process for one by default, and Render shows a 502 until it's back).
+  process.on("unhandledRejection", (err) => console.error("Unhandled rejection:", err?.stack || err));
   await forgetGuessedCities().catch((err) => console.error("City clean up failed:", err.message));
   await app.listen({ port: Number(process.env.PORT || 3200), host: "0.0.0.0" });
 }
