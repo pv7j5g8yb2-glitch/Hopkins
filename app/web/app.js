@@ -476,7 +476,8 @@
     const h = new Date().getHours();
     const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
     const waiting = S.inbox.filter((m) => m.needs_action);
-    const recent = S.inbox.filter((m) => !m.needs_action);
+    // The Monday report lives on Report, not here (Ismael, 2026-10-27).
+    const recent = S.inbox.filter((m) => !m.needs_action && m.kind !== "report");
     const listingOf = (m) => S.listings.find((x) => x.id === m.listing_id);
     const where = (m) => listingName(m);
     // Just the home and its name (Ismael, 2026-10-27): the whole card opens it, no tag or button.

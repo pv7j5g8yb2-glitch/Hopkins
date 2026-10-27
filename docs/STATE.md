@@ -528,3 +528,4 @@ personal in here.
   scrolls to the first card. All three numbers in the same ink (Ismael). The lead count comes
   from the leads table for the last 7 days, not from the inbox's newest 30 items. The cards below
   show only the photo (or cover) and the name: no "Ads ready" tag, no "See ads" button.
+  The Monday report no longer shows in "This week" on Today; it lives on Report. New leads still do.
