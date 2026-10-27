@@ -37,6 +37,8 @@
     back: '<svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>',
     gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     chevr: '<svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>',
+    up: '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
+    down: '<svg viewBox="0 0 24 24"><path d="M3 7l6 6 4-4 8 8M15 17h6v-6"/></svg>',
     phone: '<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/></svg>',
     msg: '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12z"/></svg>',
     mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>',
@@ -389,7 +391,7 @@
       ? `<div class="sep"></div><button data-dl="feed">${ICON.down}Download feed image</button><button data-dl="story">${ICON.down}Download story image</button>
          <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>`
       : "";
-    return `<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
+    return `<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open Lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
       <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make a new set" : "Make the ads"}</button>
       <button class="danger" data-act="delListingAsk">${ICON.trash}Delete listing</button>`;
@@ -495,7 +497,7 @@
         <div class="bd"><div class="tx"><b>${esc(where(m))}</b></div></div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
-    const titleFor = (m) => (m.kind === "lead" ? `New lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
+    const titleFor = (m) => (m.kind === "lead" ? `New Lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
     const row = (m) => `<a class="row" href="${m.kind === "report" ? "#/report" : `#/l/${m.listing_id}`}"><span class="ic">${icon(m)}</span>
       <div class="tx"><b>${esc(titleFor(m))}</b><p>${esc(plainText(m.body))}</p></div><span class="when">${ago(m.created_at)}</span></a>`;
 
@@ -514,7 +516,7 @@
           <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
           <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Waiting on you</span></a></nav>
 
-        ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>New ads and leads show up here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
+        ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>New ads and Leads show up here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     // The count lives in the row below, so the line under the greeting is just the day.
@@ -1116,7 +1118,7 @@
           ${asked ? `<span class="small">You'll get an email when your seat is ready.</span>` : ""}</div>`);
       }
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
-      if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open leads</a></div>`);
+      if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open Leads</a></div>`);
       return wrap(text);
     }).join("");
   }
@@ -1312,7 +1314,7 @@
       <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}. Tap to call or text.</p>` : ""}</div>
       ${leads.length ? `<div class="list" style="border-top:0">${leads.map(item).join("")}</div>`
-        : soon(`Every lead, <span class="serif">in one place.</span>`, "Everyone who asks about a listing, and the ad that brought them.",
+        : soon(`Every Lead, <span class="serif">in one place.</span>`, "Everyone who asks about a listing, and the ad that brought them.",
             `<div class="list" style="border-top:0">${[["JM", "Jordan M.", "Wants a showing", "Ad 1 · 2m ago"], ["PS", "Priya S.", "Has a question", "Ad 3 · 1h ago"], ["AR", "Alex R.", "Wants a showing", "Ad 1 · yesterday"]].map(([i, n, w, m]) => `<div class="lead"><span class="av">${i}</span><div class="tx"><b>${n}</b><p>${w}</p><div class="small">${m}</div></div></div>`).join("")}</div>`)}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
@@ -1362,8 +1364,8 @@
     const my = current();
     if (S.me.soon && S.me.soon.report) {
       main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap"><div class="head"><h1>Report</h1></div>
-        ${soon(`Your <span class="serif">Monday report.</span>`, "Leads, cost per lead and the winning ad, every Monday.",
-          `<div class="rp-sum"><div class="rp-big"><b>7</b> leads</div><p class="rp-sub">3 asked for a showing</p><div class="rp-chart">${[1, 0, 2, 1, 0, 1, 2].map((n, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${n * 50}%"></i></span><span class="rp-dl">${"MTWTFSS"[i]}</span></div>`).join("")}</div></div>`)}</div></div>`;
+        ${soon(`Your <span class="serif">Monday report.</span>`, "Leads, cost per Lead and the winning ad, every Monday.",
+          `<div class="rp-sum"><div class="rp-big"><b>7</b> Leads</div><p class="rp-sub">3 asked for a showing</p><div class="rp-chart">${[1, 0, 2, 1, 0, 1, 2].map((n, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${n * 50}%"></i></span><span class="rp-dl">${"MTWTFSS"[i]}</span></div>`).join("")}</div></div>`)}</div></div>`;
       return;
     }
     const now = mondayOf(new Date());
@@ -1412,9 +1414,18 @@
       const isToday = thisWeek && sameDay(d, today), later = thisWeek && d > today;
       return `<div class="rp-day${isToday ? " today" : ""}${later ? " later" : ""}"><span class="rp-bar"><i style="height:${counts[i] ? Math.max(8, (counts[i] / peak) * 100) : 0}%"></i></span><span class="rp-dl">${esc(d.toLocaleDateString(undefined, { weekday: "narrow" }))}</span></div>`;
     }).join("");
-    const diff = r.total - (r.lastWeek || 0);
-    const vs = diff > 0 ? `${diff} more than the week before` : diff < 0 ? `${-diff} fewer than the week before` : r.total ? "Same as the week before" : "";
-    const sub = [r.showings ? `${r.showings} asked for a showing` : "", vs].filter(Boolean).join(" · ");
+    // Up or down on the week before, as a percentage, like Screen Time or Shopify. A week still
+    // going is set against the same stretch of last week (Monday up to this moment), never a
+    // whole week. From nothing, there's no percentage to give, so it says "Up from 0".
+    const prev = r.lastWeek || 0;
+    const against = r.soFar ? "vs this time last week" : "vs the week before";
+    const pct = prev ? Math.round(((r.total - prev) / prev) * 100) : null;
+    const delta = !r.total && !prev ? ""
+      : pct === null ? `<span class="rp-delta up">${ICON.up}Up from 0</span> ${against}`
+        : pct > 0 ? `<span class="rp-delta up">${ICON.up}${pct}%</span> ${against}`
+          : pct < 0 ? `<span class="rp-delta down">${ICON.down}${-pct}%</span> ${against}`
+            : `<span class="rp-delta">No change</span> ${against}`;
+    const sub = [delta, r.showings ? esc(`${r.showings} asked for a showing`) : ""].filter(Boolean).join(" · ");
     // Which kind of ad brings the leads, as one bar split by kind, only once there are leads.
     const pats = S.me.kinds || {};
     const won = r.patterns.filter((x) => x.leads > 0).sort((a, b) => b.leads - a.leads);
@@ -1425,7 +1436,7 @@
 
     main.innerHTML = `${mtop("Report")}<div class="page" data-report><div class="wrap">
       <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>
-      <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "lead" : "leads"}</div>${sub ? `<p class="rp-sub">${esc(sub)}</p>` : ""}
+      <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "Lead" : "Leads"}</div>${sub ? `<p class="rp-sub">${sub}</p>` : ""}
         <div class="rp-chart" role="img" aria-label="Leads each day: ${counts.join(", ")}">${bars}</div></section>
       ${r.listings.length ? boardHtml(r) : ""}
       ${winning}
@@ -1434,14 +1445,15 @@
 
   // The listings, ranked: best first by what's picked (leads, showings, cost per lead, or newest),
   // filtered to all, running or with leads. The pick is remembered on this device.
-  const SORTS = [["leads", "Most leads"], ["showings", "Most showings"], ["cpl", "Lowest cost per lead"], ["newest", "Newest"]];
-  const FILTERS = [["all", "All"], ["running", "Running"], ["leads", "With leads"]];
+  const SORTS = [["leads", "Most Leads"], ["showings", "Most showings"], ["cpl", "Lowest cost per Lead"], ["newest", "Most recent"]];
+  const FILTERS = [["all", "All"], ["active", "Active"], ["inactive", "Inactive"]];
   try { S.repSort = localStorage.getItem("hk.repSort") || "leads"; S.repFilter = localStorage.getItem("hk.repFilter") || "all"; } catch { S.repSort = "leads"; S.repFilter = "all"; }
   if (!SORTS.some(([k]) => k === S.repSort)) S.repSort = "leads";
   if (!FILTERS.some(([k]) => k === S.repFilter)) S.repFilter = "all";
   function boardHtml(r) {
     const made = (x) => (S.listings.find((l) => l.id === x.id) || {}).created_at || "";
-    const pass = { all: () => true, running: (x) => x.running, leads: (x) => x.leads > 0 };
+    // Active: its ads are running. Inactive: they aren't (not approved yet, or sold).
+    const pass = { all: () => true, active: (x) => x.running && x.status !== "sold", inactive: (x) => !x.running || x.status === "sold" };
     const count = (k) => r.listings.filter(pass[k]).length;
     const by = S.repSort;
     const rows = r.listings.filter(pass[S.repFilter]).sort((a, b) =>
@@ -1455,10 +1467,11 @@
     const ranked = by !== "newest";
     const row = (x, i) => {
       const v = value(x), lead = ranked && i === 0 && v;
-      const facts = [by !== "showings" && x.showings ? `${x.showings} ${x.showings === 1 ? "showing" : "showings"}` : "", by !== "leads" && by !== "newest" && x.leads ? `${x.leads} ${x.leads === 1 ? "lead" : "leads"}` : "", by !== "cpl" && x.cpl != null ? `${money(x.cpl)} a lead` : ""].filter(Boolean).join(" · ");
-      const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a lead" : "") : v === 1 ? "lead" : "leads";
+      const medal = ranked && v && i < 3 ? ` m${i + 1}` : "";
+      const facts = [by !== "showings" && x.showings ? `${x.showings} ${x.showings === 1 ? "showing" : "showings"}` : "", by !== "leads" && by !== "newest" && x.leads ? `${x.leads} ${x.leads === 1 ? "Lead" : "Leads"}` : "", by !== "cpl" && x.cpl != null ? `${money(x.cpl)} a Lead` : ""].filter(Boolean).join(" · ");
+      const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a Lead" : "") : v === 1 ? "Lead" : "Leads";
       return `<button class="rb-row${v ? "" : " zero"}" data-act="reportListing" data-id="${x.id}">
-        ${ranked ? `<span class="rb-rank${lead ? " first" : ""}">${v ? i + 1 : ""}</span>` : ""}
+        ${ranked ? `<span class="rb-rank${medal}">${v ? i + 1 : ""}</span>` : ""}
         <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i>
         <span class="rb-mid"><b>${esc(listingName(S.listings.find((l) => l.id === x.id) || { title: x.name }))}</b>
           <span class="rb-track"><i class="${lead ? "top" : ""}" style="width:${width(x)}%"></i></span>${facts ? `<span class="rb-facts">${esc(facts)}</span>` : ""}</span>
@@ -1499,7 +1512,7 @@
     const x = S.report && S.report.listings.find((l) => l.id === t.dataset.id);
     if (!x) return;
     openPop(t, `<div class="note"><b>${esc(x.name)}</b>${esc(weekLabel(S.repMonday))}</div>
-      <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per lead</div></div>
+      <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per Lead</div></div>
       <form class="spendf" data-id="${x.id}"><label for="spendIn">Spent on its ads so far</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
       <p class="small">Fills in once Meta is connected.</p></form>
       <div class="sep"></div><a href="#/l/${x.id}">${ICON.eye}Open listing</a>`, { top: true });
@@ -1528,8 +1541,8 @@
           <div class="logo-up"><i id="logoPrev" style="${b.logo_id ? `background-image:url(${photoUrl(b.logo_id)})` : ""}"></i><label class="sec-btn">Upload logo<input type="file" accept="image/png,image/jpeg,image/webp" hidden id="logoFile"></label>${b.logo_id ? `<button type="button" class="link" id="logoRm">Remove</button>` : ""}</div></div></div>
         <div class="group"><h4>Font</h4><div class="fonts">${FONT_CHOICES.map(([v, l]) => { const f = Creative.FONTS[v]; return `<label class="fontc"><input type="radio" name="font" value="${v}" ${(b.font || "modern") === v ? "checked" : ""}><span style="font-family:'${f.family}';font-weight:${f.weight}">Aa</span><em>${l}</em></label>`; }).join("")}</div></div>
         <div class="group"><details class="more"><summary>More</summary><div class="inner">
-          <div class="grid2">${field("phone", "Phone on lead pages", "(512) 555 0100")}<div class="fld"><label for="f_country">Country</label><select id="f_country" name="country">${COUNTRIES.map((c) => `<option ${b.country === c ? "selected" : ""}>${c}</option>`).join("")}</select></div></div>
-          ${field("license", "License line", "DRE #01234567", "Small print on your lead pages, where your state asks for it.")}
+          <div class="grid2">${field("phone", "Phone on Lead pages", "(512) 555 0100")}<div class="fld"><label for="f_country">Country</label><select id="f_country" name="country">${COUNTRIES.map((c) => `<option ${b.country === c ? "selected" : ""}>${c}</option>`).join("")}</select></div></div>
+          ${field("license", "License line", "DRE #01234567", "Small print on your Lead pages, where your state asks for it.")}
         </div></details></div>
         <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
       </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="See the preview bigger"></canvas><p class="small">${phone() ? "Live preview. Tap to expand." : "Sample ad"}</p></div></div></div></div>`;
@@ -1602,11 +1615,11 @@
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
       <div class="group"><h4>Lead alerts</h4>${b.alerts_topic
-        ? `<p>On. New leads go to your phone.</p>
+        ? `<p>On. New Leads go to your phone.</p>
            <ol class="steps-small"><li>Install ntfy from the App Store or Google Play.</li><li>Tap +, then subscribe to <b>${esc(b.alerts_topic)}</b> <button class="link" data-copy="${esc(b.alerts_topic)}" data-copied="Name copied">Copy</button></li><li>Send a test to check it arrives.</li></ol>
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
-        : `<p class="small">A ping on your phone for every new lead.</p>
-           <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
+        : `<p class="small">A ping on your phone for every new Lead.</p>
+           <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>Billed monthly. Cancel anytime.</p>`
         : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
@@ -1655,7 +1668,7 @@
       await api("/api/account", { method: "PATCH", body: { avatar_id: "" } });
       await loadMe(); drawSide(); viewSettings(); toast("Photo removed");
     } else if (act === "deleteAsk") {
-      openPop(t, `<div class="note"><b>Delete your account?</b>Listings, ads, leads and photos go for good.</div>
+      openPop(t, `<div class="note"><b>Delete your account?</b>Listings, ads, Leads and photos go for good.</div>
         <div style="padding:6px 10px 4px"><div class="fld"><label for="delPw">Your password</label><input id="delPw" type="password" autocomplete="current-password"></div></div>
         <button class="danger" data-act="deleteYes">${ICON.alert}Delete everything</button>`);
       setTimeout(() => $("#delPw") && $("#delPw").focus(), 50);
@@ -1673,7 +1686,7 @@
     if (my !== current()) return;
     main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Admin</h1><p class="lede">Only you see this. Every account on Hopkins, who asked for Pro, and the switch that puts an account on it once they've agreed the price.</p></div>
       <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
-          <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "lead" : "leads"}${w.upgrade_requested ? ` · <b>asked to upgrade ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
+          <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}${w.upgrade_requested ? ` · <b>asked to upgrade ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
           <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select>
           ${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Reset asked ${ago(w.reset_asked)}` : "Reset link"}</button>` : ""}</div></div>`).join("")}</div>
       <div class="head" style="margin-top:34px"><h2>Feedback</h2></div>
@@ -1966,11 +1979,11 @@
       } else if (act === "delOne" || act === "delPicked") {
         const ids = act === "delOne" ? [t.dataset.id] : [...S.picked];
         const name = ids.length === 1 ? listingName(S.listings.find((x) => x.id === ids[0]) || {}) : `${ids.length} listings`;
-        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, chats, photos and leads go too. It can't be undone.</div>
+        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, chats, photos and Leads go too. It can't be undone.</div>
           <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "listing" : `${ids.length} listings`}</button>`);
       } else if (act === "delYes") await deleteListings(t.dataset.ids.split(","));
       else if (act === "delListingAsk") {
-        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, chat, photos and leads go too. It can't be undone.</div>
+        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, chat, photos and Leads go too. It can't be undone.</div>
           <button class="danger" data-act="delListingYes">${ICON.trash}Delete listing</button>`);
       } else if (act === "delListingYes") {
         await api(`/api/listings/${l.id}`, { method: "DELETE" });
@@ -1984,7 +1997,7 @@
         openPop(t, `<button data-dl="feed">${ICON.down}Feed image</button><button data-dl="story">${ICON.down}Story image</button>
           <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>
           <button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>
-          <div class="sep"></div><div class="note">Post or boost it yourself. Send people to the ad link so the leads count here.</div>`);
+          <div class="sep"></div><div class="note">Post or boost it yourself. Send people to the ad link so the Leads count here.</div>`);
       }
       else if (act === "logout") { await api("/api/logout", { body: {} }); location.href = "/login"; }
       else if (act === "chat" || act === "ads") showAds(act === "ads");

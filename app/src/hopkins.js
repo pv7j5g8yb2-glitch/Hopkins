@@ -896,7 +896,10 @@ const asItself = (s) => String(s || "")
   .replace(/\b[Tt]he (platform|system|app|software|tool) only (lets|allows) me( to)?\s+/g, "I can only ")
   .replace(/\b[Tt]he (platform|system|app|software|tool) (doesn't|does not|won't|will not|can't|cannot) (let|allow) me( to)?\s+/g, "I can't ")
   .replace(/\b(I'm|I am) not (allowed|permitted) to\b/g, "I can't");
-const plainWords = (s, clean = polishChat) => clean(asItself(s).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
+// "Lead" is written with a capital L everywhere in Hopkins (Ismael, 2026-10-27). Only the noun,
+// after a number or a word like "no", "new" or "per", so "it leads to" stays as it is.
+export const capLeads = (s) => String(s || "").replace(/\b(\d[\d,]*|no|new|more|fewer|any|every|first|your|their|the|a|an|of|per|cheapest|cheaper|cheap|real|buyer|those|these|some|many|few|zero|one|two|three|four|five|six|seven|eight|nine|ten|qualified|good|warm|more|extra)(\s+)lead(s?)\b/gi, (m, w, sp, plural) => `${w}${sp}Lead${plural}`);
+const plainWords = (s, clean = polishChat) => clean(capLeads(asItself(s)).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
 
 async function applyAI(ws, listing, ads, photos, r, text) {
   const reply = plainWords(r.reply);
@@ -1090,8 +1093,8 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     const answers = {
       plan: `The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`,
       which: ads.length
-        ? "Nobody knows yet, me included. That's why they're different ideas: they run side by side with the same budget, and the one that brings leads cheapest gets the rest. You'll see it in Monday's report."
-        : "Once the ads are made, the test decides. They run side by side and the cheapest leads win.",
+        ? "Nobody knows yet, me included. That's why they're different ideas: they run side by side with the same budget, and the one that brings Leads cheapest gets the rest. You'll see it in Monday's report."
+        : "Once the ads are made, the test decides. They run side by side and the cheapest Leads win.",
       why: ad && WHY[ad.pattern]
         ? `${VERSION_WORD([v], ads)} ${WHY[ad.pattern]}. The ads are different ideas on purpose, so the test teaches you something.`
         : "Each ad takes a different idea about the home, so the test shows which one buyers answer.",
@@ -1284,7 +1287,7 @@ export async function confirmRun(ws, listingId, messageId) {
     );
   }
   await clearActions(listingId);
-  await say(ws, listingId, `Approved. ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live as soon as your Meta ad account is connected. You don't have to wait: download them under the preview and post or boost them yourself. Each ad has its own link, so leads still land here and on the Leads page.`);
+  await say(ws, listingId, `Approved. ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live as soon as your Meta ad account is connected. You don't have to wait: download them under the preview and post or boost them yourself. Each ad has its own link, so Leads still land here and on the Leads page.`);
   notifyFounder("Hopkins: ads approved", `A workspace approved ${ads.length} ads ($${plan.budget} over ${plan.days} days). Waiting on Meta.`);
   return { ok: true };
 }
@@ -1302,8 +1305,8 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
   if (ad) await run(`UPDATE tests SET leads = leads + 1 WHERE ad_id = ?`, [ad.id]);
   const what = wants === "showing" ? "wants a showing" : wants === "offer" ? "wants to talk about an offer" : "has a question";
   const contact = [phone, email].filter(Boolean).join(", ");
-  await say(ws, listing.id, `New lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""} A quick reply is the best way to keep a lead warm.`, "lead", { leadId: id }, false);
-  if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
+  await say(ws, listing.id, `New Lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""} A quick reply is the best way to keep a Lead warm.`, "lead", { leadId: id }, false);
+  if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New Lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
   return id;
 }
 
@@ -1321,7 +1324,13 @@ export async function weeklyReport(ws, range = weekRange()) {
   const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, status, spend, moment, created_at, (SELECT id FROM photos WHERE listing_id = listings.id ORDER BY position LIMIT 1) AS photo_id FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
   // For the chart and the comparison: the week before, and every lead so far per listing (spend
   // is typed in as a running total, so cost per lead is spend over all its leads, not this week's).
-  const before = await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, new Date(new Date(since).getTime() - span).toISOString(), since]);
+  // The week before, and for a week still going, the same stretch of it so far: Monday 00:00 up
+  // to this moment a week ago, so a Tuesday is never compared with a whole week.
+  const prevFrom = new Date(new Date(since).getTime() - span);
+  const now = Date.now();
+  const soFar = now > new Date(since).getTime() && now < new Date(until).getTime();
+  const prevTo = soFar ? new Date(prevFrom.getTime() + (now - new Date(since).getTime())) : new Date(since);
+  const before = await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, prevFrom.toISOString(), prevTo.toISOString()]);
   const allTime = Object.fromEntries((await all(`SELECT listing_id, COUNT(*) AS n FROM leads WHERE workspace_id = ? GROUP BY listing_id`, [ws.id])).map((r) => [r.listing_id, Number(r.n)]));
   const launched = await all(`SELECT DISTINCT listing_id FROM launches WHERE workspace_id = ?`, [ws.id]);
   const launchedIds = new Set(launched.map((r) => r.listing_id));
@@ -1351,16 +1360,16 @@ export async function weeklyReport(ws, range = weekRange()) {
   const next = [];
   for (const r of rows) {
     const top = Object.entries(r.byVersion).sort((a, b) => b[1] - a[1])[0];
-    if (top && r.leads >= 3 && top[1] / r.leads >= 0.5) next.push(`${top[0]} on ${r.name} brought ${top[1]} of its ${r.leads} leads. Put the budget behind it.`);
-    else if (r.running && r.leads === 0 && r.status === "active") next.push(`No leads yet on ${r.name}. Try another angle, or a price ad if the price moved.`);
+    if (top && r.leads >= 3 && top[1] / r.leads >= 0.5) next.push(`${top[0]} on ${r.name} brought ${top[1]} of its ${r.leads} Leads. Put the budget behind it.`);
+    else if (r.running && r.leads === 0 && r.status === "active") next.push(`No Leads yet on ${r.name}. Try another angle, or a price ad if the price moved.`);
     if (r.drafts && r.status === "active") next.push(`${r.name} has ${r.running ? "new " : ""}ads ready that aren't approved yet.`);
   }
   if (!listings.length) next.push("Send me your first listing: photos and the link or the description.");
 
   const headline = total
-    ? `${total} ${total === 1 ? "lead" : "leads"}${spend > 0 ? `, $${Math.round((spend / total) * 100) / 100} each` : ""}${showings ? `, ${showings} asked for a showing` : ""}.`
-    : "No leads.";
-  return { since, until, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), patterns, next: next.slice(0, 5) };
+    ? `${total} ${total === 1 ? "Lead" : "Leads"}${spend > 0 ? `, $${Math.round((spend / total) * 100) / 100} each` : ""}${showings ? `, ${showings} asked for a showing` : ""}.`
+    : "No Leads.";
+  return { since, until, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), soFar, patterns, next: next.slice(0, 5) };
 }
 
 // Hopkins messages first: on a Monday, the first time the app is opened, the report is

@@ -582,3 +582,13 @@ personal in here.
   lead, Newest (no ranks). Filters: All, Running, With leads, each with its count. Every listing
   shows, the ones at 0 faded and unranked. Sort and filter are remembered on the device. A tap
   still opens the listing's sheet with spend.
+* Report, round three (2026-10-27, Ismael): filters are All, Active (ads running, not sold) and
+  Inactive; "Newest" is "Most recent"; ranks 1, 2 and 3 sit on gold, silver (#C9CDD3) and bronze
+  (#B07A4E). The change on the week before is a percentage with a green rising or red falling
+  arrow, like Screen Time or Shopify. A week still going is set against the same stretch of last
+  week (Monday up to this moment a week ago), a finished week against the whole week before it;
+  from 0 it reads "Up from 0", the same count reads "No change", nothing at all shows nothing.
+  "Lead" is capitalised across the app, Hopkins' own messages, the Monday report, alerts, and the
+  model's replies (`capLeads`, noun only). Checked on a slowed server at iPhone and laptop size:
+  6 vs 2 so far reads up 200% (last week's 3 later Leads rightly left out), 5 vs 10 reads down
+  50%, 10 vs 0 reads up from 0.

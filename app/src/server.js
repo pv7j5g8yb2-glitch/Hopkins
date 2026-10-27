@@ -315,8 +315,8 @@ app.post("/api/feedback", async (request, reply) => {
 
 app.post("/api/alerts/test", async (request, reply) => {
   if (tooMany(`alerttest:${request.user.id}`, 5)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
-  if (!request.ws.brand.alerts_topic) return reply.code(400).send({ error: "Turn lead alerts on first." });
-  notifyTopic(request.ws.brand.alerts_topic, "Hopkins test", "Lead alerts work. New leads will arrive like this.");
+  if (!request.ws.brand.alerts_topic) return reply.code(400).send({ error: "Turn Lead alerts on first." });
+  notifyTopic(request.ws.brand.alerts_topic, "Hopkins test", "Lead alerts work. New Leads will arrive like this.");
   return { ok: true };
 });
 

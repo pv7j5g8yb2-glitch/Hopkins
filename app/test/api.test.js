@@ -4,7 +4,7 @@ import { boot, client, TINY_JPEG } from "./helpers.js";
 import { houseRuleProblems } from "../src/writer.js";
 
 const app = await boot();
-const { all } = await import("../src/db.js");
+const { all, run } = await import("../src/db.js");
 
 const DESCRIPTION = "Just listed: 412 Oak Street in Riverside, Austin, TX. 3 bed, 2 bath, 1,840 sq ft craftsman with a wraparound porch, renovated kitchen and a fenced backyard. Perfect for families. $649,000";
 
@@ -123,7 +123,7 @@ test("paid: the plan first, then the yes, then the testing record and leads", as
   const report = await c("GET", "/api/report");
   assert.equal(report.json.total, 1);
   assert.equal(report.json.cpl, 60);
-  assert.match(report.json.headline, /1 lead, \$60 each, 1 asked for a showing/);
+  assert.match(report.json.headline, /1 Lead, \$60 each, 1 asked for a showing/);
 });
 
 test("workspaces can't see each other's listings, and only admins see admin", async () => {
@@ -563,4 +563,29 @@ test("the report is one Monday to Sunday week, and a made up range is refused", 
   assert.equal(r.json.until, "2026-11-02T00:00:00.000Z");
   assert.equal((await c("GET", "/api/report?from=2026-10-26T00:00:00.000Z&to=2026-12-02T00:00:00.000Z")).status, 400);
   assert.equal((await c("GET", "/api/report?from=nope&to=nope")).status, 400);
+});
+
+test("this week is compared with the same stretch of last week, never a whole week", async () => {
+  const { c } = await signup("fair@hopkins.test");
+  const created = await c("POST", "/api/listings", { text: DESCRIPTION });
+  const id = created.json.listing.id;
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  const day = 86400_000, now = Date.now();
+  const from = new Date(now - 2 * day), to = new Date(from.getTime() + 7 * day);
+  // Last week: one Lead a day before this moment a week ago, one after it.
+  for (const at of [from.getTime() - 7 * day + day, now - 7 * day + 3600_000]) await run(`INSERT INTO leads (id, workspace_id, listing_id, name, wants, created_at) VALUES (?, ?, ?, 'T', 'info', ?)`, [String(Math.random()), ws, id, new Date(at).toISOString()]);
+  await run(`INSERT INTO leads (id, workspace_id, listing_id, name, wants, created_at) VALUES (?, ?, ?, 'T', 'info', ?)`, [String(Math.random()), ws, id, new Date(now - 3600_000).toISOString()]);
+  const r = await c("GET", `/api/report?from=${from.toISOString()}&to=${to.toISOString()}`);
+  assert.equal(r.json.total, 1);
+  assert.equal(r.json.soFar, true);
+  assert.equal(r.json.lastWeek, 1, "only last week's Lead from before this moment counts");
+  // A finished week is set against the whole week before it.
+  const past = await c("GET", `/api/report?from=${new Date(from.getTime() + 7 * day).toISOString()}&to=${new Date(from.getTime() + 14 * day).toISOString()}`);
+  assert.equal(past.json.soFar, false);
+});
+
+test("Lead has a capital L in Hopkins' replies, the verb doesn't", async () => {
+  const { capLeads } = await import("../src/hopkins.js");
+  assert.equal(capLeads("3 leads this week, no leads on Elm, cost per lead $20"), "3 Leads this week, no Leads on Elm, cost per Lead $20");
+  assert.equal(capLeads("This leads to more showings."), "This leads to more showings.");
 });
