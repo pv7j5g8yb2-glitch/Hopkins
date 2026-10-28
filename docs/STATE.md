@@ -663,7 +663,7 @@ personal in here.
   the key.
 * Gemini, the free model (2026-10-28, Ismael: "keep the absolute best free one"). Built and
   tested against a fake Gemini, not yet live: with `GEMINI_API_KEY` set (free from
-  aistudio.google.com, no card) Hopkins runs on Gemini 3.5 Flash (falls back to 3 Flash, then
+  aistudio.google.com, no card) Hopkins runs on Gemini 3.8 Flash, the newest free one AI Studio shows (falls back to 3.5 Flash, 3 Flash, then
   2.5 Flash if a name is retired), with the same instructions, structured answers and rules;
   photos go to it as images so it labels them and says what's in them; a link a site blocks is
   read through Google's URL context (Google's own fetcher, a documented API feature) and used

@@ -21,7 +21,7 @@ const MODEL = process.env.HOPKINS_MODEL || "claude-opus-5-5";
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 // Gemini's best free model first; if Google retires a name, the next one answers.
-const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash,gemini-3-flash,gemini-2.5-flash").split(",").map((m) => m.trim()).filter(Boolean);
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.8-flash,gemini-3.5-flash,gemini-3-flash,gemini-2.5-flash").split(",").map((m) => m.trim()).filter(Boolean);
 const GEMINI_URL = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 // Groq's free model that can see images (3 per request, about 7,000 input tokens a minute, and
 // each photo costs about 1,800 whatever its size). Checked 2026-10-25.
