@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseListingText, parsePrice } from "../src/listing.js";
+import { parseListingText, parsePrice, formatPrice, shortPrice } from "../src/listing.js";
 import { writeSet, writeVersion, houseRuleProblems, polish } from "../src/writer.js";
 import { checkWording, cleanWording, audienceFor } from "../src/fairhousing.js";
 import { readIntent, targetVersions } from "../src/rules.js";
@@ -27,6 +27,20 @@ test("reads the facts out of a description", () => {
   assert.equal(parsePrice("Asking $389k"), 389000);
   assert.equal(parsePrice("$3.2M"), 3200000);
   assert.equal(parsePrice("$1,250,000"), 1250000);
+});
+
+test("a price keeps its currency: euros stay euros", () => {
+  const madrid = parseListingText("Calle de Serrano 45, Madrid. 3 bed 2 bath flat, 140 m2, €1,250,000. Corner balcony.");
+  assert.deepEqual([madrid.price, madrid.currency], [1250000, "EUR"]);
+  assert.deepEqual([parsePrice("1.250.000 €"), parseListingText("Precio 1.250.000 €").currency], [1250000, "EUR"]);
+  assert.equal(parseListingText("£875,000 in Hampstead, 3 bed").currency, "GBP");
+  assert.equal(parseListingText("AED 3,400,000 villa in Dubai Hills, 4 bed").currency, "AED");
+  assert.equal(parseListingText("$649,000, 3 bed 2 bath").currency, null);
+  assert.equal(formatPrice(1250000, "EUR"), "€1,250,000");
+  assert.equal(shortPrice(1250000, "EUR"), "€1.25M");
+  assert.equal(formatPrice(649000), "$649,000");
+  const ads = writeSet({ listing: { ...madrid, open_house: null }, photos: [], brand: {}, moment: "new" });
+  for (const a of ads) assert.doesNotMatch(`${a.headline} ${a.overlay} ${a.primary_text} ${a.name}`, /\$/);
 });
 
 test("three different ideas, every time, within the house rules", () => {

@@ -189,6 +189,9 @@
   }
 
   const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
+  // A home's price in its own currency (ad spend stays in dollars).
+  const SYM = { EUR: "€", GBP: "£", AED: "AED ", CAD: "$", AUD: "$" };
+  const homePrice = (l, short) => !l.price ? "" : (SYM[l.currency] || "$") + (short && l.price >= 1e6 ? `${(l.price / 1e6).toFixed(2).replace(/\.?0+$/, "")}M` : Number(l.price).toLocaleString("en-US"));
   // A listing with no photo gets a cover made from its own details instead of an empty square,
   // in the brand's style: oxblood ground, the price in gold (the number that matters), the
   // facts in cream, and the two pebbles drawn large and faint, placed differently per listing.
@@ -574,7 +577,7 @@
     if (!l) return;
     c.classList.add("held");
     setTimeout(() => c.classList.remove("held"), 300);
-    openPop(c, `<div class="note"><b>${esc(listingName(l))}</b>${esc(l.price ? money(l.price) : "")}</div>
+    openPop(c, `<div class="note"><b>${esc(listingName(l))}</b>${esc(homePrice(l))}</div>
       <a href="#/l/${l.id}">${ICON.eye}Open</a>
       <button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button>
       <button data-act="selectOne" data-id="${l.id}">${ICON.check}Select</button>
@@ -819,7 +822,7 @@
     const sub = [l.priceText, l.facts].filter(Boolean).join(" · ");
     const firstPhoto = p.photos[0];
     main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab" data-seg="view"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub, rename: l.id })}
-      <div class="lv ${showPv ? "showpv" : ""}" id="lv">
+      <div class="lv ${showPv ? "showpv" : ""} ${p.ads.length ? "" : "noads"}" id="lv">
       <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><button class="rn" data-act="renameAsk" data-id="${l.id}" title="Rename"><h2>${esc(listingName(l))}</h2></button><span class="sub">${esc(sub)}</span></div>${chip}
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
         <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section>
@@ -1130,7 +1133,7 @@
       logo: b.logo_id ? photoUrl(b.logo_id) : null,
       face: S.me.user.avatar_id ? photoUrl(S.me.user.avatar_id) : null,
       watermark: false,
-      price: l.price ? (l.price >= 1e6 ? `$${(l.price / 1e6).toFixed(2).replace(/\.?0+$/, "")}M` : money(l.price)) : "",
+      price: homePrice(l, true),
       place: l.area || l.city || "",
     };
   }
@@ -1169,10 +1172,9 @@
   function drawPreview() {
     const p = S.current, l = p.listing, pv = $("#pv");
     if (!pv) return;
-    if (!p.ads.length) {
-      pv.innerHTML = `<div class="pvh"><span class="small">Preview</span></div><div class="empty-pv">Your ads show up here.<button class="btn" data-act="remake" style="margin-top:10px">Make the ads</button></div>`;
-      return;
-    }
+    // No ads yet: no panel at all, the chat has the screen (Ismael, 2026-10-28).
+    $("#lv")?.classList.toggle("noads", !p.ads.length);
+    if (!p.ads.length) { pv.innerHTML = ""; return; }
     const v = S.selected[l.id];
     const ad = adFor(v) || p.ads[0];
     const b = S.me.workspace.brand;

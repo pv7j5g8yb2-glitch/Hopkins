@@ -4,7 +4,7 @@
 
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
-import { parseListingText, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
+import { parseListingText, parseCurrency, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
@@ -20,7 +20,7 @@ import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 
-const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house"];
+const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency"];
 export const DEFAULT_BUDGET = 200;
 export const DEFAULT_DAYS = 10;
 
@@ -189,12 +189,12 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
 
   const id = randomUUID();
   const now = nowIso();
-  const listing = { id, workspace_id: ws.id, address: null, city: null, area: null, price: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
+  const listing = { id, workspace_id: ws.id, address: null, city: null, area: null, price: null, currency: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
   listing.slug = slugFor(listing);
   await run(
-    `INSERT INTO listings (id, workspace_id, slug, address, city, area, price, beds, baths, sqft, home_type, features, description, link, open_house, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [id, ws.id, listing.slug, listing.address, listing.city, listing.area, listing.price, listing.beds, listing.baths, listing.sqft, listing.home_type,
+    `INSERT INTO listings (id, workspace_id, slug, address, city, area, price, currency, beds, baths, sqft, home_type, features, description, link, open_house, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id, ws.id, listing.slug, listing.address, listing.city, listing.area, listing.price, listing.currency, listing.beds, listing.baths, listing.sqft, listing.home_type,
       JSON.stringify(listing.features || []), source || null, link, listing.open_house, now, now]
   );
 
@@ -216,7 +216,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   await numberUntitled(ws.id);
   const fresh = await loadListing(ws.id, id);
   if (link && !linkInfo && !fresh.price && !rest) {
-    await say(ws, id, LINK_BLOCKED);
+    await say(ws, id, LINK_BLOCKED(link));
     return fresh;
   }
   await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest) });
@@ -234,7 +234,10 @@ async function importPhotos(ws, listingId, list) {
   }
 }
 
-const LINK_BLOCKED = "I couldn't open that link (a lot of listing sites block other apps). Paste the description, or tell me the price, beds, baths and the best thing about it, and I'll make the ads.";
+// Some portals (idealista, for one) block any app from reading their pages, on purpose. Hopkins
+// says which site and what works instead; it never says it can't open links (2026-10-28).
+const siteOf = (link) => { try { return new URL(link).hostname.replace(/^www\./, ""); } catch { return "That site"; } };
+const LINK_BLOCKED = (link) => `${siteOf(link)} blocks apps from reading its listings, so I couldn't open it. Paste the description from the page, or send the photos and the price.`;
 
 // With a model, it reads the listing and labels the photos better than the rules can. Returns
 // the question to ask if something important is missing.
@@ -252,6 +255,7 @@ async function readListing(ws, id, { rest, linkInfo, features = [], look = false
   if (!r) return null;
   const patch = {};
   for (const k of LISTING_FIELDS) if (r.listing[k] && !(typeof r.listing[k] === "number" && r.listing[k] <= 0)) patch[k] = r.listing[k];
+  if (patch.price) { const cur = parseCurrency([rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join(" ")); if (cur) patch.currency = cur; }
   if (r.listing.features?.length) patch.features = [...new Set([...(features || []), ...r.listing.features])];
   await patchListing(ws.id, id, patch);
   for (const [i, label] of (r.photo_labels || []).entries()) if (photos[i] && label) await run(`UPDATE photos SET label = ? WHERE id = ?`, [label, photos[i].id]);
@@ -799,6 +803,17 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
     return {};
   }
   const ads = await currentAds(listing);
+  // A link the site wouldn't let Hopkins read, and nothing else yet: until the agent sends the
+  // facts or photos, every question gets the same true answer, not the model's guess (it once
+  // said "I don't have browsing ability" right after a Zillow link had worked, 2026-10-28).
+  if (!ads.length && listing.link && !listing.description && text.trim() && !looksLikeListing(text)) {
+    const site = siteOf(listing.link);
+    await say(ws, listing.id, await fresh(listing.id, [
+      `${site} blocks apps from reading its listings; Zillow and most brokerage sites don't. Paste the description from the page, or send the photos and the price.`,
+      `Paste the description from ${site}, or send the photos and the price, and I'll make the ads.`,
+    ]));
+    return {};
+  }
   const photos = await loadPhotos(listing.id, aiEnabled);
   let busy = false;
 
@@ -889,14 +904,14 @@ async function editFirst(ws, listing, msg, text) {
   if (linkInfo?.photos?.length && !(await get(`SELECT 1 FROM photos WHERE listing_id = ? AND kind = 'listing'`, [listing.id]))) await importPhotos(ws, listing.id, linkInfo.photos);
   const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
   const parsed = parseListingText(source);
-  const facts = { address: null, city: null, area: null, price: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
-  await run(`UPDATE listings SET address = ?, city = ?, area = ?, price = ?, beds = ?, baths = ?, sqft = ?, home_type = ?, open_house = ?, features = ?, description = ?, link = ?, moment = 'new', updated_at = ? WHERE id = ? AND workspace_id = ?`,
-    [facts.address, facts.city, facts.area, facts.price, facts.beds, facts.baths, facts.sqft, facts.home_type, facts.open_house, JSON.stringify(facts.features || []), source || null, link, nowIso(), listing.id, ws.id]);
+  const facts = { address: null, city: null, area: null, price: null, currency: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
+  await run(`UPDATE listings SET address = ?, city = ?, area = ?, price = ?, currency = ?, beds = ?, baths = ?, sqft = ?, home_type = ?, open_house = ?, features = ?, description = ?, link = ?, moment = 'new', updated_at = ? WHERE id = ? AND workspace_id = ?`,
+    [facts.address, facts.city, facts.area, facts.price, facts.currency, facts.beds, facts.baths, facts.sqft, facts.home_type, facts.open_house, JSON.stringify(facts.features || []), source || null, link, nowIso(), listing.id, ws.id]);
   await postMessage(ws.id, listing.id, "agent", "text", [rest, link].filter(Boolean).join("\n"), { ...safeJson(msg.data, {}), first: true });
   const missing = await readListing(ws, listing.id, { rest, linkInfo, features: facts.features });
   const fresh = await loadListing(ws.id, listing.id);
   if (link && !linkInfo && !fresh.price && !rest) {
-    await say(ws, listing.id, LINK_BLOCKED);
+    await say(ws, listing.id, LINK_BLOCKED(link));
     return {};
   }
   await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest), inPlace: true });
@@ -931,13 +946,18 @@ const asItself = (s) => String(s || "")
 // after a number or a word like "no", "new" or "per", so "it leads to" stays as it is.
 export const capLeads = (s) => String(s || "").replace(/\b(\d[\d,]*|no|new|more|fewer|any|every|first|your|their|the|a|an|of|per|cheapest|cheaper|cheap|real|buyer|those|these|some|many|few|zero|one|two|three|four|five|six|seven|eight|nine|ten|qualified|good|warm|more|extra)(\s+)lead(s?)\b/gi, (m, w, sp, plural) => `${w}${sp}Lead${plural}`);
 // Offers of more help at the end of a reply ("Let me know if you'd like any tweaks.") add nothing.
-const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|happy to help|hope (?:this|that) helps|if you(?:'d| would) like(?: any)?|if you want|want me to)[^.!?]*[.!?]?\s*$/i;
+const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|happy to help|hope (?:this|that) helps|if you(?:'d| would) like(?: any)?|if you want|want me to|anything (?:else )?(?:to|you'd like to|you want to) (?:adjust|change|tweak)|any (?:other |more )?(?:tweaks|changes|questions)|pick the one|tell me which)[^.!?]*[.!?]?\s*$/i;
 export const noFiller = (s) => { let t = String(s || ""), prev; do { prev = t; t = t.replace(FILLER, "").trim(); } while (t !== prev && t); return t || String(s || ""); };
 const plainWords = (s, clean = polishChat) => clean(noFiller(capLeads(asItself(s))).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
 
 async function applyAI(ws, listing, ads, photos, r, text) {
   const reply = plainWords(r.reply);
   const patch = patchFrom(listing, r.listing_patch);
+  // Facts the agent typed that the model left out ("€1,250,000" once never reached the listing,
+  // 2026-10-28): only where the listing has nothing yet.
+  const typed = text ? parseListingText(text) : {};
+  for (const k of ["price", "beds", "baths", "sqft", "address"]) if (typed[k] && !patch[k] && !listing[k]) patch[k] = typed[k];
+  if (patch.price && text) { const cur = parseCurrency(text); if (cur) patch.currency = cur; }
   // New facts the feature list has no name for ("it has solar panels") are kept in the agent's
   // own words, so every later rewrite still knows them.
   if (r.action === "update_listing" && text) patch.description = [listing.description, text].filter(Boolean).join("\n");
@@ -1162,6 +1182,11 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
   }
 
   if (!ads.length) {
+    // A link the site wouldn't let Hopkins read: whatever they asked, that's the honest answer.
+    if (listing.link && !listing.description) {
+      await say(ws, listing.id, await fresh(listing.id, [`${siteOf(listing.link)} blocks apps from reading its listings. Zillow links open fine. Paste the description from the page, or send the photos and the price.`, "Paste the description from the page, or send the photos and the price, and I'll make the ads."]));
+      return {};
+    }
     await say(ws, listing.id, "There are no ads on this listing yet. Tell me the price and the best thing about the home and I'll make them.");
     return {};
   }

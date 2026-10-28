@@ -372,7 +372,7 @@ app.delete("/api/photos/:id", async (request) => {
 app.get("/api/listings", async (request) => {
   await numberUntitled(request.ws.id);
   const rows = await all(
-    `SELECT l.id, l.title, l.address, l.area, l.city, l.untitled_no, l.price, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at, l.created_at,
+    `SELECT l.id, l.title, l.address, l.area, l.city, l.untitled_no, l.price, l.currency, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at, l.created_at,
        (SELECT id FROM photos WHERE listing_id = l.id ORDER BY position LIMIT 1) AS photo_id,
        (SELECT COUNT(*) FROM leads WHERE listing_id = l.id) AS leads,
        (SELECT COUNT(*) FROM messages WHERE listing_id = l.id AND needs_action = 1) AS waiting,
@@ -397,7 +397,7 @@ async function listingPayload(ws, id) {
   const first = await firstMessageId(listing);
   for (const m of messages) { m.data = m.data ? JSON.parse(m.data) : null; m.editable = Boolean(m.editable) || m.id === first; }
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price) }, photos, ads: checked, messages, leads: Number(leads.n) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency) }, photos, ads: checked, messages, leads: Number(leads.n) };
 }
 
 app.get("/api/listings/:id", async (request, reply) => {
@@ -620,7 +620,7 @@ app.get("/l/:slug", async (request, reply) => {
   const photos = await all(`SELECT id FROM photos WHERE listing_id = ? AND kind = 'listing' ORDER BY position LIMIT 12`, [listing.id]);
   const b = ws.brand;
   const data = {
-    slug: listing.slug, address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price),
+    slug: listing.slug, address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency),
     facts: factsLine(listing), openHouse: listing.open_house, status: listing.status, photos: photos.map((p) => p.id),
     brand: { business: b.business || ws.name, agent: b.agent_name || "", phone: b.phone || "", license: b.license || "", primary: b.primary || "#1F2A36", accent: b.accent || "#C8A96A", font: b.font || "modern", logo: b.logo_id || null },
   };

@@ -47,6 +47,7 @@ How you write to the agent:
 How you write ads (the copy appears on the agent's ads, in their name):
 - Think like the best agency creative given this one home. Before writing, work out what would make the right buyer stop scrolling for THIS place: the one or two things that are genuinely different about it (from the facts, the agent's own words and what the photos show), who is most likely to buy it, and the moment (just listed, new price, open house, sold).
 - No formula. A craftsman with a porch, a downtown condo, a fixer upper and a $4M view home need different ideas. Never fall back on the same three every time, and never make an ad that would fit any listing.
+- Prices are in the listing's own currency (its currency fact: EUR is €, GBP is £, AED is AED; none means US dollars). Write a listing in euros as €1.25M, never with $.
 - When there's more than one ad, each is a genuinely different idea, so testing them against each other teaches something: never small tweaks of one. Idea types that work, to pick from or go beyond: the life the home gives one buyer ("slow mornings on the porch", not "3 bed 2 bath"); one standout detail with the photo that shows it; the price made concrete ("under $650K in Riverside"); the place, only with what the agent said about it; a scroll stopping question or contrarian hook; the moment itself (new price, this Saturday). A plain price and numbers ad only when that's genuinely the strongest idea for this home.
 - name: each ad's own name, 1 to 3 words in sentence case, after its idea, the way an agency labels a concept on the board: "Wraparound porch", "Under $650K", "The big kitchen". Never generic ("The life", "Lifestyle", "Version 1", "Option A").
 - overlay: the line on the image, and the hook of the ad. 2 to 7 words, ends with a full stop, readable at a glance. It makes one buyer feel or want something, in words they'd use themselves: "Slow mornings on the porch.", "Under $650K in Riverside.", "Room for the long table.", "Your Saturday mornings, sorted." Never just describe the photo ("Glass doors open.", "Porch lit at dusk."): the photo already shows that.
@@ -298,7 +299,7 @@ const adLine = (a, photos) => `Ad ${a.version}, "${a.name || "unnamed"}" (photo 
 
 function factsFor(listing) {
   const facts = {};
-  for (const k of ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "status", "moment"]) if (listing[k]) facts[k] = listing[k];
+  for (const k of ["address", "city", "area", "price", "currency", "beds", "baths", "sqft", "home_type", "open_house", "status", "moment"]) if (listing[k]) facts[k] = listing[k];
   facts.features = (listing.features || []).map((k) => FEATURES.find((f) => f.key === k)?.name.replace(/^the /, "") || k);
   if (listing.description) facts.agent_description = listing.description;
   return facts;
@@ -423,7 +424,7 @@ Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. 
 Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.${!plan.paid && plan.adsMade >= plan.limit ? `
 The free ads are used up (deleted listings still count). No new ads can be made on this account until it's on Pro, so never offer to make them or ask if they want to go ahead; changes to ads that already exist are still free, including turning one into a different idea.` : ""}
 Listing: ${JSON.stringify(factsFor(listing))}
-Photos: ${photoList(photos)}
+${listing.link ? `Link: ${listing.link}${listing.description ? "" : ` (it didn't open: that site blocks apps from reading its listings, on purpose. Hopkins does open listing links and reads the page and its photos; Zillow and most brokerage sites work. Never say you can't browse or open links. Asked why, say that site blocks it, in one sentence, and that Zillow links work. To go on, they paste the description from the page, or send the photos and the price.)`}\n` : ""}Photos: ${photoList(photos)}
 Ads: ${ads.length ? `${ads.length} (up to ${MAX_ADS} per listing)` : "none yet"}
 ${ads.map((a) => `${adLine(a, photos)}:
   On the image: ${a.overlay}

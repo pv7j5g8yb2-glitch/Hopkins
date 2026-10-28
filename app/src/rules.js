@@ -3,7 +3,7 @@
 // photo, the headline or the tone, try another angle, a new price, an open house, sold, run
 // it, and the common questions. Anything else gets one short question back, not a guess.
 
-import { parseListingText, parsePrice, PHOTO_LABELS } from "./listing.js";
+import { parseListingText, parsePrice, parseCurrency, PHOTO_LABELS } from "./listing.js";
 import { COLOUR_WORDS, cleanStyle } from "./style.js";
 
 // A change to how the ad looks: colours, font, layout, size, alignment, crop, fade. Returns
@@ -157,6 +157,7 @@ export function readIntent(text, { selected = 1, photos = [], ads = [] } = {}) {
     intent.kind = "moment";
     intent.moment = "price";
     intent.listingPatch.price = price;
+    if (parseCurrency(t)) intent.listingPatch.currency = parseCurrency(t);
     return intent;
   }
 

@@ -87,11 +87,11 @@ export function factProblems(ad, { listing = {}, photos = [], extra = "", oldPri
     // Numbers: the price (and "under" a round figure just above it), beds, baths, size, the
     // old price, and any number the agent wrote themselves.
     const known = [listing.price, listing.beds, listing.baths, listing.sqft, oldPrice].filter(Boolean).map(Number);
-    for (const m of text.matchAll(/(under|below|less than|from|was|now)?\s?(\$?\d[\d,]*(?:\.\d+)?\s?[km]?\b)/gi)) {
+    for (const m of text.matchAll(/(under|below|less than|from|was|now)?\s?([$€£]?\d[\d,]*(?:\.\d+)?\s?[km]?\b)/gi)) {
       const raw = m[2].trim();
       const n = toNumber(raw);
-      if (n === null || (n < 10 && !raw.startsWith("$"))) continue; // small counts ("2 car") are checked by the words around them
-      const plain = raw.replace(/[$,]/g, "");
+      if (n === null || (n < 10 && !/^[$€£]/.test(raw))) continue; // small counts ("2 car") are checked by the words around them
+      const plain = raw.replace(/[$€£,]/g, "");
       const ok = known.some((k) => Math.abs(n - k) <= Math.max(1, k * (/[km]$/i.test(raw) ? 0.03 : 0.006)))
         || (/under|below|less than/i.test(m[1] || "") && listing.price && n >= listing.price && n <= listing.price * 1.1)
         || src.includes(plain) || src.includes(raw)

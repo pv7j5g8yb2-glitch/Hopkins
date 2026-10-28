@@ -181,7 +181,9 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   "ALTER TABLE listings ADD COLUMN untitled_no INTEGER",
   // undo: on the agent's latest message, the listing and its ads as they were before it, so
   // the message can be edited (hopkins.js, editMessage).
-  "ALTER TABLE messages ADD COLUMN undo TEXT"]) {
+  "ALTER TABLE messages ADD COLUMN undo TEXT",
+  // currency: the listing's own (EUR for "€1,250,000"); empty means US dollars.
+  "ALTER TABLE listings ADD COLUMN currency TEXT"]) {
   // Only "already there" is expected; anything else is logged, not hidden.
   try { await client.execute(sql); } catch (err) { if (!/duplicate column/i.test(err.message)) console.error(`Migration failed (${sql}):`, err.message); }
 }

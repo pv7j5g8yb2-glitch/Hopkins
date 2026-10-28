@@ -57,8 +57,8 @@ function pickPhoto(photos, want, used) {
 function momentLead(l, moment, extra = {}) {
   if (moment === "price") {
     return extra.oldPrice && l.price && extra.oldPrice > l.price
-      ? `New price. Was ${formatPrice(extra.oldPrice)}, now ${formatPrice(l.price)}.`
-      : `New price: ${formatPrice(l.price)}.`;
+      ? `New price. Was ${formatPrice(extra.oldPrice, l.currency)}, now ${formatPrice(l.price, l.currency)}.`
+      : `New price: ${formatPrice(l.price, l.currency)}.`;
   }
   if (moment === "open_house") return l.open_house ? `Open house ${l.open_house}. Come by, no appointment needed.` : "Open house this weekend.";
   if (moment === "sold") return `Just sold in ${place(l) || "the area"}.`;
@@ -93,7 +93,7 @@ export function writeVersion(pattern, ctx, opts = {}) {
   const angle = opts.angle || 0;
   const where = place(l);
   const facts = factsLine(l);
-  const price = formatPrice(l.price);
+  const price = formatPrice(l.price, l.currency);
   const type = l.home_type || "home";
   const lead = momentLead(l, moment, extra);
   const ctaLine = moment === "sold" ? "Thinking about selling nearby? Send me a message."
@@ -134,13 +134,13 @@ export function writeVersion(pattern, ctx, opts = {}) {
       photoWant: f ? f.photo : "living",
     };
   } else {
-    const momentOverlay = moment === "price" ? `Now ${shortPrice(l.price)}.` : moment === "sold" ? "Just sold." : moment === "open_house" ? "Open house." : "Just listed.";
+    const momentOverlay = moment === "price" ? `Now ${shortPrice(l.price, l.currency)}.` : moment === "sold" ? "Just sold." : moment === "open_house" ? "Open house." : "Just listed.";
     ad = {
       pattern: "facts",
-      name: moment === "price" ? "New price" : moment === "open_house" ? "Open house" : moment === "sold" ? "Just sold" : l.price ? `${shortPrice(l.price)}${where && where.length < 16 ? ` in ${where}` : ""}` : "The numbers",
+      name: moment === "price" ? "New price" : moment === "open_house" ? "Open house" : moment === "sold" ? "Just sold" : l.price ? `${shortPrice(l.price, l.currency)}${where && where.length < 16 ? ` in ${where}` : ""}` : "The numbers",
       overlay: momentOverlay,
       kicker: facts || cap(type),
-      headline: fit([shortPrice(l.price), where].filter(Boolean).join(" in ") || `New ${type}`, 40),
+      headline: fit([shortPrice(l.price, l.currency), where].filter(Boolean).join(" in ") || `New ${type}`, 40),
       body: [
         lead || `Just listed${l.address ? `: ${l.address}` : ""}${where ? `, ${where}` : ""}.`,
         moment === "price" ? (facts ? `${cap(facts)}.` : "") : factsOnly,

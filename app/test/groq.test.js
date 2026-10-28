@@ -331,3 +331,29 @@ test("thanks never reaches the model, a colour change keeps the words, and the m
   await c("POST", `/api/listings/${id}/messages`, { text: "which ad is doing best?", version: 1 });
   assert.match(calls.at(-1).body.messages[0].content, /Leads so far: 0/);
 });
+
+test("a link the site won't let Hopkins read: it names the site, never says it can't open links", async (t) => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "blocked@test.com", password: "password123", invite: "EARLY1", name: "Dana Reyes" });
+  // The site answers 403, like idealista does for any app.
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 403, text: async () => "blocked" });
+  t.after(() => { globalThis.fetch = realFetch; });
+  next = [500, 500, 500];
+  const r = await c("POST", "/api/listings", { text: "https://www.idealista.com/inmueble/111452225/" });
+  assert.equal(r.status, 200);
+  const id = r.json.listing.id;
+  const first = (await c("GET", `/api/listings/${id}`)).json.messages.at(-1).body;
+  assert.match(first, /^idealista\.com blocks apps from reading its listings/);
+  // Questions get the same true answer without the model, never "I can't browse".
+  const before = calls.length;
+  const why = await c("POST", `/api/listings/${id}/messages`, { text: "why can't you open it", version: 1 });
+  assert.equal(calls.length, before);
+  assert.match(why.json.messages.at(-1).body, /^idealista\.com blocks apps from reading its listings; Zillow and most brokerage sites don't/);
+  const again = await c("POST", `/api/listings/${id}/messages`, { text: "I sent you a Zillow listing earlier and you opened it", version: 1 });
+  assert.match(again.json.messages.at(-1).body, /^Paste the description from idealista\.com/);
+  // Facts go to the model as usual, and it hears the truth about links too.
+  next = [{ reply: "Got it.", action: "update_listing", ads: [], listing_patch: { price: 1250000, beds: 3, baths: 2 } }];
+  await c("POST", `/api/listings/${id}/messages`, { text: "3 bed 2 bath flat, €1,250,000", version: 1 });
+  assert.match(calls.at(-1).body.messages[0].content, /Never say you can't browse or open links/);
+});

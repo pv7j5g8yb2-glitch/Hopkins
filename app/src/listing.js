@@ -49,9 +49,22 @@ export function labelFromName(name = "") {
 
 const num = (s) => Number(String(s).replace(/,/g, ""));
 
+// The currency a price was written in (2026-10-28: "€1,250,000" became $1,250,000). Dollars
+// stay the default, so only the others are named.
+const CURRENCIES = [["EUR", /€|\beur\b|\beuros?\b/i], ["GBP", /£|\bgbp\b|\bpounds?\b/i], ["AED", /\baed\b|\bdirhams?\b/i], ["CAD", /\bca?\$|\bcad\b/i], ["AUD", /\ba\$|\baud\b/i]];
+export function parseCurrency(text) {
+  for (const [code, re] of CURRENCIES) if (re.test(text || "")) return code;
+  return null;
+}
+const SYMBOL = { EUR: "€", GBP: "£", AED: "AED ", CAD: "$", AUD: "$" };
+const sym = (cur) => SYMBOL[cur] || "$";
+
 export function parsePrice(text) {
-  const m = text.match(/\$\s?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(k|m|mm|million|thousand)?\b/i) ||
-    text.match(/\b(\d{1,3}(?:,\d{3}){1,2})\s*(?:dollars|usd)?\b/i);
+  // "1.250.000 €": dots as thousands, the way most of Europe writes it.
+  const eu = text.match(/(?:€|eur)\s?(\d{1,3}(?:\.\d{3})+)(?!\d)|\b(\d{1,3}(?:\.\d{3})+)\s?(?:€|eur|euros?)/i);
+  if (eu) { const v = Number((eu[1] || eu[2]).replace(/\./g, "")); if (v >= 10_000 && v < 1_000_000_000) return v; }
+  const m = text.match(/(?:\$|€|£|\baed\s?)\s?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(k|m|mm|million|thousand)?\b/i) ||
+    text.match(/\b(\d{1,3}(?:,\d{3}){1,2})\s*(?:dollars|usd|euros?|eur|pounds|gbp|aed|dirhams)?\b/i);
   if (!m) return null;
   let v = num(m[1]);
   const unit = (m[2] || "").toLowerCase();
@@ -64,6 +77,7 @@ export function parseListingText(text = "") {
   const t = text.replace(/\s+/g, " ").trim();
   const out = { features: [] };
   out.price = parsePrice(t);
+  if (out.price) out.currency = parseCurrency(t);
   const beds = t.match(/(\d+(?:\.\d)?)\s*(?:bed(room)?s?|bd|br)\b/i);
   if (beds) out.beds = Number(beds[1]);
   const baths = t.match(/(\d+(?:\.\d)?)\s*(?:bath(room)?s?|ba)\b/i);
@@ -84,15 +98,15 @@ export function parseListingText(text = "") {
   return out;
 }
 
-export function formatPrice(p) {
+export function formatPrice(p, cur) {
   if (!p) return "";
-  return "$" + Number(p).toLocaleString("en-US");
+  return sym(cur) + Number(p).toLocaleString("en-US");
 }
 
-export function shortPrice(p) {
+export function shortPrice(p, cur) {
   if (!p) return "";
-  if (p >= 1_000_000) return "$" + (p / 1_000_000).toFixed(p % 1_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, "") + "M";
-  return "$" + Math.round(p / 1000) + "K";
+  if (p >= 1_000_000) return sym(cur) + (p / 1_000_000).toFixed(p % 1_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, "") + "M";
+  return sym(cur) + Math.round(p / 1000) + "K";
 }
 
 export function priceBand(p) {

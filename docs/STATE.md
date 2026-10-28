@@ -639,3 +639,15 @@ personal in here.
   home, what they asked, status or ad, with "No Leads match" and Cancel. Every name (Leads,
   account, agent name on the brand) now starts each part with a capital, and names saved before
   are fixed at start. Checked on a slowed server at iPhone and laptop size.
+* Blocked links and currency (2026-10-28, Ismael, angry: an idealista link failed, then Hopkins
+  said it couldn't browse at all and ignored "why"). idealista blocks apps on purpose (bot
+  protection); Hopkins doesn't get around that. Now: the first reply names the site; any
+  question on a listing whose link didn't open gets a fixed true answer (that site blocks apps,
+  Zillow and most brokerage sites don't, paste the description or send photos and the price),
+  never the model's guess; the model is told Hopkins does open links. Facts typed in the chat
+  that the model leaves out (price, beds, baths, size, address) still reach the listing. Prices
+  keep their currency (EUR, GBP, AED, CAD, AUD; a new `currency` column on listings), shown and
+  written as €1,250,000 / €1.25M. The empty "Your ads show up here / Make the ads" panel is gone:
+  with no ads the chat has the whole screen. More trailing offers stripped ("Anything to
+  adjust?", "Pick the one..."). Checked with real Groq on a slowed server, phone and laptop.
+  Open idea: read facts from screenshots of a listing page, for sites that block links.
