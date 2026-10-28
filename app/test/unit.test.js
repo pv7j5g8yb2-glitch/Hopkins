@@ -169,3 +169,15 @@ test("a listing page's own photos and facts: Zillow's page data, else JSON-LD, e
   assert.deepEqual(photosFrom(`<meta property="og:image" content="https://x.test/og.jpg">`).map((p) => p.url), ["https://x.test/og.jpg"]);
   assert.deepEqual(photosFrom(`<meta property="og:image" content="http://insecure.test/a.jpg">`), []);
 });
+
+test("listing pages on other portals give their full facts, and Canada is in Canadian dollars", async () => {
+  const { ldFacts } = await import("../src/listing.js");
+  const html = `<script type="application/ld+json">${JSON.stringify({ "@type": ["RealEstateListing"], description: "Short.", offers: { "@type": "Offer", price: 1995000, priceCurrency: "USD" }, mainEntity: { "@type": "SingleFamilyResidence", numberOfBedrooms: 3, numberOfBathroomsTotal: 2, floorSize: { "@type": "QuantitativeValue", value: 2656, unitCode: "FTK" }, description: "Step into a slice of 1940s heaven that's been reimagined for the way we live today, with a new kitchen and a garden.", address: { "@type": "PostalAddress", streetAddress: "30 Whitwell Ave", addressLocality: "Newport", addressRegion: "RI" } } })}</script>`;
+  const text = ldFacts(html);
+  assert.match(text, /^30 Whitwell Ave, Newport, RI\. Price \$1,995,000\. 3 bed, 2 bath, 2,656 sq ft\. Step into a slice of 1940s heaven/);
+  const p = parseListingText(text);
+  assert.deepEqual([p.price, p.beds, p.baths, p.sqft, p.currency], [1995000, 3, 2, 2656, null]);
+  assert.equal(parseListingText("1338 E 37th Ave, Vancouver, BC V5W 1G5. Price $1,638,000. 4 bed, 2 bath").currency, "CAD");
+  assert.equal(parseListingText("215 Acton Avenue, Toronto, Ontario. $1,000,000, 3 bed").currency, "CAD");
+  assert.equal(parseListingText("a 4-bed, 2-bath home, $334,999").baths, 2);
+});

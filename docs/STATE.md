@@ -714,3 +714,17 @@ personal in here.
   longer get one. Checked on the demo account: answers matched the Report (9 Leads, 3 showings,
   Westover Hills 20 in all, 3 this week). The idealista link still fails on the live site while
   Gemini's free Flash allowance is used up (Google's reader runs on it).
+* Which listing sites Hopkins can read (2026-10-28, tested with Hopkins' own reader on real
+  listings; Google's reader tried on the refused ones):
+  - Full (price, beds, baths, size, address, the agent's full description, up to 12 photos):
+    Zillow (US and Canada), Trulia, Coldwell Banker, Compass (5 photos). Compass, Coldwell
+    Banker and Trulia only gave a one line summary until Hopkins learnt to read the schema.org
+    data on the page (`ldFacts` in listing.js); now 900 to 1,800 characters of description.
+  - Refused (403 or 405 to any app): Realtor.com, Realtor.ca, Redfin, Homes.com, Century 21,
+    Keller Williams, RE/MAX, Sotheby's, Berkshire Hathaway. Google's reader: couldn't open
+    Realtor.ca; Century 21 came back empty (Hopkins treats that as not opened). Not tried: eXp
+    (my test address was wrong), MLS client portal links (OneHome, Matrix, Flexmls), agent IDX
+    sites. Never work around a site's blocking.
+  - Fixed with it: Canadian listings priced with a plain "$" now count as Canadian dollars
+    (postal code or province), "4-bed, 2-bath" with hyphens is read.
+  - Photos from a link stop at 12 on purpose (ads need a few, and each is stored).

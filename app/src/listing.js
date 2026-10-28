@@ -52,8 +52,12 @@ const num = (s) => Number(String(s).replace(/,/g, ""));
 // The currency a price was written in (2026-10-28: "€1,250,000" became $1,250,000). Dollars
 // stay the default, so only the others are named.
 const CURRENCIES = [["EUR", /€|\beur\b|\beuros?\b/i], ["GBP", /£|\bgbp\b|\bpounds?\b/i], ["AED", /\baed\b|\bdirhams?\b/i], ["CAD", /\bca?\$|\bcad\b/i], ["AUD", /\ba\$|\baud\b/i]];
+// A plain "$" in Canada is Canadian dollars: a Canadian postal code or province says so (a
+// Vancouver listing on Zillow read as US dollars, 2026-10-28).
+const CANADA = /\b[ABCEGHJ-NPRSTVXY]\d[A-Z] ?\d[A-Z]\d\b|,\s*(BC|AB|SK|MB|ON|QC|NB|NS|PE|NL|YT|NT|NU)\b|\b(British Columbia|Alberta|Saskatchewan|Manitoba|Ontario|Qu[eé]bec|Nova Scotia|New Brunswick|Prince Edward Island|Newfoundland)\b/;
 export function parseCurrency(text) {
   for (const [code, re] of CURRENCIES) if (re.test(text || "")) return code;
+  if (CANADA.test(text || "")) return "CAD";
   return null;
 }
 const SYMBOL = { EUR: "€", GBP: "£", AED: "AED ", CAD: "$", AUD: "$" };
@@ -78,9 +82,9 @@ export function parseListingText(text = "") {
   const out = { features: [] };
   out.price = parsePrice(t);
   if (out.price) out.currency = parseCurrency(t);
-  const beds = t.match(/(\d+(?:\.\d)?)\s*(?:bed(room)?s?|bd|br)\b/i);
+  const beds = t.match(/(\d+(?:\.\d)?)\s*-?\s*(?:bed(room)?s?|bd|br)\b/i);
   if (beds) out.beds = Number(beds[1]);
-  const baths = t.match(/(\d+(?:\.\d)?)\s*(?:bath(room)?s?|ba)\b/i);
+  const baths = t.match(/(\d+(?:\.\d)?)\s*-?\s*(?:bath(room)?s?|ba)\b/i);
   if (baths) out.baths = Number(baths[1]);
   const sqft = t.match(/(\d{1,2},?\d{3}|\d{3,4})\s*(?:sq\.?\s?ft|square feet|sqft|sf)\b/i);
   if (sqft) out.sqft = num(sqft[1]);
@@ -154,7 +158,7 @@ export async function readLink(url) {
     const description = meta("og:description") || meta("description");
     const image = meta("og:image");
     if (!title && !description) return null;
-    const facts = pageFacts(html);
+    const facts = pageFacts(html) || ldFacts(html);
     return { title: title ? decode(title).trim() : null, description: [description, facts].filter(Boolean).join("\n") || null, image: image || null, photos: photosFrom(html) };
   } catch {
     return null;
@@ -208,6 +212,44 @@ export function pageFacts(html) {
     typeof p.description === "string" && p.description.slice(0, 2500),
   ].filter(Boolean);
   return bits.length ? bits.join(" ") : null;
+}
+
+// The listing's facts from the page's schema.org data, which most other portals carry (checked
+// 2026-10-28: Compass, Coldwell Banker, Trulia): the address, price with its currency, beds,
+// baths, size and the agent's full description. Their summary line alone said "Discover the
+// property..." and nothing else.
+export function ldFacts(html) {
+  const nodes = [];
+  const walk = (o, depth = 0) => {
+    if (depth > 10 || !o || typeof o !== "object") return;
+    if (Array.isArray(o)) { o.forEach((x) => walk(x, depth + 1)); return; }
+    nodes.push(o);
+    for (const k in o) walk(o[k], depth + 1);
+  };
+  for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try { walk(JSON.parse(m[1])); } catch {}
+  }
+  const HOME = /RealEstateListing|SingleFamilyResidence|Residence|House|Apartment|Accommodation|Product/;
+  const homes = nodes.filter((n) => HOME.test([].concat(n["@type"] || []).join(",")));
+  if (!homes.length) return null;
+  const pick = (k) => homes.map((n) => n[k]).find((v) => v !== undefined && v !== null && v !== "");
+  const num = (v) => { const x = Number(typeof v === "object" ? v?.value : v); return x > 0 ? x : null; };
+  const addr = nodes.find((n) => n.streetAddress && (n.addressLocality || n.addressRegion));
+  const offer = nodes.find((n) => [].concat(n["@type"] || []).includes("Offer") && num(n.price));
+  const size = nodes.find((n) => n.floorSize)?.floorSize;
+  const sizeUnit = /MTK|m2|m²|sqm/i.test(`${size?.unitCode || ""}${size?.unitText || ""}`) ? "m²" : "sq ft";
+  const beds = num(pick("numberOfBedrooms")) || num(pick("numberOfRooms"));
+  const baths = num(pick("numberOfBathroomsTotal")) || num(pick("numberOfFullBathrooms"));
+  const cur = offer?.priceCurrency || "USD";
+  const money = (n) => `${cur === "USD" ? "$" : cur === "CAD" ? "CA$" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : `${cur} `}${n.toLocaleString("en-US")}`;
+  const description = homes.map((n) => n.description).filter((d) => typeof d === "string").sort((a, b) => b.length - a.length)[0];
+  const bits = [
+    addr && `${[addr.streetAddress, addr.addressLocality, addr.addressRegion].filter(Boolean).join(", ")}.`,
+    offer && `Price ${money(num(offer.price))}.`,
+    [beds && `${beds} bed`, baths && `${baths} bath`, num(size) && `${num(size).toLocaleString("en-US")} ${sizeUnit}`].filter(Boolean).join(", ").replace(/.$/, "$&."),
+    description && decode(description).slice(0, 2500),
+  ].filter((b) => b && b !== ".");
+  return bits.length > 1 ? bits.join(" ") : null;
 }
 
 // The object that holds a non empty array under `key` (Zillow's property).
