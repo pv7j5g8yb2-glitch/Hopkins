@@ -110,13 +110,15 @@ test("paid: the plan first, then the yes, then the testing record and leads", as
   assert.match(page.body, /412 Oak Street/);
   const anon = client(app);
   assert.equal((await anon("POST", `/api/l/${created.json.listing.slug}/lead`, { name: "Dana" })).status, 400);
-  const lead = await anon("POST", `/api/l/${created.json.listing.slug}/lead`, { name: "Dana Price", phone: "512 555 0199", wants: "showing", v: approvedV1.id });
+  const lead = await anon("POST", `/api/l/${created.json.listing.slug}/lead`, { name: "  dana mary-jo  o'price ", phone: "512 555 0199", wants: "showing", v: approvedV1.id });
   assert.equal(lead.status, 200);
   const record = await all(`SELECT * FROM tests WHERE ad_id = ?`, [approvedV1.id]);
   assert.equal(record[0].leads, 1);
 
   const leads = await c("GET", "/api/leads");
   assert.equal(leads.json.leads[0].version, 1);
+  // Every part of a name starts with a capital, however it was typed.
+  assert.equal(leads.json.leads[0].name, "Dana Mary-Jo O'Price");
   // Today's "Leads this week" counts the leads themselves.
   assert.equal((await c("GET", "/api/inbox")).json.leadsWeek, 1);
   await c("PATCH", `/api/listings/${id}`, { spend: 60 });
@@ -638,4 +640,15 @@ test("the demo's own ads pass the house rules and the fair housing check", async
     const w = checkWording(l);
     assert.ok(!w || !w.length || w.every?.((x) => !x.block), `${l}: ${JSON.stringify(w)}`);
   }
+});
+
+test("account names get their capitals too, and names saved before are fixed at start", async () => {
+  const { c } = await signup("names@ellery.test", { name: "sam de la cruz" });
+  assert.equal((await c("GET", "/api/me")).json.user.name, "Sam De La Cruz");
+  await c("PATCH", "/api/account", { name: "samuel mcdonald" });
+  assert.equal((await c("GET", "/api/me")).json.user.name, "Samuel Mcdonald");
+  await run(`UPDATE users SET name = 'old lowercase' WHERE email = 'names@ellery.test'`);
+  const { capitaliseNames } = await import("../src/hopkins.js");
+  await capitaliseNames();
+  assert.equal((await c("GET", "/api/me")).json.user.name, "Old Lowercase");
 });

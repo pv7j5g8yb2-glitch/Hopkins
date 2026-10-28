@@ -43,6 +43,7 @@
     msg: '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12z"/></svg>',
     mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>',
     spark: '<svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>',
+    search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>',
     people: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg>',
     chart: '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
   };
@@ -1305,8 +1306,10 @@
       <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? `Ad ${x.version}` : "Lead page"} · ${ago(x.created_at)}</div>
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
       <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
-    main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
-      ${leads.length ? `<div class="list" style="border-top:0">${leads.map(item).join("")}</div>`
+    main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
+      ${leads.length ? `<button class="sel-btn round" data-act="leadSearch" aria-label="Search Leads">${ICON.search}</button>` : ""}</div>
+      ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search Leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
+      <div class="list" id="leadList" style="border-top:0">${leads.map(item).join("")}</div><p class="lnone" id="lnone" hidden></p>`
         : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>They show up here, with the ad that brought them.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
@@ -1314,6 +1317,28 @@
       buzz(6);
       toast("Saved");
     }));
+    // Search: name, phone, email, home, what they asked and the status, as they type.
+    const words = leads.map((x) => [x.name, x.email, x.phone, x.phone && tel(x.phone), x.address, x.area, x.note, WANTS[x.wants], STATUS[x.status], x.version && `Ad ${x.version}`].filter(Boolean).join(" ").toLowerCase());
+    const rows = $$("#leadList .lead");
+    $("#lq")?.addEventListener("input", (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      const parts = q.split(/\s+/).filter(Boolean);
+      let shown = 0;
+      rows.forEach((r, i) => { const hit = parts.every((p) => words[i].includes(p) || (/\d/.test(p) && words[i].includes(p.replace(/[^\d+]/g, "")))); r.hidden = !hit; if (hit) shown++; });
+      $("#lnone").hidden = Boolean(shown);
+      $("#lnone").textContent = shown ? "" : `No Leads match "${e.target.value.trim()}".`;
+    });
+  }
+
+  function leadSearch(open) {
+    const box = $("#lsearch");
+    if (!box) return;
+    box.hidden = !open;
+    $("[data-act=leadSearch]").hidden = open;
+    const q = $("#lq");
+    if (open) { q.focus(); return; }
+    q.value = "";
+    q.dispatchEvent(new Event("input"));
   }
 
   // ---------- Monday report ----------
@@ -1935,6 +1960,8 @@
           <button class="danger" data-act="delOne" data-id="${t.dataset.id}">${ICON.trash}Delete</button>`);
       }
       else if (act === "sideToggle") setSide(!$("#shell").classList.contains("slim"));
+      else if (act === "leadSearch") leadSearch(true);
+      else if (act === "leadSearchClose") leadSearch(false);
       else if (act === "style") {
         openPop(t, styleSheet(), { style: true });
         settleSegs();

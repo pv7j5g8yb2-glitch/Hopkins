@@ -634,3 +634,8 @@ personal in here.
   limit; Admin strings shortened and "Paid" reads "Pro"; "Colors" and "Main color" now "Colours"
   and "Main colour" like the rest. Known limit: Groq's free key runs out after a few quick
   messages in a row (about 8,000 tokens a minute); Hopkins says so and asks to send it again.
+* Leads search and name capitals (2026-10-28, Ismael): a round search button sits by the Leads
+  title; it opens a search field that filters as you type by name, phone (any format), email,
+  home, what they asked, status or ad, with "No Leads match" and Cancel. Every name (Leads,
+  account, agent name on the brand) now starts each part with a capital, and names saved before
+  are fixed at start. Checked on a slowed server at iPhone and laptop size.

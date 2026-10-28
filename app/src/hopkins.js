@@ -17,6 +17,7 @@ import { aiEnabled, provider, readListingAI, seePhotosAI, writeSetAI, chatTurnAI
 const BUSY = "I'm getting a lot of messages at once. Send that again in a few seconds.";
 const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].includes(readIntent(text).kind);
 import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
+import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house"];
@@ -118,6 +119,22 @@ export async function newChat(ws, history) {
     : intent.kind === "thanks" ? ["Anytime."]
     : [`I need a listing to start. ${ask}`, `I didn't catch a listing in that. Paste the link or add the photos and I'll take it from there.`];
   return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
+}
+
+// Names saved before every name got its capitals (2026-10-28): Leads, accounts and the agent's
+// name on the brand. Runs at start, and does nothing once they're clean.
+export async function capitaliseNames() {
+  for (const t of ["leads", "users"]) {
+    for (const r of await all(`SELECT id, name FROM ${t} WHERE name IS NOT NULL AND name != ''`)) {
+      if (nameCase(r.name) !== r.name) await run(`UPDATE ${t} SET name = ? WHERE id = ?`, [nameCase(r.name), r.id]);
+    }
+  }
+  for (const w of await all(`SELECT id, brand FROM workspaces`)) {
+    const brand = safeJson(w.brand, {});
+    if (brand.agent_name && nameCase(brand.agent_name) !== brand.agent_name) {
+      await run(`UPDATE workspaces SET brand = ? WHERE id = ?`, [JSON.stringify({ ...brand, agent_name: nameCase(brand.agent_name) }), w.id]);
+    }
+  }
 }
 
 // Listings made before that fix may carry the brand city as a guess. Clear it where the listing's
@@ -1323,6 +1340,7 @@ export async function confirmRun(ws, listingId, messageId) {
 // ---------- leads ----------
 
 export async function addLead(listing, { name, email, phone, wants, note, adId, source }) {
+  name = nameCase(name);
   const ws = await getWorkspace(listing.workspace_id);
   const ad = adId ? await get(`SELECT id, version, name FROM ads WHERE id = ? AND listing_id = ?`, [adId, listing.id]) : null;
   const id = randomUUID();

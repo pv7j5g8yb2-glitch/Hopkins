@@ -9,9 +9,10 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, restyle, numberUntitled, editMessage, firstMessageId,
+  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, capitaliseNames, restyle, numberUntitled, editMessage, firstMessageId,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
+import { nameCase } from "./names.js";
 import { FONT_KEYS } from "./style.js";
 import { buildDemo, DEMO_DOMAIN } from "./demo.js";
 import { aiEnabled } from "./brain.js";
@@ -139,7 +140,7 @@ app.post("/api/signup", async (request, reply) => {
   if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) return reply.code(400).send({ error: "That email doesn't look right." });
   if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the password." });
   if (await get(`SELECT id FROM users WHERE email = ?`, [email.trim().toLowerCase()])) return reply.code(409).send({ error: "There's already an account with that email. Sign in instead." });
-  const userId = await createAccount({ email: email.trim(), password, name: clean(name, 80), business: clean(business, 120), plan: pilotPlan() });
+  const userId = await createAccount({ email: email.trim(), password, name: nameCase(clean(name, 80)), business: clean(business, 120), plan: pilotPlan() });
   setSession(reply, userId);
   const count = await get(`SELECT COUNT(*) AS n FROM workspaces`);
   notifyFounder("New Hopkins account", `${count.n} accounts in total.`, ["tada"]);
@@ -241,7 +242,8 @@ app.put("/api/brand", async (request, reply) => {
   const brand = { ...request.ws.brand };
   for (const [k, max] of Object.entries(BRAND_KEYS)) {
     if (body[k] === undefined) continue;
-    const v = typeof body[k] === "string" ? body[k].trim().slice(0, max) : "";
+    let v = typeof body[k] === "string" ? body[k].trim().slice(0, max) : "";
+    if (k === "agent_name") v = nameCase(v);
     if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Colours need to be hex, like #1F2A36." });
     if (k === "voice" && !["plain", "warm", "premium"].includes(v)) continue;
     if (k === "font" && !FONT_KEYS.includes(v)) continue;
@@ -259,7 +261,7 @@ app.patch("/api/account", async (request, reply) => {
   const b = request.body || {};
   const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
   const sets = [], args = [];
-  if (b.name !== undefined) { sets.push("name = ?"); args.push(clean(b.name, 80)); }
+  if (b.name !== undefined) { sets.push("name = ?"); args.push(nameCase(clean(b.name, 80))); }
   if (b.avatar_id !== undefined) {
     if (b.avatar_id && !(await get(`SELECT id FROM photos WHERE id = ? AND workspace_id = ? AND kind = 'avatar'`, [b.avatar_id, request.ws.id]))) return reply.code(400).send({ error: "That photo didn't upload. Try again." });
     sets.push("avatar_id = ?"); args.push(b.avatar_id || null);
@@ -660,5 +662,6 @@ if (process.env.NODE_ENV !== "test" && !process.env.NO_LISTEN) {
   // server down (Node stops the process for one by default, and Render shows a 502 until it's back).
   process.on("unhandledRejection", (err) => console.error("Unhandled rejection:", err?.stack || err));
   await forgetGuessedCities().catch((err) => console.error("City clean up failed:", err.message));
+  await capitaliseNames().catch((err) => console.error("Name clean up failed:", err.message));
   await app.listen({ port: Number(process.env.PORT || 3200), host: "0.0.0.0" });
 }

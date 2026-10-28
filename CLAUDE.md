@@ -200,6 +200,10 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Lead with a capital L (Ismael, 2026-10-27):** "Lead" and "Leads" are always capitalised in the
   app and in Hopkins' replies ("3 Leads", "cost per Lead", "New Lead"). Ad copy and buyer pages
   are not the app.
+* **Names start with capitals (Ismael, 2026-10-28):** every part of a person's name (first, middle,
+  last, each side of a hyphen or apostrophe) starts with a capital, however it was typed: Leads,
+  the account name and the agent name on the brand. Only first letters change, so "McDonald"
+  stays as typed. `app/src/names.js`; names saved before are fixed when the server starts.
 * **The paid plan is called Pro (Ismael, 2026-10-27)** everywhere a user sees it ("Pro", "Ask for
   Pro", "on Pro"), never "paid plan". The account corner and menu show the person's own name, not
   the brokerage they work at.
