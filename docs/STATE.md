@@ -683,3 +683,8 @@ personal in here.
   "Tell me if you would like to adjust" stripped; "and new caption text" now reads "the caption
   is shorter" or "is rewritten"; the model's line before a plan ("Running all three ads...",
   before anything ran) is gone, the plan alone asks for the yes. Needs `GEMINI_API_KEY` on Render.
+* One model for all of Hopkins (Ismael, 2026-10-28): Gemini 3.5 Flash runs every part (chat,
+  reading listings and links, seeing photos, writing ads), with Groq as the backup when it's
+  busy. No routing between models for now: one voice, nothing to save on a free tier, simpler to
+  fix. Revisit only when Hopkins goes paid, with the blind test (Gemini 4 Argon, Claude Opus 5.5
+  or Sonnet 5.5, GPT 6 Astra) deciding the main model.
