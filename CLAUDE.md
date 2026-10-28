@@ -198,6 +198,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   said "most engagement" with no data behind it. The chat model now gets each ad's Leads and
   answers with them; it never mentions engagement, clicks or reach, which Hopkins doesn't track.
   A plain look change ("make ad 2 navy") never rewrites the words.
+  Every chat (New listing included) also gets the account's numbers: last week, this week so far,
+  each listing, the top ads. Asked "how did I do last week?" it had answered "I can't see any past
+  report" (2026-10-28). Never a cost per Lead for a week: spend is a running total per listing, so
+  it read $255.56 a Lead when the listings ran at $31 to $90.
 * **Links a site blocks (lesson, 2026-10-28):** idealista blocks apps from reading its pages on
   purpose. Hopkins named no site, then told Ismael "I don't have browsing ability" right after a
   Zillow link had worked. Now it names the site, says Zillow and most brokerage sites work, and

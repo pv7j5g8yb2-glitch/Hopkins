@@ -125,7 +125,7 @@ test("paid: the plan first, then the yes, then the testing record and leads", as
   const report = await c("GET", "/api/report");
   assert.equal(report.json.total, 1);
   assert.equal(report.json.cpl, 60);
-  assert.match(report.json.headline, /1 Lead, \$60 each, 1 asked for a showing/);
+  assert.equal(report.json.headline, "1 Lead, 1 asked for a showing."); // no weekly cost per Lead: spend is a running total
 });
 
 test("workspaces can't see each other's listings, and only admins see admin", async () => {
@@ -651,4 +651,18 @@ test("account names get their capitals too, and names saved before are fixed at 
   const { capitaliseNames } = await import("../src/hopkins.js");
   await capitaliseNames();
   assert.equal((await c("GET", "/api/me")).json.user.name, "Old Lowercase");
+});
+
+test("asked how they did, Hopkins answers with the account's own numbers, even with no model", async () => {
+  const { c } = await signup("howdid@ellery.test");
+  const none = await c("POST", "/api/listings", { text: "how did I do last week?" });
+  assert.match(none.json.chat.reply, /^No listings yet/);
+  const l = await c("POST", "/api/listings", { text: DESCRIPTION });
+  const slug = (await c("GET", `/api/listings/${l.json.listing.id}`)).json.listing.slug;
+  const anon = client(app);
+  await anon("POST", `/api/l/${slug}/lead`, { name: "Dana Price", phone: "512 555 0199", wants: "showing" });
+  await anon("POST", `/api/l/${slug}/lead`, { name: "Sam Lee", email: "sam@example.com", wants: "info" });
+  const r = await c("POST", "/api/listings", { text: "how many leads did I get this week?" });
+  assert.match(r.json.chat.reply, /This week so far: 2\./);
+  assert.match(r.json.chat.reply, /Report/);
 });

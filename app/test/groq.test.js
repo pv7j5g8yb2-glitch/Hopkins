@@ -384,6 +384,9 @@ test("Stop: the agent's message stays, the reply never comes, and the ads go bac
   const after = await c("POST", `/api/listings/${id}/messages`, { text: "which one would you keep?", version: 1 });
   assert.equal(after.json.messages.at(-1).body, "Ad 2, the kitchen sells it.");
   assert.ok(!calls.at(-1).body.messages.some((m) => /make ad 1 green/.test(m.content)));
+  // The model knows the account's numbers, so "how did I do?" never gets "I can't see them".
+  assert.match(calls.at(-1).body.messages[0].content, /Their account, from Hopkins' own records/);
+  assert.match(calls.at(-1).body.messages[0].content, /Last week \(/);
 });
 
 test("Stop while a listing is being made: no listing, nothing counted", async () => {

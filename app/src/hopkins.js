@@ -100,15 +100,38 @@ export function looksLikeListing(text, photoIds = []) {
 
 // The reply on the New listing screen when there's no listing yet. history is the exchange so
 // far on that screen, [{ role: "agent" | "hopkins", body }], ending with the agent's message.
-export async function newChat(ws, history) {
+// The account's own numbers, in a few lines, for the chat: last week, this week so far, each
+// listing, the ads that brought the most Leads. Hopkins once said "I can't see any past report or
+// lead numbers" when asked how last week went (2026-10-28); the Report had them all along.
+export async function accountSummary(ws, tz = "UTC") {
+  const [last, now] = await Promise.all([weeklyReport(ws, weekRange(new Date(), tz, 1)), weeklyReport(ws, weekRange(new Date(), tz, 0))]);
+  if (!now.listings.length) return "No listings yet, so no Leads or report yet.";
+  const day = (iso) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: tz });
+  const week = (r, label) => `${label} (${day(r.since)} to ${day(new Date(new Date(r.until).getTime() - 1).toISOString())}): ${r.total} ${r.total === 1 ? "Lead" : "Leads"}, ${r.showings} asked for a showing.`;
+  const rows = now.listings.slice(0, 15).map((l) => {
+    const prev = last.listings.find((x) => x.id === l.id);
+    return `- ${l.name}: ${l.status === "sold" ? "sold" : l.running ? "ads approved" : l.drafts ? "ads waiting for a yes" : "no ads yet"}; Leads: ${prev?.leads || 0} last week, ${l.leads} this week so far, ${l.allLeads} in all${l.spend > 0 ? `; spent $${l.spend} in all${l.cpl ? `, $${l.cpl} a Lead` : ""}` : ""}.`;
+  });
+  const top = last.topAds.length ? `Top ads last week: ${last.topAds.map((a) => `${a.name} on ${now.listings.find((l) => l.id === a.listing_id)?.name || "a listing"} (${a.leads})`).join("; ")}.` : "";
+  return [week(last, "Last week"), week(now, "This week so far"), "Each listing:", ...rows, top, "Cost per Lead exists only per listing (all its spend over all its Leads); never give one for a week."].filter(Boolean).join("\n");
+}
+
+export async function newChat(ws, history, tz = "UTC") {
   const text = history.at(-1)?.body || "";
   const lastReply = [...history].reverse().find((m) => m.role === "hopkins")?.body;
   if (aiEnabled) {
-    const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name });
+    const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz) });
     if (reply) return plainWords(reply);
     if (takeFailure() === "busy" && needsModel(text)) return BUSY;
   }
   const first = (ws.brand.agent_name || "").split(" ")[0];
+  // How they did: the numbers themselves, even with no model.
+  if (/\b(last week|this week|report|how (did|am|are|is) (i|we|it|things)|how many leads|my leads|results?|performance|how'?s it going)\b/i.test(text)) {
+    const [last, now] = await Promise.all([weeklyReport(ws, weekRange(new Date(), tz, 1)), weeklyReport(ws, weekRange(new Date(), tz, 0))]);
+    if (!now.listings.length) return "No listings yet, so there's no report. Send me your first listing to start.";
+    const best = last.topAds[0];
+    return `Last week: ${last.total} ${last.total === 1 ? "Lead" : "Leads"}, ${last.showings} asked for a showing. This week so far: ${now.total}.${best ? ` Your best ad last week was ${best.name} with ${best.leads}.` : ""} The full breakdown is on Report.`;
+  }
   const intent = readIntent(text);
   // Said once; after that it isn't tacked onto every reply.
   const ask = lastReply?.includes("Send me a listing") ? "" : "Send me a listing: paste the link, add the photos, or tell me the address, price and what stands out.";
@@ -804,7 +827,7 @@ async function directEdit(ws, listing, ads, text, selected) {
   return { focus: shown.length === 1 ? shown[0] : undefined };
 }
 
-export async function handleMessage(ws, listingId, text, selected = 1) {
+export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC") {
   const listing = await loadListing(ws.id, listingId);
   if (!listing) return null;
   const sent = await postMessage(ws.id, listingId, "agent", "text", text);
@@ -838,7 +861,7 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
     // Each ad's Leads, so "which one is working?" gets real numbers, never "engagement".
     const leadRows = await all(`SELECT ad_id, SUM(CASE WHEN wants = 'showing' THEN 1 ELSE 0 END) AS showings, COUNT(*) AS n FROM leads WHERE listing_id = ? GROUP BY ad_id`, [listingId]);
     const leads = Object.fromEntries(leadRows.map((x) => [x.ad_id, { n: Number(x.n), showings: Number(x.showings) }]));
-    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads });
+    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz) });
     if (r) return applyAI(ws, listing, ads, photos, r, text);
     busy = takeFailure() === "busy";
     if (busy && needsModel(text)) {
@@ -1520,7 +1543,9 @@ export async function weeklyReport(ws, range = weekRange()) {
   if (!listings.length) next.push("Send me your first listing: photos and the link or the description.");
 
   const headline = total
-    ? `${total} ${total === 1 ? "Lead" : "Leads"}${spend > 0 ? `, $${Math.round((spend / total) * 100) / 100} each` : ""}${showings ? `, ${showings} asked for a showing` : ""}.`
+    // No cost per Lead for the week: spend is a running total per listing, so all of it over one
+    // week's Leads read as $255.56 a Lead when the listings ran at $31 to $90 (2026-10-28).
+    ? `${total} ${total === 1 ? "Lead" : "Leads"}${showings ? `, ${showings} asked for a showing` : ""}.`
     : "No Leads.";
   return { since, until, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), lastWeekTotal: Number(beforeAll?.n || 0), soFar, patterns, topAds, next: next.slice(0, 5) };
 }

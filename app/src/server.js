@@ -414,7 +414,7 @@ app.post("/api/listings", async (request, reply) => {
   const prior = Array.isArray(request.body.history) ? request.body.history.slice(-12).filter((m) => m && typeof m.body === "string" && m.body.trim() && ["agent", "hopkins"].includes(m.role)).map((m) => ({ role: m.role, body: clean(m.body, 2000) })) : [];
   // No listing in it ("Hello"): answer, and don't make a listing out of it.
   if (!looksLikeListing(clean(text, 5000) || "", ids)) {
-    return { chat: { reply: await newChat(request.ws, [...prior, { role: "agent", body: clean(text, 2000) }]) } };
+    return { chat: { reply: await newChat(request.ws, [...prior, { role: "agent", body: clean(text, 2000) }], timeZone(request)) } };
   }
   // The listing's chat starts with that conversation, so it carries on as one thread.
   const key = `new:${request.ws.id}`;
@@ -457,7 +457,7 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
   const turn = startTurn(key);
   let r;
   try {
-    r = await handleMessage(request.ws, request.params.id, text, selected);
+    r = await handleMessage(request.ws, request.params.id, text, selected, timeZone(request));
     if (r && turn.stopped) await undoLatestReply(request.ws, request.params.id);
   } finally {
     endTurn(key, turn);

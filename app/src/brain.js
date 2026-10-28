@@ -591,21 +591,21 @@ const NEW_SCHEMA = {
   additionalProperties: false,
 };
 
-export async function newChatAI({ history, brand, plan, agentName }) {
+export async function newChatAI({ history, brand, plan, agentName, account }) {
   const messages = conversation(history);
   if (!messages.length) return null;
   const system = `${SYSTEM}\n${CHAT}\n\nContext (the current state, not something the agent wrote):
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}.
 Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.
-They're on the New listing screen and haven't sent a listing yet. To make ads you need the listing: a link, photos, or the details (address, price, beds, baths, what stands out). Talk normally, and when it fits, say what you need to start.`;
+They're on the New listing screen and haven't sent a listing yet. To make ads you need the listing: a link, photos, or the details (address, price, beds, baths, what stands out). Talk normally, and when it fits, say what you need to start.${account ? `\nTheir account, from Hopkins' own records (real numbers; the Report page shows the same):\n${account}\nWhen they ask how they did, how many Leads, which listing or ad is working, answer from these numbers, plainly, in one or two sentences. Never say you can't see their numbers or past reports.` : ""}`;
   const r = await call({ system, messages, schema: NEW_SCHEMA, effort: "low", temperature: 0.7 });
   return r && typeof r.reply === "string" && r.reply.trim() ? r.reply : null;
 }
 
-export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto, leads }) {
+export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto, leads, account }) {
   const messages = conversation(history);
   if (!messages.length) return null;
-  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads })}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
+  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads })}${account ? `\nTheir account, from Hopkins' own records (real numbers; the Report page shows the same):\n${account}\nWhen they ask how they did, how many Leads, which listing or ad is working, answer from these numbers, plainly, in one or two sentences. Never say you can't see their numbers or past reports.` : ""}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
   const raw = await call({ system, messages, schema: TURN_SCHEMA, effort: "low", temperature: 0.7 });
   if (process.env.HOPKINS_DEBUG) console.log("chat turn:", JSON.stringify(raw));
   return normalizeTurn(raw);

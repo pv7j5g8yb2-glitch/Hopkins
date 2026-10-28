@@ -706,3 +706,11 @@ personal in here.
   My test runs used much of it. Added 3.5 Flash Lite after the Flash models (its own allowance,
   sees photos, answered every time). Fixed "On Ad 1, a different photo" to "Ad 1 now uses a
   different photo". The real fix is billing on the same Google key (no code change) or Claude.
+* The chat knows the account (2026-10-28, Ismael: Hopkins said "I can't see any past report or
+  lead numbers"). Every chat now gets a short summary from Hopkins' own records (`accountSummary`
+  in hopkins.js): last week, this week so far, each listing's Leads and status, the top ads; with
+  no model it still answers from the numbers. Fixed with it: the week's "cost per Lead" divided
+  all spend ever by one week's Leads ("9 Leads, $255.56 each" in the Monday message); weeks no
+  longer get one. Checked on the demo account: answers matched the Report (9 Leads, 3 showings,
+  Westover Hills 20 in all, 3 this week). The idealista link still fails on the live site while
+  Gemini's free Flash allowance is used up (Google's reader runs on it).
