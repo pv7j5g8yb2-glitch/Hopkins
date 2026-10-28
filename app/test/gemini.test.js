@@ -84,7 +84,7 @@ test("a link the site blocks is read through Google, and only when Google really
   assert.deepEqual(tools, [{ url_context: {} }]);
   assert.equal(blocked.json.listing.price, null);
   const msg = (await c("GET", `/api/listings/${blocked.json.listing.id}`)).json.messages.at(-1).body;
-  assert.match(msg, /^idealista\.com blocks apps from reading its listings/);
+  assert.equal(msg, "The link you sent restricts access, so I can't see your listing. Please send the property photos and the details: the address, price, beds, baths and what stands out.");
   // Google opened it: the facts come from the page, in the page's currency.
   next = [
     { raw: answer('Here it is: {"opened": true, "title": "Piso en Calle de Serrano 45, Salamanca, Madrid", "description": "Calle de Serrano 45, Salamanca, Madrid. 3 bed, 2 bath, 140 m2 flat. Price €1,250,000. Corner flat with a balcony.", "photos": []}', { urlContextMetadata: { urlMetadata: [{ retrievedUrl: "https://www.idealista.com/inmueble/2/", urlRetrievalStatus: "URL_RETRIEVAL_STATUS_SUCCESS" }] } }) },

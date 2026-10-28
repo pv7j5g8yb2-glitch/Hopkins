@@ -204,8 +204,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   it read $255.56 a Lead when the listings ran at $31 to $90.
 * **Links a site blocks (lesson, 2026-10-28):** idealista blocks apps from reading its pages on
   purpose. Hopkins named no site, then told Ismael "I don't have browsing ability" right after a
-  Zillow link had worked. Now it names the site, says Zillow and most brokerage sites work, and
-  every question on that listing gets the same true answer until the facts or photos arrive.
+  Zillow link had worked. Now it always says, professionally: "The link you sent restricts access,
+  so I can't see your listing. Please send the property photos and the details: the address,
+  price, beds, baths and what stands out." Both photos and details, nothing else (Ismael,
+  2026-10-28), and every question on that listing gets that until they arrive.
   Never work around a site's bot protection. Prices keep the currency they were typed in (€, £,
   AED); "€1,250,000" once showed as $1,250,000.
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the

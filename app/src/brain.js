@@ -529,7 +529,7 @@ Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. 
 Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.${!plan.paid && plan.adsMade >= plan.limit ? `
 The free ads are used up (deleted listings still count). No new ads can be made on this account until it's on Pro, so never offer to make them or ask if they want to go ahead; changes to ads that already exist are still free, including turning one into a different idea.` : ""}
 Listing: ${JSON.stringify(factsFor(listing))}
-${listing.link ? `Link: ${listing.link}${listing.description ? "" : ` (it didn't open: that site blocks apps from reading its listings, on purpose. Hopkins does open listing links and reads the page and its photos; Zillow and most brokerage sites work. Never say you can't browse or open links. Asked why, say that site blocks it, in one sentence, and that Zillow links work. To go on, they paste the description from the page, or send the photos and the price.)`}\n` : ""}Photos: ${photoList(photos)}
+${listing.link ? `Link: ${listing.link}${listing.description ? "" : ` (it didn't open: the site restricts access. Hopkins does open listing links; never say you can't browse or open links. Asked about it, say the link restricts access and ask for the property photos and the details, nothing else.)`}\n` : ""}Photos: ${photoList(photos)}
 Ads: ${ads.length ? `${ads.length} (up to ${MAX_ADS} per listing)` : "none yet"}
 ${ads.map((a) => `${adLine(a, photos)}:
   On the image: ${a.overlay}

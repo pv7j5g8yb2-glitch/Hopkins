@@ -332,7 +332,7 @@ test("thanks never reaches the model, a colour change keeps the words, and the m
   assert.match(calls.at(-1).body.messages[0].content, /Leads so far: 0/);
 });
 
-test("a link the site won't let Hopkins read: it names the site, never says it can't open links", async (t) => {
+test("a link the site won't let Hopkins read: it asks for the photos and the details, never says it can't open links", async (t) => {
   const c = client(app);
   await c("POST", "/api/signup", { email: "blocked@test.com", password: "password123", invite: "EARLY1", name: "Dana Reyes" });
   // The site answers 403, like idealista does for any app.
@@ -344,18 +344,18 @@ test("a link the site won't let Hopkins read: it names the site, never says it c
   assert.equal(r.status, 200);
   const id = r.json.listing.id;
   const first = (await c("GET", `/api/listings/${id}`)).json.messages.at(-1).body;
-  assert.match(first, /^idealista\.com blocks apps from reading its listings/);
+  assert.match(first, /^The link you sent restricts access, so I can't see your listing\. Please send the property photos and the details/);
   // Questions get the same true answer without the model, never "I can't browse".
   const before = calls.length;
   const why = await c("POST", `/api/listings/${id}/messages`, { text: "why can't you open it", version: 1 });
   assert.equal(calls.length, before);
-  assert.match(why.json.messages.at(-1).body, /^idealista\.com blocks apps from reading its listings; Zillow and most brokerage sites don't/);
+  assert.equal(why.json.messages.at(-1).body, "I still need the property photos and the details to make the ads: the address, price, beds, baths and what stands out.");
   const again = await c("POST", `/api/listings/${id}/messages`, { text: "I sent you a Zillow listing earlier and you opened it", version: 1 });
-  assert.match(again.json.messages.at(-1).body, /^Paste the description from idealista\.com/);
+  assert.match(again.json.messages.at(-1).body, /^The link you sent restricts access/);
   // Facts go to the model as usual, and it hears the truth about links too.
   next = [{ reply: "Got it.", action: "update_listing", ads: [], listing_patch: { price: 1250000, beds: 3, baths: 2 } }];
   await c("POST", `/api/listings/${id}/messages`, { text: "3 bed 2 bath flat, €1,250,000", version: 1 });
-  assert.match(calls.at(-1).body.messages[0].content, /Never say you can't browse or open links/);
+  assert.match(calls.at(-1).body.messages[0].content, /never say you can't browse or open links/i);
 });
 
 test("Stop: the agent's message stays, the reply never comes, and the ads go back as they were", async () => {

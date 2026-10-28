@@ -263,10 +263,12 @@ async function importPhotos(ws, listingId, list) {
   }
 }
 
-// Some portals (idealista, for one) block any app from reading their pages, on purpose. Hopkins
-// says which site and what works instead; it never says it can't open links (2026-10-28).
-const siteOf = (link) => { try { return new URL(link).hostname.replace(/^www\./, ""); } catch { return "That site"; } };
-const LINK_BLOCKED = (link) => `${siteOf(link)} blocks apps from reading its listings, so I couldn't open it. Paste the description from the page, or send the photos and the price.`;
+// Some portals (idealista, Realtor.com, Redfin and others) block any app from reading their
+// pages, on purpose. Hopkins never says it can't open links (2026-10-28).
+// What Hopkins says, every time, when a link won't let it in: the property photos and the
+// details, nothing else, in a professional way (Ismael, 2026-10-28).
+const LINK_BLOCKED = () => "The link you sent restricts access, so I can't see your listing. Please send the property photos and the details: the address, price, beds, baths and what stands out.";
+const STILL_NEED = "I still need the property photos and the details to make the ads: the address, price, beds, baths and what stands out.";
 
 // With a model, it reads the listing and labels the photos better than the rules can. Returns
 // the question to ask if something important is missing.
@@ -844,11 +846,7 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
   // facts or photos, every question gets the same true answer, not the model's guess (it once
   // said "I don't have browsing ability" right after a Zillow link had worked, 2026-10-28).
   if (!ads.length && listing.link && !listing.description && text.trim() && !looksLikeListing(text)) {
-    const site = siteOf(listing.link);
-    await say(ws, listing.id, await fresh(listing.id, [
-      `${site} blocks apps from reading its listings; Zillow and most brokerage sites don't. Paste the description from the page, or send the photos and the price.`,
-      `Paste the description from ${site}, or send the photos and the price, and I'll make the ads.`,
-    ]));
+    await say(ws, listing.id, await fresh(listing.id, [LINK_BLOCKED(), STILL_NEED]));
     return {};
   }
   const photos = await loadPhotos(listing.id, aiEnabled);
@@ -1277,7 +1275,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
   if (!ads.length) {
     // A link the site wouldn't let Hopkins read: whatever they asked, that's the honest answer.
     if (listing.link && !listing.description) {
-      await say(ws, listing.id, await fresh(listing.id, [`${siteOf(listing.link)} blocks apps from reading its listings. Zillow links open fine. Paste the description from the page, or send the photos and the price.`, "Paste the description from the page, or send the photos and the price, and I'll make the ads."]));
+      await say(ws, listing.id, await fresh(listing.id, [LINK_BLOCKED(), STILL_NEED]));
       return {};
     }
     await say(ws, listing.id, "There are no ads on this listing yet. Tell me the price and the best thing about the home and I'll make them.");
