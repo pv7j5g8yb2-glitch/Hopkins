@@ -844,6 +844,57 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
   return applyRules(ws, listing, ads, photos, text, selected, { busy });
 }
 
+// ---------- stopping a reply ----------
+
+// Stop, like ChatGPT and Claude (Ismael, 2026-10-28): the agent's message stays, Hopkins' reply
+// never comes, and whatever it was about to change goes back as it was. The model can't be
+// called back mid answer, so the reply runs to its end and is then undone. Keyed by listing
+// ("l:<id>") or, on the New listing screen, by workspace ("new:<id>").
+const turns = new Map();
+export function startTurn(key) {
+  let finish;
+  const turn = { stopped: false, done: new Promise((r) => (finish = r)) };
+  turn.finish = finish;
+  turns.set(key, turn);
+  return turn;
+}
+export function endTurn(key, turn) {
+  if (turns.get(key) === turn) turns.delete(key);
+  turn.finish();
+}
+// The reply that was still running, now marked to be undone; null when none was.
+export function stopTurn(key) {
+  const turn = turns.get(key);
+  if (!turn) return null;
+  turn.stopped = true;
+  return turn;
+}
+// A message sent right after Stop waits until the stopped reply has been undone.
+export async function settleTurn(key) {
+  const turn = turns.get(key);
+  if (turn?.stopped) await turn.done;
+}
+
+// Undo Hopkins' reply to the agent's latest message: its replies go, the agent's message stays.
+export async function undoLatestReply(ws, listingId) {
+  const msg = await get(`SELECT * FROM messages WHERE listing_id = ? AND workspace_id = ? AND role = 'agent' ORDER BY created_at DESC LIMIT 1`, [listingId, ws.id]);
+  if (!msg) return false;
+  if (msg.undo) await restoreBefore(ws, msg);
+  await run(`DELETE FROM messages WHERE listing_id = ? AND created_at > ? AND role = 'hopkins' AND kind != 'lead'`, [listingId, msg.created_at]);
+  // Marked, so the model never acts on a request the agent stopped (it once applied it on the
+  // next, unrelated question).
+  await run(`UPDATE messages SET data = ? WHERE id = ?`, [JSON.stringify({ ...safeJson(msg.data, {}), stopped: true }), msg.id]);
+  return true;
+}
+
+// A listing stopped while it was being made: gone, without counting its ads as made (nobody saw
+// them), and the photos sent with it kept for the next try.
+export async function dropStoppedListing(ws, id) {
+  await run(`UPDATE photos SET listing_id = NULL WHERE listing_id = ? AND workspace_id = ? AND kind = 'listing'`, [id, ws.id]);
+  for (const t of ["tests", "launches", "ads", "messages"]) await run(`DELETE FROM ${t} WHERE listing_id = ? AND workspace_id = ?`, [id, ws.id]);
+  await run(`DELETE FROM listings WHERE id = ? AND workspace_id = ?`, [id, ws.id]);
+}
+
 // ---------- editing a sent message ----------
 
 // Any message the agent sent can be edited, like in ChatGPT or Claude, and Hopkins forgets the
@@ -875,11 +926,8 @@ export async function firstMessageId(listing) {
   return m?.id || null;
 }
 
-export async function editMessage(ws, messageId, text, selected = 1) {
-  const msg = await get(`SELECT * FROM messages WHERE id = ? AND workspace_id = ? AND role = 'agent'`, [messageId, ws.id]);
-  const listing = msg && (await loadListing(ws.id, msg.listing_id));
-  if (!listing) return null;
-  if (!msg.undo) return (await firstMessageId(listing)) === msg.id ? editFirst(ws, listing, msg, text) : null;
+// The listing and its ads put back as they were just before an agent's message (its undo).
+async function restoreBefore(ws, msg) {
   const { listing: was, ads } = JSON.parse(msg.undo);
   await oneAtATime(ws, async () => {
     // On the free plan, ads the old message made still count as made, and ads it removed come
@@ -899,6 +947,14 @@ export async function editMessage(ws, messageId, text, selected = 1) {
     const cols = Object.keys(was).filter((k) => COLUMN.test(k) && !["id", "workspace_id", "slug", "created_at", "updated_at", "untitled_no", "title", "status", "spend"].includes(k));
     await run(`UPDATE listings SET ${cols.map((k) => `${k} = ?`).join(", ")} WHERE id = ? AND workspace_id = ?`, [...cols.map((k) => was[k]), msg.listing_id, ws.id]);
   });
+}
+
+export async function editMessage(ws, messageId, text, selected = 1) {
+  const msg = await get(`SELECT * FROM messages WHERE id = ? AND workspace_id = ? AND role = 'agent'`, [messageId, ws.id]);
+  const listing = msg && (await loadListing(ws.id, msg.listing_id));
+  if (!listing) return null;
+  if (!msg.undo) return (await firstMessageId(listing)) === msg.id ? editFirst(ws, listing, msg, text) : null;
+  await restoreBefore(ws, msg);
   await run(`DELETE FROM messages WHERE listing_id = ? AND created_at >= ? AND kind != 'lead'`, [msg.listing_id, msg.created_at]);
   return handleMessage(ws, msg.listing_id, text, selected);
 }

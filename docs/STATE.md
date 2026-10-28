@@ -688,3 +688,10 @@ personal in here.
   busy. No routing between models for now: one voice, nothing to save on a free tier, simpler to
   fix. Revisit only when Hopkins goes paid, with the blind test (Gemini 4 Argon, Claude Opus 5.5
   or Sonnet 5.5, GPT 6 Astra) deciding the main model.
+* Stop button (2026-10-28, Ismael). Send turns into Stop while Hopkins works (chat, edits and the
+  New listing screen). The server can't call the model back, so a stopped reply runs to its end
+  and is then undone: replies deleted, listing and ads restored from the message's undo, the
+  message marked stopped and left out of what the model sees; a message sent right after waits
+  for that. Stopping a new listing deletes it without counting its ads and frees its photos.
+  `/healthz` now also says which provider answers (`ai`). Checked in the browser at phone size
+  with real Gemini: ads unchanged after Stop, Edit on the message, the next question answered.

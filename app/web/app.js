@@ -13,6 +13,7 @@
   const ICON = {
     menu: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
     send: '<svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>',
+    stop: '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.6" fill="currentColor" stroke="none"/></svg>',
     photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
     link: '<svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
@@ -60,8 +61,9 @@
     // safe to repeat, so a GET quietly tries again a couple of times before giving up.
     for (let attempt = 0; ; attempt++) {
       try {
-        res = await fetch(path, { method, headers: { ...(opts.body ? { "Content-Type": "application/json" } : {}), "X-Time-Zone": TZ }, body: opts.body ? JSON.stringify(opts.body) : undefined });
-      } catch {
+        res = await fetch(path, { method, signal: opts.signal, headers: { ...(opts.body ? { "Content-Type": "application/json" } : {}), "X-Time-Zone": TZ }, body: opts.body ? JSON.stringify(opts.body) : undefined });
+      } catch (err) {
+        if (opts.signal?.aborted) throw Object.assign(new Error("Stopped"), { stopped: true });
         if (method === "GET" && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
         throw new Error("No connection. Try again.");
       }
@@ -627,7 +629,15 @@
         : "";
       const pick = comp.querySelector("label.icon-btn");
       if (pick) pick.dataset.count = n || "";
-      $("#send").disabled = S.busy || (!ta.value.trim() && !S.pending.length);
+      // While Hopkins works, Send turns into Stop (a square with soft corners, like ChatGPT and
+      // Claude, Ismael 2026-10-28).
+      const btn = $("#send");
+      if (btn.classList.contains("stop") !== Boolean(S.busy)) {
+        btn.classList.toggle("stop", Boolean(S.busy));
+        btn.innerHTML = S.busy ? ICON.stop : ICON.send;
+        btn.setAttribute("aria-label", S.busy ? "Stop" : "Send");
+      }
+      btn.disabled = !S.busy && !ta.value.trim() && !S.pending.length;
     };
     const add = (files) => {
       for (const f of files) if (f.type.startsWith("image/")) S.pending.push({ file: f, url: URL.createObjectURL(f) });
@@ -637,7 +647,7 @@
     S.addFiles = (files) => add(files);
     S.removeFile = (i) => { S.pending.splice(i, 1); drawAtt(); };
     ta.addEventListener("input", () => { grow(); drawAtt(); });
-    ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !phone()) { e.preventDefault(); comp.requestSubmit(); } });
+    ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !phone()) { e.preventDefault(); if (!S.busy) comp.requestSubmit(); } });
     ta.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.editing) { e.preventDefault(); stopEdit(); } });
     $("#files").addEventListener("change", (e) => { add(e.target.files); e.target.value = ""; });
     $("#att").addEventListener("click", (e) => { const i = e.target.dataset.rm; if (i !== undefined) S.removeFile(Number(i)); });
@@ -648,7 +658,7 @@
     ta.addEventListener("paste", (e) => { const fs = [...(e.clipboardData?.files || [])]; if (fs.length) add(fs); });
     comp.addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (S.busy) return;
+      if (S.busy) { if (S.stop) { buzz(8); S.stop(); S.stop = null; } return; }
       const text = ta.value.trim();
       if (!text && !S.pending.length) return;
       S.busy = true;
@@ -661,14 +671,16 @@
       S.pending = [];
       grow();
       drawAtt();
-      $("#send").disabled = true;
       try {
         await onSend(text, pending.map((p) => p.file));
       } catch (err) {
-        if (ta.isConnected && !ta.value) { ta.value = text; S.pending = pending; grow(); }
-        toast(err.message);
+        if (!err.stopped) {
+          if (ta.isConnected && !ta.value) { ta.value = text; S.pending = pending; grow(); }
+          toast(err.message);
+        }
       } finally {
         S.busy = false;
+        S.stop = null;
         if ($("#send")) drawAtt();
       }
     });
@@ -734,7 +746,7 @@
       const ta = $("#ta");
       ta.value = "";
       ta.dispatchEvent(new Event("input"));
-      try { await create(text, files); } catch (err) { ta.value = text; viewNew(); $("#ta").value = text; throw err; }
+      try { await create(text, files); } catch (err) { if (!err.stopped) { ta.value = text; viewNew(); $("#ta").value = text; } throw err; }
     }, {
       drop: (pending) => {
         dropEl.classList.toggle("has", pending.length > 0);
@@ -750,10 +762,22 @@
       // its own isn't a listing (2026-10-27): it takes a price, beds, baths, size, a street
       // address, a link or photos, the same things the server looks for.
       const listingish = files.length || LISTINGISH.some((re) => re.test(text));
+      // Stop: your message stays and the conversation carries on here; no listing is made, and
+      // any photos you sent go back in the box.
+      const ctrl = new AbortController();
+      S.stop = () => {
+        ctrl.abort();
+        $("#typing") && $("#typing").remove();
+        $("#work") && $("#work").closest(".hk")?.remove();
+        S.newChat.push({ role: "agent", body: text || "(sent photos)" });
+        api("/api/new/stop", { body: {} }).catch(() => {});
+        if (files.length) setTimeout(() => S.addFiles(files), 0);
+      };
+      const signal = ctrl.signal;
       if (!listingish) {
         showTyping();
         const my = current();
-        const p = await api("/api/listings", { body: { text, history: S.newChat } });
+        const p = await api("/api/listings", { body: { text, history: S.newChat }, signal });
         if (my !== current()) return;
         $("#typing") && $("#typing").remove();
         if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
@@ -768,10 +792,12 @@
       const photoIds = [], photoNames = {};
       for (const f of files) {
         const r = await uploadPhoto(f);
+        if (signal.aborted) throw Object.assign(new Error("Stopped"), { stopped: true });
         photoIds.push(r.id);
         photoNames[r.id] = f.name;
       }
-      const p = await api("/api/listings", { body: { text, photoIds, photoNames, history: S.newChat } });
+      const p = await api("/api/listings", { body: { text, photoIds, photoNames, history: S.newChat }, signal });
+      if (p.stopped) return;
       if (p.chat) {
         // It wasn't a listing after all: the reply takes the thinking mark's place.
         $("#work").closest(".hk").remove();
@@ -851,14 +877,30 @@
     });
   }
 
+  // Stop: the app lets go at once, your message stays, the thinking mark goes. The server undoes
+  // the reply when it ends, then the chat redraws with Edit on your message.
+  function stoppable(l) {
+    const ctrl = new AbortController();
+    S.stop = () => {
+      ctrl.abort();
+      $("#typing") && $("#typing").remove();
+      $("#work") && $("#work").closest(".hk")?.remove();
+      const my = current();
+      api(`/api/listings/${l.id}/stop`, { body: {} }).then((p) => { if (my === current() && !S.busy && p.listing) { drawListing(p, true); refreshSide(); } }).catch(() => {});
+    };
+    return ctrl.signal;
+  }
+
   async function say(text) {
     const l = S.current.listing;
     showTyping(text);
     const my = current();
+    const signal = stoppable(l);
     let next;
     try {
-      next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] } });
+      next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] }, signal });
     } catch (err) {
+      if (err.stopped) throw err;
       // No answer (no signal, the server's down): stop thinking.
       $("#typing") && $("#typing").remove();
       // The message didn't go, so it goes back in the box (the composer keeps it), not in the chat.
@@ -942,11 +984,13 @@
     if (old?.data?.first) { $("#thread").insertAdjacentHTML("beforeend", `<div class="me in"><span class="tx">${esc(text)}</span></div>`); finish = showWork(); }
     else showTyping(text);
     const my = current();
+    const signal = stoppable(l);
     let next;
     try {
-      next = await api(`/api/messages/${id}/edit`, { body: { text, version: S.selected[l.id] } });
+      next = await api(`/api/messages/${id}/edit`, { body: { text, version: S.selected[l.id] }, signal });
       if (finish) await finish();
     } catch (err) {
+      if (err.stopped) throw err;
       // Nothing changed: the chat comes back as it was, still editing, with the new words kept.
       if (my === current()) { drawListing(S.current, true); startEdit($(`#thread .mact[data-mid="${id}"]`), text); }
       throw err;

@@ -9,13 +9,13 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, capitaliseNames, restyle, numberUntitled, editMessage, firstMessageId,
+  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { nameCase } from "./names.js";
 import { FONT_KEYS } from "./style.js";
 import { buildDemo, DEMO_DOMAIN } from "./demo.js";
-import { aiEnabled } from "./brain.js";
+import { aiEnabled, provider } from "./brain.js";
 import { KIND_NAMES, MOMENTS } from "./writer.js";
 import { PHOTO_LABELS, formatPrice, factsLine } from "./listing.js";
 import { notifyFounder, notifyTopic } from "./notify.js";
@@ -87,7 +87,8 @@ app.setErrorHandler((err, request, reply) => {
 // How long this copy of the server has been up, so a restart (a deploy, or a crash) can be told
 // apart from the outside without the Render dashboard.
 const STARTED = new Date().toISOString();
-app.get("/healthz", async () => ({ ok: true, started: STARTED }));
+// Which model provider answers ("gemini", "claude", "groq" or none), never a key.
+app.get("/healthz", async () => ({ ok: true, started: STARTED, ai: provider || "none" }));
 
 for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
@@ -416,7 +417,16 @@ app.post("/api/listings", async (request, reply) => {
     return { chat: { reply: await newChat(request.ws, [...prior, { role: "agent", body: clean(text, 2000) }]) } };
   }
   // The listing's chat starts with that conversation, so it carries on as one thread.
-  const listing = await createListing(request.ws, { text: clean(text, 5000) || "", photoIds: ids, photoNames: photoNames || {}, history: prior });
+  const key = `new:${request.ws.id}`;
+  const turn = startTurn(key);
+  let listing;
+  try {
+    listing = await createListing(request.ws, { text: clean(text, 5000) || "", photoIds: ids, photoNames: photoNames || {}, history: prior });
+  } finally {
+    if (turn.stopped && listing) await dropStoppedListing(request.ws, listing.id);
+    endTurn(key, turn);
+  }
+  if (turn.stopped) return { stopped: true };
   return listingPayload(request.ws, listing.id);
 });
 
@@ -442,11 +452,41 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
   const text = clean(request.body?.text, 2000);
   if (!text) return reply.code(400).send({ error: "Say something first." });
   const selected = [1, 2, 3, 4, 5].includes(request.body?.version) ? request.body.version : 1;
-  const r = await handleMessage(request.ws, request.params.id, text, selected);
+  const key = `l:${request.params.id}`;
+  await settleTurn(key);
+  const turn = startTurn(key);
+  let r;
+  try {
+    r = await handleMessage(request.ws, request.params.id, text, selected);
+    if (r && turn.stopped) await undoLatestReply(request.ws, request.params.id);
+  } finally {
+    endTurn(key, turn);
+  }
   if (!r) return reply.code(404).send({ error: "No such listing." });
+  if (turn.stopped) return { ...(await listingPayload(request.ws, request.params.id)), stopped: true };
   // focus: the version the conversation is now about, so the app can switch to it.
   return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null, upgrade: r.repeat ? r.reason || "run" : null };
 });
+
+// Stop: Hopkins' reply to the agent's latest message never comes, and what it changed goes back.
+// Usually the reply is still running and is undone when it ends; if it had just finished, it's
+// undone now (only within two minutes of the message, so an old reply is never taken back).
+app.post("/api/listings/:id/stop", async (request, reply) => {
+  const listing = await loadListing(request.ws.id, request.params.id);
+  if (!listing) return reply.code(404).send({ error: "No such listing." });
+  const turn = stopTurn(`l:${listing.id}`);
+  if (turn) {
+    // The app has already let go; this answer, once the reply is undone, redraws the chat.
+    let timer;
+    await Promise.race([turn.done, new Promise((r) => { timer = setTimeout(r, 120000); })]);
+    clearTimeout(timer);
+    return { ...(await listingPayload(request.ws, listing.id)), stopped: true };
+  }
+  const last = await get(`SELECT created_at FROM messages WHERE listing_id = ? AND role = 'agent' ORDER BY created_at DESC LIMIT 1`, [listing.id]);
+  if (last && Date.now() - new Date(last.created_at).getTime() < 2 * 60 * 1000) await undoLatestReply(request.ws, listing.id);
+  return { ...(await listingPayload(request.ws, listing.id)), stopped: true };
+});
+app.post("/api/new/stop", async (request) => ({ stopped: Boolean(stopTurn(`new:${request.ws.id}`)) }));
 
 // Editing the latest message: Hopkins forgets the old wording and answers the new one.
 app.post("/api/messages/:id/edit", async (request, reply) => {
@@ -454,8 +494,18 @@ app.post("/api/messages/:id/edit", async (request, reply) => {
   if (!text) return reply.code(400).send({ error: "Say something first." });
   const selected = [1, 2, 3, 4, 5].includes(request.body?.version) ? request.body.version : 1;
   const msg = await get(`SELECT listing_id FROM messages WHERE id = ? AND workspace_id = ?`, [request.params.id, request.ws.id]);
-  const r = msg && (await editMessage(request.ws, request.params.id, text, selected));
+  const key = msg ? `l:${msg.listing_id}` : null;
+  if (key) await settleTurn(key);
+  const turn = key ? startTurn(key) : null;
+  let r;
+  try {
+    r = msg && (await editMessage(request.ws, request.params.id, text, selected));
+    if (r && turn?.stopped) await undoLatestReply(request.ws, msg.listing_id);
+  } finally {
+    if (turn) endTurn(key, turn);
+  }
   if (!r) return reply.code(409).send({ error: "That message can't be edited any more. Send a new one instead." });
+  if (turn?.stopped) return { ...(await listingPayload(request.ws, msg.listing_id)), stopped: true };
   return { ...(await listingPayload(request.ws, msg.listing_id)), focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null, upgrade: r.repeat ? r.reason || "run" : null };
 });
 

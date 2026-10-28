@@ -551,6 +551,8 @@ function conversation(history) {
     // "I'm getting a lot of messages" never reached the model, so it isn't part of the talk:
     // the question before it and a "now?" after it read as one message to answer.
     if (data.busy) continue;
+    // A message the agent stopped is withdrawn: it isn't part of the talk either.
+    if (data.stopped) continue;
     const photos = data.photos?.length || 0;
     const body = m.body || (photos ? `(sent ${photos} ${photos === 1 ? "photo" : "photos"})` : "");
     if (!body) continue;

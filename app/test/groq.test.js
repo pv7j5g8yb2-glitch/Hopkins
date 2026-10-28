@@ -357,3 +357,48 @@ test("a link the site won't let Hopkins read: it names the site, never says it c
   await c("POST", `/api/listings/${id}/messages`, { text: "3 bed 2 bath flat, €1,250,000", version: 1 });
   assert.match(calls.at(-1).body.messages[0].content, /Never say you can't browse or open links/);
 });
+
+test("Stop: the agent's message stays, the reply never comes, and the ads go back as they were", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "stop@test.com", password: "password123", invite: "EARLY1", name: "Dana Reyes" });
+  next = [500, 500, 500];
+  const r = await c("POST", "/api/listings", { text: "21 Birch Rd, Austin, 3 bed 2 bath, $540,000, big kitchen" });
+  const id = r.json.listing.id;
+  const before = r.json.ads.map((a) => [a.version, a.overlay, a.style?.bg || null]);
+  // The model takes a while and would rewrite Ad 1; Stop comes while it's still working.
+  delay = 600;
+  next = [{ reply: "Ad 1 now says Room for everyone.", action: "revise", version: 1, ads: [{ version: 1, overlay: "Room for everyone.", style: { bg: "#2F5D46" } }] }];
+  const sending = c("POST", `/api/listings/${id}/messages`, { text: "make ad 1 green and change the line", version: 1 });
+  await new Promise((res) => setTimeout(res, 150));
+  const stop = await c("POST", `/api/listings/${id}/stop`, {});
+  const sent = await sending;
+  delay = 0;
+  assert.equal(stop.json.stopped, true);
+  assert.equal(sent.json.stopped, true);
+  const now = (await c("GET", `/api/listings/${id}`)).json;
+  assert.equal(now.messages.at(-1).role, "agent");
+  assert.equal(now.messages.at(-1).body, "make ad 1 green and change the line");
+  assert.deepEqual(now.ads.map((a) => [a.version, a.overlay, a.style?.bg || null]), before);
+  // The next message works as normal, and the model never sees the stopped request.
+  next = [{ reply: "Ad 2, the kitchen sells it.", action: "none", version: 2, ads: [] }];
+  const after = await c("POST", `/api/listings/${id}/messages`, { text: "which one would you keep?", version: 1 });
+  assert.equal(after.json.messages.at(-1).body, "Ad 2, the kitchen sells it.");
+  assert.ok(!calls.at(-1).body.messages.some((m) => /make ad 1 green/.test(m.content)));
+});
+
+test("Stop while a listing is being made: no listing, nothing counted", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "stopnew@test.com", password: "password123", invite: "EARLY1" });
+  const made = (await c("GET", "/api/me")).json.usage.adsMade;
+  delay = 600;
+  next = [500, 500, 500, 500];
+  const making = c("POST", "/api/listings", { text: "7 Cedar Ln, Austin, 4 bed 3 bath, $720,000" });
+  await new Promise((res) => setTimeout(res, 150));
+  const stop = await c("POST", "/api/new/stop", {});
+  const res = await making;
+  delay = 0;
+  assert.equal(stop.json.stopped, true);
+  assert.equal(res.json.stopped, true);
+  assert.equal((await c("GET", "/api/listings")).json.listings.length, 0);
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, made);
+});
