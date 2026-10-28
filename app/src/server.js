@@ -222,14 +222,7 @@ app.addHook("preHandler", async (request, reply) => {
 app.get("/api/me", async (request) => {
   const ws = request.ws;
   const made = await adsMade(ws.id);
-  // Leads and the report fill in once ads run on Meta; until an account has any, they show as
-  // coming soon.
-  const [leadCount, launchCount] = await Promise.all([
-    get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ?`, [ws.id]),
-    get(`SELECT COUNT(*) AS n FROM launches WHERE workspace_id = ?`, [ws.id]),
-  ]);
   return {
-    soon: { leads: !Number(leadCount.n), report: !Number(leadCount.n) && !Number(launchCount.n) },
     user: { email: request.user.email, name: request.user.name, avatar_id: request.user.avatar_id || null },
     workspace: { id: ws.id, name: ws.name, plan: ws.plan, brand: ws.brand, created_at: ws.created_at },
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
@@ -249,7 +242,7 @@ app.put("/api/brand", async (request, reply) => {
   for (const [k, max] of Object.entries(BRAND_KEYS)) {
     if (body[k] === undefined) continue;
     const v = typeof body[k] === "string" ? body[k].trim().slice(0, max) : "";
-    if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Colors need to be hex, like #1F2A36." });
+    if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Colours need to be hex, like #1F2A36." });
     if (k === "voice" && !["plain", "warm", "premium"].includes(v)) continue;
     if (k === "font" && !FONT_KEYS.includes(v)) continue;
     if (k === "alerts_topic" && v && !/^[A-Za-z0-9_-]{6,64}$/.test(v)) return reply.code(400).send({ error: "The alerts topic can only use letters, numbers, dashes and underscores, 6 to 64 of them." });

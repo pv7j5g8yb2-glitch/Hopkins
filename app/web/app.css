@@ -414,16 +414,6 @@ a.row:hover{background:var(--hover)}
 .adm-act{display:flex;gap:8px;align-items:center}
 .adm-act select{font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--raise)}
 .fb-list{display:flex;flex-direction:column}
-/* Coming soon: a faded preview with a card over it */
-.soon{margin-top:4px;padding-bottom:40px}
-.soon-prev{filter:blur(2px) grayscale(1);opacity:.35;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 10%,transparent 92%);mask-image:linear-gradient(180deg,#000 10%,transparent 92%)}
-.soon-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 8px;margin-top:-34px;position:relative}
-.soon-chip{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8E6B2C;background:rgba(215,174,98,.16);padding:5px 10px;border-radius:999px;margin-bottom:12px}
-.soon-card h2{font-size:28px;line-height:1.08;letter-spacing:-.04em;margin-bottom:16px;max-width:340px}
-.soon-card p{color:var(--quiet);font-size:14.5px;line-height:1.55;max-width:290px;padding-top:16px;border-top:1px solid var(--line2)}
-/* their tabs look quieter until there's something in them */
-body.soon-leads [data-nav=leads],body.soon-report [data-nav=report]{opacity:.5}
-body.soon-leads [data-nav=leads].on,body.soon-report [data-nav=report].on{opacity:.8}
 .upsell{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 14px 6px;max-width:360px;margin:0 auto}
 .upsell-mark{width:44px;height:44px;margin-bottom:12px;animation:rise .6s cubic-bezier(.3,1.5,.5,1) both}
 @keyframes rise{from{opacity:0;transform:translateY(10px) scale(.8)}to{opacity:1;transform:none}}
@@ -791,7 +781,7 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   .pvb .actrow.lg{left:14px;right:14px;bottom:max(12px,calc(var(--safe-b) - 8px));padding:6px;border-top:0;border-radius:999px;background:var(--lg-tint);-webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter)}
   .pvb .actrow.lg .btn{border-radius:999px}
   .pvb .actrow.lg .sec-btn{border-radius:999px;background:rgba(255,255,255,.5);border-color:rgba(255,255,255,.6)}
-  .pop.lg{position:fixed;background:rgba(255,253,249,.84);border:0;border-radius:30px;-webkit-backdrop-filter:blur(30px) saturate(1.9);backdrop-filter:blur(30px) saturate(1.9)}
+  .pop.lg{position:fixed;background:rgba(255,253,249,.96);border:0;border-radius:30px;-webkit-backdrop-filter:blur(30px) saturate(1.9);backdrop-filter:blur(30px) saturate(1.9)}
   .pop.lg:after{inset:1px}
   .lg-circle{width:64px;height:64px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:transform .35s var(--spring)}
   .lg-circle svg{width:26px;height:26px;stroke-width:2.2;position:relative;z-index:4}
@@ -803,6 +793,7 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
   @keyframes selup{from{transform:translateY(30px);opacity:0}}
   .selbar.lg{position:fixed;background:var(--lg-tint);-webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter);box-shadow:var(--lg-shadow)}
   .selbar.lg .sec-btn{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.6)}
+  body:has(.pop.on) .selbar{visibility:hidden}
   /* inside a listing: full screen, like a chat app */
   .lv{flex:1;display:flex;min-height:0}
   .ch{display:none}

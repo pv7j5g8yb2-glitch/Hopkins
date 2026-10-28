@@ -14,7 +14,7 @@ import { aiEnabled, provider, readListingAI, seePhotosAI, writeSetAI, chatTurnAI
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
 // needs real understanding gets an honest "give me a moment" instead of "I didn't follow".
-const BUSY = "Sorry, I'm getting a lot of messages at once. Send that again in a few seconds and I'll give it a proper answer.";
+const BUSY = "I'm getting a lot of messages at once. Send that again in a few seconds.";
 const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].includes(readIntent(text).kind);
 import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
@@ -113,7 +113,7 @@ export async function newChat(ws, history) {
   const ask = lastReply?.includes("Send me a listing") ? "" : "Send me a listing: paste the link, add the photos, or tell me the address, price and what stands out.";
   const options =
     intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos whenever you're ready."]
-    : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`]
+    : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes 3 ads, yours to download. ${upgradeText("plan")}`]
     : intent.kind === "question" && intent.topic === "help" ? [`I make ads for each listing, each a different idea, so you can test them against each other. You change them with me here, and nothing runs until you say yes. ${ask}`]
     : intent.kind === "thanks" ? ["Anytime."]
     : [`I need a listing to start. ${ask}`, `I didn't catch a listing in that. Paste the link or add the photos and I'll take it from there.`];
@@ -309,6 +309,7 @@ function modelStyle(st, message, { filter = true } = {}) {
 // When nothing changes in that turn, the answer comes from the ads themselves, never from the
 // model, which once replied "You're right, I didn't apply it. Let me fix that now" about a change
 // it had made (2026-10-27).
+const JUST_THANKS = /^\s*(thanks|thank you|thank u|thx|ty|cheers|ta)( (so much|a lot|a million|hopkins))?[\s!.]*$/i;
 const CHALLENGE = /\b(you didn'?t|didn'?t (change|work|do|happen|apply)|did(n'?t| not) change|nothing (changed|happened)|not (changed|done|applied)|still (the same|looks? the same|navy|blue|green|grey|gray|black|white)|it'?s (still|not)|no change|same as before|where'?s the change)\b/i;
 function lookNow(ads) {
   const groups = [];
@@ -507,7 +508,7 @@ async function writtenSet(ctx, built, { count, brief = "", keep = [], extra = ""
     const a = r.ads.find((x) => x.version === b.version) || r.ads[i];
     return a ? { ...b, ...guarded({ ...b, ...normalizeAI(a, ctx.photos, b) }, b, guardCtx), version: b.version } : b;
   });
-  return { ads, reply: r.reply ? adNumbers(polishChat(r.reply)) : null };
+  return { ads, reply: r.reply ? adNumbers(plainWords(r.reply)) : null };
 }
 
 // How many ads the agent asked for in so many words ("just one ad", "two ads"), else null.
@@ -630,7 +631,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
   await clearActions(listing.id);
   // The first set says once how to change the look (Ismael, 2026-10-27: people didn't know).
   const firstSet = moment === "new" && !(await get(`SELECT 1 FROM messages WHERE listing_id = ? AND kind = 'ads'`, [listing.id]));
-  const tip = firstSet ? 'To change how they look, tap **Style**, or just tell me in your own words, like "grey background", "classic font" or "use the kitchen photo".' : null;
+  const tip = firstSet ? 'Tap **Style** to change the look, or just say it ("navy background", "classic font").' : null;
   const body = [reply || introFor(moment, listing, set), note].filter(Boolean).join(" ") + (tip ? `\n\n${tip}` : "");
   await say(ws, listing.id, body, "ads", { moment, snapshot: await snapshot(listing) }, true);
 
@@ -700,7 +701,7 @@ async function changeSetNow(ws, listing, ads, photos, r, text) {
   if (!(await canMake(ws, n))) {
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
     if (last && last.kind === "upgrade") return { upgrade: true, repeat: true };
-    await say(ws, listing.id, `${upgradeText("limit")} You can still turn any of these into a different idea, that's included.`, "upgrade", { reason: "limit" });
+    await say(ws, listing.id, `${upgradeText("limit")} Changes to these are included.`, "upgrade", { reason: "limit" });
     return { upgrade: true };
   }
   const ctx = { listing, photos, brand: ws.brand, moment: listing.moment || "new" };
@@ -775,21 +776,31 @@ export async function handleMessage(ws, listingId, text, selected = 1) {
   await keepUndo(listingId, sent.id);
   const direct = await directEdit(ws, listing, await currentAds(listing), text, selected);
   if (direct) return direct;
+  // A plain thanks never goes to the model, so it can't touch the ads or get a reply about them.
+  if (JUST_THANKS.test(text)) {
+    await say(ws, listing.id, "Anytime.");
+    return {};
+  }
   const ads = await currentAds(listing);
   const photos = await loadPhotos(listing.id, aiEnabled);
+  let busy = false;
 
   if (aiEnabled) {
     const history = await all(`SELECT role, body, data FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
     const plan = { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
     const agentPhoto = await hasAgentPhoto(ws);
-    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto });
+    // Each ad's Leads, so "which one is working?" gets real numbers, never "engagement".
+    const leadRows = await all(`SELECT ad_id, SUM(CASE WHEN wants = 'showing' THEN 1 ELSE 0 END) AS showings, COUNT(*) AS n FROM leads WHERE listing_id = ? GROUP BY ad_id`, [listingId]);
+    const leads = Object.fromEntries(leadRows.map((x) => [x.ad_id, { n: Number(x.n), showings: Number(x.showings) }]));
+    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads });
     if (r) return applyAI(ws, listing, ads, photos, r, text);
-    if (takeFailure() === "busy" && needsModel(text)) {
+    busy = takeFailure() === "busy";
+    if (busy && needsModel(text)) {
       await say(ws, listing.id, BUSY, "text", { busy: true });
       return {};
     }
   }
-  return applyRules(ws, listing, ads, photos, text, selected);
+  return applyRules(ws, listing, ads, photos, text, selected, { busy });
 }
 
 // ---------- editing a sent message ----------
@@ -895,11 +906,17 @@ function patchFrom(listing, lp) {
 const asItself = (s) => String(s || "")
   .replace(/\b[Tt]he (platform|system|app|software|tool) only (lets|allows) me( to)?\s+/g, "I can only ")
   .replace(/\b[Tt]he (platform|system|app|software|tool) (doesn't|does not|won't|will not|can't|cannot) (let|allow) me( to)?\s+/g, "I can't ")
-  .replace(/\b(I'm|I am) not (allowed|permitted) to\b/g, "I can't");
+  .replace(/\b(I'm|I am) not (allowed|permitted) to\b/g, "I can't")
+  // Never "we": it makes Hopkins sound like an agency. The model still slips now and then.
+  .replace(/\bbefore we (start|begin|launch|go live|run (it|them))\b/gi, "before the ads go live")
+  .replace(/\b([Ww])e('ll| will| can| could|'d| would|'ve| have)\b/g, (m, w, rest) => `I${rest}`);
 // "Lead" is written with a capital L everywhere in Hopkins (Ismael, 2026-10-27). Only the noun,
 // after a number or a word like "no", "new" or "per", so "it leads to" stays as it is.
 export const capLeads = (s) => String(s || "").replace(/\b(\d[\d,]*|no|new|more|fewer|any|every|first|your|their|the|a|an|of|per|cheapest|cheaper|cheap|real|buyer|those|these|some|many|few|zero|one|two|three|four|five|six|seven|eight|nine|ten|qualified|good|warm|more|extra)(\s+)lead(s?)\b/gi, (m, w, sp, plural) => `${w}${sp}Lead${plural}`);
-const plainWords = (s, clean = polishChat) => clean(capLeads(asItself(s)).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
+// Offers of more help at the end of a reply ("Let me know if you'd like any tweaks.") add nothing.
+const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|happy to help|hope (?:this|that) helps|if you(?:'d| would) like(?: any)?|if you want|want me to)[^.!?]*[.!?]?\s*$/i;
+export const noFiller = (s) => { let t = String(s || ""), prev; do { prev = t; t = t.replace(FILLER, "").trim(); } while (t !== prev && t); return t || String(s || ""); };
+const plainWords = (s, clean = polishChat) => clean(noFiller(capLeads(asItself(s))).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
 
 async function applyAI(ws, listing, ads, photos, r, text) {
   const reply = plainWords(r.reply);
@@ -947,7 +964,11 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   const ruledColours = ruled && !ruled.vague ? Object.fromEntries(["bg", "accent", "text"].filter((k) => ruled.style[k]).map((k) => [k, ruled.style[k]])) : {};
   // "The same" about a look is only a look change: the words stay exactly as they are (the model
   // once rewrote both ads' copy as well, 2026-10-27).
-  const lookOnly = Boolean(again) && !/\b(shorter|longer|headline|wording|words|copy|rewrite|write|line|caption|warmer|punchier|tone)\b/i.test(text || "");
+  const COPY_ASK = /\b(shorter|longer|headline|wording|words|copy|rewrite|write|line|caption|warmer|punchier|tone|say|says|mention)\b/i;
+  const lookOnly = Boolean(again) && !COPY_ASK.test(text || "");
+  // A plain look change ("make ad 2 navy") keeps the words as they are: the model once
+  // rewrote the caption with it (2026-10-28).
+  const wordsStay = lookOnly || (Boolean(ruled && !ruled.vague && Object.keys(ruled.style || {}).length) && !COPY_ASK.test(text || ""));
   let overrode = lookOnly;
   let needPhoto = false;
   const unreadable = {};
@@ -956,6 +977,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     if (!ad) continue;
     if (named && !named.includes(ad.version)) { overrode = true; continue; }
     const next = lookOnly ? { ...ad } : guarded({ ...ad, ...normalizeAI(a, photos, ad, text, ads.map((x) => x.overlay)) }, ad, { listing: { ...listing, ...patch }, photos, extra: [text, ...ads.map((x) => x.overlay)].join(" ") });
+    if (wordsStay) for (const k of ["headline", "primary_text", "overlay"]) next[k] = ad[k];
     const wanted = modelStyle(a.style, text, { filter: false });
     const look = modelStyle(a.style, refersBack(text) && askText === text ? `${text} ${sayLook(wanted)}` : askText);
     for (const k of ["bg", "accent", "text"]) {
@@ -1004,7 +1026,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
       overrode = true;
     }
   }
-  const copyChanged = !lookOnly && (r.ads || []).some((a) => {
+  const copyChanged = !wordsStay && (r.ads || []).some((a) => {
     const ad = ads.find((x) => x.version === a.version);
     return ad && (!named || named.includes(ad.version)) && ["headline", "primary_text", "overlay"].some((k) => a[k] && polish(cleanWording(String(a[k]))) !== ad[k]);
   });
@@ -1030,7 +1052,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
     // Nothing changed this turn: never a reply that says something did.
     const n = namedVersions(text, ads);
     const shown = n ? ads.filter((a) => n.includes(a.version)) : ads;
-    out = `${changed.length || CHALLENGE.test(text || "") ? "Nothing changed with that message." : "I haven't changed anything since your last message."} Here's where ${shown.length === 1 ? "it is" : "they are"} now. ${stateNow(shown)} Tell me exactly what to change and I'll do it straight away.`;
+    out = `${changed.length || CHALLENGE.test(text || "") ? "Nothing changed with that message." : "I haven't changed anything since your last message."} Now: ${lookNow(shown)} Tell me what to change.`;
     if (needPhoto) out = ADD_PHOTO;
     else if (notes) out = notes;
     data.snapshot = await snapshot(listing, shown.map((a) => a.version));
@@ -1051,7 +1073,7 @@ async function fresh(listingId, options) {
   return options.find((o) => o && o !== last?.body) || options[options.length - 1];
 }
 
-async function applyRules(ws, listing, ads, photos, text, selected) {
+async function applyRules(ws, listing, ads, photos, text, selected, { busy = false } = {}) {
   const intent = readIntent(text, { selected, photos, ads });
   const sorted = [...photos].sort((a, b) => a.position - b.position);
   const v = intent.versions.length === 1 ? intent.versions[0] : selected;
@@ -1091,7 +1113,7 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
 
   if (intent.kind === "question") {
     const answers = {
-      plan: `The free plan makes up to 3 ads as previews. ${upgradeText("plan")}`,
+      plan: `The free plan makes 3 ads, yours to download. ${upgradeText("plan")}`,
       which: ads.length
         ? "Nobody knows yet, me included. That's why they're different ideas: they run side by side with the same budget, and the one that brings Leads cheapest gets the rest. You'll see it in Monday's report."
         : "Once the ads are made, the test decides. They run side by side and the cheapest Leads win.",
@@ -1219,6 +1241,12 @@ async function applyRules(ws, listing, ads, photos, text, selected) {
     return {};
   }
 
+  // The model was over its limit and the rules can't read it either: ask again, don't pretend
+  // the message was unclear.
+  if (busy) {
+    await say(ws, listing.id, BUSY, "text", { busy: true });
+    return {};
+  }
   await say(ws, listing.id, await fresh(listing.id, [
     `I didn't follow that one. Is it a change to version ${selected}? Say it plainly, like "shorter", "warmer" or "use photo 2".`,
     `Still not with you, sorry. Try one change at a time, like "new headline: Morning light" or "version 3, use the kitchen photo".`,
@@ -1259,7 +1287,7 @@ export async function proposeRun(ws, listing, { versions = [1, 2, 3, 4, 5], budg
   plan.perDay = Math.round((plan.budget / plan.days) * 100) / 100;
   await clearActions(listing.id);
   const split = plan.versions.length > 1 ? `, split evenly across the ${plan.versions.length} ads so the test is fair` : "";
-  await say(ws, listing.id, `Here's the plan: $${plan.budget} over ${plan.days} days${split}. Say yes and I'll set it up.`, "plan", plan, true);
+  await say(ws, listing.id, `Here's the plan: $${plan.budget} over ${plan.days} days${split}. Say yes to run it.`, "plan", plan, true);
   return { plan };
 }
 
@@ -1287,7 +1315,7 @@ export async function confirmRun(ws, listingId, messageId) {
     );
   }
   await clearActions(listingId);
-  await say(ws, listingId, `Approved. ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live as soon as your Meta ad account is connected. You don't have to wait: download them under the preview and post or boost them yourself. Each ad has its own link, so Leads still land here and on the Leads page.`);
+  await say(ws, listingId, `Approved: ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live once Meta is connected. Until then, download them from Ads and post or boost them yourself.`);
   notifyFounder("Hopkins: ads approved", `A workspace approved ${ads.length} ads ($${plan.budget} over ${plan.days} days). Waiting on Meta.`);
   return { ok: true };
 }
@@ -1305,7 +1333,7 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
   if (ad) await run(`UPDATE tests SET leads = leads + 1 WHERE ad_id = ?`, [ad.id]);
   const what = wants === "showing" ? "wants a showing" : wants === "offer" ? "wants to talk about an offer" : "has a question";
   const contact = [phone, email].filter(Boolean).join(", ");
-  await say(ws, listing.id, `New Lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""} A quick reply is the best way to keep a Lead warm.`, "lead", { leadId: id }, false);
+  await say(ws, listing.id, `New Lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""}`, "lead", { leadId: id }, false);
   if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New Lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
   return id;
 }

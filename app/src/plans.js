@@ -29,11 +29,9 @@ export async function canMake(workspace, count) {
 }
 
 export function upgradeText(reason, { usedOn } = {}) {
-  const tail = `Pro is $${PRICE_FROM} a month, billed monthly. Cancel anytime, and no cut of your ad spend. If you joined the waitlist, your first year is 30% off.`;
-  if (reason === "run") return `Running ads is on Pro. ${tail}`;
-  if (reason === "plan") return tail;
-  if (reason === "saved") {
-    return `Your ${FREE_AD_LIMIT} free ads went on ${usedOn || "an earlier listing"}. This listing is saved. Once you're on Pro, tap Make the ads. ${tail}`;
-  }
-  return `That's your ${FREE_AD_LIMIT} free ads. ${tail}`;
+  const short = `Pro is from $${PRICE_FROM} a month, billed monthly.`;
+  if (reason === "run") return `Running ads is on Pro. ${short}`;
+  if (reason === "plan") return `${short} Cancel anytime, and no cut of your ad spend. If you joined the waitlist, your first year is 30% off.`;
+  if (reason === "saved") return `Your ${FREE_AD_LIMIT} free ads went on ${usedOn || "an earlier listing"}. This listing is saved. On Pro, tap Make the ads.`;
+  return `That's your ${FREE_AD_LIMIT} free ads. ${short}`;
 }

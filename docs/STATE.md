@@ -181,11 +181,8 @@ personal in here.
   Render; until then the by hand route stays. Needs from Ismael: a free Resend account, the domain
   (kirmistudio.com, or gethopkins.com once bought) verified there with the DNS records Resend gives,
   then the two values on Render.
-* Leads and Report are "coming soon" (2026-10-25, Ismael): until an account has a lead (or, for the
-  report, an approved run), each page shows a faded, greyed preview of what it will hold under a
-  card ("Coming soon", what it does, "This opens once ads can go live on Facebook and Instagram"),
-  and their tabs look quieter. Real leads still show the moment one arrives (lead pages already
-  work when an agent shares the link).
+* Leads and Report used to be "coming soon" (2026-10-25); Ismael had it removed everywhere
+  (2026-10-28). Leads with none yet shows "No Leads yet" and a one line hint; Report always opens.
 * Run it on the free plan (2026-10-25, Ismael: the same upgrade note looped in the chat): it now
   opens a plan card over the screen (bottom sheet on a phone) with the price points and Ask for
   the paid plan, and nothing is posted to the chat. Make a new set past the free ads does the
@@ -614,3 +611,26 @@ personal in here.
   This week no longer shows a percentage (Ismael: "7 Leads, 600%" beside last week's 9 made no
   sense); it shows "Last week 9". Finished weeks show the percentage "vs the week before", which
   in the demo reads 9 vs 10 down 10%, 10 vs 11 down 9%, 11 vs 7 up 57%, 7 vs 5 up 40%.
+* Full end to end check (2026-10-28, Ismael: "everything, literally EVERYTHING"), real Groq, iPhone
+  size on a slowed server, then laptop, then the demo account. Passed: sign up and sign in errors,
+  brand setup, new listing with photos, every chat change (colours, "the same", fonts, shorter,
+  full stop, face with and without a photo, a challenge, edit and rewind), Ads tab, Style,
+  download, Run it, plan and yes, buyer Lead page, Lead to Today, Leads, chat and Report,
+  listings menu (sold, select, delete, rename), settings (profile, photo, password, alerts),
+  feedback, sign out, free plan limits and Ask for Pro, Admin (plan switch, reset link, demo and
+  back), Report weeks, calendar, sort and filters, sidebar collapse and the listing menu.
+  Fixed from it: "thanks" got "Nothing changed with that message" (now "Anytime.", never the
+  model); "make ad 2 navy" also rewrote the caption (a plain look change now keeps the words);
+  "which ad is doing best?" said "most engagement" with no data (the model now gets each ad's
+  Leads and showings and answers with them: "Ad 1 has 13 Leads, 5 showing requests..."); two
+  weeks priced as "$200 over 10 days" (now $20 a day, $280); "before we start" (stray "we" now
+  rewritten to "I"); trailing offers ("If you want..., I can...") stripped; the first ads reply
+  ended "Let me know if anything needs tweaking" (now cleaned like every reply); the free limit
+  reply was five sentences (now two, the price lives on the Pro card); "The free plan makes up to
+  3 ads as previews" was wrong (now "3 ads, yours to download"); the Instagram handle in ad
+  previews kept "&" ("stone&corealty", now "stoneandcorealty"); glass sheets on phones let the
+  buttons behind show through (more opaque now, and the select bar hides under a sheet); the busy
+  reply is one short line and no longer becomes "I didn't follow that one" when Groq is over its
+  limit; Admin strings shortened and "Paid" reads "Pro"; "Colors" and "Main color" now "Colours"
+  and "Main colour" like the rest. Known limit: Groq's free key runs out after a few quick
+  messages in a row (about 8,000 tokens a minute); Hopkins says so and asks to send it again.

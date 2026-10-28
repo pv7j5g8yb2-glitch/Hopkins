@@ -410,14 +410,14 @@ In the chat:
 - Never list everything you can do unless they ask. Never repeat a reply you already gave.
 - Only use facts from the context. Never invent results, numbers or features. In ads too: no appliances, materials, finishes or layout the agent didn't mention.
 - Say it the way the agent would: "the line on the photo", not "overlay"; "the label", not "kicker".
-- Money, exactly: the Hopkins plan is one price. The ad spend is separate, the agent chooses it and pays it to Meta. The default test is $200 over 10 days, split across the versions. Never say the plan price covers ad spend.
+- Money, exactly: the Hopkins plan is one price. The ad spend is separate, the agent chooses it and pays it to Meta. The default test is $200 over 10 days ($20 a day), split across the versions; for another length, work it out at $20 a day (two weeks is $280) and say the agent can change it. Never say the plan price covers ad spend.
 - A new fact about the home that isn't one of the listed features (solar panels, a new roof) is still a fact: use update_listing, work it into the versions where it fits (put them in ads), and never mention a feature list or any other part of how you work.
 - Small talk ("lol ok", "cool") gets a short, natural reply. Don't push them to run or upgrade.
 - You can change how every ad looks, not only the words, and you never say you can't: background colour, the colour of the label and price, the colour of the big line, the font (modern, classic, elegant, editorial, bold or minimal), the layout (fade, top, split, card, frame), text size, left or centred, which part of the photo stays in view, and how strong the fade is. Put those in ads[].style for each ad you change (with its words and name copied as they are). Fill in only the parts they asked for and leave every other style field as "" (size 0), so nothing else changes. Use refined colours, never pure web ones: navy #1F2A44, gold #D7AE62, black #111111, cream #F4EBDD, green #2F5D46, burgundy #6D1F2C, white #FFFFFF. If an earlier reply in this chat said you can't change colours, fonts or layout, that was wrong: say so plainly ("I got that wrong earlier, I can"). "All of them" or "all three" means every ad. With no colours set, the ads use the agent's brand colours. Pick colours with enough contrast to read. In the reply, name colours in words ("navy", "gold"), never hex codes, and only say what you actually changed in this turn, not earlier changes. You can also put the agent's own photo in the bottom right corner of an ad (style face: on) and take it off (face: off). You are Hopkins: always speak as yourself, in the first person. Never mention "the platform", "the system", "the app", "the tool" or anyone who decides what you can do; if you can't do something yet, say "I can't do that yet" and offer the nearest thing you can. If the agent says a change didn't happen ("no you didn't"), check each ad's Look in the context before answering: if it did happen, say so plainly; if it didn't, make the change now in ads[].style. Never say you'll do something "now" or "next" without doing it in this same reply. If they ask for something the ads can't do (a second photo in one ad, animation, a video), say so plainly and offer the nearest thing you can do.
 - What's real today, say it exactly when asked: Hopkins makes and edits the ads (words and look) here, checks the wording, makes the run plan, gives each version a lead page and link, and collects the leads. It is not connected to Meta yet, so nothing goes live on Facebook or Instagram from here, there's no account to link, and there are no performance numbers to see. A plan the agent says yes to waits until that connection is ready; on Pro they can download the ads and post or boost them themselves. Never claim more than this.
-- The free plan: 3 ads in all, made in the chat, full quality with no watermark, and they can be downloaded. Changes to those 3 are included. Any new ad after that (a new set, another ad, ads for another listing, even after deleting a listing) and running ads need Pro, the paid plan, which is $299 a month, billed every month from the day they sign up, cancel anytime, no cut of ad spend. Say this plainly when it matters, once.`;
+- The free plan: 3 ads in all, made in the chat, full quality with no watermark, and they can be downloaded. Changes to those 3 are included. Any new ad after that (a new set, another ad, ads for another listing, even after deleting a listing) and running ads need Pro, the paid plan, which is $299 a month, billed every month from the day they sign up, cancel anytime, no cut of ad spend. Say this plainly when it matters, once. What running ads costs: the budget they pick is the ad spend itself, paid to Meta, never on top of it (the test defaults to $200 over 10 days, and they can change it); Pro is separate, $299 a month. Never say ad spend is added to the budget.`;
 
-function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto }) {
+function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads }) {
   return `Context (the current state, not something the agent wrote):
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. Brand voice: ${brand.voice || "plain"}. Their own photo: ${agentPhoto ? "added, so it can go on the ads (face: on)" : "not added yet (they add it in Settings, then it can go on the ads)"}.
 Plan: ${plan.paid ? "paid" : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.${!plan.paid && plan.adsMade >= plan.limit ? `
@@ -430,7 +430,9 @@ ${ads.map((a) => `${adLine(a, photos)}:
   Look: ${describeStyle(a.style)}
   Label: ${a.kicker}
   Headline: ${a.headline}
-  Text: ${a.primary_text}`).join("\n")}
+  Text: ${a.primary_text}${leads ? `
+  Leads so far: ${leads[a.id]?.n || 0}${leads[a.id]?.showings ? ` (${leads[a.id].showings} asked for a showing)` : ""}` : ""}`).join("\n")}${leads ? `
+Leads are the only result Hopkins tracks. When asked what's working, answer with these numbers; never mention engagement, clicks, reach or anything not listed here. No Leads yet means it's too early to say. When asked about one ad, start from its Leads, call it by its name, and never label ads by type ("a facts ad", "a life angle").` : ""}
 The agent is looking at ad ${selectedVersion || 1}. Call the ads by their names when you talk about them ("the porch one"), or by number when that's clearer.`;
 }
 
@@ -492,10 +494,10 @@ They're on the New listing screen and haven't sent a listing yet. To make ads yo
   return r && typeof r.reply === "string" && r.reply.trim() ? r.reply : null;
 }
 
-export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto }) {
+export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto, leads }) {
   const messages = conversation(history);
   if (!messages.length) return null;
-  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto })}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
+  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads })}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
   const raw = await call({ system, messages, schema: TURN_SCHEMA, effort: "low", temperature: 0.7 });
   if (process.env.HOPKINS_DEBUG) console.log("chat turn:", JSON.stringify(raw));
   return normalizeTurn(raw);

@@ -401,16 +401,8 @@
 
   async function loadMe() {
     S.me = await api("/api/me");
-    document.body.classList.toggle("soon-leads", Boolean(S.me.soon && S.me.soon.leads));
-    document.body.classList.toggle("soon-report", Boolean(S.me.soon && S.me.soon.report));
   }
 
-  // A part of Hopkins that opens once ads run on Meta: a faded look at what it will hold, and a
-  // card saying plainly that it's coming.
-  function soon(title, line, preview) {
-    return `<div class="soon"><div class="soon-prev" aria-hidden="true">${preview}</div>
-      <div class="soon-card"><span class="soon-chip">Coming soon</span><h2>${title}</h2><p>${line}</p></div></div>`;
-  }
   async function loadListings() { S.listings = (await api("/api/listings")).listings; numberNames(); }
   async function loadInbox() { const r = await api("/api/inbox"); S.inbox = r.items; S.leadsWeek = r.leadsWeek; S.inboxLoaded = true; }
 
@@ -507,7 +499,7 @@
       const brandDone = S.me.workspace.brand.setup_done;
       body = `<div class="progress"><div class="meter"><i style="width:${brandDone ? 34 : 6}%"></i></div>${brandDone ? "1 of 3 done" : "Let's start"}</div>
         <ol class="steps">
-        <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colors, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
+        <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colours, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
         <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
         <li><div class="tx"><b>Your yes</b><p>Nothing runs until you say so.</p></div></li></ol>`;
     } else {
@@ -1183,7 +1175,7 @@
     const v = S.selected[l.id];
     const ad = adFor(v) || p.ads[0];
     const b = S.me.workspace.brand;
-    const handle = (b.instagram || b.business || "your.brand").replace(/^@/, "").toLowerCase().replace(/\s+/g, "");
+    const handle = (b.instagram || b.business || "your.brand").replace(/^@/, "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9._]/g, "").slice(0, 30) || "your.brand";
     const ava = b.logo_id ? `style="background:#fff url(${photoUrl(b.logo_id)}) center/cover no-repeat"` : `style="background:${esc(b.primary || "#1F2A36")}"`;
     const issues = ad.issues || [];
     const short = ad.primary_text.length > 125;
@@ -1315,8 +1307,7 @@
       <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head"><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
       ${leads.length ? `<div class="list" style="border-top:0">${leads.map(item).join("")}</div>`
-        : soon(`Every Lead, <span class="serif">in one place.</span>`, "Everyone who asks about a listing, and the ad that brought them.",
-            `<div class="list" style="border-top:0">${[["JM", "Jordan M.", "Wants a showing", "Ad 1 · 2m ago"], ["PS", "Priya S.", "Has a question", "Ad 3 · 1h ago"], ["AR", "Alex R.", "Wants a showing", "Ad 1 · yesterday"]].map(([i, n, w, m]) => `<div class="lead"><span class="av">${i}</span><div class="tx"><b>${n}</b><p>${w}</p><div class="small">${m}</div></div></div>`).join("")}</div>`)}</div></div>`;
+        : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>They show up here, with the ad that brought them.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");
@@ -1363,12 +1354,6 @@
 
   async function viewReport() {
     const my = current();
-    if (S.me.soon && S.me.soon.report) {
-      main.innerHTML = `${mtop("Report")}<div class="page"><div class="wrap"><div class="head"><h1>Report</h1></div>
-        ${soon(`Your <span class="serif">Monday report.</span>`, "Leads, cost per Lead and the winning ad, every Monday.",
-          `<div class="rp-sum"><div class="rp-big"><b>7</b> Leads</div><p class="rp-sub">3 asked for a showing</p><div class="rp-chart">${[1, 0, 2, 1, 0, 1, 2].map((n, i) => `<div class="rp-day ${i === 6 ? "today" : ""}"><span class="rp-bar"><i style="height:${n * 50}%"></i></span><span class="rp-dl">${"MTWTFSS"[i]}</span></div>`).join("")}</div></div>`)}</div></div>`;
-      return;
-    }
     const now = mondayOf(new Date());
     if (!S.repMonday || S.repMonday > now || S.repMonday < firstMonday()) { S.repMonday = now; S.repFollow = true; }
     const mon = S.repMonday;
@@ -1539,7 +1524,7 @@
       <div class="brandgrid"><form class="form" id="brandForm">
         <div class="group"><h4>Who you are</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
         <div class="group"><h4>Branding</h4><div style="display:flex;flex-direction:column;gap:14px">
-          <div><div class="colors"><label><input type="color" name="primary" value="${esc(b.primary || "#1F2A36")}">Main color</label><label><input type="color" name="accent" value="${esc(b.accent || "#C8A96A")}">Accent</label></div>
+          <div><div class="colors"><label><input type="color" name="primary" value="${esc(b.primary || "#1F2A36")}">Main colour</label><label><input type="color" name="accent" value="${esc(b.accent || "#C8A96A")}">Accent</label></div>
           <div class="swatches">${PALETTES.map(([p1, p2]) => `<button type="button" data-pal="${p1},${p2}" style="background:${p1}" aria-label="Use ${p1} and ${p2}"><i style="background:${p2}"></i></button>`).join("")}</div></div>
           <div class="logo-up"><i id="logoPrev" style="${b.logo_id ? `background-image:url(${photoUrl(b.logo_id)})` : ""}"></i><label class="sec-btn">Upload logo<input type="file" accept="image/png,image/jpeg,image/webp" hidden id="logoFile"></label>${b.logo_id ? `<button type="button" class="link" id="logoRm">Remove</button>` : ""}</div></div></div>
         <div class="group"><h4>Font</h4><div class="fonts">${FONT_CHOICES.map(([v, l]) => { const f = Creative.FONTS[v]; return `<label class="fontc"><input type="radio" name="font" value="${v}" ${(b.font || "modern") === v ? "checked" : ""}><span style="font-family:'${f.family}';font-weight:${f.weight}">Aa</span><em>${l}</em></label>`; }).join("")}</div></div>
@@ -1613,7 +1598,7 @@
           <div><button class="sec-btn" data-act="saveProfile">Save profile</button></div></div></div>
       <div class="group"><h4>Business</h4>
         ${fld("sBiz", "Business, team or brokerage", b.business, "text", "Ellery Realty", "organization")}
-        <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="saveBiz">Save</button><a class="link" href="#/brand">Colors, logo and font</a></div></div>
+        <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="saveBiz">Save</button><a class="link" href="#/brand">Colours, logo and font</a></div></div>
       <div class="group"><h4>Password</h4><div style="display:flex;flex-direction:column;gap:12px">
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
@@ -1687,10 +1672,10 @@
     const my = current();
     const [{ workspaces }, { feedback }] = await Promise.all([api("/api/admin/workspaces"), api("/api/admin/feedback")]);
     if (my !== current()) return;
-    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Admin</h1><p class="lede">Only you see this. Every account, who asked for Pro, and the switch that puts them on it.</p></div><button class="sec-btn" data-act="demoOpen">Open demo account</button></div>
+    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Admin</h1><p class="lede">Only you see this.</p></div><button class="sec-btn" data-act="demoOpen">Open demo account</button></div>
       <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
           <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}${w.upgrade_requested ? ` · <b>asked to upgrade ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
-          <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Paid</option></select>
+          <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Pro</option></select>
           ${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Reset asked ${ago(w.reset_asked)}` : "Reset link"}</button>` : ""}</div></div>`).join("")}</div>
       <div class="head" style="margin-top:34px"><h2>Feedback</h2></div>
       ${feedback.length ? `<div class="fb-list">${feedback.map((f) => `<div class="fb"><p>${esc(f.body)}</p><span class="small">${esc(f.name || "")} · ${esc(f.email || "")} · ${esc(f.page || "")} · ${ago(f.created_at)}</span></div>`).join("")}</div>` : `<p class="lede">Nothing yet. Pilots send it from the account menu, Send feedback.</p>`}
@@ -1958,7 +1943,7 @@
       else if (act === "resetLink") {
         const { link } = await api(`/api/admin/users/${t.dataset.user}/reset-link`, { body: {} });
         // Shown rather than copied straight away: iPhones only allow copying inside the tap itself.
-        openPop(t, `<div class="note"><b>Reset link</b>Send it to them yourself. It works once, for 48 hours, and signs them out everywhere else.</div>
+        openPop(t, `<div class="note"><b>Reset link</b>Works once, for 48 hours. Signs them out everywhere else.</div>
           <div class="note" style="word-break:break-all;user-select:all;-webkit-user-select:all">${esc(link)}</div>
           <button data-copy="${esc(link)}" data-copied="Reset link copied">${ICON.copy}Copy link</button>`);
       }
@@ -2054,7 +2039,7 @@
         await api("/api/upgrade-request", { body: {} });
         await loadMe();
         t.textContent = "Requested";
-        toast("Sent. You'll hear back soon");
+        toast("Sent");
       } else if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); buzz(6); toast(t.dataset.copied || "Link copied"); }
       else if (t.dataset.dl) { await download(t.dataset.dl); toast("Saved to your downloads"); }
       else if (t.dataset.use) {

@@ -190,6 +190,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   reply is now checked against the ads after the change; when they disagree, the reply comes from
   the ads, not the model. Keep it that way for anything new Hopkins can change. Since the same
   day every reply about a change is written from the before and after of the ads, never by the model.
+* **Results come from real numbers (lesson, 2026-10-28):** asked "which ad is doing best?", Hopkins
+  said "most engagement" with no data behind it. The chat model now gets each ad's Leads and
+  answers with them; it never mentions engagement, clicks or reach, which Hopkins doesn't track.
+  A plain look change ("make ad 2 navy") never rewrites the words.
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the
   system only allows". Claude never says "Anthropic doesn't let me". Hopkins says "I can't" or "I
   can only", and when something needs a step from the agent, it says the step.

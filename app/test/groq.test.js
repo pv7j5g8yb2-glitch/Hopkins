@@ -309,3 +309,25 @@ test("a copied line keeps its own punctuation, and asking for a face in the bott
   assert.deepEqual(face.json.ads.map((x) => x.style.layout), copy.json.ads.map((x) => x.style.layout));
   assert.match(face.json.messages.at(-1).body, /^To put your photo on the ads, add it first/);
 });
+
+test("thanks never reaches the model, a colour change keeps the words, and the model sees each ad's Leads", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "thanks@test.com", password: "password123", invite: "EARLY1", name: "Dana Reyes" });
+  next = [500, 500];
+  const r = await c("POST", "/api/listings", { text: "14 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  const id = r.json.listing.id;
+  const before = calls.length;
+  const t = await c("POST", `/api/listings/${id}/messages`, { text: "thanks!", version: 1 });
+  assert.equal(calls.length, before, "no model call");
+  assert.equal(t.json.messages.at(-1).body, "Anytime.");
+  const ad2 = r.json.ads.find((a) => a.version === 2);
+  next = [{ reply: "Ad 2 is navy now, with a new caption.", action: "revise", ads: [{ version: 2, primary_text: "A brand new caption.", headline: "New headline", style: { bg: "#1F2A44" } }] }];
+  const n = await c("POST", `/api/listings/${id}/messages`, { text: "make ad 2 navy", version: 2 });
+  const after = n.json.ads.find((a) => a.version === 2);
+  assert.deepEqual([after.primary_text, after.headline, after.overlay], [ad2.primary_text, ad2.headline, ad2.overlay]);
+  assert.ok(after.style.bg, "the colour still changes");
+  assert.doesNotMatch(n.json.messages.at(-1).body, /caption/);
+  next = [{ reply: "None yet, too early to say.", action: "none", ads: [] }];
+  await c("POST", `/api/listings/${id}/messages`, { text: "which ad is doing best?", version: 1 });
+  assert.match(calls.at(-1).body.messages[0].content, /Leads so far: 0/);
+});
