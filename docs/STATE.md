@@ -651,3 +651,13 @@ personal in here.
   with no ads the chat has the whole screen. More trailing offers stripped ("Anything to
   adjust?", "Pick the one..."). Checked with real Groq on a slowed server, phone and laptop.
   Open idea: read facts from screenshots of a listing page, for sites that block links.
+* Why Hopkins' chat isn't as smart as Claude or ChatGPT (2026-10-28, Ismael asked): it runs on
+  Groq's free open models (gpt-oss-120b, with smaller backups), which are far weaker, allow about
+  8,000 tokens a minute while one chat message uses about 5,000, sometimes return broken JSON,
+  and can't see photos well. Every failure drops to the built-in rules, which is where replies
+  like "I didn't follow that one" come from. The Claude path is already built and current
+  (Claude Opus 5.5, structured output, refusal fallback, sees the photos): it turns on the moment
+  `ANTHROPIC_API_KEY` is set on Render, no code change. Rough cost, an estimate not a
+  measurement: a few cents per chat message, up to about 10 cents for a new set of ads with
+  photos. `HOPKINS_MODEL=claude-sonnet-5-5` halves that if cost matters. Waiting on Ismael for
+  the key.
