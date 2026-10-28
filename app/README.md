@@ -138,3 +138,11 @@ seconds.
   messages without a model, `src/fairhousing.js`, `src/plans.js`, `src/listing.js`.
 * `web/app.js` the app, `web/creative.js` draws the ads (preview, download and brand page
   share it), `web/lead.html` the public lead page, `web/login.html`.
+
+## Demo account
+
+Admins see "Open demo account" on the Admin page. It builds a full demo agent from
+`src/demo.js` (listings with the photos in `demo/photos`, ads, runs, Leads over six weeks) and
+signs you into it. "Back to my account" in the account menu returns you. Opening it again starts
+it fresh.
+

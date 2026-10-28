@@ -599,3 +599,12 @@ personal in here.
   Hopkins' chat prompt now asks for one or two plain sentences, professional, no filler.
   Open question to Ismael: should Hopkins' chat replies also talk about itself in the third
   person, or keep "I" like Claude and ChatGPT (only screens use the third person for now)?
+* Demo account (2026-10-28, Ismael: wanted to see the screens full): Admin has "Open demo account".
+  It builds a fresh demo agent (Sarah Mitchell, Mitchell Home Group, Austin, on Pro) and signs the
+  founder into it: 7 listings with real photos (Unsplash, in app/demo/photos), 3 hand written ads
+  each named after its idea, 4 listings running, 1 sold, 2 with ads waiting for a yes, about 50
+  Leads over six weeks with names, phones and statuses, spend, and a history back 6 weeks, all
+  counted back from now in the founder's own time zone. No AI calls. "Back to my account" in the
+  account menu returns to the founder's account (a signed cookie, no password). Opening it again
+  rebuilds it; demo accounts never show in the Admin list. Code: app/src/demo.js. Opens in about
+  2 seconds locally on a slowed server; on Turso it makes a few hundred writes, so expect longer.

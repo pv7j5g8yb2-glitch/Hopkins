@@ -13,6 +13,7 @@ import {
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { FONT_KEYS } from "./style.js";
+import { buildDemo, DEMO_DOMAIN } from "./demo.js";
 import { aiEnabled } from "./brain.js";
 import { KIND_NAMES, MOMENTS } from "./writer.js";
 import { PHOTO_LABELS, formatPrice, factsLine } from "./listing.js";
@@ -233,6 +234,7 @@ app.get("/api/me", async (request) => {
     workspace: { id: ws.id, name: ws.name, plan: ws.plan, brand: ws.brand, created_at: ws.created_at },
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
     admin: isAdmin(request.user),
+    demo: request.user.email.endsWith(DEMO_DOMAIN) && Boolean(request.cookies[BACK]),
     ai: aiEnabled,
     kinds: KIND_NAMES,
     moments: MOMENTS,
@@ -563,12 +565,35 @@ app.get("/api/admin/workspaces", async (request, reply) => {
        (SELECT MAX(reset_asked) FROM users WHERE workspace_id = w.id) AS reset_asked,
        (SELECT COUNT(*) FROM listings WHERE workspace_id = w.id) AS listings, (SELECT COUNT(*) FROM ads WHERE workspace_id = w.id) AS ads,
        (SELECT COUNT(*) FROM leads WHERE workspace_id = w.id) AS leads
-     FROM workspaces w ORDER BY w.created_at DESC`
+     FROM workspaces w WHERE w.id NOT IN (SELECT workspace_id FROM users WHERE email LIKE '%${DEMO_DOMAIN}') ORDER BY w.created_at DESC`
   );
   return { workspaces: rows.map((r) => ({ ...r, upgrade_requested: JSON.parse(r.brand || "{}").upgrade_requested || null, brand: undefined })) };
 });
 
 // A one time password reset link for an account, to send to the person yourself.
+// The demo account (Ismael, 2026-10-28): built fresh, then the founder is signed into it. A
+// signed cookie remembers who opened it, so "Back to my account" needs no password.
+const BACK = "hopkins_back";
+app.post("/api/admin/demo", async (request, reply) => {
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
+  const demoId = await buildDemo(request.user.id, timeZone(request));
+  const opts = { path: "/", httpOnly: true, sameSite: "lax", signed: true, maxAge: 7 * 86400, secure: process.env.NODE_ENV === "production" };
+  reply.setCookie(BACK, `${request.user.id}.${Number(request.user.session_ver || 0)}`, opts);
+  setSession(reply, demoId, 0);
+  return { ok: true };
+});
+app.post("/api/demo/leave", async (request, reply) => {
+  const raw = request.cookies[BACK];
+  const u = raw ? request.unsignCookie(raw) : { valid: false };
+  if (!u.valid) return reply.code(400).send({ error: "Sign in to your account again." });
+  const [id, ver = "0"] = u.value.split(".");
+  const admin = await get(`SELECT id, email, session_ver FROM users WHERE id = ?`, [id]);
+  if (!admin || !isAdmin(admin) || Number(admin.session_ver) !== Number(ver)) return reply.code(400).send({ error: "Sign in to your account again." });
+  reply.clearCookie(BACK, { path: "/" });
+  setSession(reply, admin.id, Number(admin.session_ver));
+  return { ok: true };
+});
+
 app.post("/api/admin/users/:id/reset-link", async (request, reply) => {
   if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
   if (!(await get(`SELECT id FROM users WHERE id = ?`, [request.params.id]))) return reply.code(404).send({ error: "No such account." });

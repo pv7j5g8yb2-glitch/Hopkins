@@ -589,3 +589,52 @@ test("Lead has a capital L in Hopkins' replies, the verb doesn't", async () => {
   assert.equal(capLeads("3 leads this week, no leads on Elm, cost per lead $20"), "3 Leads this week, no Leads on Elm, cost per Lead $20");
   assert.equal(capLeads("This leads to more showings."), "This leads to more showings.");
 });
+
+test("the demo account: admins only, full, rebuilt fresh, out of the admin list, and back to the founder's own account", async () => {
+  // The admin account from the first test.
+  const c = client(app);
+  assert.equal((await c("POST", "/api/login", { email: "owner@hopkins.test", password: "password123" })).status, 200);
+  const other = (await signup("notadmin@hopkins.test")).c;
+  assert.equal((await other("POST", "/api/admin/demo", {})).status, 403);
+  assert.equal((await c("POST", "/api/admin/demo", {})).status, 200);
+  assert.equal((await c("POST", "/api/admin/demo", {})).status, 403, "inside the demo there's no admin");
+  assert.equal((await c("POST", "/api/demo/leave", {})).status, 200);
+  assert.equal((await c("POST", "/api/admin/demo", {})).status, 200, "opening it again rebuilds it");
+  const me = (await c("GET", "/api/me")).json;
+  assert.equal(me.demo, true);
+  assert.equal(me.user.name, "Sarah Mitchell");
+  assert.equal(me.workspace.plan, "paid");
+  const listings = (await c("GET", "/api/listings")).json.listings;
+  assert.equal(listings.length, 7);
+  assert.ok(listings.some((l) => l.status === "sold"));
+  const leads = (await c("GET", "/api/leads")).json.leads;
+  assert.ok(leads.length >= 30, `${leads.length} Leads`);
+  const report = (await c("GET", "/api/report")).json;
+  assert.ok(report.total > 0, "this week has Leads");
+  assert.ok(report.listings.filter((x) => x.running).length >= 4);
+  assert.ok((await c("GET", "/api/inbox")).json.items.some((m) => m.needs_action), "ads waiting for a yes");
+  // Every Lead sits after its listing's run started and before now.
+  const { all: q } = await import("../src/db.js");
+  const bad = await q(`SELECT l.created_at, (SELECT MIN(created_at) FROM launches WHERE listing_id = l.listing_id) AS ran FROM leads l WHERE l.workspace_id = (SELECT workspace_id FROM users WHERE email LIKE 'demo+%')`);
+  assert.ok(bad.every((r) => r.ran && r.created_at >= r.ran && new Date(r.created_at) < new Date()), "no Lead before its run or in the future");
+  assert.equal((await q(`SELECT COUNT(*) AS n FROM users WHERE email LIKE 'demo+%'`))[0].n, 1, "one demo per founder");
+  // Not an admin in there, and not in the admin list.
+  assert.equal((await c("GET", "/api/admin/workspaces")).status, 403);
+  assert.equal((await c("POST", "/api/demo/leave", {})).status, 200);
+  const back = (await c("GET", "/api/me")).json;
+  assert.equal(back.admin, true);
+  assert.ok(!back.demo);
+  assert.ok(!(await c("GET", "/api/admin/workspaces")).json.workspaces.some((w) => /Mitchell/.test(w.name)));
+});
+
+test("the demo's own ads pass the house rules and the fair housing check", async () => {
+  const src = (await import("node:fs")).readFileSync(new URL("../src/demo.js", import.meta.url), "utf8");
+  const { checkWording } = await import("../src/fairhousing.js");
+  const lines = [...src.matchAll(/(overlay|headline|kicker|text): "([^"]+)"/g)].map((m) => m[2]);
+  assert.ok(lines.length > 40);
+  for (const l of lines) {
+    assert.deepEqual(houseRuleProblems(l), [], l);
+    const w = checkWording(l);
+    assert.ok(!w || !w.length || w.every?.((x) => !x.block), `${l}: ${JSON.stringify(w)}`);
+  }
+});
