@@ -245,6 +245,11 @@ app's previews) shows the blue verified badge after the handle (Ismael, 2026-10-
 
 ## Log
 
+- 2026-10-28 (reels, format): a found hook clip first, untouched (Ismael's: a jug given one push,
+  rolling away on its own), then a hard cut into the explainer with "Here's how you're gonna...".
+  The clip earns the first second, the first spoken line ties it to the lesson ("a listing ad that
+  keeps rolling without you", "one good push, then hands off"), so the cut doesn't feel random.
+
 - 2026-10-26 (reels, format): "X things to know before your next ad, and they get more niche as I
   go" (Ismael's pick). The hook isn't a sound or a slap, it's a promise of depth: seven numbered
   cards slam in as a stack, fan out on "niche" to show card 7, "Nobody tells you this one", and a

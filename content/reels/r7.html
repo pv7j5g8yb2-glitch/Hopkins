@@ -1,0 +1,200 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script>
+const {$,$$,P,ease,inout,vis,pop,draw,icon,house,slam}=E;
+// Plays straight after Ismael's hook clip (a glass jug given one push, rolling away on its own):
+// set a listing ad up once, then leave it to roll. Six steps, each one of Meta's own rules: the
+// Housing special ad category, different ideas in one ad set, instant forms, edits sending an ad
+// set back into learning, and judging it on cost per lead.
+const R={
+hook:2,
+sfx:[{s:"hit",at:.02,shake:14},{s:"whoosh",at:"rolling"},{s:"select",at:"push"},{s:"pop",at:"handsoff"},
+ ...["one","two","three","four","five","six"].map(c=>({s:"pop",at:c})),
+ {s:"select",at:"housing"},{s:"tick",at:"age",g:.7},{s:"tick",at:"gender",g:.7},{s:"tick",at:"zip",g:.7},
+ {s:"pop2",at:"porch"},{s:"pop2",at:"kitchen"},{s:"pop2",at:"price"},{s:"stamp",at:"colours",shake:8},
+ {s:"ding",at:"working"},{s:"select",at:"instantform"},{s:"stamp",at:"donttouchit",shake:12},{s:"whoosh",at:"learning"},
+ {s:"ding",at:"fullweek",d:1.2},{s:"pop",at:"costperlead"},{s:"stamp",at:"pay",shake:8},{s:"whoosh",at:"losers"},{s:"ding",at:"winner"}],
+script:[
+ "Here's how you're gonna set up a listing ad",
+ {t:"that keeps [rolling] without you.",pause:.45},
+ {t:"One good ^push. Then [hands off.]",pause:.5},
+ "^One. Mark it as a [Housing] ad.",
+ "No ^age, ^gender or ^ZIP code targeting,",
+ {t:"and at least a [15 mile radius.]",pause:.45},
+ "^Two. Make three ads that are actually [different.]",
+ "The ^porch. The ^kitchen. The ^price.",
+ {t:"Not the same ad in three ^colours.",pause:.45},
+ "^Three. Put all three in [one ad set,]",
+ {t:"and Meta pushes the budget to whichever one's ^working.",pause:.45},
+ "^Four. Use an [instant form,]",
+ {t:"so they never leave ^Instagram to send you their details.",pause:.45},
+ "^Five, the hard one. [Don't touch it.]",
+ "Every big edit sends it back into ^learning,",
+ {t:"so give it a [full week.]",pause:.45},
+ "^Six. Then check one number. [Cost per lead.]",
+ "Not likes. Not views. That shit doesn't ^pay you.",
+ {t:"Turn off the ^losers, and let the [winner] keep rolling.",pause:.5},
+ "Send this to whoever runs your ads.",
+],
+css:`
+#ad{position:absolute;left:170px;top:640px;width:740px;overflow:hidden;opacity:0}
+#ad .ph{height:400px;overflow:hidden}#ad svg{display:block}
+#ad .row{display:flex;align-items:center;justify-content:space-between;padding:26px 34px 10px}
+#ad .row b{font-size:40px;letter-spacing:-.02em}
+.live{display:flex;align-items:center;gap:10px;font-size:26px;font-weight:700;color:#3f8f62}.live i{width:14px;height:14px;border-radius:50%;background:#3f8f62}
+#track{position:relative;margin:18px 34px 34px;height:10px;border-radius:5px;background:#e8dccb}
+#trf{position:absolute;left:0;top:0;height:10px;border-radius:5px;background:var(--gold);width:0}
+#ball{position:absolute;top:-17px;left:0;width:44px;height:44px;border-radius:50%;background:var(--gold);border:4px solid var(--ox);display:flex;align-items:center;justify-content:center}
+#ball i{width:4px;height:22px;background:var(--ox);border-radius:2px}
+#days{display:flex;justify-content:space-between;margin:0 34px 30px;font-size:22px;color:var(--quiet)}
+#pub{position:absolute;left:300px;top:1330px;width:480px;height:110px;border-radius:55px;background:var(--gold);color:var(--ox);font-size:40px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:16px;opacity:0;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+#hands{position:absolute;left:330px;top:1480px;width:420px;height:80px;border-radius:40px;border:3px solid var(--rose);color:var(--cream);font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:14px;opacity:0}
+.sc{position:absolute;left:110px;width:860px}
+#hc{top:600px;padding:34px 40px}
+.ck{display:flex;align-items:center;gap:20px;font-size:38px;font-weight:700;margin:16px 0 8px}
+.ck .bx{width:50px;height:50px;border-radius:10px;border:3px solid rgba(42,15,20,.3);display:flex;align-items:center;justify-content:center}
+.hr{display:flex;align-items:center;gap:18px;padding:24px 0;border-top:1px solid rgba(42,15,20,.1);font-size:30px}
+.hr .k{color:var(--quiet);width:220px}.hr .v{font-weight:700;flex:1}
+#ideas{position:absolute;left:60px;top:620px;width:960px;display:flex;gap:24px}
+.idea{position:relative;flex:1;padding:26px 24px 30px;opacity:0}
+.idea .ic{width:84px;height:84px;border-radius:22px;background:var(--paper);display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+.idea b{display:block;font-size:34px;letter-spacing:-.02em}
+.idea p{font-size:24px;color:var(--quiet);margin-top:10px;line-height:1.3}
+#same{position:absolute;left:120px;top:1130px;width:840px;opacity:0}
+#same .row3{display:flex;gap:20px}
+.mini{flex:1;height:190px;border-radius:20px;display:flex;flex-direction:column;justify-content:flex-end;padding:20px;font-weight:700;font-size:28px;color:var(--cream);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+#same .lbl2{margin-top:22px;text-align:center;font-size:28px;font-weight:700;color:var(--lilac)}
+#strike{position:absolute;left:-20px;right:-20px;top:92px;height:9px;border-radius:5px;background:var(--plum);transform-origin:0 50%;transform:scaleX(0)}
+#set{top:620px;padding:34px 40px}
+#set h3{font-size:34px;display:flex;justify-content:space-between;align-items:center}
+#set h3 span{font-size:24px;color:var(--quiet);font-weight:400}
+.br{padding:24px 0 6px;border-top:1px solid rgba(42,15,20,.1);margin-top:18px}
+.br .tp{display:flex;justify-content:space-between;font-size:28px;font-weight:700}
+.br .tp span{font-weight:400;color:var(--quiet)}
+.br .bar{height:22px;border-radius:11px;background:#e8dccb;margin-top:14px;overflow:hidden}.br .bar i{display:block;height:100%;width:33%;background:var(--lilac)}
+.phone{position:absolute;background:#fff;color:var(--ink);border-radius:50px;border:10px solid #1b0a0d;box-shadow:0 40px 90px rgba(0,0,0,.5);overflow:hidden}
+#ph{left:290px;top:600px;width:500px;height:880px;padding:0}
+#ph .ig{height:96px;display:flex;align-items:center;gap:14px;padding:30px 28px 0;font-weight:700;font-size:24px}
+#ph .ig i{width:44px;height:44px;border-radius:50%;background:conic-gradient(#f9ce34,#ee2a7b,#6228d7,#f9ce34);display:block}
+#ph .pic{height:230px;overflow:hidden;margin-top:14px}
+#ph .fm{padding:22px 28px}
+#ph h4{font-size:30px}#ph .f{border-radius:14px;background:var(--paper);border:2px solid rgba(42,15,20,.1);padding:14px 18px;margin-top:14px}
+#ph .f small{display:block;font-size:17px;color:var(--quiet)}#ph .f div{font-size:24px;font-weight:700}
+#ph .btn{margin-top:22px;height:70px;border-radius:16px;background:#1877F2;color:#fff;font-weight:700;font-size:26px;display:flex;align-items:center;justify-content:center}
+#stay{position:absolute;left:250px;top:1530px;width:580px;text-align:center;padding:20px 0;border-radius:44px;background:var(--gold);color:var(--ox);font-size:32px;font-weight:700;opacity:0}
+#lrn{top:640px;padding:36px 40px}
+#lrn h3{font-size:36px;display:flex;justify-content:space-between;align-items:center}
+#lst{padding:10px 22px;border-radius:30px;font-size:24px;background:rgba(183,157,194,.35);color:var(--plum)}
+#lrn .bar{height:28px;border-radius:14px;background:#e8dccb;margin-top:36px;overflow:hidden}#lbf{display:block;height:100%;width:0;background:var(--gold)}
+#lrn .n{display:flex;justify-content:space-between;font-size:26px;color:var(--quiet);margin-top:16px}
+#wk{display:flex;gap:16px;margin-top:34px}#wk div{flex:1;height:78px;border-radius:16px;background:var(--paper);border:2px solid rgba(42,15,20,.1);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--quiet)}
+#edit{position:absolute;left:330px;top:1220px;width:420px;height:110px;border-radius:24px;background:var(--ox2);border:4px solid var(--plum);color:var(--cream);font-size:40px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:18px;opacity:0}
+#edit .no{position:absolute;inset:-30px;border-radius:40px;border:8px solid var(--lilac);opacity:0}
+#edit .no:after{content:"";position:absolute;left:50%;top:50%;width:560px;height:8px;background:var(--lilac);transform:translate(-50%,-50%) rotate(-14deg);border-radius:4px}
+#cpl{top:620px;padding:34px 40px}
+.th,.tr{display:grid;grid-template-columns:1.6fr 1fr 1.3fr 90px;align-items:center;gap:10px}
+.th{font-size:21px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);padding-bottom:16px}
+.tr{padding:26px 0;border-top:1px solid rgba(42,15,20,.1);font-size:32px;position:relative}
+.tr b{font-weight:700}.tr .lk{color:var(--quiet);position:relative}.tr .cp{font-weight:700}
+.tr .lk s{position:absolute;left:-6px;top:50%;height:6px;width:0;background:var(--plum);border-radius:3px}
+.sw{width:76px;height:42px;border-radius:21px;background:#3f8f62;position:relative;justify-self:end}.sw i{position:absolute;top:5px;left:39px;width:32px;height:32px;border-radius:50%;background:#fff}
+#keep{position:absolute;left:300px;top:1240px;width:480px;text-align:center;padding:22px 0;border-radius:44px;background:var(--gold);color:var(--ox);font-size:34px;font-weight:700;opacity:0}
+#share{left:160px;top:640px;width:760px;padding:34px 38px}
+#share h3{font-size:30px;display:flex;align-items:center;gap:16px}
+.avs{display:flex;gap:22px;margin-top:30px}.avs div{width:110px;text-align:center;font-size:19px;color:var(--quiet)}
+.avs i{display:flex;width:96px;height:96px;margin:0 auto 10px;border-radius:50%;align-items:center;justify-content:center;font-style:normal;font-weight:700;font-size:28px;color:var(--cream);position:relative}
+.avs i u{position:absolute;right:-4px;bottom:-4px;width:38px;height:38px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;opacity:0}
+`,
+scenes:`
+<div class="scene" id="sH"><div class="card" id="ad"><div class="ph">${house("adh",740,458)}</div>
+ <div class="row"><b>14 Oak Street</b><span class="live"><i></i>Active</span></div>
+ <div id="track"><div id="trf"></div><div id="ball"><i></i></div></div>
+ <div id="days"><span>Day 1</span><span>Day 7</span></div></div>
+ <div id="pub">${icon("rocket",44,"#2A0F14",2.2)}<span id="pubt">Publish</span></div>
+ <div id="hands">${icon("lock",36,"#C3A9A2",2.2)}Hands off</div></div>
+<div class="scene" id="s1"><div class="card sc" id="hc"><div class="lbl" style="color:var(--quiet)">Special ad categories</div>
+ <div class="ck"><span class="bx" id="hbx">${icon("check",38,"#2A0F14",3)}</span>Housing</div>
+ <div class="hr" id="r1"><span class="k">Age</span><span class="v">18 to 65+</span>${icon("lock",36,"#7d6862",2.2)}</div>
+ <div class="hr" id="r2"><span class="k">Gender</span><span class="v">All</span>${icon("lock",36,"#7d6862",2.2)}</div>
+ <div class="hr" id="r3"><span class="k">ZIP codes</span><span class="v">Not allowed</span>${icon("x",36,"#5B4873",2.2)}</div>
+ <div class="hr" id="r4"><span class="k">Location</span><span class="v">15 mile radius minimum</span>${icon("pin",36,"#7d6862",2.2)}</div></div>
+ <div class="src" style="top:1330px">Meta's Housing special ad category, for housing ads in the US</div></div>
+<div class="scene" id="s2"><div id="ideas">
+ <div class="card idea" id="i1"><div class="ic">${icon("home",52,"#8E6B2C",1.8)}</div><b>The porch</b><p>“Slow mornings, wraparound porch.”</p></div>
+ <div class="card idea" id="i2"><div class="ic">${icon("store",52,"#8E6B2C",1.8)}</div><b>The kitchen</b><p>“Room to cook for twelve.”</p></div>
+ <div class="card idea" id="i3"><div class="ic">${icon("coin",52,"#8E6B2C",1.8)}</div><b>The price</b><p>“Under $650K in Riverside.”</p></div></div>
+ <div id="same"><div style="position:relative"><div class="row3">
+  <div class="mini" style="background:#1F2A36">Just listed!</div><div class="mini" style="background:#2F5D46">Just listed!</div><div class="mini" style="background:#111">Just listed!</div></div><i id="strike"></i></div>
+  <div class="lbl2">Same ad, three colours</div></div>
+ <div class="src" style="top:1500px">Example ads for a made up listing</div></div>
+<div class="scene" id="s3"><div class="card sc" id="set"><h3>One ad set <span>$30 a day</span></h3>
+ <div class="br" id="b1"><div class="tp">The porch<span id="b1n">$10 a day</span></div><div class="bar"><i></i></div></div>
+ <div class="br" id="b2"><div class="tp">The kitchen<span id="b2n">$10 a day</span></div><div class="bar"><i></i></div></div>
+ <div class="br" id="b3"><div class="tp">The price<span id="b3n">$10 a day</span></div><div class="bar"><i></i></div></div></div>
+ <div class="src" style="top:1260px">Example numbers. Meta spends more on the ads in an ad set that get results</div></div>
+<div class="scene" id="s4"><div class="phone" id="ph"><div class="ig"><i></i>ellery.realty<span style="color:#3897f0;margin-left:-6px">${icon("check",22,"#3897f0",3)}</span></div>
+ <div class="pic">${house("igh",500,310)}</div>
+ <div class="fm"><h4>Get the details</h4><div class="f"><small>Full name</small><div>Jordan Blake</div></div><div class="f"><small>Phone</small><div>(512) 555 0148</div></div><div class="f"><small>Email</small><div>jordan@mail.com</div></div><div class="btn">Submit</div></div></div>
+ <div id="stay">Already filled in, never leaves the app</div></div>
+<div class="scene" id="s5"><div class="card sc" id="lrn"><h3>One ad set <span id="lst">Learning</span></h3>
+ <div class="bar"><i id="lbf"></i></div><div class="n"><span id="lbn">32 of 50 results</span><span>7 days</span></div>
+ <div id="wk">${["M","T","W","T","F","S","S"].map(d=>`<div>${d}</div>`).join("")}</div></div>
+ <div id="edit">${icon("form",44,"#F4EBDD",2)}Edit<span class="no"></span></div>
+ <div class="src" style="top:1420px">Example numbers. Meta: a big edit can send an ad set back into learning</div></div>
+<div class="scene" id="s6"><div class="card sc" id="cpl">
+ <div class="th"><span>Ad</span><span>Likes</span><span>Cost per lead</span><span></span></div>
+ <div class="tr" id="c1"><b>The porch</b><span class="lk">41<s></s></span><span class="cp">$31</span><span class="sw"><i></i></span></div>
+ <div class="tr" id="c2"><b>The kitchen</b><span class="lk">212<s></s></span><span class="cp">$74</span><span class="sw"><i></i></span></div>
+ <div class="tr" id="c3"><b>The price</b><span class="lk">96<s></s></span><span class="cp">$48</span><span class="sw"><i></i></span></div></div>
+ <div id="keep">Keep it rolling</div>
+ <div class="src" style="top:1380px">Example numbers</div></div>
+<div class="scene" id="s7"><div class="card" id="share"><h3>${icon("send",40,"#5B4873",2)} Send to</h3>
+ <div class="avs"><div><i style="background:#5B4873">TL<u>${icon("check",22,"#2A0F14",3)}</u></i>Team lead</div><div><i style="background:#8E6B2C">MR<u>${icon("check",22,"#2A0F14",3)}</u></i>Marketing</div><div><i style="background:#7d6862">JS<u></u></i>Jess</div><div><i style="background:#36151C">BK<u></u></i>Broker</div><div><i style="background:#B79DC2">AP<u></u></i>Assistant</div></div></div></div>
+`,
+update(t,C,endAt){
+ // hook: the ad slams in on frame one, then rolls on its own like the jug before it
+ vis("#sH",t,0,C.p3-.25,{dy:0,blur:0});
+ slam("#ad",t,.02,{s:1.5,r:-8});draw("#adh .ln",1);
+ const roll=ease(P(t,C.rolling-.1,C.p3-.3));
+ $("#trf").style.width=(roll*100)+"%";$("#ball").style.left=`calc(${roll*100}% - 22px)`;$("#ball").style.transform=`rotate(${roll*720}deg)`;
+ const pk=P(t,C.push-.05,C.push+.15);
+ vis("#pub",t,C.p2-.15,null,{dy:40});$("#pub").style.transform+=` scale(${1-.12*Math.sin(pk*Math.PI)})`;
+ $("#pubt").textContent=t>=C.push+.1?"Live":"Publish";
+ pop("#hands",P(t,C.handsoff,C.handsoff+.3));
+ // 1 housing
+ vis("#s1",t,C.p3,C.p6);vis("#hc",t,C.p3,null);
+ const hk=P(t,C.housing-.1,C.housing+.2);$("#hbx").style.background=hk>.5?"var(--gold)":"";$("#hbx").style.borderColor=hk>.5?"var(--gold)":"";draw("#hbx path",hk);
+ [["#r1",C.age],["#r2",C.gender],["#r3",C.zip],["#r4",C["15mileradius"]]].forEach(([r,a])=>{$(r).style.opacity=.15+.85*ease(P(t,a-.15,a+.2))});
+ // 2 three different ideas, not three colours
+ vis("#s2",t,C.p6,C.p9);
+ [["#i1",C.porch],["#i2",C.kitchen],["#i3",C.price]].forEach(([s,a],i)=>{const k=slam(s,t,Math.max(C.p6+.2+i*.12,a-.05),{s:1.3,r:i%2?5:-5});if(k===0)$(s).style.opacity=0});
+ vis("#same",t,C.colours-.4,null,{dy:40});$("#strike").style.transform=`scaleX(${ease(P(t,C.colours+.1,C.colours+.4))})`;
+ $$(".mini").forEach(m=>m.style.opacity=1-.55*ease(P(t,C.colours+.2,C.colours+.6)));
+ // 3 one ad set: the budget moves to the ad that works
+ vis("#s3",t,C.p9,C.p11);vis("#set",t,C.p9,null);
+ const mv=ease(P(t,C.working-.5,C.working+.4));const w=[33+37*mv,33-18*mv,33-19*mv],d=[10+11*mv,10-6*mv,10-5*mv];
+ [1,2,3].forEach(i=>{const b=$(`#b${i} .bar i`);b.style.width=w[i-1]+"%";b.style.background=i===1&&mv>.5?"var(--gold)":"var(--lilac)";$(`#b${i}n`).textContent=`$${Math.round(d[i-1])} a day`});
+ // 4 instant form
+ vis("#s4",t,C.p11,C.p13);vis("#ph",t,C.p11,null,{dy:90});draw("#igh .ln",1);vis("#stay",t,C.instagram-.2,null,{dy:30});
+ // 5 don't touch it: an edit sends it back to learning, then a full week
+ vis("#s5",t,C.p13,C.p16);vis("#lrn",t,C.p13,null);
+ const ed=slam("#edit",t,C.donttouchit-.05,{s:1.5,r:-6});if(t<C.donttouchit-.05)$("#edit").style.opacity=0;
+ $("#edit .no").style.opacity=ease(P(t,C.donttouchit+.15,C.donttouchit+.35));
+ $("#edit").style.opacity=Math.min(+$("#edit").style.opacity||0,1-ease(P(t,C.fullweek-.3,C.fullweek)));
+ const rs=ease(P(t,C.learning,C.learning+.35)),wk=P(t,C.fullweek,C.fullweek+1.3);
+ const res=rs<1?32*(1-rs):50*ease(wk);$("#lbf").style.width=(res/50*100)+"%";$("#lbn").textContent=Math.round(res)+" of 50 results";
+ const act=wk>=1;$("#lst").textContent=act?"Active":rs>.3?"Learning again":"Learning";$("#lst").style.background=act?"var(--gold)":"";$("#lst").style.color=act?"var(--ox)":"";
+ $$("#wk div").forEach((d,i)=>{const on=wk*7>i+.5;d.style.background=on?"var(--gold)":"";d.style.color=on?"var(--ox)":"";d.style.borderColor=on?"var(--gold)":""});
+ // 6 cost per lead, not likes
+ vis("#s6",t,C.p16,C.p19);vis("#cpl",t,C.p16,null);
+ const cp=ease(P(t,C.costperlead-.1,C.costperlead+.3));$$(".tr .cp").forEach(e=>{e.style.color=cp>.5?"var(--bronze)":"";e.style.transform=`scale(${1+.08*cp})`});
+ const lk=ease(P(t,C.pay-.6,C.pay));$$(".tr .lk s").forEach(s=>s.style.width=(lk*70)+"px");$$(".tr .lk").forEach(e=>e.style.opacity=1-.5*lk);
+ const off=ease(P(t,C.losers,C.losers+.4));["#c2","#c3"].forEach(r=>{$(r).style.opacity=1-.6*off;const s=$(r+" .sw");s.style.background=off>.5?"#cdbfae":"";s.querySelector("i").style.left=(39-34*off)+"px"});
+ const win=ease(P(t,C.winner-.1,C.winner+.3));$("#c1").style.background=`rgba(215,174,98,${.22*win})`;$("#c1").style.boxShadow=`0 0 0 ${4*win}px #D7AE62`;$("#c1").style.borderRadius="14px";
+ pop("#keep",P(t,C.winner+.1,C.winner+.4));
+ // share
+ vis("#s7",t,C.p19,endAt);vis("#share",t,C.p19,null);[0,1].forEach(i=>pop($$("#share u")[i],P(t,C.p19+.8+i*.3,C.p19+1.1+i*.3)));
+}};
+E.boot(R);
+render(0);
+</script></body></html>

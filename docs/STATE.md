@@ -71,6 +71,15 @@ personal in here.
   (`/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2`),
   else the system ffmpeg.
   Playwright's Chromium can't decode H.264, so check videos by extracting frames with ffmpeg.
+* Reel 7, "the jug" (2026-10-28): Ismael's own 4.3s hook clip (a glass jug given one push,
+  rolling away down a path) plays first, untouched (its own sound, fitted to 1080x1920 with thin
+  oxblood edges), then a hard cut into `r7.html`: "Here's how you're gonna set up a listing ad that
+  keeps rolling without you." Six steps from Meta's own rules (Housing category, three different
+  ideas, one ad set, instant form, no big edits for a week, judge on cost per lead), ends on
+  Follow @gethopkins. Joined with ffmpeg's concat filter (command in the session; the hook clip
+  isn't in git). 54s in all. The clip is about 4 dB louder than the voice part (-11 vs -15 LUFS),
+  left as it is. Cover in `hooks.js` ("Set it up once. Then don't touch it."). Kokoro needs
+  `VIRTUAL_ENV=$PWD/vovenv` set on its first run so it can install its English model.
 * Rendered mp4s and covers live in `reports/hopkins-brand/reels/`, which is not in git. A new
   container won't have them; Ismael has the sent copies, and they can be re-rendered from source.
 
