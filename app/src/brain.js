@@ -20,8 +20,10 @@ export const aiEnabled = Boolean(provider);
 const MODEL = process.env.HOPKINS_MODEL || "claude-opus-5-5";
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-// Gemini's best free model first; if Google retires a name, the next one answers.
-const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.8-flash,gemini-3.5-flash,gemini-3-flash,gemini-2.5-flash").split(",").map((m) => m.trim()).filter(Boolean);
+// The Gemini model that answers free keys first. Checked 2026-10-28: 3.5 Flash answered every
+// time (2 to 18 seconds); 3.8 and 3.7 Flash answered "high demand" every time, one after 132
+// seconds; 2.5 Flash is closed to new keys. The newer ones stay after it for when they free up.
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash,gemini-3.8-flash,gemini-3.7-flash").split(",").map((m) => m.trim()).filter(Boolean);
 const GEMINI_URL = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 // Groq's free model that can see images (3 per request, about 7,000 input tokens a minute, and
 // each photo costs about 1,800 whatever its size). Checked 2026-10-25.
@@ -299,9 +301,15 @@ let geminiSchemaOk = true;
 
 // One Gemini request with JSON back. Null when it couldn't answer (over the free limit, down,
 // blocked); "busy" is noted when it was the limit, so the chat can say so.
+// A model that said it's overloaded or over its limit rests a while, so the next message goes
+// straight to one that answers (2026-10-28: the newest free ones answered "high demand" for a
+// while, taking up to 10 seconds each to say so).
+const geminiResting = new Map();
 async function gemini({ system, messages, schema, temperature, tools }) {
   const contents = messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: geminiParts(m.content) }));
-  for (const model of GEMINI_MODELS) {
+  const ready = GEMINI_MODELS.filter((m) => !(geminiResting.get(m) > Date.now()));
+  let limited = false;
+  for (const model of ready.length ? ready : GEMINI_MODELS) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const withSchema = schema && geminiSchemaOk && !tools;
       const res = await fetchImpl(GEMINI_URL(model), {
@@ -313,8 +321,9 @@ async function gemini({ system, messages, schema, temperature, tools }) {
           ...(tools ? { tools } : {}),
           generationConfig: { temperature, ...(tools ? {} : { responseMimeType: "application/json" }), ...(withSchema ? { responseJsonSchema: schema } : {}) },
         }),
-        signal: AbortSignal.timeout(60000),
-      });
+        // Reading a link through Google can take 40 seconds; anything else that slow is stuck.
+        signal: AbortSignal.timeout(tools ? 75000 : 40000),
+      }).catch((err) => ({ ok: false, status: 504, text: async () => err.message }));
       if (res.ok) {
         const data = await res.json();
         if (data.usageMetadata) console.info(`Gemini ${model}: ${data.usageMetadata.totalTokenCount} tokens`);
@@ -326,17 +335,20 @@ async function gemini({ system, messages, schema, temperature, tools }) {
       const err = await res.text();
       if (res.status === 404) break; // that model name is gone: try the next
       if (res.status === 400 && withSchema && /schema/i.test(err)) { geminiSchemaOk = false; continue; }
-      if (res.status === 429) {
+      if (res.status === 429 || res.status === 503 || res.status === 504) {
+        // Over the free limit, or "high demand": this model rests and the next one is asked.
         const wait = Number((err.match(/"retryDelay":\s*"(\d+)s"/) || [])[1]) || 0;
-        if (attempt === 0 && wait > 0 && wait <= 10) { await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
-        lastFailure = "busy";
-        console.error(`Gemini ${model} is over its free limit: ${err.slice(0, 160)}`);
-        return null;
+        geminiResting.set(model, Date.now() + Math.max(wait, res.status === 503 ? 30 : 60) * 1000);
+        if (res.status === 429) limited = true;
+        console.error(`Gemini ${model} ${res.status === 429 ? "is over its free limit" : "is overloaded"}; trying the next one.`);
+        break;
       }
       if (res.status >= 500 && attempt === 0) { await new Promise((r) => setTimeout(r, 1500)); continue; }
+      if (res.status >= 500) break;
       throw new Error(`Gemini ${res.status}: ${err.slice(0, 200)}`);
     }
   }
+  if (limited) lastFailure = "busy";
   return null;
 }
 
@@ -348,7 +360,7 @@ export async function readLinkAI(url) {
   try {
     const r = await gemini({
       system: "You read real estate listing pages. Use only what the page actually says. Never guess or fill in anything.",
-      messages: [{ role: "user", content: `Open this listing page and read it: ${url}\n\nAnswer with only a JSON object, nothing before or after it: {"opened": true or false, "title": "the listing's title", "description": "every fact on the page about the home: the address or area, the price exactly as written with its currency, beds, baths, size with its unit, the type of home, and the seller's or agent's own description, in their words", "photos": ["full URLs of the listing's own photos, if the page lists them"]}. If you couldn't open the page, answer {"opened": false}.` }],
+      messages: [{ role: "user", content: `Open this listing page and read it: ${url}\n\nAnswer with only a JSON object, nothing before or after it: {"opened": true or false, "title": "the listing's title", "description": "in English, every fact on the page about the home: the address or area, the price with its currency (like €4,995,000), the number of bedrooms as N bed and bathrooms as N bath, the size with its unit, the type of home, and the seller's or agent's own description, translated if needed", "photos": ["full URLs of the listing's own photos, if the page lists them"]}. If you couldn't open the page, answer {"opened": false}.` }],
       temperature: 0.1,
       tools: [{ url_context: {} }],
     });

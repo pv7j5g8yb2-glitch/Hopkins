@@ -100,7 +100,7 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 | `DATABASE_URL`, `DATABASE_AUTH_TOKEN` | Turso database. Defaults to `./data/hopkins.db`. |
 | `ANTHROPIC_API_KEY` | Turns on Claude for reading listings, writing ads and the chat. |
 | `GEMINI_API_KEY` | Google's Gemini on its free tier (aistudio.google.com, no card). Used when there's no Anthropic key: sees the photos, and reads listing links a site blocks through Google's URL context. With `GROQ_API_KEY` also set, Groq answers when Gemini is over its free limit. Free tier content may be used by Google to improve its products. |
-| `GEMINI_MODEL` | Gemini models to try, best first (default `gemini-3.8-flash,gemini-3.5-flash,gemini-3-flash,gemini-2.5-flash`). |
+| `GEMINI_MODEL` | Gemini models to try, best first (default `gemini-3.5-flash,gemini-3.8-flash,gemini-3.7-flash`: on 28 October 2026 only 3.5 Flash answered free keys reliably; a model that says it is overloaded or over its limit is skipped for a few minutes). |
 | `GROQ_API_KEY` | Free alternative for the chat when there's no Anthropic key (console.groq.com). |
 | `HOPKINS_MODEL`, `GROQ_MODEL` | Override the models (defaults `claude-opus-5-5`, `openai/gpt-oss-120b`). |
 | `GROQ_BACKUP_MODELS`, `GROQ_VISION_MODEL` | Groq models to try when the main one is over its limit (default `openai/gpt-oss-20b,qwen/qwen3.8-27b`), and the one that sees photos (default `qwen/qwen3.8-27b`). |

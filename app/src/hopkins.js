@@ -412,7 +412,10 @@ function editParts(before = {}, after = {}) {
   if (after.photo_id && before.photo_id !== after.photo_id) parts.push({ text: "a different photo" });
   if (after.overlay !== before.overlay) parts.push({ text: `the line on the photo reads "${after.overlay}"` });
   if (after.headline !== before.headline) parts.push({ text: `the headline reads "${after.headline}"` });
-  if (after.primary_text !== before.primary_text) parts.push({ text: "new caption text" });
+  if (after.primary_text !== before.primary_text) {
+    const shorter = String(after.primary_text || "").length < String(before.primary_text || "").length * 0.9;
+    parts.push({ text: shorter ? "the caption is shorter" : "the caption is rewritten" });
+  }
   return parts;
 }
 // The reply for a change, written from the ads, never from what the model says it did
@@ -952,7 +955,7 @@ const asItself = (s) => String(s || "")
 // after a number or a word like "no", "new" or "per", so "it leads to" stays as it is.
 export const capLeads = (s) => String(s || "").replace(/\b(\d[\d,]*|no|new|more|fewer|any|every|first|your|their|the|a|an|of|per|cheapest|cheaper|cheap|real|buyer|those|these|some|many|few|zero|one|two|three|four|five|six|seven|eight|nine|ten|qualified|good|warm|more|extra)(\s+)lead(s?)\b/gi, (m, w, sp, plural) => `${w}${sp}Lead${plural}`);
 // Offers of more help at the end of a reply ("Let me know if you'd like any tweaks.") add nothing.
-const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|happy to help|hope (?:this|that) helps|if you(?:'d| would) like(?: any)?|if you want|want me to|anything (?:else )?(?:to|you'd like to|you want to) (?:adjust|change|tweak)|any (?:other |more )?(?:tweaks|changes|questions)|pick the one|tell me which)[^.!?]*[.!?]?\s*$/i;
+const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|happy to help|hope (?:this|that) helps|if you(?:'d| would) like(?: any)?|if you want|want me to|tell me if you(?:'d| would) like|anything (?:else )?(?:to|you'd like to|you want to) (?:adjust|change|tweak)|any (?:other |more )?(?:tweaks|changes|questions)|pick the one|tell me which)[^.!?]*[.!?]?\s*$/i;
 export const noFiller = (s) => { let t = String(s || ""), prev; do { prev = t; t = t.replace(FILLER, "").trim(); } while (t !== prev && t); return t || String(s || ""); };
 const plainWords = (s, clean = polishChat) => clean(noFiller(capLeads(asItself(s))).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
 
@@ -970,8 +973,8 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   const focus = r.version || undefined;
 
   if (r.action === "run") {
-    // On the free plan the upgrade message says it all; a "sure, here's the plan" first would contradict it.
-    if (reply && isPaid(ws)) await say(ws, listing.id, reply);
+    // The plan says it all: the model's own line before it once said "Running all three ads"
+    // before anything ran, then the plan asked for a yes again (2026-10-28).
     return proposeRun(ws, listing, { versions: r.version ? [r.version] : undefined, budget: r.budget || undefined, days: r.days || undefined });
   }
   if (r.action === "new_moment" && r.moment !== "none") {

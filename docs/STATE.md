@@ -663,7 +663,7 @@ personal in here.
   the key.
 * Gemini, the free model (2026-10-28, Ismael: "keep the absolute best free one"). Built and
   tested against a fake Gemini, not yet live: with `GEMINI_API_KEY` set (free from
-  aistudio.google.com, no card) Hopkins runs on Gemini 3.8 Flash, the newest free one AI Studio shows (falls back to 3.5 Flash, 3 Flash, then
+  aistudio.google.com, no card) Hopkins runs on Gemini 3.5 Flash, the one that answers free keys reliably (3.8 and 3.7 Flash refused free keys with "high demand" every time on 28 October; they stay as backups after it, then
   2.5 Flash if a name is retired), with the same instructions, structured answers and rules;
   photos go to it as images so it labels them and says what's in them; a link a site blocks is
   read through Google's URL context (Google's own fetcher, a documented API feature) and used
@@ -671,3 +671,15 @@ personal in here.
   is over its free limit. Order: Claude, then Gemini, then Groq. Caveats to tell pilots about:
   Google's free tier may use what's sent to improve its products; free limits aren't published
   and vary by project. Waiting on Ismael for a free Gemini key to test it live.
+* Gemini tested live (2026-10-28, with Ismael's free key, used from the chat, never saved).
+  Free keys: 3.5 Flash answered every time (2 to 18 seconds, though it was overloaded now and
+  then); 3.8 and 3.7 Flash refused with "high demand" every time; 2.5 Flash is closed to new
+  keys. Order is 3.5, 3.8, 3.7; a model that's overloaded rests 30 seconds, one over its limit 60,
+  and Groq answers meanwhile. His idealista link opened through Google's URL context: a villa
+  at Avenida Cantábrica 35, Marbesa, Marbella, €4,995,000, 6 bed, 8 bath, 658 m², with three
+  specific ads (rooftop sea views, steps from the beach, the full spec) in about 64 seconds from
+  link to ads. Google gave no photos from that page, so the ads waited for the agent's. Chat
+  answers were on point ("which first", "why", two weeks at $280, "navy"). Fixed from the run:
+  "Tell me if you would like to adjust" stripped; "and new caption text" now reads "the caption
+  is shorter" or "is rewritten"; the model's line before a plan ("Running all three ads...",
+  before anything ran) is gone, the plan alone asks for the yes. Needs `GEMINI_API_KEY` on Render.
