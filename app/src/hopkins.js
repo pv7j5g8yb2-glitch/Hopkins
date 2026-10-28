@@ -409,7 +409,7 @@ function editParts(before = {}, after = {}) {
   const look = lookDiff(before.style, after.style);
   const step = Math.round(((Number(after.style?.size) || 1) - (Number(before.style?.size) || 1)) * 100) / 100;
   if (Object.keys(look).length || step) parts.push({ look: true, text: sayLook(look, step) });
-  if (after.photo_id && before.photo_id !== after.photo_id) parts.push({ text: "a different photo" });
+  if (after.photo_id && before.photo_id !== after.photo_id) parts.push({ photo: true, text: "a different photo" });
   if (after.overlay !== before.overlay) parts.push({ text: `the line on the photo reads "${after.overlay}"` });
   if (after.headline !== before.headline) parts.push({ text: `the headline reads "${after.headline}"` });
   if (after.primary_text !== before.primary_text) {
@@ -433,6 +433,11 @@ function sayEdits(edits, ads) {
   return groups.map(({ parts, versions }) => {
     const who = VERSION_WORD(versions, ads);
     const many = versions.length > 1;
+    // "Ad 1 now uses a different photo", never "On Ad 1, a different photo" (2026-10-28).
+    if (parts[0].photo) {
+      const rest = parts.slice(1).map((p) => p.text.replace(/ reads /, " now reads "));
+      return `${who} now ${many ? "use" : "uses"} a different photo${rest.length ? `, and ${rest.join(", and ")}` : ""}.`;
+    }
     if (parts[0].look) {
       const rest = parts.slice(1).map((p) => p.text.replace(/ reads /, " now reads "));
       return `${who} now ${many ? "have" : "has"} ${parts[0].text}${rest.length ? `, and ${rest.join(", and ")}` : ""}.`;

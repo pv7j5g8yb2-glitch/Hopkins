@@ -23,7 +23,9 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 // The Gemini model that answers free keys first. Checked 2026-10-28: 3.5 Flash answered every
 // time (2 to 18 seconds); 3.8 and 3.7 Flash answered "high demand" every time, one after 132
 // seconds; 2.5 Flash is closed to new keys. The newer ones stay after it for when they free up.
-const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash,gemini-3.8-flash,gemini-3.7-flash").split(",").map((m) => m.trim()).filter(Boolean);
+// 3.5 Flash Lite comes last: weaker, but it sees photos and has its own free allowance, which
+// the live site needed the same day when the others ran out.
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash,gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash-lite").split(",").map((m) => m.trim()).filter(Boolean);
 const GEMINI_URL = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 // Groq's free model that can see images (3 per request, about 7,000 input tokens a minute, and
 // each photo costs about 1,800 whatever its size). Checked 2026-10-25.

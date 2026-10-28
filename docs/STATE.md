@@ -695,3 +695,14 @@ personal in here.
   for that. Stopping a new listing deletes it without counting its ads and frees its photos.
   `/healthz` now also says which provider answers (`ai`). Checked in the browser at phone size
   with real Gemini: ads unchanged after Stop, Edit on the message, the next question answered.
+* Live check on Gemini (2026-10-28, invite code from Ismael, test account deleted after). The
+  live site reports `ai: gemini`. But the free key ran out: 3.5, 3.8 and 3.7 Flash all answered
+  "You exceeded your current quota", so the live run fell back to Groq and the built-in writer.
+  The idealista link didn't open (Google's reader is Gemini too), the photo listing got generic
+  template ads with photos labelled "other", and one question got the busy line. Stop worked
+  live (ads unchanged). 3.5 Flash answered one request a few minutes later, then ran out again:
+  the free allowance is small (Google doesn't show the number to the API; a third party source
+  says about 20 a day on 3.x Flash, which fits) and one new listing uses about three requests.
+  My test runs used much of it. Added 3.5 Flash Lite after the Flash models (its own allowance,
+  sees photos, answered every time). Fixed "On Ad 1, a different photo" to "Ad 1 now uses a
+  different photo". The real fix is billing on the same Google key (no code change) or Claude.
