@@ -99,6 +99,8 @@ With no `INVITE_CODES` set, anyone can sign up (fine locally, never in productio
 | `ADMIN_EMAILS` | Accounts that see the Admin page (switch workspaces to paid). In production an email on this list can't sign up or be moved onto, so admin only applies to accounts that already exist: the person signs up first, then their email goes on the list. |
 | `DATABASE_URL`, `DATABASE_AUTH_TOKEN` | Turso database. Defaults to `./data/hopkins.db`. |
 | `ANTHROPIC_API_KEY` | Turns on Claude for reading listings, writing ads and the chat. |
+| `GEMINI_API_KEY` | Google's Gemini on its free tier (aistudio.google.com, no card). Used when there's no Anthropic key: sees the photos, and reads listing links a site blocks through Google's URL context. With `GROQ_API_KEY` also set, Groq answers when Gemini is over its free limit. Free tier content may be used by Google to improve its products. |
+| `GEMINI_MODEL` | Gemini models to try, best first (default `gemini-3.5-flash,gemini-3-flash,gemini-2.5-flash`). |
 | `GROQ_API_KEY` | Free alternative for the chat when there's no Anthropic key (console.groq.com). |
 | `HOPKINS_MODEL`, `GROQ_MODEL` | Override the models (defaults `claude-opus-5-5`, `openai/gpt-oss-120b`). |
 | `GROQ_BACKUP_MODELS`, `GROQ_VISION_MODEL` | Groq models to try when the main one is over its limit (default `openai/gpt-oss-20b,qwen/qwen3.8-27b`), and the one that sees photos (default `qwen/qwen3.8-27b`). |

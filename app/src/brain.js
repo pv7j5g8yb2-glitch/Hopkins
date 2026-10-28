@@ -3,19 +3,26 @@ import { FEATURES } from "./listing.js";
 import { KINDS, MAX_ADS } from "./writer.js";
 import { LAYOUTS, describeStyle } from "./style.js";
 
-// The model behind the chat. Claude when ANTHROPIC_API_KEY is set; otherwise Groq's free
-// model when GROQ_API_KEY is set (the same free option the survey uses). Every call returns
-// null on any failure and the caller falls back to the built-in reader, writer and rules, so
-// the chat never breaks because a model call did.
+// The model behind the chat. Claude when ANTHROPIC_API_KEY is set; otherwise Google's Gemini
+// when GEMINI_API_KEY is set (its free tier, 2026-10-28: Ismael wanted the best free model,
+// one that sees photos and reads links); otherwise Groq's free model. With Gemini and Groq both
+// set, Groq answers when Gemini is over its free limit. Every call returns null on any failure
+// and the caller falls back to the built-in reader, writer and rules, so the chat never breaks
+// because a model call did.
 //
 // Four jobs: see the photos, read a listing from what the agent sent, write the ads, and take
 // one chat turn: hold a real conversation and, when the agent asks for something, do it.
 
-export const provider = process.env.ANTHROPIC_API_KEY ? "claude" : process.env.GROQ_API_KEY ? "groq" : null;
+export const provider = process.env.ANTHROPIC_API_KEY ? "claude" : process.env.GEMINI_API_KEY ? "gemini" : process.env.GROQ_API_KEY ? "groq" : null;
+// Claude and Gemini see the photos themselves; Groq's chat model can't.
+export const seesPhotos = provider === "claude" || provider === "gemini";
 export const aiEnabled = Boolean(provider);
 const MODEL = process.env.HOPKINS_MODEL || "claude-opus-5-5";
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+// Gemini's best free model first; if Google retires a name, the next one answers.
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash,gemini-3-flash,gemini-2.5-flash").split(",").map((m) => m.trim()).filter(Boolean);
+const GEMINI_URL = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 // Groq's free model that can see images (3 per request, about 7,000 input tokens a minute, and
 // each photo costs about 1,800 whatever its size). Checked 2026-10-25.
 const GROQ_VISION_MODEL = process.env.GROQ_VISION_MODEL || "qwen/qwen3.8-27b";
@@ -185,7 +192,13 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
       if (res.stop_reason === "refusal" || res.stop_reason === "max_tokens") return null;
       return JSON.parse(res.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
     }
-    if (provider === "groq") {
+    if (provider === "gemini") {
+      const out = await gemini({ system, messages, schema, temperature });
+      if (out) return out;
+      if (!process.env.GROQ_API_KEY) return null;
+      console.error("Gemini didn't answer; Groq is answering instead.");
+    }
+    if (provider === "groq" || (provider === "gemini" && process.env.GROQ_API_KEY)) {
       const text = (c) => (typeof c === "string" ? c : c.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
       const body = (model) => JSON.stringify({
         model,
@@ -274,6 +287,84 @@ export function takeFailure() {
   return f;
 }
 
+// Claude content (strings, or text and base64 image blocks) as Gemini parts.
+function geminiParts(content) {
+  if (typeof content === "string") return [{ text: content }];
+  return content.map((b) => (b.type === "image" ? { inlineData: { mimeType: b.source.media_type, data: b.source.data } } : { text: b.text || "" }));
+}
+// The text of Gemini's answer, without its thinking.
+const geminiText = (data) => (data?.candidates?.[0]?.content?.parts || []).filter((p) => !p.thought && typeof p.text === "string").map((p) => p.text).join("");
+// Gemini once took JSON Schema as is; if this one won't, the schema goes in the instructions.
+let geminiSchemaOk = true;
+
+// One Gemini request with JSON back. Null when it couldn't answer (over the free limit, down,
+// blocked); "busy" is noted when it was the limit, so the chat can say so.
+async function gemini({ system, messages, schema, temperature, tools }) {
+  const contents = messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: geminiParts(m.content) }));
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const withSchema = schema && geminiSchemaOk && !tools;
+      const res = await fetchImpl(GEMINI_URL(model), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: withSchema || !schema ? system : `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` }] },
+          contents,
+          ...(tools ? { tools } : {}),
+          generationConfig: { temperature, ...(tools ? {} : { responseMimeType: "application/json" }), ...(withSchema ? { responseJsonSchema: schema } : {}) },
+        }),
+        signal: AbortSignal.timeout(60000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.usageMetadata) console.info(`Gemini ${model}: ${data.usageMetadata.totalTokenCount} tokens`);
+        const text = geminiText(data);
+        if (!text) throw new Error(`Gemini gave no answer (${data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || "empty"})`);
+        if (tools) return { data, text };
+        try { return JSON.parse(text); } catch { if (attempt === 0) continue; throw new Error("Gemini's answer wasn't JSON"); }
+      }
+      const err = await res.text();
+      if (res.status === 404) break; // that model name is gone: try the next
+      if (res.status === 400 && withSchema && /schema/i.test(err)) { geminiSchemaOk = false; continue; }
+      if (res.status === 429) {
+        const wait = Number((err.match(/"retryDelay":\s*"(\d+)s"/) || [])[1]) || 0;
+        if (attempt === 0 && wait > 0 && wait <= 10) { await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
+        lastFailure = "busy";
+        console.error(`Gemini ${model} is over its free limit: ${err.slice(0, 160)}`);
+        return null;
+      }
+      if (res.status >= 500 && attempt === 0) { await new Promise((r) => setTimeout(r, 1500)); continue; }
+      throw new Error(`Gemini ${res.status}: ${err.slice(0, 200)}`);
+    }
+  }
+  return null;
+}
+
+// A listing link Hopkins' own request couldn't open (a portal that blocks apps), read through
+// Google's URL context instead, Google's own fetcher, a documented API feature. Only what the
+// page actually says: when Google couldn't open it either, null, never a guess.
+export async function readLinkAI(url) {
+  if (provider !== "gemini") return null;
+  try {
+    const r = await gemini({
+      system: "You read real estate listing pages. Use only what the page actually says. Never guess or fill in anything.",
+      messages: [{ role: "user", content: `Open this listing page and read it: ${url}\n\nAnswer with only a JSON object, nothing before or after it: {"opened": true or false, "title": "the listing's title", "description": "every fact on the page about the home: the address or area, the price exactly as written with its currency, beds, baths, size with its unit, the type of home, and the seller's or agent's own description, in their words", "photos": ["full URLs of the listing's own photos, if the page lists them"]}. If you couldn't open the page, answer {"opened": false}.` }],
+      temperature: 0.1,
+      tools: [{ url_context: {} }],
+    });
+    if (!r) return null;
+    const meta = r.data?.candidates?.[0]?.urlContextMetadata?.urlMetadata || [];
+    if (!meta.some((m) => /SUCCESS/.test(m.urlRetrievalStatus || ""))) return null;
+    const out = JSON.parse((r.text.match(/\{[\s\S]*\}/) || ["{}"])[0]);
+    if (!out.opened || !(out.title || out.description)) return null;
+    const photos = (Array.isArray(out.photos) ? out.photos : []).filter((u) => typeof u === "string" && /^https:\/\//.test(u)).slice(0, 12).map((u) => ({ url: u, thumb: u }));
+    return { title: out.title || null, description: out.description || null, image: photos[0]?.url || null, photos };
+  } catch (err) {
+    console.error("Reading the link through Google failed:", err.message);
+    return null;
+  }
+}
+
 export async function readListingAI({ text, linkInfo, photos }) {
   const content = [
     ...photoBlocks(photos),
@@ -281,12 +372,12 @@ export async function readListingAI({ text, linkInfo, photos }) {
       type: "text",
       text: `The agent sent a new listing. Read the facts from it. Use only what's actually there.\n\nWhat they wrote:\n${text || "(nothing)"}\n\n${
         linkInfo ? `The listing link's page says:\nTitle: ${linkInfo.title || ""}\nDescription: ${linkInfo.description || ""}\n` : ""
-      }\n${provider === "claude" ? "Label each photo and note what's visible in it." : "You can't see the photos here, so leave photo_labels and photo_notes empty."} If the price or the city is missing, ask for it in "missing".`,
+      }\n${seesPhotos ? "Label each photo and note what's visible in it." : "You can't see the photos here, so leave photo_labels and photo_notes empty."} If the price or the city is missing, ask for it in "missing".`,
     },
   ];
   const r = await call({ system: SYSTEM, messages: [{ role: "user", content }], schema: READ_SCHEMA, effort: "low" });
   // Only a model that saw the photos can say what's in them.
-  if (r && provider !== "claude") { r.photo_labels = []; r.photo_notes = []; }
+  if (r && !seesPhotos) { r.photo_labels = []; r.photo_notes = []; }
   return r;
 }
 

@@ -10,7 +10,7 @@ import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
-import { aiEnabled, provider, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
+import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
 // needs real understanding gets an honest "give me a moment" instead of "I didn't follow".
@@ -180,7 +180,7 @@ export async function deleteListing(ws, id) {
 export async function createListing(ws, { text = "", photoIds = [], photoNames = {}, history = [] }) {
   const link = (text.match(URL_RE) || [])[0] || null;
   const rest = link ? text.replace(link, " ").trim() : text.trim();
-  const linkInfo = link ? await readLink(link) : null;
+  const linkInfo = link ? await openLink(link) : null;
   const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
 
   const parsed = parseListingText(source);
@@ -221,6 +221,12 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   }
   await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest) });
   return fresh;
+}
+
+// A listing link: Hopkins opens it itself, and when the site blocks that, Gemini reads it
+// through Google's own fetcher (only what the page says, 2026-10-28).
+async function openLink(link) {
+  return (await readLink(link)) || (await readLinkAI(link));
 }
 
 // Photos from the listing's page, downloaded once and kept like uploaded ones, in the page's order.
@@ -900,7 +906,7 @@ async function editFirst(ws, listing, msg, text) {
   await run(`DELETE FROM messages WHERE listing_id = ? AND created_at >= ? AND kind != 'lead'`, [listing.id, msg.created_at]);
   const link = (text.match(URL_RE) || [])[0] || null;
   const rest = link ? text.replace(link, " ").trim() : text.trim();
-  const linkInfo = link ? await readLink(link) : null;
+  const linkInfo = link ? await openLink(link) : null;
   if (linkInfo?.photos?.length && !(await get(`SELECT 1 FROM photos WHERE listing_id = ? AND kind = 'listing'`, [listing.id]))) await importPhotos(ws, listing.id, linkInfo.photos);
   const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
   const parsed = parseListingText(source);

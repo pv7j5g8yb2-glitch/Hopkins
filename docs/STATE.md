@@ -661,3 +661,13 @@ personal in here.
   measurement: a few cents per chat message, up to about 10 cents for a new set of ads with
   photos. `HOPKINS_MODEL=claude-sonnet-5-5` halves that if cost matters. Waiting on Ismael for
   the key.
+* Gemini, the free model (2026-10-28, Ismael: "keep the absolute best free one"). Built and
+  tested against a fake Gemini, not yet live: with `GEMINI_API_KEY` set (free from
+  aistudio.google.com, no card) Hopkins runs on Gemini 3.5 Flash (falls back to 3 Flash, then
+  2.5 Flash if a name is retired), with the same instructions, structured answers and rules;
+  photos go to it as images so it labels them and says what's in them; a link a site blocks is
+  read through Google's URL context (Google's own fetcher, a documented API feature) and used
+  only when Google reports it really opened the page, never a guess; Groq answers when Gemini
+  is over its free limit. Order: Claude, then Gemini, then Groq. Caveats to tell pilots about:
+  Google's free tier may use what's sent to improve its products; free limits aren't published
+  and vary by project. Waiting on Ismael for a free Gemini key to test it live.
