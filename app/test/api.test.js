@@ -579,6 +579,7 @@ test("this week is compared with the same stretch of last week, never a whole we
   assert.equal(r.json.total, 1);
   assert.equal(r.json.soFar, true);
   assert.equal(r.json.lastWeek, 1, "only last week's Lead from before this moment counts");
+  assert.equal(r.json.lastWeekTotal, 2, "and the whole of last week is there to show beside it");
   // A finished week is set against the whole week before it.
   const past = await c("GET", `/api/report?from=${new Date(from.getTime() + 7 * day).toISOString()}&to=${new Date(from.getTime() + 14 * day).toISOString()}`);
   assert.equal(past.json.soFar, false);

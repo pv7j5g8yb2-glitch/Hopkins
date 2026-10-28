@@ -180,6 +180,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   a message can be selected and copied. An edit makes Hopkins forget the old wording and put the
   ads back as they were, like ChatGPT and Claude. Only messages an edit can't go back to (before an
   approved run, or the chat before the listing existed) have no Edit.
+* **Numbers must read true at a glance (lesson, 2026-10-28):** "7 Leads, up 600% vs last week" sat
+  next to a last week of 9 because the percentage quietly compared against the same days of last
+  week. A week still going never gets a percentage; it shows last week's total beside it. Finished
+  weeks say "vs the week before". Before shipping any number, check it against the numbers next to
+  it on the same screen and in the views either side.
 * **Replies must match what happened (lesson, 2026-10-27):** Hopkins said "grey background applied
   to Ad 1 and Ad 3" when nothing changed, then apologised for a change it had made. Every look
   reply is now checked against the ads after the change; when they disagree, the reply comes from

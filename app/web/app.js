@@ -817,7 +817,8 @@
     const l = p.listing;
     if (!S.selected[l.id]) S.selected[l.id] = 1;
     const prevScroll = keepScroll && $("#msgs") ? $("#msgs").scrollTop : null;
-    const showPv = $("#lv") && $("#lv").classList.contains("showpv");
+    const showPv = S.openAds || ($("#lv") && $("#lv").classList.contains("showpv"));
+    S.openAds = false;
     const seen = S.seen[l.id] ?? (S.fresh === l.id ? 1 : p.messages.length);
     const reveal = S.fresh === l.id;
     S.fresh = null;
@@ -1414,32 +1415,35 @@
       const isToday = thisWeek && sameDay(d, today), later = thisWeek && d > today;
       return `<div class="rp-day${isToday ? " today" : ""}${later ? " later" : ""}"><span class="rp-bar"><i style="height:${counts[i] ? Math.max(8, (counts[i] / peak) * 100) : 0}%"></i></span><span class="rp-dl">${esc(d.toLocaleDateString(undefined, { weekday: "narrow" }))}</span></div>`;
     }).join("");
-    // Up or down on the week before, as a percentage, like Screen Time or Shopify. A week still
-    // going is set against the same stretch of last week (Monday up to this moment), never a
-    // whole week. From nothing, there's no percentage to give, so it says "Up from 0".
+    // A finished week: up or down on the week before it, as a percentage, like Screen Time or
+    // Shopify. The week still going has no percentage (half a week against a whole one, or
+    // against a few days of last week, both read wrong): it shows last week's total beside it.
     const prev = r.lastWeek || 0;
-    const against = "vs last week";
     const pct = prev ? Math.round(((r.total - prev) / prev) * 100) : null;
-    const delta = !r.total && !prev ? ""
-      : pct === null ? `<span class="rp-delta up">${ICON.up}Up from 0</span> ${against}`
-        : pct > 0 ? `<span class="rp-delta up">${ICON.up}${pct}%</span> ${against}`
-          : pct < 0 ? `<span class="rp-delta down">${ICON.down}${-pct}%</span> ${against}`
-            : `<span class="rp-delta">No change</span> ${against}`;
+    const delta = r.soFar ? `<span class="rp-vs">Last week <b>${r.lastWeekTotal || 0}</b></span>`
+      : !r.total && !prev ? ""
+        : pct === null ? `<span class="rp-delta up">${ICON.up}Up from 0</span> vs the week before`
+          : pct > 0 ? `<span class="rp-delta up">${ICON.up}${pct}%</span> vs the week before`
+            : pct < 0 ? `<span class="rp-delta down">${ICON.down}${-pct}%</span> vs the week before`
+              : `<span class="rp-delta">No change</span> vs the week before`;
     const sub = delta;
-    // Which kind of ad brings the leads, as one bar split by kind, only once there are leads.
-    const pats = S.me.kinds || {};
-    const won = r.patterns.filter((x) => x.leads > 0).sort((a, b) => b.leads - a.leads);
-    const wonTotal = won.reduce((n, x) => n + x.leads, 0);
-    const SEG = ["var(--gold)", "var(--plum)", "var(--lilac)", "#C3A9A2", "var(--bronze)"];
-    const winning = wonTotal ? `<h3>What's winning</h3><div class="rp-split">${won.map((x, i) => `<i style="width:${(x.leads / wonTotal) * 100}%;background:${SEG[i % SEG.length]}"></i>`).join("")}</div>
-      <div class="rp-legend">${won.map((x, i) => `<span><i style="background:${SEG[i % SEG.length]}"></i>${esc(pats[x.pattern] || x.pattern)} <b>${x.leads}</b></span>`).join("")}</div>` : "";
+    // Top ads: the three single ads with the most Leads this week, each shown as itself (its photo
+    // and its line) with its count. A tap opens that ad.
+    const top = r.topAds || [];
+    const winning = top.length ? `<section class="ta"><h3>Top ads</h3><div class="ta-row">${top.map((a, i) => {
+      const l = S.listings.find((x) => x.id === a.listing_id);
+      return `<a class="ta-card" href="#/l/${a.listing_id}" data-act="openAd" data-id="${a.listing_id}" data-v="${a.version}">
+        <div class="ta-ph" style="${a.photo_id ? `background-image:url(${photoUrl(a.photo_id, true)})` : ""}"><span class="rb-rank m${i + 1}">${i + 1}</span><b>${esc(a.overlay)}</b></div>
+        <div class="ta-bd"><span class="ta-nm">${esc(a.name)}</span><span class="ta-n"><b>${a.leads}</b> ${a.leads === 1 ? "Lead" : "Leads"}</span></div>
+        <span class="ta-where">${esc(l ? listingName(l) : "")} · Ad ${a.version}</span></a>`;
+    }).join("")}</div></section>` : "";
 
     main.innerHTML = `${mtop("Report")}<div class="page" data-report><div class="wrap">
       <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>
       <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "Lead" : "Leads"}</div>${sub ? `<p class="rp-sub">${sub}</p>` : ""}
         <div class="rp-chart" role="img" aria-label="Leads each day: ${counts.join(", ")}">${bars}</div></section>
-      ${r.listings.length ? boardHtml(r) : ""}
       ${winning}
+      ${r.listings.length ? boardHtml(r) : ""}
     </div></div>`;
   }
 
@@ -1901,6 +1905,7 @@
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "reportListing") reportSheet(t);
+      else if (act === "openAd") { S.selected[t.dataset.id] = Number(t.dataset.v); S.openAds = true; }
       else if (act === "demoOpen" || act === "demoLeave") {
         // A fresh demo agent, or back to the founder's own account: a clean reload either way.
         t.disabled = true;

@@ -608,3 +608,9 @@ personal in here.
   account menu returns to the founder's account (a signed cookie, no password). Opening it again
   rebuilds it; demo accounts never show in the Admin list. Code: app/src/demo.js. Opens in about
   2 seconds locally on a slowed server; on Turso it makes a few hundred writes, so expect longer.
+* Report, round five (2026-10-28): "What's winning" (ad types) is replaced by Top ads: the three
+  single ads with the most Leads that week, each shown as itself (its photo and its line, gold,
+  silver and bronze rank), its name, count and listing; a tap opens that listing's Ads tab on it.
+  This week no longer shows a percentage (Ismael: "7 Leads, 600%" beside last week's 9 made no
+  sense); it shows "Last week 9". Finished weeks show the percentage "vs the week before", which
+  in the demo reads 9 vs 10 down 10%, 10 vs 11 down 9%, 11 vs 7 up 57%, 7 vs 5 up 40%.

@@ -1316,7 +1316,7 @@ export async function weeklyReport(ws, range = weekRange()) {
   const since = range.from, until = range.to;
   const span = new Date(until).getTime() - new Date(since).getTime();
   const leads = await all(
-    `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern, ads.name AS ad_name FROM leads
+    `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern, ads.name AS ad_name, ads.overlay AS ad_overlay, ads.photo_id AS ad_photo FROM leads
      JOIN listings ON listings.id = leads.listing_id LEFT JOIN ads ON ads.id = leads.ad_id
      WHERE leads.workspace_id = ? AND leads.created_at >= ? AND leads.created_at < ? ORDER BY leads.created_at DESC`,
     [ws.id, since, until]
@@ -1331,6 +1331,9 @@ export async function weeklyReport(ws, range = weekRange()) {
   const soFar = now > new Date(since).getTime() && now < new Date(until).getTime();
   const prevTo = soFar ? new Date(prevFrom.getTime() + (now - new Date(since).getTime())) : new Date(since);
   const before = await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, prevFrom.toISOString(), prevTo.toISOString()]);
+  // The whole week before, for a week still going (Ismael, 2026-10-28: "7 Leads, up 600%" next to
+  // a last week of 9 read as nonsense). A week in progress shows this number, not a percentage.
+  const beforeAll = soFar ? await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, prevFrom.toISOString(), since]) : before;
   const allTime = Object.fromEntries((await all(`SELECT listing_id, COUNT(*) AS n FROM leads WHERE workspace_id = ? GROUP BY listing_id`, [ws.id])).map((r) => [r.listing_id, Number(r.n)]));
   const launched = await all(`SELECT DISTINCT listing_id FROM launches WHERE workspace_id = ?`, [ws.id]);
   const launchedIds = new Set(launched.map((r) => r.listing_id));
@@ -1356,6 +1359,15 @@ export async function weeklyReport(ws, range = weekRange()) {
   const byKind = {};
   for (const x of leads) if (x.pattern) byKind[x.pattern] = (byKind[x.pattern] || 0) + 1;
   const patterns = Object.entries(byKind).map(([pattern, n]) => ({ pattern, leads: n }));
+  // The single ads that brought the most Leads this week, best first.
+  const byAd = {};
+  for (const x of leads) {
+    if (!x.ad_id) continue;
+    const a = (byAd[x.ad_id] ||= { ad_id: x.ad_id, listing_id: x.listing_id, version: x.version, name: x.ad_name || `Ad ${x.version}`, overlay: x.ad_overlay || "", photo_id: x.ad_photo || null, leads: 0, last: "" });
+    a.leads++;
+    if (x.created_at > a.last) a.last = x.created_at;
+  }
+  const topAds = Object.values(byAd).sort((a, b) => b.leads - a.leads || b.last.localeCompare(a.last)).slice(0, 3).map(({ last, ...a }) => a);
 
   const next = [];
   for (const r of rows) {
@@ -1369,7 +1381,7 @@ export async function weeklyReport(ws, range = weekRange()) {
   const headline = total
     ? `${total} ${total === 1 ? "Lead" : "Leads"}${spend > 0 ? `, $${Math.round((spend / total) * 100) / 100} each` : ""}${showings ? `, ${showings} asked for a showing` : ""}.`
     : "No Leads.";
-  return { since, until, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), soFar, patterns, next: next.slice(0, 5) };
+  return { since, until, headline, total, showings, spend, cpl: spend > 0 && total ? Math.round((spend / total) * 100) / 100 : null, listings: rows, leads: leads.slice(0, 20), times: leads.map((x) => x.created_at), lastWeek: Number(before?.n || 0), lastWeekTotal: Number(beforeAll?.n || 0), soFar, patterns, topAds, next: next.slice(0, 5) };
 }
 
 // Hopkins messages first: on a Monday, the first time the app is opened, the report is
