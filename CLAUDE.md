@@ -209,7 +209,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
   invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
 * **Chats (Ismael, 2026-10-29):** everything is a chat, like ChatGPT and Claude: "New chat", the
-  Chats tab and screen ("2 chats"), "Delete chat", "Rename chat". The first message makes the chat
+  Chats tab and screen (a "Search chats" bar where the count was, Liquid Glass on phones, plain on
+  a laptop; it matches the name, address, area and city), "Delete chat", "Rename chat". The first message makes the chat
   at once: it's in the sidebar and opens with the thinking mark before Hopkins answers, named from
   that message in a few words by the model (the first words stand in until then; a property's
   address wins). A chat with a property in it (facts, a link, photos) gets its ads, whether that
@@ -257,7 +258,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   for buyers and renters, may say "home". The threads themselves are chats.
 * **Lead with a capital L (Ismael, 2026-10-27):** "Lead" and "Leads" are always capitalised in the
   app and in Hopkins' replies ("3 Leads", "cost per Lead", "New Lead"). Ad copy and buyer pages
-  are not the app.
+  are not the app. One exception he asked for (2026-10-29): the empty Leads screen says "Each lead
+  shows the ad it came from."
 * **Names start with capitals (Ismael, 2026-10-28):** every part of a person's name (first, middle,
   last, each side of a hyphen or apostrophe) starts with a capital, however it was typed: Leads,
   the account name and the agent name on the brand. Only first letters change, so "McDonald"

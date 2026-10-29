@@ -603,12 +603,25 @@
     const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}</div>
       <div class="bd"><b>${esc(listingName(l))}</b>${l.unread ? `<span class="dot" aria-label="New reply"></span>` : ""}</div></a>`; };
     const n = S.picked.size;
-    const lede = sel ? (n ? `${n} selected` : "Select chats to delete") : props.length ? `${props.length} ${props.length === 1 ? "chat" : "chats"}` : "Your chats appear here.";
-    main.innerHTML = `${mtop("Chats")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Chats</h1><p class="lede">${lede}</p></div>
+    // A search bar where the count was (Ismael, 2026-10-29), in Liquid Glass on phones.
+    const typing = document.activeElement?.id === "cq";
+    const q = (S.chatQ || "").trim().toLowerCase();
+    const words = (l) => [listingName(l), l.address, l.area, l.city, l.auto_title].filter(Boolean).join(" ").toLowerCase();
+    const shown = q ? props.filter((l) => words(l).includes(q)) : props;
+    const cardsHtml = () => `${shown.map(card).join("")}${sel || q ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}`;
+    const top = sel ? `<p class="lede">${n ? `${n} selected` : "Select chats to delete"}</p>` : props.length ? "" : `<p class="lede">Your chats appear here.</p>`;
+    main.innerHTML = `${mtop("Chats")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Chats</h1>${top}</div>
       ${props.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
-      <div class="cards ${sel ? "selecting" : ""}">${props.map(card).join("")}${sel ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}</div></div></div>
+      ${props.length && !sel ? `<label class="csearch lg">${ICON.search}<input type="search" id="cq" placeholder="Search chats" autocomplete="off" enterkeyhint="search" value="${esc(S.chatQ || "")}"></label>` : ""}
+      <div class="cards ${sel ? "selecting" : ""}">${cardsHtml()}</div>${q && !shown.length ? `<p class="cnone">No chats found.</p>` : ""}</div></div>
       ${sel ? `<div class="selbar lg"><button class="sec-btn" data-act="selectAll">${n === props.length ? "Select none" : "Select all"}</button>
         <button class="btn del-btn" data-act="delPicked" ${n ? "" : "disabled"}>${ICON.trash}${n ? `Delete ${n}` : "Delete"}</button></div>` : ""}`;
+    const box = $("#cq");
+    if (box) {
+      box.addEventListener("input", () => { S.chatQ = box.value; viewListings(); });
+      // Redrawn while typing (a reply landed, or a letter typed): the cursor stays where it was.
+      if (typing) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+    }
     bindHold();
   }
 
@@ -1429,7 +1442,7 @@
       ${leads.length ? `<button class="sel-btn round" data-act="leadSearch" aria-label="Search Leads">${ICON.search}</button>` : ""}</div>
       ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search Leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
       <div class="list" id="leadList" style="border-top:0">${leads.map(item).join("")}</div><p class="lnone" id="lnone" hidden></p>`
-        : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each Lead shows the ad it came from.</div>`}</div></div>`;
+        : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each lead shows the ad it came from.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");

@@ -409,6 +409,12 @@ a.row:hover{background:var(--hover)}
 .sel-btn.round{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .sel-btn.round svg{width:19px;height:19px}
 .lsearch{display:flex;align-items:center;gap:8px;margin:-6px 0 8px;padding:0 6px 0 12px;border-radius:12px;background:var(--sel);animation:fade .2s}
+/* Search on Chats: a soft field on a laptop, Liquid Glass (.lg) on a phone. */
+.csearch{display:flex;align-items:center;gap:9px;margin:-8px 0 18px;padding:0 16px;height:44px;border-radius:999px;background:var(--sel)}
+.csearch>svg{width:18px;height:18px;color:var(--quiet);flex:none}
+.csearch input{flex:1;min-width:0;border:0;background:none;outline:none;font:inherit;font-size:16px;color:var(--ink)}
+.csearch input::-webkit-search-cancel-button{-webkit-appearance:none}
+.cnone{color:var(--quiet);font-size:14.5px;margin-top:4px}
 .lsearch[hidden],.lead[hidden],.sel-btn[hidden],.lnone[hidden]{display:none}
 .lsearch>svg{width:17px;height:17px;color:var(--quiet);flex:none}
 .lsearch input{flex:1;min-width:0;border:0;background:none;outline:none;font:inherit;font-size:16px;padding:10px 0;color:var(--ink)}
