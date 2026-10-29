@@ -167,7 +167,7 @@ export async function readLink(url) {
 
 // The listing's own photos from its page (2026-10-27), at most 12, so a link alone is enough.
 // Zillow keeps them in the page's data (property.responsivePhotos, inside __NEXT_DATA__), each
-// in several sizes: 1152 wide for the ads (they're 1080 wide) and 384 for the thumbnail. The page also holds
+// in several sizes: the largest for the ads (1536 wide, the most Zillow gives; checked 2026-10-29) and 384 for the thumbnail. The page also holds
 // nearby homes' photos, which are left alone. Other sites usually list theirs in schema.org
 // JSON-LD; failing that, the page's og:image.
 export function photosFrom(html, max = 12) {
@@ -181,7 +181,7 @@ export function photosFrom(html, max = 12) {
       for (const ph of firstArray(JSON.parse(nd[1]), "responsivePhotos") || []) {
         const sizes = (ph.mixedSources?.jpeg || []).filter((j) => j.url).sort((a, b) => a.width - b.width);
         const upTo = (w) => (sizes.filter((j) => j.width <= w).pop() || sizes[0])?.url;
-        add(upTo(1152) || ph.url, upTo(384));
+        add(sizes.at(-1)?.url || ph.url, upTo(384));
       }
     } catch {}
   }

@@ -37,10 +37,12 @@ const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8"
 // brand page preview before the agent has any listings.
 for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg"]) files[f] = readFileSync(join(WEB, f));
 files["manifest.webmanifest"] = readFileSync(join(WEB, "manifest.webmanifest"), "utf8");
-// The HEIC converter (iPhone photos, for browsers that can't open them). 3 MB, so the app only
-// loads it when such a photo is picked, and browsers keep it: its name changes with its version.
-files["heic-to.js"] = readFileSync(join(WEB, "heic-to.js"));
-const heicGz = gzipSync(files["heic-to.js"], { level: 9 });
+// The HEIC decoder (iPhone photos, for browsers that can't open them): libheif in WebAssembly, run
+// in a worker. 1.5 MB, so the app only loads it when such a photo is picked, and browsers keep it
+// for good: its address carries its version. Sent gzipped when the browser takes that.
+files["heic-worker.js"] = readFileSync(join(WEB, "heic-worker.js"), "utf8");
+const VENDOR = { "libheif-1.23.5.js": ["libheif.js", TYPES.js], "libheif-1.23.5.wasm": ["libheif.wasm", "application/wasm"] };
+for (const [path, [file, type]] of Object.entries(VENDOR)) { const raw = readFileSync(join(WEB, file)); VENDOR[path] = { raw, gz: gzipSync(raw, { level: 9 }), type }; }
 
 // trustProxy: on Render every request arrives through its proxy, so the visitor's address is in
 // X-Forwarded-For. Without it, every visitor looked like the same one and the brakes below
@@ -51,13 +53,13 @@ const heicGz = gzipSync(files["heic-to.js"], { level: 9 });
 const inlineScripts = ["login.html", "lead.html"].flatMap((f) => [...files[f].matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash("sha256").update(m[1]).digest("base64")}'`));
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' ${inlineScripts.join(" ")}`,
+  // wasm-unsafe-eval lets WebAssembly (the HEIC decoder) start; it doesn't let text run as code.
+  `script-src 'self' 'wasm-unsafe-eval' ${inlineScripts.join(" ")}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob:",
   "connect-src 'self'",
-  // The HEIC converter decodes in a worker it makes from its own code.
-  "worker-src 'self' blob:",
+  "worker-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",
   "frame-ancestors 'none'",
@@ -97,14 +99,16 @@ const STARTED = new Date().toISOString();
 // Which model provider answers ("gemini", "claude", "groq" or none), never a key.
 app.get("/healthz", async () => ({ ok: true, started: STARTED, ai: provider || "none" }));
 
-for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest"]) {
+for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest", "heic-worker.js"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
-app.get("/static/heic-to-1.6.7.js", async (request, reply) => {
-  reply.type(TYPES.js).header("Cache-Control", "public, max-age=31536000, immutable").header("Vary", "Accept-Encoding");
-  if (/\bgzip\b/.test(request.headers["accept-encoding"] || "")) return reply.header("Content-Encoding", "gzip").send(heicGz);
-  return reply.send(files["heic-to.js"]);
-});
+for (const [path, v] of Object.entries(VENDOR)) {
+  app.get(`/static/${path}`, async (request, reply) => {
+    reply.type(v.type).header("Cache-Control", "public, max-age=31536000, immutable").header("Vary", "Accept-Encoding");
+    if (/\bgzip\b/.test(request.headers["accept-encoding"] || "")) return reply.header("Content-Encoding", "gzip").send(v.gz);
+    return reply.send(v.raw);
+  });
+}
 app.get("/apple-touch-icon.png", async (_, reply) => reply.type(TYPES.png).send(files["apple-touch-icon.png"]));
 
 // ---------- pages ----------

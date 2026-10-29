@@ -174,6 +174,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   (same as Claude and ChatGPT). Started on the bottom tab bar only, so Ismael can judge it against
   Apple's before it spreads. It has to match Apple's, not be a cheap copy.
 
+* **Best quality, always (Ismael, 2026-10-29):** ads are always given in the best quality and
+  resolution. Photos are kept at 1920 pixels on the short side (4096 at most on the long side, JPEG
+  0.92), photos from a link are taken at the largest size the site gives, ads download as PNG at
+  1080 by 1350 (feed) and 1080 by 1920 (story). Speed comes from doing the work in parallel and
+  showing progress, never from lowering quality.
 * **Ads are never a fixed set (Ismael, 2026-10-25):** no set names like "The life / The standout /
   The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
   its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the

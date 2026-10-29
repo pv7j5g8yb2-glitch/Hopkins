@@ -264,6 +264,7 @@ h3{font-size:14px;font-weight:700;margin:34px 0 10px;letter-spacing:-.01em}
 .drop span{font-size:13.5px;color:var(--quiet)}
 .drop .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
 .drop .grid i{aspect-ratio:4/3;border-radius:10px;background:var(--side) center/cover;animation:pop .25s var(--ease) both}
+.drop .grid i.wait,.att-row .ph.wait{background:linear-gradient(90deg,var(--side) 30%,#efe8dc 50%,var(--side) 70%);background-size:200% 100%;animation:shimmer 1.2s linear infinite}
 .drop.has{padding:10px;text-align:left}
 .drop.has .ic,.drop.has b,.drop.has>span{display:none}
 .drop .more{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;border-radius:10px;border:1.5px dashed var(--line2);color:var(--quiet)}

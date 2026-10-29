@@ -260,33 +260,78 @@
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
   }
+  // How big a photo is kept: 1920 pixels on its short side (a story ad is 1920 tall, so a
+  // landscape photo cropped for one is never stretched), at most 4096 on its long side, at JPEG
+  // quality 0.92. Smaller photos keep their own size. Logos stay small.
+  const fit = (w, h, max) => (max ? Math.min(1, max / Math.max(w, h)) : Math.min(1, 1920 / Math.min(w, h), 4096 / Math.max(w, h)));
   function toData(img, max, type, quality) {
-    const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const s = fit(img.naturalWidth, img.naturalHeight, max);
     const c = document.createElement("canvas");
     c.width = Math.round(img.naturalWidth * s);
     c.height = Math.round(img.naturalHeight * s);
-    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const g = c.getContext("2d");
+    g.imageSmoothingQuality = "high";
+    g.drawImage(img, 0, 0, c.width, c.height);
     return c.toDataURL(type, quality).split(",")[1];
   }
-  // iPhones save photos as HEIC. Safari opens them, other browsers can't, so there they're turned
-  // into JPEGs as they're picked, with a converter that only loads the first time one is needed.
-  // Any size is fine: every photo is shrunk to 1600 pixels before it's sent.
+  // iPhones save photos as HEIC. Safari opens them; other browsers can't, so there they're opened
+  // with libheif (WebAssembly) in background workers, several photos at once, and come back as
+  // JPEGs already at the size above, so they're sent as they are, with no second compression.
+  // The decoder only loads the first time a HEIC is picked.
   const HEIC = /\.(heic|heif)$/i;
-  const isPhoto = (f) => f.type.startsWith("image/") || HEIC.test(f.name || "");
+  const isHeic = (f) => /image\/hei[cf]/.test(f.type) || HEIC.test(f.name || "");
+  const isPhoto = (f) => f.type.startsWith("image/") || isHeic(f);
+  const PREPARED = new WeakSet();
+  const heicPool = { workers: [], queue: [], jobs: new Map(), id: 0 };
+  function heicRun() {
+    for (const w of heicPool.workers) {
+      if (w.busy || !heicPool.queue.length) continue;
+      const job = heicPool.queue.shift();
+      w.busy = job;
+      job.file.arrayBuffer().then((buffer) => w.postMessage({ id: job.id, buffer, short: 1920, long: 4096, quality: 0.92 }, [buffer]), (err) => w.finish(job, null, err));
+    }
+  }
+  function heicJpeg(file) {
+    if (!heicPool.workers.length) {
+      const n = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2));
+      for (let i = 0; i < n; i++) {
+        const w = new Worker("/static/heic-worker.js");
+        w.finish = (job, blob, err) => {
+          w.busy = false;
+          heicPool.jobs.delete(job.id);
+          if (blob) job.done(blob); else job.fail(err || new Error("decode failed"));
+          heicRun();
+        };
+        w.onmessage = ({ data }) => w.finish(heicPool.jobs.get(data.id), data.blob, data.error && new Error(data.error));
+        w.onerror = () => w.busy && w.finish(w.busy, null);
+        heicPool.workers.push(w);
+      }
+    }
+    return new Promise((done, fail) => {
+      const job = { id: ++heicPool.id, file, done, fail };
+      heicPool.jobs.set(job.id, job);
+      heicPool.queue.push(job);
+      heicRun();
+    });
+  }
+  let nativeHeic;
   async function openable(file) {
-    if (!/image\/hei[cf]/.test(file.type) && !HEIC.test(file.name || "")) return file;
-    if (await readImage(file).then(() => true, () => false)) return file;
-    const { heicTo } = await import("/static/heic-to-1.6.7.js");
-    const jpeg = await heicTo({ blob: file, type: "image/jpeg", quality: 0.92 });
-    return new File([jpeg], (file.name || "photo").replace(HEIC, "") + ".jpg", { type: "image/jpeg" });
+    if (!isHeic(file)) return file;
+    if (nativeHeic === undefined) nativeHeic = await readImage(file).then(() => true, () => false);
+    if (nativeHeic) return file;
+    const jpeg = await heicJpeg(file);
+    const out = new File([jpeg], (file.name || "photo").replace(HEIC, "") + ".jpg", { type: "image/jpeg" });
+    PREPARED.add(out);
+    return out;
   }
   async function uploadPhoto(file, { listingId, kind } = {}) {
     const img = await readImage(file).catch(() => { throw new Error("That photo couldn't be opened. Try a JPG or PNG."); });
     const logo = kind === "logo";
     const type = logo && file.type === "image/png" ? "image/png" : "image/jpeg";
+    const asIs = PREPARED.has(file) && !logo;
     const body = {
-      data: toData(img, logo ? 800 : 1600, type, 0.86),
-      thumb: logo ? undefined : toData(img, 512, "image/jpeg", 0.72),
+      data: asIs ? await blobBase64(file) : toData(img, logo ? 800 : 0, type, 0.92),
+      thumb: logo ? undefined : toData(img, 512, "image/jpeg", 0.8),
       mime: type,
       listingId,
       kind,
@@ -294,6 +339,12 @@
     };
     return api("/api/photos", { body });
   }
+  const blobBase64 = (blob) => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
 
 
   // ---------- menus ----------
@@ -636,7 +687,7 @@
       const dropShown = drop && $("#drop") && $("#drop").offsetParent !== null;
       if (drop) drop(S.pending);
       $("#att").innerHTML = n && !dropShown
-        ? `<div class="att-row">${S.pending.map((p, i) => `<div class="ph" style="background-image:url(${p.url})"><button type="button" data-rm="${i}" aria-label="Remove photo ${i + 1}">×</button></div>`).join("")}<label class="att-more" for="files" aria-label="Add more photos">${ICON.plus}</label></div>
+        ? `<div class="att-row">${S.pending.map((p, i) => `<div class="ph${p.url ? "" : " wait"}" style="${p.url ? `background-image:url(${p.url})` : ""}"><button type="button" data-rm="${i}" aria-label="Remove photo ${i + 1}">×</button></div>`).join("")}<label class="att-more" for="files" aria-label="Add more photos">${ICON.plus}</label></div>
           <div class="att-note">${n} ${n === 1 ? "photo" : "photos"} ready to send</div>`
         : "";
       const pick = comp.querySelector("label.icon-btn");
@@ -649,22 +700,22 @@
         btn.innerHTML = S.busy ? ICON.stop : ICON.send;
         btn.setAttribute("aria-label", S.busy ? "Stop" : "Send");
       }
-      btn.disabled = !S.busy && !ta.value.trim() && !S.pending.length;
+      btn.disabled = !S.busy && ((!ta.value.trim() && !S.pending.length) || S.pending.some((p) => !p.file));
     };
-    const add = async (files) => {
+    // Each photo shows in the tray at once; a HEIC one shimmers there while it's opened, and Send
+    // waits until every photo is ready, like attachments in ChatGPT or Claude.
+    const add = (files) => {
       const all = [...files], photos = all.filter(isPhoto);
       if (photos.length < all.length) toast("Only photos can be added");
-      if (!photos.length) return;
-      const slow = photos.some((f) => HEIC.test(f.name || "") || /hei[cf]/.test(f.type));
-      if (slow) toast("Preparing photos…");
       for (const f of photos) {
-        try {
-          const ok = await openable(f);
-          S.pending.push({ file: ok, url: URL.createObjectURL(ok) });
-        } catch { toast("That photo couldn't be opened. Try a JPG or PNG."); }
-        if (slow) drawAtt();
+        const item = { file: null, url: "" };
+        item.ready = openable(f).then(
+          (ok) => { item.file = ok; item.url = URL.createObjectURL(ok); },
+          () => { toast("That photo couldn't be opened. Try a JPG or PNG."); S.pending = S.pending.filter((p) => p !== item); },
+        ).finally(drawAtt);
+        S.pending.push(item);
       }
-      buzz(5);
+      if (photos.length) buzz(5);
       drawAtt();
     };
     S.addFiles = (files) => add(files);
@@ -683,7 +734,7 @@
       e.preventDefault();
       if (S.busy) { if (S.stop) { buzz(8); S.stop(); S.stop = null; } return; }
       const text = ta.value.trim();
-      if (!text && !S.pending.length) return;
+      if ((!text && !S.pending.length) || S.pending.some((p) => !p.file)) return;
       S.busy = true;
       buzz(8);
       ta.blur();
@@ -773,7 +824,7 @@
     }, {
       drop: (pending) => {
         dropEl.classList.toggle("has", pending.length > 0);
-        $("#dropGrid").innerHTML = pending.length ? pending.map((p, i) => `<i style="background-image:url(${p.url});position:relative"><button type="button" data-rm="${i}" aria-label="Remove" style="position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:rgba(42,15,20,.75);color:#fff;font-size:13px;line-height:22px">×</button></i>`).join("") + `<span class="more">${ICON.plus}</span>` : "";
+        $("#dropGrid").innerHTML = pending.length ? pending.map((p, i) => `<i class="${p.url ? "" : "wait"}" style="${p.url ? `background-image:url(${p.url});` : ""}position:relative"><button type="button" data-rm="${i}" aria-label="Remove" style="position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:rgba(42,15,20,.75);color:#fff;font-size:13px;line-height:22px">×</button></i>`).join("") + `<span class="more">${ICON.plus}</span>` : "";
       },
     });
     async function create(text, files) {

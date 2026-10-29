@@ -160,8 +160,8 @@ test("a listing page's own photos and facts: Zillow's page data, else JSON-LD, e
   const cache = JSON.stringify({ "ViewQuery{zpid}": { property, nearby: { responsivePhotos: [shot("zzz")] } } });
   const zillow = `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { componentProps: { gdpClientCache: cache } } } })}</script></html>`;
   assert.deepEqual(photosFrom(zillow), [
-    { url: "https://photos.zillowstatic.com/fp/aaa-cc_ft_1152.jpg", thumb: "https://photos.zillowstatic.com/fp/aaa-cc_ft_384.jpg" },
-    { url: "https://photos.zillowstatic.com/fp/bbb-cc_ft_1152.jpg", thumb: "https://photos.zillowstatic.com/fp/bbb-cc_ft_384.jpg" },
+    { url: "https://photos.zillowstatic.com/fp/aaa-cc_ft_1536.jpg", thumb: "https://photos.zillowstatic.com/fp/aaa-cc_ft_384.jpg" },
+    { url: "https://photos.zillowstatic.com/fp/bbb-cc_ft_1536.jpg", thumb: "https://photos.zillowstatic.com/fp/bbb-cc_ft_384.jpg" },
   ]);
   assert.equal(pageFacts(zillow), "12 Elm St, Austin, TX. Price $585,000. 3 bed, 2 bath, 1,840 sq ft. Built in 1998. Big back yard with a pecan tree.");
   const ld = `<script type="application/ld+json">{"@type":"SingleFamilyResidence","image":["https://x.test/1.jpg",{"url":"https://x.test/2.jpg"}]}</script><meta property="og:image" content="https://x.test/og.jpg">`;
