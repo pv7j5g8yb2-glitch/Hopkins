@@ -762,3 +762,9 @@ personal in here.
   Section 8, students only, mature tenants) are caught, and New listing asks "What are you
   listing?". Zillow's FOR_RENT pages and schema.org lease offers say "For rent". Before this the
   code dropped any price under $10,000, so "$2,400/mo" got no price.
+* **Rentals checked live (2026-10-29):** "2 bed 2 bath condo ... 2400/mo, available Dec 1, pets ok,
+  in unit laundry" (no dollar sign) became rent $2,400/mo; three renter ads (Midtown, pets, the
+  laundry), each with $2,400/mo and Dec 1; "how much should I spend to rent this out fast?" got a
+  straight budget answer. The first set took 104 seconds on the free model, too slow (Gemini billing
+  still undecided). One test account ("Rental Check", rental-check-...@hopkins.test) was left on
+  the live site by a run cut off by a redeploy; the second run deleted its own.
