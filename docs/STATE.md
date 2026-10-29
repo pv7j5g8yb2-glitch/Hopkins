@@ -826,3 +826,8 @@ personal in here.
   process; a limited company is about €50 online (Form A1, from a Xero guide, not CRO's own page).
   Whether Meta accepts a sole trader's business name isn't settled; a company is the safe bet.
   A family member's existing registered business can own the Meta app instead.
+  Meta verifies businesses in any country, not only Ireland. A US LLC (Wyoming: about $100 to form,
+  $60 a year, plus a registered agent, per formation services) suits US customers and Stripe US,
+  but a foreign owned single member LLC must file IRS Form 5472 every year with a $25,000 penalty
+  for missing it, and Ismael's tax stays wherever he lives. Recommendation given: register where he
+  lives unless an accountant says otherwise.
