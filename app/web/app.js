@@ -518,7 +518,11 @@
       else if (view === "new") viewNew();
       else if (view === "listings") viewListings();
       else if (view === "leads") await viewLeads();
-      else if (view === "report") await viewReport();
+      else if (view === "report") {
+        if (id === "active") { S.repFilter = "active"; S.repMonday = mondayOf(new Date()); S.repFollow = true; }
+        await viewReport();
+        if (id === "active") $("#board")?.scrollIntoView({ block: "start" });
+      }
       else if (view === "brand") await viewBrand();
       else if (view === "admin") await viewAdmin();
       else if (view === "settings") viewSettings();
@@ -549,8 +553,9 @@
     const first = (S.me.user.name || "").split(" ")[0];
     const h = new Date().getHours();
     const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-    // Each number opens its own section showing exactly what it counts (Ismael, 2026-10-29).
-    const reviewing = S.listings.filter((l) => l.waiting > 0);
+    // Each number opens its own tab, showing exactly what it counts (Ismael, 2026-10-29): Chats,
+    // Leads (this week's) and Report (the listings with ads running, its Active filter).
+    const active = S.listings.filter((l) => l.approved > 0 && l.status !== "sold");
     // The Monday report lives on Report, not here (Ismael, 2026-10-27).
     const recent = S.inbox.filter((m) => !m.needs_action && m.kind !== "report");
     const where = (m) => listingName(m);
@@ -579,7 +584,7 @@
       body = `<nav class="stats-mini" aria-label="At a glance">
           <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Chat" : "Chats"}</span></a>
           <a href="#/leads/week"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
-          <a href="#/listings/review"><b>${reviewing.length}</b><span>Needs review</span></a></nav>
+          <a href="#/report/active"><b>${active.length}</b><span>Active ${active.length === 1 ? "listing" : "listings"}</span></a></nav>
 
         <div class="sec">Recent</div>${S.listings.slice(0, 5).map(recentCard).join("")}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
@@ -607,17 +612,14 @@
     // A search bar where the count was (Ismael, 2026-10-29), in Liquid Glass on phones.
     const typing = document.activeElement?.id === "cq";
     const q = (S.chatQ || "").trim().toLowerCase();
-    // From Today's "Needs review": only the chats with ads waiting for approval.
-    const review = location.hash === "#/listings/review";
     const words = (l) => [listingName(l), l.address, l.area, l.city, l.auto_title].filter(Boolean).join(" ").toLowerCase();
-    const shown = (review ? props.filter((l) => l.waiting > 0) : props).filter((l) => !q || words(l).includes(q));
-    const cardsHtml = () => `${shown.map(card).join("")}${sel || q || review ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}`;
+    const shown = props.filter((l) => !q || words(l).includes(q));
+    const cardsHtml = () => `${shown.map(card).join("")}${sel || q ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}`;
     const top = sel ? `<p class="lede">${n ? `${n} selected` : "Select chats to delete"}</p>` : props.length ? "" : `<p class="lede">Your chats appear here.</p>`;
     main.innerHTML = `${mtop("Chats")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Chats</h1>${top}</div>
       ${props.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
       ${props.length && !sel ? `<label class="csearch lg">${ICON.search}<input type="search" id="cq" placeholder="Search chats" autocomplete="off" enterkeyhint="search" value="${esc(S.chatQ || "")}"></label>` : ""}
-      ${review && !sel ? `<a class="fchip" href="#/listings">Needs review ${ICON.x}</a>` : ""}
-      <div class="cards ${sel ? "selecting" : ""}">${cardsHtml()}</div>${!shown.length && (q || review) ? `<p class="cnone">${q ? "No chats found." : "Nothing needs review."}</p>` : ""}</div></div>
+      <div class="cards ${sel ? "selecting" : ""}">${cardsHtml()}</div>${!shown.length && q ? `<p class="cnone">No chats found.</p>` : ""}</div></div>
       ${sel ? `<div class="selbar lg"><button class="sec-btn" data-act="selectAll">${n === props.length ? "Select none" : "Select all"}</button>
         <button class="btn del-btn" data-act="delPicked" ${n ? "" : "disabled"}>${ICON.trash}${n ? `Delete ${n}` : "Delete"}</button></div>` : ""}`;
     const box = $("#cq");
