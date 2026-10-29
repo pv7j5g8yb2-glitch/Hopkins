@@ -187,6 +187,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   Claude's, also on its card on the Listings screen. Hovering shows the ••• again; opening the chat
   clears the dot at once. Other rows stay as they are. Listing cards carry no tags (no "Ads ready",
   "Approved" or "Sold" on the photo, Ismael 2026-10-29): just the photo, the name and the dot.
+  Today shows its three numbers, then "Recent" and the 5 listings used most recently (Ismael,
+  2026-10-29); "Needs review" opens the latest listing waiting for review.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.

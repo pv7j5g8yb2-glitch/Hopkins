@@ -550,13 +550,13 @@
     const waiting = S.inbox.filter((m) => m.needs_action);
     // The Monday report lives on Report, not here (Ismael, 2026-10-27).
     const recent = S.inbox.filter((m) => !m.needs_action && m.kind !== "report");
-    const listingOf = (m) => S.listings.find((x) => x.id === m.listing_id);
     const where = (m) => listingName(m);
-    // Just the home and its name (Ismael, 2026-10-27): the whole card opens it, no tag or button.
-    const hero = (m) => {
-      const pc = photoOrCover(listingOf(m));
-      return `<a class="hero" href="#/l/${m.listing_id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}</div>
-        <div class="bd"><div class="tx"><b>${esc(where(m))}</b></div></div></a>`;
+    // The 5 listings used most recently, labelled Recent like the sidebar (Ismael, 2026-10-29),
+    // with the gold dot on one that has a reply not seen yet.
+    const recentCard = (l) => {
+      const pc = photoOrCover(l);
+      return `<a class="hero" href="#/l/${l.id}"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}</div>
+        <div class="bd"><div class="tx"><b>${esc(listingName(l))}</b></div>${l.unread ? `<span class="dot" aria-label="New reply"></span>` : ""}</div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
     const titleFor = (m) => (m.kind === "lead" ? `New Lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
@@ -576,9 +576,9 @@
       body = `<nav class="stats-mini" aria-label="At a glance">
           <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Listing" : "Listings"}</span></a>
           <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
-          <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Needs your review</span></a></nav>
+          <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Needs review</span></a></nav>
 
-        ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>New ads and Leads appear here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
+        <div class="sec">Recent</div>${S.listings.slice(0, 5).map(recentCard).join("")}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     // The count lives in the row below, so the line under the greeting is just the day.
@@ -2078,9 +2078,10 @@
         viewReport();
       }
       else if (act === "toWaiting") {
-        // The first thing waiting is right below; a tap brings it into view.
+        // Opens the most recent listing with ads waiting for review.
         e.preventDefault();
-        $(".hero")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const w = S.inbox.find((m) => m.needs_action && m.listing_id);
+        if (w) location.hash = `#/l/${w.listing_id}`;
       }
       else if (act === "listmenu") { S.menuFrom = null; openPop(t, listingMenu()); }
       else if (act === "limenu") {
