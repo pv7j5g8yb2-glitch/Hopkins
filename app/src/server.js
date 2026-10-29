@@ -10,7 +10,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
+  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { nameCase } from "./names.js";
@@ -389,12 +389,12 @@ app.delete("/api/photos/:id", async (request) => {
 app.get("/api/listings", async (request) => {
   await numberUntitled(request.ws.id);
   const rows = await all(
-    `SELECT l.id, l.title, l.address, l.area, l.city, l.untitled_no, l.price, l.currency, l.deal, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at, l.created_at,
+    `SELECT l.id, l.title, l.address, l.auto_title, l.area, l.city, l.untitled_no, l.price, l.currency, l.deal, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at, l.created_at,
        (SELECT id FROM photos WHERE listing_id = l.id ORDER BY position LIMIT 1) AS photo_id,
        (SELECT COUNT(*) FROM leads WHERE listing_id = l.id) AS leads,
        (SELECT COUNT(*) FROM messages WHERE listing_id = l.id AND needs_action = 1) AS waiting,
        (SELECT COUNT(*) FROM ads WHERE listing_id = l.id AND status = 'approved') AS approved,
-       ${UNREAD} AS unread
+       ${UNREAD} AS unread, ${PROPERTY("l")} AS property
      FROM listings l WHERE l.workspace_id = ? ORDER BY l.updated_at DESC`,
     [request.ws.id]
   );
@@ -434,6 +434,30 @@ app.get("/api/listings/:id", async (request, reply) => {
 app.post("/api/listings/:id/seen", async (request) => {
   await markSeen(request.ws, request.params.id);
   return { ok: true };
+});
+
+// A new thread, like ChatGPT and Claude: the first message makes it at once, so it's in the
+// sidebar (named from that message) before Hopkins answers; /first then gets the answer.
+app.post("/api/listings/start", async (request, reply) => {
+  const { text, photoIds, photoNames } = request.body || {};
+  const ids = Array.isArray(photoIds) ? photoIds.filter((x) => typeof x === "string").slice(0, 30) : [];
+  if (!clean(text, 5000) && !ids.length) return reply.code(400).send({ error: "Add photos, a link or a description." });
+  const listing = await startThread(request.ws, { text: clean(text, 5000) || "", photoIds: ids, photoNames: photoNames && typeof photoNames === "object" ? photoNames : {} });
+  return { listing: { id: listing.id } };
+});
+app.post("/api/listings/:id/first", async (request, reply) => {
+  const key = `l:${request.params.id}`;
+  await settleTurn(key);
+  const turn = startTurn(key);
+  let r;
+  try {
+    r = await firstReply(request.ws, request.params.id, timeZone(request));
+    if (r && turn.stopped) await undoFirst(request.ws, request.params.id);
+  } finally {
+    endTurn(key, turn);
+  }
+  if (!r) return reply.code(404).send({ error: "Listing not found." });
+  return { ...(await listingPayload(request.ws, request.params.id)), ...(turn.stopped ? { stopped: true } : { focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null }) };
 });
 
 app.post("/api/listings", async (request, reply) => {
@@ -517,8 +541,12 @@ app.post("/api/listings/:id/stop", async (request, reply) => {
     clearTimeout(timer);
     return { ...(await listingPayload(request.ws, listing.id)), stopped: true };
   }
-  const last = await get(`SELECT created_at FROM messages WHERE listing_id = ? AND role = 'agent' ORDER BY created_at DESC LIMIT 1`, [listing.id]);
-  if (last && Date.now() - new Date(last.created_at).getTime() < 2 * 60 * 1000) await undoLatestReply(request.ws, listing.id);
+  const last = await get(`SELECT created_at, data FROM messages WHERE listing_id = ? AND role = 'agent' ORDER BY created_at DESC LIMIT 1`, [listing.id]);
+  if (last && Date.now() - new Date(last.created_at).getTime() < 2 * 60 * 1000) {
+    // The thread's first message: its ads go without being counted, like a stop while it ran.
+    if (/"first":true/.test(last.data || "")) await undoFirst(request.ws, listing.id);
+    else await undoLatestReply(request.ws, listing.id);
+  }
   return { ...(await listingPayload(request.ws, listing.id)), stopped: true };
 });
 app.post("/api/new/stop", async (request) => ({ stopped: Boolean(stopTurn(`new:${request.ws.id}`)) }));

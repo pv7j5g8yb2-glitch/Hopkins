@@ -776,3 +776,8 @@ personal in here.
 * **Unread dot (2026-10-29):** the Today count badge is gone (sidebar and tab bar). `listings.seen_at`
   is set when a chat is opened (GET /api/listings/:id) or a reply lands while it's on screen
   (POST /api/listings/:id/seen); a Hopkins message after it makes the listing `unread`.
+* **Threads (2026-10-29):** POST /api/listings/start makes the thread from the first message
+  (photos uploaded first), POST /api/listings/:id/first answers it (`firstReply`: a property gets
+  its ads, anything else a chat reply; the model names it, `titleAI`, into `listings.auto_title`).
+  `PROPERTY()` in hopkins.js decides what counts as a listing. The old POST /api/listings still
+  does it all in one call (the tests use it).

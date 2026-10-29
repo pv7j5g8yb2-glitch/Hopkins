@@ -188,7 +188,10 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   "ALTER TABLE listings ADD COLUMN deal TEXT",
   // seen_at: when the agent last had this chat open. A Hopkins message after it is unread, shown as
   // a small gold dot in the sidebar like Claude's (2026-10-29). Empty (listings from before) is read.
-  "ALTER TABLE listings ADD COLUMN seen_at TEXT"]) {
+  "ALTER TABLE listings ADD COLUMN seen_at TEXT",
+  // auto_title: the thread's name from its first message, in a few words, like Claude names a
+  // chat (2026-10-29). The agent's own name (title) and the address come first.
+  "ALTER TABLE listings ADD COLUMN auto_title TEXT"]) {
   // Only "already there" is expected; anything else is logged, not hidden.
   try { await client.execute(sql); } catch (err) { if (!/duplicate column/i.test(err.message)) console.error(`Migration failed (${sql}):`, err.message); }
 }

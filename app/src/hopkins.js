@@ -10,7 +10,7 @@ import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
-import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure } from "./brain.js";
+import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure, titleAI } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
 // needs real understanding gets an honest "give me a moment" instead of "I didn't follow".
@@ -256,6 +256,110 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   return fresh;
 }
 
+// ---------- a new thread, like ChatGPT and Claude ----------
+
+// The first message makes the thread at once (Ismael, 2026-10-29): it's in the sidebar before
+// Hopkins answers, named from that message. Hopkins' answer comes after (firstReply). A thread
+// with a property in it becomes a listing with ads; any other message gets a reply like any chat.
+// A thread is a property listing once it has a property in it: a fact, a link, photos or ads.
+// A plain chat ("write me an email to a buyer") stays in Recent but isn't counted as a listing.
+export const PROPERTY = (t = "listings") => `(${t}.address IS NOT NULL OR ${t}.price IS NOT NULL OR ${t}.beds IS NOT NULL OR ${t}.sqft IS NOT NULL OR ${t}.home_type IS NOT NULL OR ${t}.link IS NOT NULL OR EXISTS (SELECT 1 FROM photos WHERE photos.listing_id = ${t}.id AND photos.kind = 'listing') OR EXISTS (SELECT 1 FROM ads WHERE ads.listing_id = ${t}.id))`;
+
+export function quickTitle(text) {
+  const t = String(text || "").replace(/https?:\/\/\S+/g, " ").replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  const words = t.split(" ").slice(0, 5).join(" ").replace(/[.,!?;:'"]+$/, "");
+  return (words.charAt(0).toUpperCase() + words.slice(1)).slice(0, 48) || null;
+}
+
+export async function startThread(ws, { text = "", photoIds = [], photoNames = {} }) {
+  const link = (text.match(URL_RE) || [])[0] || null;
+  const rest = link ? text.replace(link, " ").trim() : text.trim();
+  const parsed = parseListingText(rest);
+  const id = randomUUID();
+  const now = nowIso();
+  const listing = { id, workspace_id: ws.id, address: null, city: null, area: null, price: null, currency: null, deal: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
+  listing.slug = slugFor(listing);
+  await run(
+    `INSERT INTO listings (id, workspace_id, slug, address, city, area, price, currency, deal, beds, baths, sqft, home_type, features, link, open_house, auto_title, created_at, updated_at, seen_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id, ws.id, listing.slug, listing.address, listing.city, listing.area, listing.price, listing.currency, listing.deal, listing.beds, listing.baths, listing.sqft, listing.home_type,
+      JSON.stringify(listing.features || []), link, listing.open_house, quickTitle(rest), now, now, now]
+  );
+  for (const [i, pid] of photoIds.entries()) {
+    const label = labelFromName(photoNames[pid] || "");
+    await run(`UPDATE photos SET listing_id = ?, position = ?, label = COALESCE(label, ?) WHERE id = ? AND workspace_id = ?`, [id, i, label, pid, ws.id]);
+  }
+  await postMessage(ws.id, id, "agent", "text", [rest, link].filter(Boolean).join("\n"), { first: true, ...(photoIds.length ? { photos: photoIds } : {}) });
+  await numberUntitled(ws.id);
+  return loadListing(ws.id, id);
+}
+
+// The model names the thread in a few words (the first words stand in until then).
+async function nameThread(ws, id, text) {
+  const title = await titleAI(text).catch(() => null);
+  if (title) await run(`UPDATE listings SET auto_title = ? WHERE id = ? AND workspace_id = ?`, [polish(title), id, ws.id]);
+}
+
+export async function firstReply(ws, id, tz = "UTC") {
+  const listing = await loadListing(ws.id, id);
+  if (!listing) return null;
+  const msg = await get(`SELECT * FROM messages WHERE listing_id = ? AND role = 'agent' AND data LIKE '%"first":true%' ORDER BY created_at LIMIT 1`, [id]);
+  if (!msg) return null;
+  if (await get(`SELECT 1 FROM messages WHERE listing_id = ? AND role = 'hopkins' LIMIT 1`, [id])) return {};
+  const text = msg.body || "";
+  const naming = nameThread(ws, id, text);
+  const out = await answerFirst(ws, listing, text, safeJson(msg.data, {}).photos || [], tz);
+  // The name usually lands with the answer; it never holds the answer up for long.
+  await Promise.race([naming, new Promise((r) => setTimeout(r, 4000))]);
+  return out;
+}
+
+// A property (photos, a link, or a home fact the model agrees is a listing) gets its ads; a
+// question or anything else gets an answer, like any chat.
+async function answerFirst(ws, listing, text, photoIds, tz, { inPlace = false } = {}) {
+  let answer = null;
+  if (!photoIds.length && !URL_RE.test(text)) {
+    const history = [{ role: "agent", body: text }];
+    answer = looksLikeListing(text) ? await answerIfNotListing(ws, history, text, tz) : await newChat(ws, history, tz);
+  }
+  if (!answer) return readAndMake(ws, listing, text, { inPlace });
+  await say(ws, listing.id, answer);
+  return {};
+}
+
+// Stopped while Hopkins answered the first message: the thread and the message stay, the answer
+// goes, and ads it made are never counted (nobody saw them).
+export async function undoFirst(ws, id) {
+  const msg = await get(`SELECT * FROM messages WHERE listing_id = ? AND role = 'agent' AND data LIKE '%"first":true%' ORDER BY created_at LIMIT 1`, [id]);
+  for (const t of ["tests", "launches", "ads"]) await run(`DELETE FROM ${t} WHERE listing_id = ? AND workspace_id = ?`, [id, ws.id]);
+  await run(`DELETE FROM messages WHERE listing_id = ? AND workspace_id = ? AND role = 'hopkins' AND kind != 'lead'`, [id, ws.id]);
+  if (msg) await run(`UPDATE messages SET data = ? WHERE id = ?`, [JSON.stringify({ ...safeJson(msg.data, {}), stopped: true }), msg.id]);
+}
+
+// The listing read from the agent's first message (its link, its words, its photos), then its
+// ads. inPlace writes them over the ones there (an edit of that first message).
+async function readAndMake(ws, listing, text, { inPlace = false } = {}) {
+  const link = (text.match(URL_RE) || [])[0] || null;
+  const rest = link ? text.replace(link, " ").trim() : text.trim();
+  const linkInfo = link ? await openLink(link) : null;
+  if (linkInfo?.photos?.length && !(await get(`SELECT 1 FROM photos WHERE listing_id = ? AND kind = 'listing'`, [listing.id]))) await importPhotos(ws, listing.id, linkInfo.photos);
+  const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
+  const parsed = parseListingText(source);
+  const facts = { address: null, city: null, area: null, price: null, currency: null, deal: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
+  await run(`UPDATE listings SET address = ?, city = ?, area = ?, price = ?, currency = ?, deal = ?, beds = ?, baths = ?, sqft = ?, home_type = ?, open_house = ?, features = ?, description = ?, link = ?, moment = 'new', updated_at = ? WHERE id = ? AND workspace_id = ?`,
+    [facts.address, facts.city, facts.area, facts.price, facts.currency, facts.deal, facts.beds, facts.baths, facts.sqft, facts.home_type, facts.open_house, JSON.stringify(facts.features || []), source || null, link, nowIso(), listing.id, ws.id]);
+  const missing = await readListing(ws, listing.id, { rest, linkInfo, features: facts.features, look: !inPlace });
+  await numberUntitled(ws.id);
+  const fresh = await loadListing(ws.id, listing.id);
+  if (link && !linkInfo && !fresh.price && !rest) {
+    await say(ws, listing.id, LINK_BLOCKED(link));
+    return {};
+  }
+  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : fresh.deal === "rent" ? "What's the monthly rent?" : "What's the asking price?"), count: countFrom(rest), inPlace });
+  return { focus: 1 };
+}
+
 // A listing link: Hopkins opens it itself, and when the site blocks that, Gemini reads it
 // through Google's own fetcher (only what the page says, 2026-10-28).
 async function openLink(link) {
@@ -308,9 +412,9 @@ async function readListing(ws, id, { rest, linkInfo, features = [], look = false
 
 // A listing's name: the agent's own, else the address or area or city, else "Untitled 1",
 // "Untitled 2" and so on, numbered in the order they came in and never renumbered.
-export const listingTitle = (l) => l.title || l.address || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
+export const listingTitle = (l) => l.title || l.address || l.auto_title || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
 export async function numberUntitled(workspaceId) {
-  const bare = await all(`SELECT id FROM listings WHERE workspace_id = ? AND untitled_no IS NULL AND COALESCE(title, address, area, city, '') = '' ORDER BY created_at`, [workspaceId]);
+  const bare = await all(`SELECT id FROM listings WHERE workspace_id = ? AND untitled_no IS NULL AND COALESCE(title, address, auto_title, area, city, '') = '' ORDER BY created_at`, [workspaceId]);
   if (!bare.length) return;
   const top = await get(`SELECT COALESCE(MAX(untitled_no), 0) AS n FROM listings WHERE workspace_id = ?`, [workspaceId]);
   for (const [i, l] of bare.entries()) await run(`UPDATE listings SET untitled_no = ? WHERE id = ?`, [Number(top.n) + i + 1, l.id]);
@@ -661,7 +765,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
     if (last && last.kind === "upgrade") return { upgrade: true, repeat: true, reason: "limit" };
     if (!current.length) {
-      const used = await get(`SELECT l.title, l.address, l.area, l.city, l.untitled_no FROM ads JOIN listings l ON l.id = ads.listing_id WHERE ads.workspace_id = ? AND l.id != ? ORDER BY ads.created_at LIMIT 1`, [ws.id, listing.id]);
+      const used = await get(`SELECT l.title, l.address, l.auto_title, l.area, l.city, l.untitled_no FROM ads JOIN listings l ON l.id = ads.listing_id WHERE ads.workspace_id = ? AND l.id != ? ORDER BY ads.created_at LIMIT 1`, [ws.id, listing.id]);
       // Two listings can share a name; "your ads went on Miami" reads wrong on a listing called Miami.
       const usedOn = used && listingTitle(used);
       const here = listingTitle(listing);
@@ -984,7 +1088,7 @@ async function restoreBefore(ws, msg) {
       const cols = Object.keys(a).filter((k) => COLUMN.test(k));
       await run(`INSERT INTO ads (${cols.join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`, cols.map((k) => a[k]));
     }
-    const cols = Object.keys(was).filter((k) => COLUMN.test(k) && !["id", "workspace_id", "slug", "created_at", "updated_at", "untitled_no", "title", "status", "spend"].includes(k));
+    const cols = Object.keys(was).filter((k) => COLUMN.test(k) && !["id", "workspace_id", "slug", "created_at", "updated_at", "untitled_no", "title", "auto_title", "status", "spend", "seen_at"].includes(k));
     await run(`UPDATE listings SET ${cols.map((k) => `${k} = ?`).join(", ")} WHERE id = ? AND workspace_id = ?`, [...cols.map((k) => was[k]), msg.listing_id, ws.id]);
   });
 }
@@ -1005,22 +1109,8 @@ async function editFirst(ws, listing, msg, text) {
   await run(`DELETE FROM messages WHERE listing_id = ? AND created_at >= ? AND kind != 'lead'`, [listing.id, msg.created_at]);
   const link = (text.match(URL_RE) || [])[0] || null;
   const rest = link ? text.replace(link, " ").trim() : text.trim();
-  const linkInfo = link ? await openLink(link) : null;
-  if (linkInfo?.photos?.length && !(await get(`SELECT 1 FROM photos WHERE listing_id = ? AND kind = 'listing'`, [listing.id]))) await importPhotos(ws, listing.id, linkInfo.photos);
-  const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
-  const parsed = parseListingText(source);
-  const facts = { address: null, city: null, area: null, price: null, currency: null, deal: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
-  await run(`UPDATE listings SET address = ?, city = ?, area = ?, price = ?, currency = ?, deal = ?, beds = ?, baths = ?, sqft = ?, home_type = ?, open_house = ?, features = ?, description = ?, link = ?, moment = 'new', updated_at = ? WHERE id = ? AND workspace_id = ?`,
-    [facts.address, facts.city, facts.area, facts.price, facts.currency, facts.deal, facts.beds, facts.baths, facts.sqft, facts.home_type, facts.open_house, JSON.stringify(facts.features || []), source || null, link, nowIso(), listing.id, ws.id]);
   await postMessage(ws.id, listing.id, "agent", "text", [rest, link].filter(Boolean).join("\n"), { ...safeJson(msg.data, {}), first: true });
-  const missing = await readListing(ws, listing.id, { rest, linkInfo, features: facts.features });
-  const fresh = await loadListing(ws.id, listing.id);
-  if (link && !linkInfo && !fresh.price && !rest) {
-    await say(ws, listing.id, LINK_BLOCKED(link));
-    return {};
-  }
-  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : fresh.deal === "rent" ? "What's the monthly rent?" : "What's the asking price?"), count: countFrom(rest), inPlace: true });
-  return { focus: 1 };
+  return answerFirst(ws, listing, text, safeJson(msg.data, {}).photos || [], "UTC", { inPlace: true });
 }
 
 // The model's facts, kept only where they're real values and actually different.
@@ -1497,7 +1587,7 @@ export async function weeklyReport(ws, range = weekRange()) {
      WHERE leads.workspace_id = ? AND leads.created_at >= ? AND leads.created_at < ? ORDER BY leads.created_at DESC`,
     [ws.id, since, until]
   );
-  const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, deal, status, spend, moment, created_at, (SELECT id FROM photos WHERE listing_id = listings.id ORDER BY position LIMIT 1) AS photo_id FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
+  const listings = await all(`SELECT id, title, address, auto_title, area, city, untitled_no, price, deal, status, spend, moment, created_at, (SELECT id FROM photos WHERE listing_id = listings.id ORDER BY position LIMIT 1) AS photo_id FROM listings WHERE workspace_id = ? AND ${PROPERTY()} ORDER BY created_at DESC`, [ws.id]);
   // For the chart and the comparison: the week before, and every lead so far per listing (spend
   // is typed in as a running total, so cost per lead is spend over all its leads, not this week's).
   // The week before, and for a week still going, the same stretch of it so far: Monday 00:00 up
@@ -1616,7 +1706,7 @@ export async function inbox(ws, tz) {
   await mondayMessage(ws, new Date(), tz);
   await numberUntitled(ws.id);
   const items = await all(
-    `SELECT messages.*, listings.title, listings.address, listings.area, listings.city, listings.untitled_no FROM messages LEFT JOIN listings ON listings.id = messages.listing_id
+    `SELECT messages.*, listings.title, listings.address, listings.auto_title, listings.area, listings.city, listings.untitled_no FROM messages LEFT JOIN listings ON listings.id = messages.listing_id
      WHERE messages.workspace_id = ? AND (messages.needs_action = 1 OR (messages.kind IN ('lead','report') AND messages.created_at >= ?))
      ORDER BY messages.created_at DESC LIMIT 30`,
     [ws.id, new Date(Date.now() - 7 * 86400_000).toISOString()]

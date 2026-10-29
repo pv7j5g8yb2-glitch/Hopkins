@@ -210,7 +210,7 @@
   }
   const photoOrCover = (l, thumb) => (l && l.photo_id ? { cls: "", style: `background-image:url(${photoUrl(l.photo_id, thumb)})`, inner: "" } : { cls: " cover", style: "", inner: l ? cover(l) : "" });
 
-  const baseName = (l) => l.title || l.address || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
+  const baseName = (l) => l.title || l.address || l.auto_title || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
   // Two listings with the same name read "Naples" and "Naples 2", then 3 and so on, in the order
   // they were made, like files on a computer (Ismael, 2026-10-27).
   S.nameNo = {};
@@ -480,8 +480,9 @@
 
   // The tab you tapped lights up straight away, before its screen has loaded.
   function markNav() {
-    const view = location.hash.slice(2).split("/")[0];
-    const nav = view === "l" ? "listings" : view || "today";
+    const [view, id] = location.hash.slice(2).split("/");
+    // A plain chat isn't a listing, so Listings doesn't light up for it.
+    const nav = view === "l" ? (S.listings.find((x) => x.id === id)?.property ? "listings" : "") : view || "today";
     $$(".nv,.tabbar a").forEach((a) => a.classList.toggle("on", a.dataset.nav === nav));
   }
 
@@ -574,7 +575,7 @@
         <li><div class="tx"><b>Your approval</b><p>Nothing runs without it.</p></div></li></ol>`;
     } else {
       body = `<nav class="stats-mini" aria-label="At a glance">
-          <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Listing" : "Listings"}</span></a>
+          <a href="#/listings"><b>${properties().length}</b><span>${properties().length === 1 ? "Listing" : "Listings"}</span></a>
           <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
           <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Needs review</span></a></nav>
 
@@ -591,18 +592,21 @@
 
   // Clearing listings out, the way Photos does it: Select, tick the ones to go, Delete. Holding
   // a card (or right clicking it on a laptop) opens its own menu: select, mark as sold, delete.
+  // Only threads with a property in them: a plain chat stays in Recent (2026-10-29).
+  const properties = () => S.listings.filter((l) => l.property);
   function viewListings() {
-    const sel = S.selecting && S.listings.length;
+    const props = properties();
+    const sel = S.selecting && props.length;
     document.body.classList.toggle("selecting", Boolean(sel));
     if (!sel) S.picked = new Set();
     const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}</div>
       <div class="bd"><b>${esc(listingName(l))}</b>${l.unread ? `<span class="dot" aria-label="New reply"></span>` : ""}</div></a>`; };
     const n = S.picked.size;
-    const lede = sel ? (n ? `${n} selected` : "Select listings to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "property" : "properties"}` : "Your listings appear here.";
+    const lede = sel ? (n ? `${n} selected` : "Select listings to delete") : props.length ? `${props.length} ${props.length === 1 ? "property" : "properties"}` : "Your listings appear here.";
     main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Listings</h1><p class="lede">${lede}</p></div>
-      ${S.listings.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
-      <div class="cards ${sel ? "selecting" : ""}">${S.listings.map(card).join("")}${sel ? "" : `<a class="card-new" href="#/new">${ICON.plus}New listing</a>`}</div></div></div>
-      ${sel ? `<div class="selbar lg"><button class="sec-btn" data-act="selectAll">${n === S.listings.length ? "Select none" : "Select all"}</button>
+      ${props.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
+      <div class="cards ${sel ? "selecting" : ""}">${props.map(card).join("")}${sel ? "" : `<a class="card-new" href="#/new">${ICON.plus}New listing</a>`}</div></div></div>
+      ${sel ? `<div class="selbar lg"><button class="sec-btn" data-act="selectAll">${n === props.length ? "Select none" : "Select all"}</button>
         <button class="btn del-btn" data-act="delPicked" ${n ? "" : "disabled"}>${ICON.trash}${n ? `Delete ${n}` : "Delete"}</button></div>` : ""}`;
     bindHold();
   }
@@ -782,15 +786,6 @@
 
   // ---------- a new listing ----------
 
-  const LISTINGISH = [
-    /https?:\/\//i,
-    /\$\s?\d|\b\d[\d,.]*\s?(k|m|million)\b|\b\d{3},\d{3}\b/i,
-    /\b\d+(\.\d)?\s*(bed|bd|br|bath|ba)(room)?s?\b/i,
-    /\b[\d,]+\s*(sq\.?\s*f(ee|oo)?t|sqft|square f(ee|oo)t|sf)\b/i,
-    /\b\d+\s+[a-z]+(\s[a-z]+)?\s+(st|street|ave|avenue|rd|road|dr|drive|ln|lane|blvd|boulevard|way|ct|court|pl|place|terrace|crescent)\b/i,
-    /\b(just listed|new listing|for sale|listing for)\b/i,
-  ];
-
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
@@ -807,13 +802,6 @@
     dropEl.addEventListener("drop", (e) => { e.preventDefault(); dropEl.classList.remove("drag"); S.addFiles(e.dataTransfer.files); });
     $("#dropGrid").addEventListener("click", (e) => { const i = e.target.dataset.rm; if (i !== undefined) { e.preventDefault(); S.removeFile(Number(i)); } });
     bindComposer(async (text, files) => {
-      if (S.editing && S.editing.nc != null) {
-        const at = Number(S.editing.nc);
-        let n = $(`#thread .mact.me-act[data-nc="${at}"]`)?.previousElementSibling;
-        stopEdit(false);
-        while (n) { const next = n.nextElementSibling; n.remove(); n = next; }
-        S.newChat.length = at;
-      }
       // Clear the box straight away so it doesn't look like nothing happened.
       const ta = $("#ta");
       ta.value = "";
@@ -821,77 +809,63 @@
       try { await create(text, files); } catch (err) { if (!err.stopped) { ta.value = text; viewNew(); $("#ta").value = text; } throw err; }
     }, {
       drop: (pending) => {
+        // The thread may already have opened in its place.
+        if (!dropEl.isConnected) return;
         dropEl.classList.toggle("has", pending.length > 0);
         $("#dropGrid").innerHTML = pending.length ? pending.map((p, i) => `<i class="${p.url ? "" : "wait"}" style="${p.url ? `background-image:url(${p.url});` : ""}position:relative"><button type="button" data-rm="${i}" aria-label="Remove" style="position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:rgba(42,15,20,.75);color:#fff;font-size:13px;line-height:22px">×</button></i>`).join("") + `<span class="more">${ICON.plus}</span>` : "";
       },
     });
+    // Like ChatGPT and Claude (Ismael, 2026-10-29): sending the first message makes the thread
+    // at once. It's in the sidebar, named from the message, and opens with the thinking mark
+    // while Hopkins answers there. Photos upload first, so they're part of that first message.
     async function create(text, files) {
-      const mine = current();
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
-      $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>${msgActs(`data-nc="${S.newChat.length}"`, true, true)}` : ""));
-      // Only a message that looks like a listing shows the listing steps. Anything else ("Hello",
-      // "what's 1+2?") gets the thinking mark and a reply; the server decides for sure. A number on
-      // its own isn't a listing (2026-10-27): it takes a price, beds, baths, size, a street
-      // address, a link or photos, the same things the server looks for.
-      const listingish = files.length || LISTINGISH.some((re) => re.test(text));
-      // Stop: your message stays and the conversation carries on here; no listing is made, and
-      // any photos you sent go back in the box.
+      $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>` : ""));
       const ctrl = new AbortController();
+      // Stopped while the photos upload: no thread is made, and the photos go back in the box.
       S.stop = () => {
         ctrl.abort();
-        $("#typing") && $("#typing").remove();
         $("#work") && $("#work").closest(".hk")?.remove();
-        S.newChat.push({ role: "agent", body: text || "(sent photos)" });
-        api("/api/new/stop", { body: {} }).catch(() => {});
         if (files.length) setTimeout(() => S.addFiles(files), 0);
       };
-      const signal = ctrl.signal;
-      if (!listingish) {
-        showTyping();
-        const my = current();
-        const p = await api("/api/listings", { body: { text, history: S.newChat }, signal });
-        if (my !== current()) { if (p.listing) refreshSide(); return; }
-        $("#typing") && $("#typing").remove();
-        if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
-        S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
-        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
-        typeOut([$("#thread .hk:last-child")], $("#msgs"));
-          $("#ta").placeholder = REPLY;
-        $("#msgs").scrollTop = $("#msgs").scrollHeight;
-        return;
-      }
-      const finish = showWork();
+      showWork();
       const photoIds = [], photoNames = {};
       for (const f of files) {
         const r = await uploadPhoto(f);
-        if (signal.aborted) throw Object.assign(new Error("Stopped"), { stopped: true });
+        if (ctrl.signal.aborted) throw Object.assign(new Error("Stopped"), { stopped: true });
         photoIds.push(r.id);
         photoNames[r.id] = f.name;
       }
-      const p = await api("/api/listings", { body: { text, photoIds, photoNames, history: S.newChat }, signal });
-      if (p.stopped) return;
-      if (p.chat) {
-        // It wasn't a listing after all: the reply takes the thinking mark's place.
-        $("#work").closest(".hk").remove();
-        S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
-        $("#thread").insertAdjacentHTML("beforeend", `<div class="hk in">${MARK("settle")}<div class="b">${md(p.chat.reply)}${msgActs(`data-nc="${S.newChat.length - 1}"`, false)}</div></div>`);
-        typeOut([$("#thread .hk:last-child")], $("#msgs"));
-          $("#ta").placeholder = REPLY;
-        $("#msgs").scrollTop = $("#msgs").scrollHeight;
-        return;
+      const { listing } = await api("/api/listings/start", { body: { text, photoIds, photoNames }, signal: ctrl.signal });
+      // From here the thread exists: it shows in the sidebar and opens, whatever happens next.
+      const id = listing.id;
+      const here = () => location.hash === `#/l/${id}`;
+      S.firstPending = id;
+      S.fresh = id;
+      S.seen[id] = 1;
+      try {
+        const [, , full] = await Promise.all([loadMe(), loadListings(), api(`/api/listings/${id}`).catch(() => null)]);
+        if (full) S.ready = full;
+        drawSide();
+        location.hash = `#/l/${id}`;
+        const signal = stoppable({ id });
+        const next = await api(`/api/listings/${id}/first`, { body: {}, signal });
+        S.firstPending = null;
+        if (here() && !next.stopped) {
+          if (next.focus && next.ads.some((a) => a.version === next.focus)) S.selected[id] = next.focus;
+          drawListing(next);
+        }
+        refreshSide();
+      } catch (err) {
+        S.firstPending = null;
+        if (err.stopped) throw err;
+        // The thread and the message stay; the thinking mark goes and the error shows.
+        $("#typing") && $("#typing").remove();
+        refreshSide();
+        toast(err.message);
+        throw Object.assign(new Error(err.message), { stopped: true });
       }
-      // Gone before the ads came: the new listing waits in the sidebar with its dot.
-      if (mine !== current()) { await refreshSide(); return; }
-      await finish();
-      // The listing loads while the chat and the thinking mark are still on screen, then takes
-      // their place in one go: no grey placeholder in between.
-      const [, , full] = await Promise.all([loadMe(), loadListings(), api(`/api/listings/${p.listing.id}`).catch(() => null)]);
-      if (full) S.ready = full;
-      S.fresh = p.listing.id;
-      // The conversation so far is already on screen; only what's new animates in.
-      if (S.newChat.length) S.seen[p.listing.id] = S.newChat.length + 1;
-      location.hash = `#/l/${p.listing.id}`;
     }
   }
 
@@ -914,6 +888,7 @@
     const row = S.listings.find((x) => x.id === p.listing.id);
     if (p.listing.unread) { p.listing.unread = false; api(`/api/listings/${p.listing.id}/seen`, { body: {} }).catch(() => {}); }
     if (row && row.unread) { row.unread = 0; drawSide(); }
+    const awaitingFirst = S.firstPending === p.listing.id && !p.messages.some((m) => m.role === "hopkins");
     S.editing = null;
     const l = p.listing;
     if (!S.selected[l.id]) S.selected[l.id] = 1;
@@ -954,6 +929,8 @@
       if (S.editing) return sendEdit(S.editing.id, text);
       await say(text);
     });
+    // A new thread, still waiting on its first answer: the thinking mark, like any reply.
+    if (awaitingFirst) showTyping();
   }
 
   // Stop: the app lets go at once, your message stays, the thinking mark goes. The server undoes
@@ -2125,7 +2102,7 @@
         input.select();
       }
       else if (act === "selectMode") { S.selecting = !S.selecting; buzz(5); viewListings(); }
-      else if (act === "selectAll") { S.picked = S.picked.size === S.listings.length ? new Set() : new Set(S.listings.map((x) => x.id)); buzz(5); viewListings(); }
+      else if (act === "selectAll") { const props = properties(); S.picked = S.picked.size === props.length ? new Set() : new Set(props.map((x) => x.id)); buzz(5); viewListings(); }
       else if (act === "selectOne") { S.selecting = true; S.picked = new Set([t.dataset.id]); viewListings(); }
       else if (act === "markSold") {
         await api(`/api/listings/${t.dataset.id}`, { method: "PATCH", body: { status: t.dataset.sold === "1" ? "sold" : "active" } });

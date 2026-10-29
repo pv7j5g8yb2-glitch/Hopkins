@@ -600,6 +600,22 @@ const NEW_SCHEMA = {
   additionalProperties: false,
 };
 
+// A thread's name from its first message, the way Claude or ChatGPT name a chat. Null when the
+// model isn't there or didn't answer; the first words stand in meanwhile.
+const TITLE_SCHEMA = { type: "object", properties: { title: { type: "string" } }, required: ["title"], additionalProperties: false };
+export async function titleAI(text) {
+  if (!aiEnabled || !String(text || "").trim()) return null;
+  const r = await call({
+    system: `You name chats in Hopkins, a real estate marketing app, the way Claude or ChatGPT name a conversation from its first message: 2 to 5 words, sentence case, no quotes, no full stop, no dashes, no emoji. Say what it's about, plainly: "Email to a quiet buyer", "Instagram posting times", "3 bed condo in Midtown". For a property with a street address, use the address ("412 Oak Street").`,
+    messages: [{ role: "user", content: `First message:\n${String(text).slice(0, 1500)}` }],
+    schema: TITLE_SCHEMA,
+    effort: "low",
+    temperature: 0.3,
+  });
+  const t = typeof r?.title === "string" ? r.title.replace(/^["'“”‘’\s]+|["'“”‘’.!\s]+$/g, "").trim() : "";
+  return t && t.length <= 60 ? t : null;
+}
+
 // With decide, the model also says whether the last message hands over a home to market, so a
 // question with a price in it ("what's 15% of $650,000?") gets an answer, not a new listing.
 const DECIDE_SCHEMA = {

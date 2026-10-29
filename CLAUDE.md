@@ -207,10 +207,15 @@ The product's code is in `app/` (its README says what works and how to run it).
   listing or an ad never gives any back. Running any ad needs the paid plan too.
 * **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
   invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
+* **Threads (Ismael, 2026-10-29):** like ChatGPT and Claude, the first message on New listing
+  makes the thread at once: it's in the sidebar and opens with the thinking mark before Hopkins
+  answers, named from that message in a few words by the model (the first words stand in until
+  then; a property's address wins). A thread with a property in it (facts, a link, photos, ads) is
+  a listing; a plain chat stays in Recent but not in Listings, its count or Report.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft
   corners), like ChatGPT and Claude. The agent's message stays with Copy and Edit, the reply
-  never comes, anything it changed goes back, and the model never sees a stopped request. On the
-  New listing screen, Stop makes no listing and counts no ads.
+  never comes, anything it changed goes back, and the model never sees a stopped request. Stopping a thread's first answer keeps the thread and the
+  message, and counts no ads.
 * **Editing messages (Ismael, 2026-10-26, 2026-10-27):** copy on every message, edit on every message
   the agent sent, both always visible (never hidden until tapped, never expiring), and any part of
   a message can be selected and copied. An edit makes Hopkins forget the old wording and put the

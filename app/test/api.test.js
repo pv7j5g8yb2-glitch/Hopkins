@@ -692,3 +692,41 @@ test("a rental: rent per month, ads for renters, Apply on its page, and rented i
   const done = await c("POST", `/api/listings/${l.id}/messages`, { text: "it's rented" });
   assert.match(done.json.messages.at(-1).body, /^Rented\./);
 });
+
+test("the first message makes the thread at once, named from it, then Hopkins answers in it", async () => {
+  const { c } = await signup("threads@ellery.test");
+  // A plain chat: the thread is there before any answer, named from the message.
+  const s = await c("POST", "/api/listings/start", { text: "hello there, quick question for you" });
+  assert.equal(s.status, 200);
+  let list = (await c("GET", "/api/listings")).json.listings;
+  assert.equal(list.length, 1);
+  assert.equal(list[0].auto_title, "Hello there, quick question for");
+  assert.equal(list[0].property, 0);
+  const f = await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  assert.equal(f.json.messages.filter((m) => m.role === "hopkins").length, 1);
+  assert.equal(f.json.ads.length, 0);
+  // Asking for the answer again doesn't answer twice.
+  await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  assert.equal((await c("GET", `/api/listings/${s.json.listing.id}`)).json.messages.filter((m) => m.role === "hopkins").length, 1);
+
+  // A property: its ads, and its name is the address.
+  const p = await c("POST", "/api/listings/start", { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000, big back yard" });
+  const pf = await c("POST", `/api/listings/${p.json.listing.id}/first`, {});
+  assert.equal(pf.json.ads.length, 3);
+  list = (await c("GET", "/api/listings")).json.listings;
+  const prop = list.find((l) => l.id === p.json.listing.id);
+  assert.equal(prop.address, "12 Elm St");
+  assert.equal(prop.property, 1);
+  // The plain chat isn't counted as a listing in Report.
+  assert.ok((await c("GET", "/api/report")).json.listings.every((l) => l.id !== s.json.listing.id));
+
+  // Stopped right after: the thread and the message stay, the ads go and aren't counted.
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [(await c("GET", "/api/me")).json.workspace.id]);
+  const before = (await c("GET", "/api/me")).json.usage.adsMade;
+  const q = await c("POST", "/api/listings/start", { text: "5 Oak Ave, Austin, TX. 2 bed 1 bath, $410,000" });
+  assert.equal((await c("POST", `/api/listings/${q.json.listing.id}/first`, {})).json.ads.length, 3);
+  const stopped = await c("POST", `/api/listings/${q.json.listing.id}/stop`, {});
+  assert.equal(stopped.json.ads.length, 0);
+  assert.equal(stopped.json.messages.length, 1);
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, before);
+});
