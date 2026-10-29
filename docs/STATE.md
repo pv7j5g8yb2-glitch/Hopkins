@@ -744,3 +744,8 @@ personal in here.
   rewritten in standard software wording (rule in CLAUDE.md). Buttons renamed: "Make the ads" is
   now "Create ads", "Run it" under an ad is "Run ad", "Yes, run it" on the plan is "Approve and
   run". The reset email, the buyer page form and the login page were done too.
+* **Photos of any size and HEIC (2026-10-29):** there was never a real size limit (the browser
+  shrinks every photo to 1600 pixels first, so a 12 MB, 8000 pixel JPEG went in fine). The real
+  gap was iPhone HEIC photos on Chrome, Firefox or Edge, which were silently dropped. They're now
+  turned into JPEGs as they're picked (heic-to, about 0.8 MB gzipped, loaded only when needed;
+  a 12 MP HEIC took about 10 seconds headless). Safari opens HEIC itself.

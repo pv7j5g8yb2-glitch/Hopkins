@@ -268,8 +268,20 @@
     c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
     return c.toDataURL(type, quality).split(",")[1];
   }
+  // iPhones save photos as HEIC. Safari opens them, other browsers can't, so there they're turned
+  // into JPEGs as they're picked, with a converter that only loads the first time one is needed.
+  // Any size is fine: every photo is shrunk to 1600 pixels before it's sent.
+  const HEIC = /\.(heic|heif)$/i;
+  const isPhoto = (f) => f.type.startsWith("image/") || HEIC.test(f.name || "");
+  async function openable(file) {
+    if (!/image\/hei[cf]/.test(file.type) && !HEIC.test(file.name || "")) return file;
+    if (await readImage(file).then(() => true, () => false)) return file;
+    const { heicTo } = await import("/static/heic-to-1.6.7.js");
+    const jpeg = await heicTo({ blob: file, type: "image/jpeg", quality: 0.92 });
+    return new File([jpeg], (file.name || "photo").replace(HEIC, "") + ".jpg", { type: "image/jpeg" });
+  }
   async function uploadPhoto(file, { listingId, kind } = {}) {
-    const img = await readImage(file);
+    const img = await readImage(file).catch(() => { throw new Error("That photo couldn't be opened. Try a JPG or PNG."); });
     const logo = kind === "logo";
     const type = logo && file.type === "image/png" ? "image/png" : "image/jpeg";
     const body = {
@@ -602,7 +614,7 @@
   function composerHtml(placeholder) {
     return `<div class="comp-wrap">
       <form class="comp lg" id="comp"><div id="editbar"></div><div class="att" id="att"></div>
-      <div class="row-c"><label class="icon-btn add" title="Add photos" aria-label="Add photos">${ICON.plus}<input type="file" id="files" accept="image/*" multiple hidden></label>
+      <div class="row-c"><label class="icon-btn add" title="Add photos" aria-label="Add photos">${ICON.plus}<input type="file" id="files" accept="image/*,.heic,.heif" multiple hidden></label>
       <textarea id="ta" rows="1" placeholder="${esc(placeholder)}" enterkeyhint="send"></textarea>
       <button class="send" id="send" type="submit" aria-label="Send">${ICON.send}</button></div><div class="hint" id="hint"></div></form></div>`;
   }
@@ -639,8 +651,19 @@
       }
       btn.disabled = !S.busy && !ta.value.trim() && !S.pending.length;
     };
-    const add = (files) => {
-      for (const f of files) if (f.type.startsWith("image/")) S.pending.push({ file: f, url: URL.createObjectURL(f) });
+    const add = async (files) => {
+      const all = [...files], photos = all.filter(isPhoto);
+      if (photos.length < all.length) toast("Only photos can be added");
+      if (!photos.length) return;
+      const slow = photos.some((f) => HEIC.test(f.name || "") || /hei[cf]/.test(f.type));
+      if (slow) toast("Preparing photos…");
+      for (const f of photos) {
+        try {
+          const ok = await openable(f);
+          S.pending.push({ file: ok, url: URL.createObjectURL(ok) });
+        } catch { toast("That photo couldn't be opened. Try a JPG or PNG."); }
+        if (slow) drawAtt();
+      }
       buzz(5);
       drawAtt();
     };
@@ -725,7 +748,7 @@
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add photos, then paste the link or describe the home. <button class="link" data-act="example">Try an example</button></p>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing need Pro.
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="link" data-upgrade>Ask for Pro</button>`}</div>` : ""}</div>
-      <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
+      <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
     const dropEl = $("#drop");
@@ -1660,7 +1683,7 @@
       <div class="head"><h1>Settings</h1></div>
       <div class="group"><h4>Profile</h4>
         <div class="set-av"><span class="av big" id="setAv" ${avatarStyle()}>${esc(initials())}</span><div>
-          <label class="sec-btn">Change photo<input type="file" accept="image/*" hidden id="avFile"></label>
+          <label class="sec-btn">Change photo<input type="file" accept="image/*,.heic,.heif" hidden id="avFile"></label>
           ${u.avatar_id ? `<button class="link" data-act="avRemove" style="margin-left:10px">Remove</button>` : ""}</div></div>
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${fld("sName", "Your name", u.name, "text", "Sam Ellery", "name")}
@@ -1692,7 +1715,8 @@
       const f = e.target.files[0];
       if (!f) return;
       toast("Uploading…");
-      const r = await uploadPhoto(f, { kind: "avatar" });
+      let r;
+      try { r = await uploadPhoto(await openable(f), { kind: "avatar" }); } catch (err) { return toast(err.message || "That photo couldn't be opened. Try a JPG or PNG."); }
       await api("/api/account", { method: "PATCH", body: { avatar_id: r.id } });
       await loadMe();
       drawSide();

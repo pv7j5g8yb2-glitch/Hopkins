@@ -14,7 +14,7 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
 * **Feedback and errors.** Send feedback from the account menu; it shows in Admin and reaches the
   founder's phone (`NTFY_TOPIC`), as does any server error. Privacy page at `/privacy`.
 * **Brand.** Business name, colors, logo, type, voice. Every ad follows it. Set on first sign in.
-* **A listing in.** Photos (resized in the browser) plus the link or the description. Hopkins
+* **A listing in.** Photos of any size (shrunk to 1600 pixels in the browser; iPhone HEIC photos are turned into JPEGs there with `web/heic-to.js`, heic-to 1.6.7, LGPL-3.0, loaded only when one is picked) plus the link or the description. Hopkins
   reads the price, beds, baths, size, address, area and features. Links: it reads what the
   page says about itself, and with no photos sent it brings in up to 12 of the listing's own
   photos from the page. Zillow works fully (checked 2026-10-27): the photos (1152 wide, with

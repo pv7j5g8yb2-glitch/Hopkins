@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import { randomUUID, createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -36,6 +37,10 @@ const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8"
 // brand page preview before the agent has any listings.
 for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg"]) files[f] = readFileSync(join(WEB, f));
 files["manifest.webmanifest"] = readFileSync(join(WEB, "manifest.webmanifest"), "utf8");
+// The HEIC converter (iPhone photos, for browsers that can't open them). 3 MB, so the app only
+// loads it when such a photo is picked, and browsers keep it: its name changes with its version.
+files["heic-to.js"] = readFileSync(join(WEB, "heic-to.js"));
+const heicGz = gzipSync(files["heic-to.js"], { level: 9 });
 
 // trustProxy: on Render every request arrives through its proxy, so the visitor's address is in
 // X-Forwarded-For. Without it, every visitor looked like the same one and the brakes below
@@ -51,6 +56,8 @@ const CSP = [
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob:",
   "connect-src 'self'",
+  // The HEIC converter decodes in a worker it makes from its own code.
+  "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'none'",
   "frame-ancestors 'none'",
@@ -93,6 +100,11 @@ app.get("/healthz", async () => ({ ok: true, started: STARTED, ai: provider || "
 for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
+app.get("/static/heic-to-1.6.7.js", async (request, reply) => {
+  reply.type(TYPES.js).header("Cache-Control", "public, max-age=31536000, immutable").header("Vary", "Accept-Encoding");
+  if (/\bgzip\b/.test(request.headers["accept-encoding"] || "")) return reply.header("Content-Encoding", "gzip").send(heicGz);
+  return reply.send(files["heic-to.js"]);
+});
 app.get("/apple-touch-icon.png", async (_, reply) => reply.type(TYPES.png).send(files["apple-touch-icon.png"]));
 
 // ---------- pages ----------
@@ -330,12 +342,12 @@ app.post("/api/upgrade-request", async (request) => {
 // Photos arrive already resized by the browser, as base64, with a small thumbnail.
 app.post("/api/photos", { bodyLimit: 12_000_000 }, async (request, reply) => {
   const { data, thumb, mime, listingId, kind, name } = request.body || {};
-  if (typeof data !== "string" || !["image/jpeg", "image/png", "image/webp"].includes(mime)) return reply.code(400).send({ error: "Use a JPG, PNG or WebP photo." });
+  if (typeof data !== "string" || !["image/jpeg", "image/png", "image/webp"].includes(mime)) return reply.code(400).send({ error: "That file isn't a photo." });
   const buf = Buffer.from(data, "base64");
-  if (buf.length > 6_000_000) return reply.code(413).send({ error: "Photos must be under 6 MB." });
+  if (buf.length > 6_000_000) return reply.code(413).send({ error: "That photo couldn't be uploaded. Try a different one." });
   // The bytes have to be the image they say they are, whatever the browser claimed.
   const looks = { "image/jpeg": buf[0] === 0xff && buf[1] === 0xd8, "image/png": buf.subarray(0, 4).toString("hex") === "89504e47", "image/webp": buf.subarray(0, 4).toString() === "RIFF" && buf.subarray(8, 12).toString() === "WEBP" };
-  if (!looks[mime]) return reply.code(400).send({ error: "Use a JPG, PNG or WebP photo." });
+  if (!looks[mime]) return reply.code(400).send({ error: "That file isn't a photo." });
   if (listingId && !(await loadListing(request.ws.id, listingId))) return reply.code(404).send({ error: "Listing not found." });
   const id = randomUUID();
   const pos = listingId ? Number((await get(`SELECT COALESCE(MAX(position), -1) + 1 AS p FROM photos WHERE listing_id = ?`, [listingId])).p) : 0;
