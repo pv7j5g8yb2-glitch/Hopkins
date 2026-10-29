@@ -831,3 +831,9 @@ personal in here.
   but a foreign owned single member LLC must file IRS Form 5472 every year with a $25,000 penalty
   for missing it, and Ismael's tax stays wherever he lives. Recommendation given: register where he
   lives unless an accountant says otherwise.
+* **Ireland it is (Ismael, 2026-10-29)** for registering the business Meta verifies. Open: whose name.
+  One guide says a sole trader must be 18 or over (not confirmed on Revenue or CRO); if he's under
+  18 it goes in a parent's name, as the "Business accounts" note says. Tax, as explained to him: a
+  sole trader is taxed on profit whether or not the money is taken out; real business costs
+  (AI, hosting, domain, Hopkins' own Meta ads) come off the profit first; spending only to avoid
+  tax costs more than it saves. An accountant once revenue starts.
