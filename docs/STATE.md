@@ -800,3 +800,13 @@ personal in here.
   Hopkins as an MCP server that Claude, ChatGPT and Gemini can use (Leads, Monday report, ad
   results first; making ads later, still approved in Hopkins). Their Claude can't power Hopkins.
   Revisit once ads go live through Meta and pilots use Hopkins weekly.
+* **Meta readiness check (2026-10-29):** not ready for App Review. Hopkins has no Meta connection
+  yet (no Facebook login, no ad account connect, no ads created through the Marketing API, no
+  Leads pulled in), and App Review needs a working app plus a screen recording of each permission
+  in use. Meta's developer docs: Business Verification is required for advanced access (needed to
+  run ads on other people's accounts), but not while the only users are people with a role on the
+  app (admins, developers, testers), so pilots can be added as testers before any verification.
+  Meta dropped its separate Access Verification step for tech providers in October 2026; Business
+  Verification and App Review stay. Whether a sole trader's registered business name is enough for
+  verification isn't settled in what Meta publishes (outside guides disagree); a limited company
+  is the safe bet. No business is registered yet (see "Business accounts" under Working with Ismael).
