@@ -208,7 +208,9 @@
     const x = -18 + (h % 40), y = -30 + ((h >> 6) % 45), turn = (h >> 11) % 360;
     return `<svg class="cv-art" viewBox="0 0 120 120" style="left:${x}%;top:${y}%;transform:rotate(${turn}deg)">${PEBBLES}</svg>`;
   }
-  const photoOrCover = (l, thumb) => (l && l.photo_id ? { cls: "", style: `background-image:url(${photoUrl(l.photo_id, thumb)})`, inner: "" } : { cls: " cover", style: "", inner: l ? cover(l) : "" });
+  // Every chat shows the Hopkins cover, never the property photo (Ismael, 2026-10-29): the cards on
+  // Today and Chats, and the small squares in the sidebar and on Report.
+  const photoOrCover = (l) => ({ cls: " cover", style: "", inner: l ? cover(l) : "" });
 
   const baseName = (l) => l.title || l.address || l.auto_title || l.area || l.city || (l.untitled_no ? `Untitled ${l.untitled_no}` : "Untitled");
   // Two listings with the same name read "Naples" and "Naples 2", then 3 and so on, in the order
@@ -490,7 +492,7 @@
     markNav();
     $("#lists").innerHTML = S.listings.length
       ? S.listings.map((l) => `<a class="li ${route[0] === "l" && route[1] === l.id ? "on" : l.unread ? "unread" : ""}" href="#/l/${l.id}">
-          <i class="th${l.photo_id ? "" : " cover-mini"}" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
+          <i class="th cover-mini"></i>
           <div class="nm"><b>${esc(listingName(l))}</b></div>${l.unread && !(route[0] === "l" && route[1] === l.id) ? `<span class="dot" aria-label="New reply"></span>` : ""}<button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
     $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? "Pro" : "Free plan"}</span></span>${ICON.chev}</button>`;
@@ -1602,7 +1604,7 @@
       const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a Lead" : "") : v === 1 ? "Lead" : "Leads";
       return `<button class="rb-row${v ? "" : " zero"}" data-act="reportListing" data-id="${x.id}">
         ${ranked ? `<span class="rb-rank${medal}">${v ? i + 1 : ""}</span>` : ""}
-        <i class="th${x.photo_id ? "" : " cover-mini"}" style="${x.photo_id ? `background-image:url(${photoUrl(x.photo_id, true)})` : ""}"></i>
+        <i class="th cover-mini"></i>
         <span class="rb-mid"><b>${esc(listingName(S.listings.find((l) => l.id === x.id) || { title: x.name }))}</b>
           <span class="rb-track"><i class="${lead ? "top" : ""}" style="width:${width(x)}%"></i></span></span>
         <span class="rb-n"><b>${by === "cpl" ? (v != null ? esc(money(v)) : "") : v || 0}</b><em>${unit}</em></span></button>`;

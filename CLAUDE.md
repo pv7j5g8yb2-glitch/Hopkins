@@ -186,7 +186,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   the agent hasn't seen (they left before it came) gets a small gold dot where its ••• sits, like
   Claude's, also on its card on the Listings screen. Hovering shows the ••• again; opening the chat
   clears the dot at once. Other rows stay as they are. Listing cards carry no tags (no "Ads ready",
-  "Approved" or "Sold" on the photo, Ismael 2026-10-29): just the photo, the name and the dot.
+  "Approved" or "Sold", Ismael 2026-10-29): just the Hopkins cover, the name and the dot. Every
+  card and small square shows the Hopkins cover, never the property photo (Ismael, 2026-10-29).
   Today shows its three numbers, then "Recent" and the 5 listings used most recently (Ismael,
   2026-10-29); "Needs review" opens the latest listing waiting for review.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
