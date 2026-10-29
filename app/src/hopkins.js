@@ -225,10 +225,10 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
   const listing = { id, workspace_id: ws.id, address: null, city: null, area: null, price: null, currency: null, deal: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
   listing.slug = slugFor(listing);
   await run(
-    `INSERT INTO listings (id, workspace_id, slug, address, city, area, price, currency, deal, beds, baths, sqft, home_type, features, description, link, open_house, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    `INSERT INTO listings (id, workspace_id, slug, address, city, area, price, currency, deal, beds, baths, sqft, home_type, features, description, link, open_house, created_at, updated_at, seen_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [id, ws.id, listing.slug, listing.address, listing.city, listing.area, listing.price, listing.currency, listing.deal, listing.beds, listing.baths, listing.sqft, listing.home_type,
-      JSON.stringify(listing.features || []), source || null, link, listing.open_house, now, now]
+      JSON.stringify(listing.features || []), source || null, link, listing.open_house, now, now, now]
   );
 
   // Photos uploaded before the listing existed get attached now, in the order sent.

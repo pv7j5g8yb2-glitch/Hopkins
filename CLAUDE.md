@@ -182,6 +182,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   0.92), photos from a link are taken at the largest size the site gives, ads download as PNG at
   1080 by 1350 (feed) and 1080 by 1920 (story). Speed comes from doing the work in parallel and
   showing progress, never from lowering quality.
+* **Unread replies (Ismael, 2026-10-29):** no numbered badge on Today. A chat with a Hopkins reply
+  the agent hasn't seen (they left before it came) gets a small gold dot where its ••• sits, like
+  Claude's, also on its card on the Listings screen. Hovering shows the ••• again; opening the chat
+  clears the dot at once. Other rows stay as they are.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.

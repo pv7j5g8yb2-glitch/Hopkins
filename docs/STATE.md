@@ -773,3 +773,6 @@ personal in here.
   screen a question or request that mentions a home fact goes to the model first
   (`answerIfNotListing`), which says whether it's really a listing. On a blocked link only messages
   about the listing get the fixed "restricts access" reply.
+* **Unread dot (2026-10-29):** the Today count badge is gone (sidebar and tab bar). `listings.seen_at`
+  is set when a chat is opened (GET /api/listings/:id) or a reply lands while it's on screen
+  (POST /api/listings/:id/seen); a Hopkins message after it makes the listing `unread`.

@@ -488,12 +488,10 @@
   function drawSide() {
     const route = location.hash.slice(2).split("/");
     markNav();
-    const waiting = S.inbox.filter((m) => m.needs_action).length;
-    $$("[data-badge]").forEach((b) => (b.textContent = waiting || ""));
     $("#lists").innerHTML = S.listings.length
-      ? S.listings.map((l) => `<a class="li ${route[0] === "l" && route[1] === l.id ? "on" : ""}" href="#/l/${l.id}">
+      ? S.listings.map((l) => `<a class="li ${route[0] === "l" && route[1] === l.id ? "on" : l.unread ? "unread" : ""}" href="#/l/${l.id}">
           <i class="th${l.photo_id ? "" : " cover-mini"}" style="${l.photo_id ? `background-image:url(${photoUrl(l.photo_id, true)})` : ""}"></i>
-          <div class="nm"><b>${esc(listingName(l))}</b></div><button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
+          <div class="nm"><b>${esc(listingName(l))}</b></div>${l.unread && !(route[0] === "l" && route[1] === l.id) ? `<span class="dot" aria-label="New reply"></span>` : ""}<button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
     $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? "Pro" : "Free plan"}</span></span>${ICON.chev}</button>`;
   }
@@ -599,7 +597,7 @@
     if (!sel) S.picked = new Set();
     const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}
       ${l.status === "sold" ? `<span class="chip green">${doneWord(l)}</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
-      <div class="bd"><b>${esc(listingName(l))}</b></div></a>`; };
+      <div class="bd"><b>${esc(listingName(l))}</b>${l.unread ? `<span class="dot" aria-label="New reply"></span>` : ""}</div></a>`; };
     const n = S.picked.size;
     const lede = sel ? (n ? `${n} selected` : "Select listings to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Your listings appear here.";
     main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Listings</h1><p class="lede">${lede}</p></div>
@@ -829,6 +827,7 @@
       },
     });
     async function create(text, files) {
+      const mine = current();
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
       $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>${msgActs(`data-nc="${S.newChat.length}"`, true, true)}` : ""));
@@ -853,7 +852,7 @@
         showTyping();
         const my = current();
         const p = await api("/api/listings", { body: { text, history: S.newChat }, signal });
-        if (my !== current()) return;
+        if (my !== current()) { if (p.listing) refreshSide(); return; }
         $("#typing") && $("#typing").remove();
         if (p.listing) { await Promise.all([loadMe(), loadListings()]); S.fresh = p.listing.id; S.seen[p.listing.id] = S.newChat.length + 1; location.hash = `#/l/${p.listing.id}`; return; }
         S.newChat.push({ role: "agent", body: text }, { role: "hopkins", body: p.chat.reply });
@@ -883,6 +882,8 @@
         $("#msgs").scrollTop = $("#msgs").scrollHeight;
         return;
       }
+      // Gone before the ads came: the new listing waits in the sidebar with its dot.
+      if (mine !== current()) { await refreshSide(); return; }
       await finish();
       // The listing loads while the chat and the thinking mark are still on screen, then takes
       // their place in one go: no grey placeholder in between.
@@ -910,6 +911,10 @@
 
   function drawListing(p, keepScroll) {
     S.current = p;
+    // On screen means read: the dot goes the moment the chat is open (like Claude's).
+    const row = S.listings.find((x) => x.id === p.listing.id);
+    if (p.listing.unread) { p.listing.unread = false; api(`/api/listings/${p.listing.id}/seen`, { body: {} }).catch(() => {}); }
+    if (row && row.unread) { row.unread = 0; drawSide(); }
     S.editing = null;
     const l = p.listing;
     if (!S.selected[l.id]) S.selected[l.id] = 1;
@@ -983,7 +988,8 @@
       if (mine.length) mine[mine.length - 1].remove();
       throw err;
     }
-    if (my !== current()) return;
+    // Gone before the reply came: it waits, with the dot beside the listing.
+    if (my !== current()) { refreshSide(); return; }
     if (next.focus && next.ads.some((a) => a.version === next.focus)) S.selected[l.id] = next.focus;
     drawListing(next);
     refreshSide();
@@ -1070,7 +1076,7 @@
       if (my === current()) { drawListing(S.current, true); startEdit($(`#thread .mact[data-mid="${id}"]`), text); }
       throw err;
     }
-    if (my !== current()) return;
+    if (my !== current()) { refreshSide(); return; }
     S.seen[l.id] = i;
     if (next.focus && next.ads.some((a) => a.version === next.focus)) S.selected[l.id] = next.focus;
     drawListing(next);
@@ -1408,6 +1414,8 @@
   async function refreshSide() {
     await Promise.all([loadMe(), loadListings(), loadInbox()]);
     drawSide();
+    // The Listings screen shows the unread dots too, so it redraws when a reply lands.
+    if (location.hash.startsWith("#/listings") && !S.selecting) viewListings();
   }
 
   // ---------- Leads ----------

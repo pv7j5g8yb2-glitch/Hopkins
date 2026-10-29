@@ -393,12 +393,18 @@ app.get("/api/listings", async (request) => {
        (SELECT id FROM photos WHERE listing_id = l.id ORDER BY position LIMIT 1) AS photo_id,
        (SELECT COUNT(*) FROM leads WHERE listing_id = l.id) AS leads,
        (SELECT COUNT(*) FROM messages WHERE listing_id = l.id AND needs_action = 1) AS waiting,
-       (SELECT COUNT(*) FROM ads WHERE listing_id = l.id AND status = 'approved') AS approved
+       (SELECT COUNT(*) FROM ads WHERE listing_id = l.id AND status = 'approved') AS approved,
+       ${UNREAD} AS unread
      FROM listings l WHERE l.workspace_id = ? ORDER BY l.updated_at DESC`,
     [request.ws.id]
   );
   return { listings: rows };
 });
+
+// Unread: a Hopkins message (a reply, new ads, a new Lead) came in after the agent last had the
+// chat open, say because they left before the reply arrived.
+const UNREAD = `(l.seen_at IS NOT NULL AND EXISTS (SELECT 1 FROM messages m WHERE m.listing_id = l.id AND m.role = 'hopkins' AND m.created_at > l.seen_at))`;
+const markSeen = (ws, id) => run(`UPDATE listings SET seen_at = ? WHERE id = ? AND workspace_id = ?`, [nowIso(), id, ws.id]);
 
 async function listingPayload(ws, id) {
   await numberUntitled(ws.id);
@@ -410,16 +416,24 @@ async function listingPayload(ws, id) {
     all(`SELECT id, role, kind, body, data, needs_action, created_at, undo IS NOT NULL AS editable FROM messages WHERE listing_id = ? ORDER BY created_at`, [id]),
     get(`SELECT COUNT(*) AS n FROM leads WHERE listing_id = ?`, [id]),
   ]);
+  const unread = Boolean((await get(`SELECT ${UNREAD} AS u FROM listings l WHERE l.id = ?`, [id]))?.u);
   // Every message the agent sent can be edited, except one from before an approved run.
   const first = await firstMessageId(listing);
   for (const m of messages) { m.data = m.data ? JSON.parse(m.data) : null; m.editable = Boolean(m.editable) || m.id === first; }
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency, listing.deal) }, photos, ads: checked, messages, leads: Number(leads.n) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency, listing.deal), unread }, photos, ads: checked, messages, leads: Number(leads.n) };
 }
 
+// Opening a chat reads it.
 app.get("/api/listings/:id", async (request, reply) => {
+  await markSeen(request.ws, request.params.id);
   const p = await listingPayload(request.ws, request.params.id);
   return p || reply.code(404).send({ error: "Listing not found." });
+});
+// A reply that arrived while the chat was on screen was read as it came in.
+app.post("/api/listings/:id/seen", async (request) => {
+  await markSeen(request.ws, request.params.id);
+  return { ok: true };
 });
 
 app.post("/api/listings", async (request, reply) => {
