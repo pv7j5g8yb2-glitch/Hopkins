@@ -80,6 +80,9 @@ personal in here.
   isn't in git). 54s in all. The clip is about 4 dB louder than the voice part (-11 vs -15 LUFS),
   left as it is. Cover in `hooks.js` ("Set it up once. Then don't touch it."). Kokoro needs
   `VIRTUAL_ENV=$PWD/vovenv` set on its first run so it can install its English model.
+  Results after 13 hours (Ismael's screenshots, 2026-10-29): 836 views, skip rate 21.6%, average
+  watch 5s, most viewers gone within 2 seconds of the cut, 6 likes, 3 saves, 0 follows. See the
+  playbook log for the lesson.
 * Rendered mp4s and covers live in `reports/hopkins-brand/reels/`, which is not in git. A new
   container won't have them; Ismael has the sent copies, and they can be re-rendered from source.
 

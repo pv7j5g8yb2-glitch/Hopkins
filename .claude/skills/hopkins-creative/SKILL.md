@@ -245,6 +245,16 @@ app's previews) shows the blue verified badge after the handle (Ismael, 2026-10-
 
 ## Log
 
+- 2026-10-29 (reels, results of the jug reel, r7): 836 views in 13 hours, 480% more than any of
+  the last 5 reels, 98.8% non-followers, 82% from the Reels tab, skip rate 21.6% (Instagram: lower
+  than typical). The found clip won the first second. But the average watch was 5s: about three
+  quarters were still watching at 4s, then it fell to roughly 15% by 6s, right after the cut from
+  the clip into the explainer (the cut is at 4.3s). Likes came during the clip. 6 likes, 3 saves,
+  0 shares, 0 follows. Audience 18 to 34 (88%), US 19%, India 17%, Australia 12%: a broad crowd
+  drawn by the clip, not team leaders. Lesson: the cut reads as a new, unrelated video. Next time
+  the payoff has to show on the clip itself (the hook line on screen and the voice starting under
+  it from the first second) so the explainer is the answer they're waiting for, not a reset.
+
 - 2026-10-28 (reels, format): a found hook clip first, untouched (Ismael's: a jug given one push,
   rolling away on its own), then a hard cut into the explainer with "Here's how you're gonna...".
   The clip earns the first second, the first spoken line ties it to the lesson ("a listing ad that
