@@ -595,8 +595,7 @@
     const sel = S.selecting && S.listings.length;
     document.body.classList.toggle("selecting", Boolean(sel));
     if (!sel) S.picked = new Set();
-    const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}
-      ${l.status === "sold" ? `<span class="chip green">${doneWord(l)}</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
+    const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}</div>
       <div class="bd"><b>${esc(listingName(l))}</b>${l.unread ? `<span class="dot" aria-label="New reply"></span>` : ""}</div></a>`; };
     const n = S.picked.size;
     const lede = sel ? (n ? `${n} selected` : "Select listings to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Your listings appear here.";

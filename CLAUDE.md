@@ -185,7 +185,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Unread replies (Ismael, 2026-10-29):** no numbered badge on Today. A chat with a Hopkins reply
   the agent hasn't seen (they left before it came) gets a small gold dot where its ••• sits, like
   Claude's, also on its card on the Listings screen. Hovering shows the ••• again; opening the chat
-  clears the dot at once. Other rows stay as they are.
+  clears the dot at once. Other rows stay as they are. Listing cards carry no tags (no "Ads ready",
+  "Approved" or "Sold" on the photo, Ismael 2026-10-29): just the photo, the name and the dot.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.
