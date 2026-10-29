@@ -1204,7 +1204,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
 }
 
 const WHY = {
-  life: "sells the life the home gives, the way one buyer would live it",
+  life: "sells the life the property gives, the way one buyer would live it",
   feature: "puts one standout detail first, with the photo that shows it",
   facts: "gives the price and the numbers up front, for buyers who are already looking",
 };
@@ -1235,7 +1235,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
   if (intent.kind === "greeting") {
     const where = ads.length
       ? `Your ${ads.length === 1 ? "ad is" : `${ads.length} ads are`} ready. Tell me what to change, or say run it.`
-      : `Send me the price and the best thing about the home and I'll make the ads.`;
+      : `Send me the price and the best thing about the property and I'll make the ads.`;
     await say(ws, listing.id, await fresh(listing.id, [`Hi${first ? ` ${first}` : ""}. ${where}`, where]));
     return {};
   }
@@ -1261,7 +1261,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
         : "Once the ads are made, the test decides. They run side by side and the cheapest Leads win.",
       why: ad && WHY[ad.pattern]
         ? `${VERSION_WORD([v], ads)} ${WHY[ad.pattern]}. The ads are different ideas on purpose, so the test teaches you something.`
-        : "Each ad takes a different idea about the home, so the test shows which one buyers answer.",
+        : "Each ad takes a different idea about the property, so the test shows which one buyers answer.",
       download: isPaid(ws)
         ? "Yes. Tap the ··· menu at the top of the listing to download the version you're on as a feed or story image, or copy its text."
         : "Yes. Tap the ··· menu at the top of the listing, or Download under the ad, for the feed or story image, or copy its text.",
@@ -1292,7 +1292,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
       await say(ws, listing.id, await fresh(listing.id, [LINK_BLOCKED(), STILL_NEED]));
       return {};
     }
-    await say(ws, listing.id, "There are no ads on this listing yet. Tell me the price and the best thing about the home and I'll make them.");
+    await say(ws, listing.id, "There are no ads on this listing yet. Tell me the price and the best thing about the property and I'll make them.");
     return {};
   }
 

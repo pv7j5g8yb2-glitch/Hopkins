@@ -10,18 +10,18 @@
 
 const RULES = [
   // Familial status
-  { re: /\b(perfect|ideal|great|made) for (young )?(families|a family|kids|children)\b/i, level: "block", why: "names who the home suits by family status", fix: "with room to spread out" },
+  { re: /\b(perfect|ideal|great|made) for (young )?(families|a family|kids|children)\b/i, level: "block", why: "names who the property suits by family status", fix: "with room to spread out" },
   { re: /\bfamily[- ]friendly\b/i, level: "block", why: "suggests a preference for families", fix: "with room to spread out" },
   { re: /\bfamily (neighbou?rhood|street|area|community)\b/i, level: "block", why: "describes the neighbours by family status", fix: "quiet street" },
   { re: /\b(no (kids|children)|adults? only|child[- ]free)\b/i, level: "block", why: "excludes people by family status", fix: "" },
-  { re: /\b(empty[- ]nesters?|retirees|newlyweds|young professionals|couples|singles)\b/i, level: "block", why: "describes the buyer instead of the home", fix: "anyone" },
+  { re: /\b(empty[- ]nesters?|retirees|newlyweds|young professionals|couples|singles)\b/i, level: "block", why: "describes the buyer instead of the property", fix: "anyone" },
   { re: /\b(mature|older) (buyers?|persons?|people|residents?|couples?)\b/i, level: "block", why: "names an age group", fix: "" },
   { re: /\bstudents?\b/i, level: "caution", why: "can read as a preference for or against a group", fix: "" },
   // Rentals: source of income is protected in many states and cities, and occupancy limits by
   // who the tenant is are familial status (2026-10-29).
   { re: /\b(no (section 8|vouchers?|housing (vouchers?|assistance)|hcv)|section 8 not accepted|vouchers? not accepted)\b/i, level: "block", why: "source of income is protected in many states and cities", fix: "" },
   { re: /\b(students|professionals|working professionals) only\b/i, level: "block", why: "limits who can rent by who they are", fix: "" },
-  { re: /\b(ideal|perfect|suits?|suitable) for (a )?(single (person|professional)|one person|a couple)\b/i, level: "block", why: "names who the home suits by family status", fix: "" },
+  { re: /\b(ideal|perfect|suits?|suitable) for (a )?(single (person|professional)|one person|a couple)\b/i, level: "block", why: "names who the property suits by family status", fix: "" },
   { re: /\bmature tenants?\b/i, level: "block", why: "names an age group", fix: "" },
   // Sex
   { re: /\bbachelor pad\b/i, level: "block", why: "suggests a preference by sex and family status", fix: "one bedroom retreat" },
@@ -30,7 +30,7 @@ const RULES = [
   { re: /\bhis and hers\b/i, level: "caution", why: "describes the buyers by sex", fix: "double" },
   // Disability
   { re: /\b(able[- ]bodied|no wheelchairs?|not for (the )?(disabled|handicapped))\b/i, level: "block", why: "excludes people with a disability", fix: "" },
-  { re: /\bhandicap(ped)?\b/i, level: "caution", why: "say what the home has instead", fix: "accessible" },
+  { re: /\bhandicap(ped)?\b/i, level: "caution", why: "say what the property has instead", fix: "accessible" },
   { re: /\bmother[- ]in[- ]law (suite|unit|apartment|quarters)\b/i, level: "caution", why: "names who would live there", fix: "guest $1" },
   // Religion, race, national origin
   { re: /\b(christian|jewish|muslim|catholic|hindu)( home| family| community| neighbou?rhood)\b/i, level: "block", why: "names a religion", fix: "" },

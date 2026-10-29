@@ -243,6 +243,9 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the
   system only allows". Claude never says "Anthropic doesn't let me". Hopkins says "I can't" or "I
   can only", and when something needs a step from the agent, it says the step.
+* **Property, not home (Ismael, 2026-10-29):** everywhere in the app, its pages and Hopkins' chat
+  it's "property" ("1 property", "2 properties", "describe the property"), singular for one. Only
+  ad copy, written for buyers and renters, may say "home".
 * **Lead with a capital L (Ismael, 2026-10-27):** "Lead" and "Leads" are always capitalised in the
   app and in Hopkins' replies ("3 Leads", "cost per Lead", "New Lead"). Ad copy and buyer pages
   are not the app.

@@ -119,7 +119,7 @@ button:disabled{opacity:.6}
   document.querySelectorAll("input[name=wants]").forEach((r) => r.addEventListener("change", () => {
     $("ftitle").textContent = { showing: "Book a showing", info: "Ask a question", offer: "Talk about an offer", apply: "Apply" }[r.value];
   }));
-  if (d.status === "sold") { document.querySelector("input[value=info]").checked = true; $("ftitle").textContent = "Ask about homes like this"; }
+  if (d.status === "sold") { document.querySelector("input[value=info]").checked = true; $("ftitle").textContent = "Ask about properties like this"; }
   $("f").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("err").textContent = "";

@@ -468,7 +468,7 @@ const SET_SCHEMA = {
   properties: {
     insight: { type: "string", description: "First, in one or two sentences: what's genuinely different about this home and who is most likely to buy it. This decides the ideas." },
     ads: { type: "array", items: SET_AD_SCHEMA },
-    reply: { type: "string", description: "To the agent, like a colleague handing them over: what you noticed about the home and what each ad tries, calling them **Ad 1**, **Ad 2** and so on (always the word Ad with its number, both in bold, never a bare number), in two to four plain sentences. No question about running, posting or paying; at most a short invite to change anything." },
+    reply: { type: "string", description: "To the agent, like a colleague handing them over: what you noticed about the property and what each ad tries, calling them **Ad 1**, **Ad 2** and so on (always the word Ad with its number, both in bold, never a bare number), in two to four plain sentences. No question about running, posting or paying; at most a short invite to change anything." },
   },
   required: ["insight", "ads", "reply"],
   additionalProperties: false,
@@ -520,6 +520,7 @@ In the chat:
 - If they ask for a change and don't name a version, change the version they're looking at.
 - If something is unclear, ask one short question instead of guessing.
 - A short nudge ("now?", "and?", "so?", "?", "try again", "well?") means they're still waiting on what they asked last: answer that, fully. Never ask what they mean by it.
+- In the chat, call it the property (properties for more than one), never the home or homes. Ad copy is different: there, "home" is fine where a buyer or renter would say it.
 - Call the ads "Ad 1", "Ad 2" and so on, the way the app labels them. You can say what one is about after its number ("Ad 2, the arched entry").
 - Never list everything you can do unless they ask. Never repeat a reply you already gave.
 - About this listing, its ads and their account, only use facts from the context: never invent results, numbers or features. In ads too: no appliances, materials, finishes or layout the agent didn't mention. For general questions, answer from what you know, and say plainly when you're not sure. You can't look up live information (today's rates, news, the weather); say so in a few words and still help with what you can.

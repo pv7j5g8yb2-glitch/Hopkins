@@ -123,7 +123,7 @@ export function writeVersion(pattern, ctx, opts = {}) {
     const overlay = f ? f.life : where ? `Home, in ${where}.` : "Room to make it yours.";
     ad = {
       pattern,
-      name: f ? cap(f.name) : where ? where : "The home",
+      name: f ? cap(f.name) : where ? where : "The property",
       overlay,
       kicker: kickerFor(l, moment, where ? `${listed} · ${where}` : listed),
       headline: fit(l.beds ? `${l.beds} bed ${type} ${rent ? "for rent " : ""}in ${where || "town"}` : `${listed}${where ? " in " + where : ""}`, 40),
