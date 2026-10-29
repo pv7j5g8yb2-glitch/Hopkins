@@ -478,7 +478,7 @@
   }
 
   async function loadListings() { S.listings = (await api("/api/listings")).listings; numberNames(); }
-  async function loadInbox() { const r = await api("/api/inbox"); S.inbox = r.items; S.leadsWeek = r.leadsWeek; S.inboxLoaded = true; }
+  async function loadInbox() { const r = await api("/api/inbox"); S.inbox = r.items; S.leadsWeek = r.leadsWeek; S.weekFrom = r.weekFrom; S.inboxLoaded = true; }
 
   // The tab you tapped lights up straight away, before its screen has loaded.
   function markNav() {
@@ -549,7 +549,8 @@
     const first = (S.me.user.name || "").split(" ")[0];
     const h = new Date().getHours();
     const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-    const waiting = S.inbox.filter((m) => m.needs_action);
+    // Each number opens its own section showing exactly what it counts (Ismael, 2026-10-29).
+    const reviewing = S.listings.filter((l) => l.waiting > 0);
     // The Monday report lives on Report, not here (Ismael, 2026-10-27).
     const recent = S.inbox.filter((m) => !m.needs_action && m.kind !== "report");
     const where = (m) => listingName(m);
@@ -577,8 +578,8 @@
     } else {
       body = `<nav class="stats-mini" aria-label="At a glance">
           <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Chat" : "Chats"}</span></a>
-          <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
-          <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Needs review</span></a></nav>
+          <a href="#/leads/week"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
+          <a href="#/listings/review"><b>${reviewing.length}</b><span>Needs review</span></a></nav>
 
         <div class="sec">Recent</div>${S.listings.slice(0, 5).map(recentCard).join("")}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
@@ -606,14 +607,17 @@
     // A search bar where the count was (Ismael, 2026-10-29), in Liquid Glass on phones.
     const typing = document.activeElement?.id === "cq";
     const q = (S.chatQ || "").trim().toLowerCase();
+    // From Today's "Needs review": only the chats with ads waiting for approval.
+    const review = location.hash === "#/listings/review";
     const words = (l) => [listingName(l), l.address, l.area, l.city, l.auto_title].filter(Boolean).join(" ").toLowerCase();
-    const shown = q ? props.filter((l) => words(l).includes(q)) : props;
-    const cardsHtml = () => `${shown.map(card).join("")}${sel || q ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}`;
+    const shown = (review ? props.filter((l) => l.waiting > 0) : props).filter((l) => !q || words(l).includes(q));
+    const cardsHtml = () => `${shown.map(card).join("")}${sel || q || review ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}`;
     const top = sel ? `<p class="lede">${n ? `${n} selected` : "Select chats to delete"}</p>` : props.length ? "" : `<p class="lede">Your chats appear here.</p>`;
     main.innerHTML = `${mtop("Chats")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Chats</h1>${top}</div>
       ${props.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
       ${props.length && !sel ? `<label class="csearch lg">${ICON.search}<input type="search" id="cq" placeholder="Search chats" autocomplete="off" enterkeyhint="search" value="${esc(S.chatQ || "")}"></label>` : ""}
-      <div class="cards ${sel ? "selecting" : ""}">${cardsHtml()}</div>${q && !shown.length ? `<p class="cnone">No chats found.</p>` : ""}</div></div>
+      ${review && !sel ? `<a class="fchip" href="#/listings">Needs review ${ICON.x}</a>` : ""}
+      <div class="cards ${sel ? "selecting" : ""}">${cardsHtml()}</div>${!shown.length && (q || review) ? `<p class="cnone">${q ? "No chats found." : "Nothing needs review."}</p>` : ""}</div></div>
       ${sel ? `<div class="selbar lg"><button class="sec-btn" data-act="selectAll">${n === props.length ? "Select none" : "Select all"}</button>
         <button class="btn del-btn" data-act="delPicked" ${n ? "" : "disabled"}>${ICON.trash}${n ? `Delete ${n}` : "Delete"}</button></div>` : ""}`;
     const box = $("#cq");
@@ -1429,8 +1433,12 @@
   async function viewLeads() {
     const my = current();
     main.innerHTML = `${mtop("Leads")}${skeleton()}`;
-    const { leads } = await api("/api/leads");
+    const { leads: all } = await api("/api/leads");
     if (my !== current()) return;
+    // From Today's "Leads this week": only this week's, the same week Today counts.
+    const week = location.hash === "#/leads/week";
+    if (week && !S.weekFrom) await loadInbox();
+    const leads = week ? all.filter((x) => x.created_at >= S.weekFrom) : all;
     const fresh = leads.filter((x) => x.status === "new").length;
     const tel = (n) => n.replace(/[^\d+]/g, "");
     const item = (x, i) => `<div class="lead ${x.status === "new" ? "new" : ""}" style="animation-delay:${Math.min(i, 8) * 0.04}s"><span class="av">${esc(x.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span>
@@ -1438,11 +1446,12 @@
       <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? `Ad ${x.version}` : "Lead page"} · ${ago(x.created_at)}</div>
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
       <select data-lead="${x.id}" aria-label="Status">${Object.keys(STATUS).map((k) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${statusName(x, k)}</option>`).join("")}</select></div></div></div>`;
-    main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
+    main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Leads</h1>${leads.length && !week ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
       ${leads.length ? `<button class="sel-btn round" data-act="leadSearch" aria-label="Search Leads">${ICON.search}</button>` : ""}</div>
+      ${week ? `<a class="fchip" href="#/leads">This week ${ICON.x}</a>` : ""}
       ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search Leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
       <div class="list" id="leadList" style="border-top:0">${leads.map(item).join("")}</div><p class="lnone" id="lnone" hidden></p>`
-        : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each lead shows the ad it came from.</div>`}</div></div>`;
+        : week && all.length ? `<p class="cnone">No Leads this week.</p>` : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each lead shows the ad it came from.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");
@@ -2078,12 +2087,6 @@
         S.repFollow = sameDay(S.repMonday, mondayOf(new Date()));
         buzz(5);
         viewReport();
-      }
-      else if (act === "toWaiting") {
-        // Opens the most recent listing with ads waiting for review.
-        e.preventDefault();
-        const w = S.inbox.find((m) => m.needs_action && m.listing_id);
-        if (w) location.hash = `#/l/${w.listing_id}`;
       }
       else if (act === "listmenu") { S.menuFrom = null; openPop(t, listingMenu()); }
       else if (act === "limenu") {

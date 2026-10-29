@@ -642,7 +642,7 @@ function timeZone(request) {
 app.get("/api/inbox", async (request) => {
   const week0 = weekRange(new Date(), timeZone(request));
   const [items, week] = await Promise.all([inbox(request.ws, timeZone(request)), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [request.ws.id, week0.from, week0.to])]);
-  return { items, leadsWeek: Number(week?.n || 0) };
+  return { items, leadsWeek: Number(week?.n || 0), weekFrom: week0.from };
 });
 
 // ---------- leads and the report ----------

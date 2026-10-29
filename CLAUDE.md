@@ -189,7 +189,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   "Approved" or "Sold", Ismael 2026-10-29): just the Hopkins cover, the name and the dot. Every
   card and small square shows the Hopkins cover, never the property photo (Ismael, 2026-10-29).
   Today shows its three numbers, then "Recent" and the 5 listings used most recently (Ismael,
-  2026-10-29); "Needs review" opens the latest listing waiting for review.
+  2026-10-29). Each number opens its own section showing exactly what it counts (Ismael,
+  2026-10-29): Chats opens Chats, "Leads this week" opens Leads filtered to this week, "Needs
+  review" opens Chats filtered to the chats with ads waiting for approval. The filter shows as a
+  dark chip ("This week ×") that clears it.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.

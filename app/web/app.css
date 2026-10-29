@@ -415,6 +415,9 @@ a.row:hover{background:var(--hover)}
 .csearch input{flex:1;min-width:0;border:0;background:none;outline:none;font:inherit;font-size:16px;color:var(--ink)}
 .csearch input::-webkit-search-cancel-button{-webkit-appearance:none}
 .cnone{color:var(--quiet);font-size:14.5px;margin-top:4px}
+/* The filter a Today number opened ("Needs review", "This week"): tap it to see everything. */
+.fchip{display:inline-flex;align-items:center;gap:6px;margin:-6px 0 16px;padding:7px 10px 7px 14px;border-radius:999px;background:var(--ink);color:var(--bg,#FBF8F3);font-size:14px;font-weight:600}
+.fchip svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.2;fill:none}
 .lsearch[hidden],.lead[hidden],.sel-btn[hidden],.lnone[hidden]{display:none}
 .lsearch>svg{width:17px;height:17px;color:var(--quiet);flex:none}
 .lsearch input{flex:1;min-width:0;border:0;background:none;outline:none;font:inherit;font-size:16px;padding:10px 0;color:var(--ink)}
