@@ -753,3 +753,8 @@ personal in here.
   Send waits. Safari opens HEIC itself. Same day, for best quality (rule in CLAUDE.md): photos are
   kept at 1920 on the short side (was 1600 on the long side, which stretched landscape photos in
   story ads 1.6 times), JPEG 0.92 (was 0.86), and Zillow photos at 1536 wide (was 1152).
+* **Try an example removed (Ismael, 2026-10-29)** from the New listing screen.
+* **Open question (2026-10-29): rentals.** Ismael asked if Hopkins should also serve agents and
+  teams that rent homes out. The app today assumes a sale everywhere (no rent price per month, the
+  buyer page offers "Talk about an offer", the "sold" moment, ad copy). Recommendation given: yes,
+  as a second listing type, same purpose. Waiting on his answer.
