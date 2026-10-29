@@ -73,7 +73,7 @@
     if (res.status >= 502 && res.status <= 504) throw new Error("Hopkins is updating. Try again in a moment.");
     if (res.status === 401) { location.href = "/login"; throw new Error("signed out"); }
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Something went wrong. Try again.");
+    if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
     return data;
   }
 
@@ -399,7 +399,7 @@
       : "";
     return `<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open Lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
-      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Make a new set" : "Make the ads"}</button>
+      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Create new ads" : "Create ads"}</button>
       <button class="danger" data-act="delListingAsk">${ICON.trash}Delete listing</button>`;
   }
 
@@ -512,9 +512,9 @@
       body = `<nav class="stats-mini" aria-label="At a glance">
           <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Listing" : "Listings"}</span></a>
           <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
-          <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Waiting on you</span></a></nav>
+          <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Needs your review</span></a></nav>
 
-        ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>New ads and Leads show up here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
+        ${waiting.length ? waiting.map(hero).join("") : `<div class="empty"><div class="ic">${ICON.check}</div><b>You're all caught up</b>New ads and Leads appear here.<br><a class="btn" href="#/new">${ICON.plus}New listing</a></div>`}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     // The count lives in the row below, so the line under the greeting is just the day.
@@ -535,7 +535,7 @@
       ${l.status === "sold" ? `<span class="chip green">Sold</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
       <div class="bd"><b>${esc(listingName(l))}</b></div></a>`; };
     const n = S.picked.size;
-    const lede = sel ? (n ? `${n} selected` : "Tap the ones to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Every home you market lives here.";
+    const lede = sel ? (n ? `${n} selected` : "Select listings to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Your listings appear here.";
     main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Listings</h1><p class="lede">${lede}</p></div>
       ${S.listings.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
       <div class="cards ${sel ? "selecting" : ""}">${S.listings.map(card).join("")}${sel ? "" : `<a class="card-new" href="#/new">${ICON.plus}New listing</a>`}</div></div></div>
@@ -725,7 +725,7 @@
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add photos, then paste the link or describe the home. <button class="link" data-act="example">Try an example</button></p>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing need Pro.
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="link" data-upgrade>Ask for Pro</button>`}</div>` : ""}</div>
-      <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>The more the better. Hopkins picks the best for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
+      <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
     const dropEl = $("#drop");
@@ -940,7 +940,7 @@
       btn.classList.add("done");
       clearTimeout(btn._t);
       btn._t = setTimeout(() => { btn.innerHTML = ICON.copy; btn.classList.remove("done"); }, 1400);
-    }, () => toast("Couldn't copy that"));
+    }, () => toast("Couldn't copy"));
   }
 
   // Editing a message you sent: its words go back in the box, with a bar saying so, and it and
@@ -1007,10 +1007,10 @@
   // It replaces posting the same upgrade note into the chat every time.
   function upgradeSheet(reason = "run", anchor) {
     const asked = S.me.workspace.brand.upgrade_requested;
-    const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : `That's your <span class="serif">3 free ads.</span>`;
+    const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : `You've used your <span class="serif">3 free ads.</span>`;
     const line = reason === "run"
-      ? "Running ads is on Pro."
-      : "New ads are on Pro. Changes stay free.";
+      ? "Running ads requires Pro."
+      : "New ads require Pro. Changes are included.";
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
       <img class="upsell-mark" src="/static/mark.svg" alt="">
       <h3>${title}</h3><p>${line}</p>
@@ -1151,7 +1151,7 @@
         const d = m.data;
         return wrap(`${text}<div class="plan"><div class="big">${money(d.budget)} <span class="serif" style="font-weight:400">over</span> ${d.days} days</div>
           <div class="meta">${money(d.perDay)} a day · ${esc(d.audience.location)}, ${d.audience.radiusMiles} miles · Housing category</div>
-          ${m.needs_action ? `<div class="acts"><button class="btn" data-confirm="${m.id}">Yes, run it</button><button class="link" data-fill="Run it with $300 over 14 days">Change the budget</button></div>` : ""}</div>`);
+          ${m.needs_action ? `<div class="acts"><button class="btn" data-confirm="${m.id}">Approve and run</button><button class="link" data-fill="Run it with $300 over 14 days">Change the budget</button></div>` : ""}</div>`);
       }
       if (m.kind === "upgrade") {
         const asked = S.me.workspace.brand.upgrade_requested;
@@ -1240,7 +1240,7 @@
     pv.innerHTML = `<div class="pvh">${tabs}${fmt}</div><div class="mbar">${tabs}${fmtIcons}</div>
       <div class="stage" id="stage">${S.format === "feed" ? feed : story}<div class="dots">${p.ads.map((a) => `<i class="${a.version === v ? "on" : ""}"></i>`).join("")}</div></div>
       <div class="pvb">
-        <div class="actrow lg"><button class="btn" data-act="run">Run it</button><button class="sec-btn" data-act="style" aria-label="Style">${ICON.brush}<span>Style</span></button><button class="sec-btn" data-act="dlmenu" aria-label="Download">${ICON.down}<span>Download</span></button></div>
+        <div class="actrow lg"><button class="btn" data-act="run">Run ad</button><button class="sec-btn" data-act="style" aria-label="Style">${ICON.brush}<span>Style</span></button><button class="sec-btn" data-act="dlmenu" aria-label="Download">${ICON.down}<span>Download</span></button></div>
         ${issues.length ? `<div class="status bad">${ICON.alert}<button data-act="issues">${issues.length} wording ${issues.length === 1 ? "issue" : "issues"} to look at</button></div>` : ""}
         ${issues.length && S.showIssues ? `<div class="issues">${issues.map((i) => `"${esc(i.term)}" ${esc(i.why)}${i.suggestion ? `. Try "${esc(i.suggestion)}"` : ""}.`).join("<br>")}</div>` : ""}
       </div>`;
@@ -1288,8 +1288,8 @@
       <div class="st-row"><span>Text size</span><div class="stc"><button data-stsize="-1" aria-label="Smaller">A−</button><button data-stsize="1" aria-label="Bigger">A+</button></div>${chips("align", [["left", "Left"], ["center", "Center"]], st.align || "left")}</div>
       <div class="st-row"><span>Photo</span>${chips("focus", [["top", "Top"], ["center", "Middle"], ["bottom", "Bottom"]], st.focus || "center")}</div>
       <div class="st-row"><span>Fade</span>${chips("fade", [["light", "Light"], ["normal", "Normal"], ["strong", "Strong"]], st.fade || "normal")}</div>
-      <button class="st-reset" data-streset="1">Back to the brand look</button>
-      <p class="st-more">Anything else, just tell Hopkins in the chat.</p>`;
+      <button class="st-reset" data-streset="1">Reset to brand style</button>
+      <p class="st-more">For other changes, ask Hopkins in the chat.</p>`;
   }
   // The ad as it now looks, small, at the top of the sheet, so a change shows where your eyes are.
   function drawStylePreview() {
@@ -1356,7 +1356,7 @@
       ${leads.length ? `<button class="sel-btn round" data-act="leadSearch" aria-label="Search Leads">${ICON.search}</button>` : ""}</div>
       ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search Leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
       <div class="list" id="leadList" style="border-top:0">${leads.map(item).join("")}</div><p class="lnone" id="lnone" hidden></p>`
-        : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>They show up here, with the ad that brought them.</div>`}</div></div>`;
+        : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each Lead shows the ad it came from.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");
@@ -1449,7 +1449,7 @@
     const now = mondayOf(new Date());
     const head = main.querySelector(".rp-week");
     const html = `<button class="icon-btn rp-prev" data-act="repPrev" aria-label="Week before" ${mon <= firstMonday() ? "disabled" : ""}>${ICON.chevr}</button>
-      <button class="rp-wl" data-act="repCal" aria-label="Pick a week">${esc(weekLabel(mon))}${ICON.chev}</button>
+      <button class="rp-wl" data-act="repCal" aria-label="Select a week">${esc(weekLabel(mon))}${ICON.chev}</button>
       <button class="icon-btn" data-act="repNext" aria-label="Week after" ${mon >= now ? "disabled" : ""}>${ICON.chevr}</button>`;
     if (head) { head.innerHTML = html; main.querySelector(".page[data-report]")?.classList.toggle("loading", loading); }
     return html;
@@ -1572,8 +1572,8 @@
     if (!x) return;
     openPop(t, `<div class="note"><b>${esc(x.name)}</b>${esc(weekLabel(S.repMonday))}</div>
       <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per Lead</div></div>
-      <form class="spendf" data-id="${x.id}"><label for="spendIn">Spent on its ads so far</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
-      <p class="small">Fills in once Meta is connected.</p></form>
+      <form class="spendf" data-id="${x.id}"><label for="spendIn">Ad spend to date</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
+      <p class="small">Available once Meta is connected.</p></form>
       <div class="sep"></div><a href="#/l/${x.id}">${ICON.eye}Open listing</a>`, { top: true });
   }
 
@@ -1593,7 +1593,7 @@
     main.innerHTML = `${first ? `<div class="mtop"><span class="logo"><img src="/static/mark.svg" alt="">Hopkins</span></div>` : mtop("Brand")}<div class="page"><div class="wrap">
       <div class="head"><h1>${first ? `Make it <span class="serif">yours</span>` : "Brand"}</h1></div>
       <div class="brandgrid"><form class="form" id="brandForm">
-        <div class="group"><h4>Who you are</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
+        <div class="group"><h4>Details</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
         <div class="group"><h4>Branding</h4><div style="display:flex;flex-direction:column;gap:14px">
           <div><div class="colors"><label><input type="color" name="primary" value="${esc(b.primary || "#1F2A36")}">Main colour</label><label><input type="color" name="accent" value="${esc(b.accent || "#C8A96A")}">Accent</label></div>
           <div class="swatches">${PALETTES.map(([p1, p2]) => `<button type="button" data-pal="${p1},${p2}" style="background:${p1}" aria-label="Use ${p1} and ${p2}"><i style="background:${p2}"></i></button>`).join("")}</div></div>
@@ -1601,10 +1601,10 @@
         <div class="group"><h4>Font</h4><div class="fonts">${FONT_CHOICES.map(([v, l]) => { const f = Creative.FONTS[v]; return `<label class="fontc"><input type="radio" name="font" value="${v}" ${(b.font || "modern") === v ? "checked" : ""}><span style="font-family:'${f.family}';font-weight:${f.weight}">Aa</span><em>${l}</em></label>`; }).join("")}</div></div>
         <div class="group"><details class="more"><summary>More</summary><div class="inner">
           <div class="grid2">${field("phone", "Phone on Lead pages", "(512) 555 0100")}<div class="fld"><label for="f_country">Country</label><select id="f_country" name="country">${COUNTRIES.map((c) => `<option ${b.country === c ? "selected" : ""}>${c}</option>`).join("")}</select></div></div>
-          ${field("license", "License line", "DRE #01234567", "Small print on your Lead pages, where your state asks for it.")}
+          ${field("license", "License line", "DRE #01234567", "Shown on your Lead pages where your state requires it.")}
         </div></details></div>
         <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
-      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="See the preview bigger"></canvas><p class="small">${phone() ? "Live preview. Tap to expand." : "Sample ad"}</p></div></div></div></div>`;
+      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="Expand preview"></canvas><p class="small">${phone() ? "Live preview. Tap to expand." : "Sample ad"}</p></div></div></div></div>`;
     const form = $("#brandForm");
     let logoId = b.logo_id || "";
     const sample = () => {
@@ -1643,7 +1643,7 @@
       try {
         await api("/api/brand", { method: "PUT", body });
         await loadMe();
-        if (first) { celebrate("Looking good"); setTimeout(() => (location.hash = "#/today"), 900); }
+        if (first) { celebrate("Brand saved"); setTimeout(() => (location.hash = "#/today"), 900); }
         else toast("Saved");
       } catch (err) {
         $("#brandErr").textContent = err.message;
@@ -1665,7 +1665,7 @@
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${fld("sName", "Your name", u.name, "text", "Sam Ellery", "name")}
           ${fld("sEmail", "Email", u.email, "email", "", "email")}
-          <div class="fld hidden" id="sEmailPw">${`<label for="sEmailPass">Current password, to change your email</label><input id="sEmailPass" type="password" autocomplete="current-password">`}</div>
+          <div class="fld hidden" id="sEmailPw">${`<label for="sEmailPass">Current password, required to change email</label><input id="sEmailPass" type="password" autocomplete="current-password">`}</div>
           <div><button class="sec-btn" data-act="saveProfile">Save profile</button></div></div></div>
       <div class="group"><h4>Business</h4>
         ${fld("sBiz", "Business, team or brokerage", b.business, "text", "Ellery Realty", "organization")}
@@ -1674,10 +1674,10 @@
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
       <div class="group"><h4>Lead alerts</h4>${b.alerts_topic
-        ? `<p>On. New Leads go to your phone.</p>
+        ? `<p>On. New Leads are sent to your phone.</p>
            <ol class="steps-small"><li>Install ntfy from the App Store or Google Play.</li><li>Tap +, then subscribe to <b>${esc(b.alerts_topic)}</b> <button class="link" data-copy="${esc(b.alerts_topic)}" data-copied="Name copied">Copy</button></li><li>Send a test to check it arrives.</li></ol>
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
-        : `<p class="small">A ping on your phone for every new Lead.</p>
+        : `<p class="small">Get a notification for every new Lead.</p>
            <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>Billed monthly. Cancel anytime.</p>`
@@ -1727,7 +1727,7 @@
       await api("/api/account", { method: "PATCH", body: { avatar_id: "" } });
       await loadMe(); drawSide(); viewSettings(); toast("Photo removed");
     } else if (act === "deleteAsk") {
-      openPop(t, `<div class="note"><b>Delete your account?</b>Listings, ads, Leads and photos go for good.</div>
+      openPop(t, `<div class="note"><b>Delete your account?</b>Your listings, ads, Leads and photos will be permanently deleted.</div>
         <div style="padding:6px 10px 4px"><div class="fld"><label for="delPw">Your password</label><input id="delPw" type="password" autocomplete="current-password"></div></div>
         <button class="danger" data-act="deleteYes">${ICON.alert}Delete everything</button>`);
       setTimeout(() => $("#delPw") && $("#delPw").focus(), 50);
@@ -1747,9 +1747,9 @@
       <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
           <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}${w.upgrade_requested ? ` · <b>asked to upgrade ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
           <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Pro</option></select>
-          ${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Reset asked ${ago(w.reset_asked)}` : "Reset link"}</button>` : ""}</div></div>`).join("")}</div>
+          ${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Reset requested ${ago(w.reset_asked)}` : "Reset link"}</button>` : ""}</div></div>`).join("")}</div>
       <div class="head" style="margin-top:34px"><h2>Feedback</h2></div>
-      ${feedback.length ? `<div class="fb-list">${feedback.map((f) => `<div class="fb"><p>${esc(f.body)}</p><span class="small">${esc(f.name || "")} · ${esc(f.email || "")} · ${esc(f.page || "")} · ${ago(f.created_at)}</span></div>`).join("")}</div>` : `<p class="lede">Nothing yet. Pilots send it from the account menu, Send feedback.</p>`}
+      ${feedback.length ? `<div class="fb-list">${feedback.map((f) => `<div class="fb"><p>${esc(f.body)}</p><span class="small">${esc(f.name || "")} · ${esc(f.email || "")} · ${esc(f.page || "")} · ${ago(f.created_at)}</span></div>`).join("")}</div>` : `<p class="lede">No feedback yet.</p>`}
       </div></div>`;
     $$("[data-ws]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/admin/workspaces/${s.dataset.ws}`, { method: "PATCH", body: { plan: s.value } });
@@ -2016,13 +2016,13 @@
       else if (act === "resetLink") {
         const { link } = await api(`/api/admin/users/${t.dataset.user}/reset-link`, { body: {} });
         // Shown rather than copied straight away: iPhones only allow copying inside the tap itself.
-        openPop(t, `<div class="note"><b>Reset link</b>Works once, for 48 hours. Signs them out everywhere else.</div>
+        openPop(t, `<div class="note"><b>Reset link</b>Single use, valid for 48 hours. Signs them out on other devices.</div>
           <div class="note" style="word-break:break-all;user-select:all;-webkit-user-select:all">${esc(link)}</div>
           <button data-copy="${esc(link)}" data-copied="Reset link copied">${ICON.copy}Copy link</button>`);
       }
       else if (act === "feedbackAsk") {
-        openPop($(".mtop .av") || t, `<div class="note"><b>Send feedback</b>Something broken or missing?</div>
-          <form class="feedback"><textarea id="fbIn" rows="4" maxlength="3000" placeholder="What happened, or what you'd like"></textarea>
+        openPop($(".mtop .av") || t, `<div class="note"><b>Send feedback</b>Report a problem or suggest a feature.</div>
+          <form class="feedback"><textarea id="fbIn" rows="4" maxlength="3000" placeholder="Describe the issue or idea"></textarea>
           <button class="btn" type="submit">Send</button></form>`, { top: true });
         $("#fbIn").focus();
       }
@@ -2053,7 +2053,7 @@
           <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "listing" : `${ids.length} listings`}</button>`);
       } else if (act === "delYes") await deleteListings(t.dataset.ids.split(","));
       else if (act === "delListingAsk") {
-        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, chat, photos and Leads go too. It can't be undone.</div>
+        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, chat, photos and Leads will also be deleted. This can't be undone.</div>
           <button class="danger" data-act="delListingYes">${ICON.trash}Delete listing</button>`);
       } else if (act === "delListingYes") {
         await api(`/api/listings/${l.id}`, { method: "DELETE" });
@@ -2067,7 +2067,7 @@
         openPop(t, `<button data-dl="feed">${ICON.down}Feed image</button><button data-dl="story">${ICON.down}Story image</button>
           <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>
           <button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>
-          <div class="sep"></div><div class="note">Post or boost it yourself. Send people to the ad link so the Leads count here.</div>`);
+          <div class="sep"></div><div class="note">Post or boost it yourself. Use the ad link so Leads are tracked here.</div>`);
       }
       else if (act === "logout") { await api("/api/logout", { body: {} }); location.href = "/login"; }
       else if (act === "chat" || act === "ads") showAds(act === "ads");
@@ -2078,11 +2078,11 @@
       else if (act === "remake" && !paid() && S.me.usage.adsMade >= S.me.usage.freeLimit) upgradeSheet("limit");
       else if (act === "remake") {
         const before = S.current.messages.length;
-        toast(S.current.ads.length ? "Making a new set…" : "Making the ads…");
+        toast(S.current.ads.length ? "Creating new ads…" : "Creating ads…");
         S.fresh = l.id;
         const next = await api(`/api/listings/${l.id}/remake`, { body: {} });
         drawListing(next);
-        if (!next.ads.length && next.messages.length === before) toast("Making ads needs Pro");
+        if (!next.ads.length && next.messages.length === before) toast("New ads require Pro");
         refreshSide();
       }
       else if (t.dataset.say) { if (!S.busy) { S.busy = true; buzz(6); try { await say(t.dataset.say); } finally { S.busy = false; } } }
@@ -2114,7 +2114,7 @@
         t.textContent = "Requested";
         toast("Sent");
       } else if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); buzz(6); toast(t.dataset.copied || "Link copied"); }
-      else if (t.dataset.dl) { await download(t.dataset.dl); toast("Saved to your downloads"); }
+      else if (t.dataset.dl) { await download(t.dataset.dl); toast("Downloaded"); }
       else if (t.dataset.use) {
         const v = S.selected[l.id];
         const idx = S.current.photos.findIndex((p) => p.id === t.dataset.use);
@@ -2151,7 +2151,7 @@
       closePop();
       try {
         await api("/api/feedback", { body: { body, page: location.hash || "#/today" } });
-        toast("Sent. Thank you");
+        toast("Feedback sent");
       } catch (err) { toast(err.message); }
       return;
     }
@@ -2175,7 +2175,7 @@
     redraw(title || null);
     try {
       await api(`/api/listings/${id}`, { method: "PATCH", body: { title } });
-      toast(title ? "Renamed" : "Name reset to the address");
+      toast(title ? "Renamed" : "Name reset");
     } catch (err) {
       redraw(before);
       toast(err.message);

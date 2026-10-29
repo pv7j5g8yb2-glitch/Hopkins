@@ -740,3 +740,7 @@ personal in here.
   - Fixed with it: Canadian listings priced with a plain "$" now count as Canadian dollars
     (postal code or province), "4-bed, 2-bath" with hyphens is read.
   - Photos from a link stop at 12 on purpose (ads need a few, and each is stored).
+* **Wording pass (2026-10-29):** every error, toast, button, hint, email and fixed chat line
+  rewritten in standard software wording (rule in CLAUDE.md). Buttons renamed: "Make the ads" is
+  now "Create ads", "Run it" under an ad is "Run ad", "Yes, run it" on the plan is "Approve and
+  run". The reset email, the buyer page form and the login page were done too.

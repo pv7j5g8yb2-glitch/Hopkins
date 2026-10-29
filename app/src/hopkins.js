@@ -14,7 +14,7 @@ import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
 // needs real understanding gets an honest "give me a moment" instead of "I didn't follow".
-const BUSY = "I'm getting a lot of messages at once. Send that again in a few seconds.";
+const BUSY = "I'm receiving too many requests right now. Please try again in a few seconds.";
 const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].includes(readIntent(text).kind);
 import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { nameCase } from "./names.js";
@@ -128,7 +128,7 @@ export async function newChat(ws, history, tz = "UTC") {
   // How they did: the numbers themselves, even with no model.
   if (/\b(last week|this week|report|how (did|am|are|is) (i|we|it|things)|how many leads|my leads|results?|performance|how'?s it going)\b/i.test(text)) {
     const [last, now] = await Promise.all([weeklyReport(ws, weekRange(new Date(), tz, 1)), weeklyReport(ws, weekRange(new Date(), tz, 0))]);
-    if (!now.listings.length) return "No listings yet, so there's no report. Send me your first listing to start.";
+    if (!now.listings.length) return "No listings yet, so there's no report. Send your first listing to get started.";
     const best = last.topAds[0];
     return `Last week: ${last.total} ${last.total === 1 ? "Lead" : "Leads"}, ${last.showings} asked for a showing. This week so far: ${now.total}.${best ? ` Your best ad last week was ${best.name} with ${best.leads}.` : ""} The full breakdown is on Report.`;
   }
@@ -136,11 +136,11 @@ export async function newChat(ws, history, tz = "UTC") {
   // Said once; after that it isn't tacked onto every reply.
   const ask = lastReply?.includes("Send me a listing") ? "" : "Send me a listing: paste the link, add the photos, or tell me the address, price and what stands out.";
   const options =
-    intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos whenever you're ready."]
+    intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos."]
     : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes 3 ads, yours to download. ${upgradeText("plan")}`]
     : intent.kind === "question" && intent.topic === "help" ? [`I make ads for each listing, each a different idea, so you can test them against each other. You change them with me here, and nothing runs without your approval. ${ask}`]
     : intent.kind === "thanks" ? ["Anytime."]
-    : [`I need a listing to start. ${ask}`, `I didn't catch a listing in that. Paste the link or add the photos and I'll take it from there.`];
+    : [`I need a listing to start. ${ask}`, `I couldn't find a listing in that. Paste the link or add the photos.`];
   return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
 }
 
@@ -330,14 +330,14 @@ function introFor(moment, listing, ads = []) {
     const one = `**Ad 1**${ads[0].name ? `, ${ads[0].name.charAt(0).toLowerCase()}${ads[0].name.slice(1)}` : ""}`;
     if (moment === "price") return `The price changed on ${where}, so here's ${one}, for the new price. A new price gives people who scrolled past a reason to look again.`;
     if (moment === "open_house") return `Here's ${one}, for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}. Run it in the days before.`;
-    if (moment === "sold") return `Sold, nice. Here's ${one}, for people nearby who might sell next.`;
-    return `Here's ${one}, for ${where}. Tell me what to change, or press Run it.`;
+    if (moment === "sold") return `Sold. Here's ${one}, for people nearby who might sell next.`;
+    return `Here's ${one}, for ${where}. Tell me what to change, or tap Run ad.`;
   }
   const list = `\n\n${IDEAS(ads)}\n\n`;
   if (moment === "price") return `The price changed on ${where}, so here are ${ads.length} ads for the new price:${list}A new price gives people who scrolled past a reason to look again.`;
   if (moment === "open_house") return `Here are ${ads.length} ads for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}:${list}Run them in the days before it.`;
-  if (moment === "sold") return `Sold, nice. Here are ${ads.length} ads for people nearby who might sell next:${list}`.trim();
-  return `Here are ${ads.length} ads for ${where}, each a different idea so the test tells you something:${list}Tell me what to change, or press Run it.`;
+  if (moment === "sold") return `Sold. Here are ${ads.length} ads for people nearby who might sell next:${list}`.trim();
+  return `Here are ${ads.length} ads for ${where}, each testing a different idea:${list}Tell me what to change, or tap Run ad.`;
 }
 
 // The model's style for one ad: "" and 0 mean "leave it", "default" means "back to the brand".
@@ -473,7 +473,7 @@ function sayEdits(edits, ads) {
 }
 // The agent's own photo can only go on once they've added one; until then Hopkins says where.
 const hasAgentPhoto = async (ws) => Boolean(await get(`SELECT 1 FROM users WHERE workspace_id = ? AND avatar_id IS NOT NULL`, [ws.id]));
-const ADD_PHOTO = "To put your photo on the ads, add it first: Settings, Profile, Change photo. Then ask me again and it goes on.";
+const ADD_PHOTO = "Add your photo first in Settings, Profile, Change photo. Then ask me again.";
 
 // Where the ads are now: their looks and their lines.
 function stateNow(ads) {
@@ -643,7 +643,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
     if (current.length && (moment === "price" || moment === "open_house")) {
       const photos = await loadPhotos(listing.id, aiEnabled);
       await rewriteAds(ws, listing, current, photos, moment === "price" ? "the new price" : "the open house", extra);
-      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be new ads, and that needs Pro.`, "text", { snapshot: await snapshot(listing) });
+      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be new ads, which require Pro.`, "text", { snapshot: await snapshot(listing) });
     }
     // Asking again doesn't stack the same message; the app shows a short note instead.
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
@@ -747,7 +747,7 @@ async function changeSetNow(ws, listing, ads, photos, r, text) {
     const left = ads.filter((a) => !gone.includes(a));
     const renumbered = moved.length ? ` ${moved.map(([from, to]) => `What was Ad ${from} is now Ad ${to}`).join(", ")}.` : "";
     // The model's reply was written before the numbers moved, so Hopkins says it plainly.
-    await say(ws, listing.id, `Removed ${VERSION_WORD(gone.map((a) => a.version), gone)}.${renumbered}${left.length ? "" : " Tell me what to make instead whenever you like."}`);
+    await say(ws, listing.id, `Removed ${VERSION_WORD(gone.map((a) => a.version), gone)}.${renumbered}${left.length ? "" : " Tell me what to make instead."}`);
     return { focus: left.length ? 1 : undefined };
   }
   // add_ads
@@ -1175,7 +1175,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   const notes = [sayChanges([], unreadable, ws.brand?.primary, ads), needPhoto ? ADD_PHOTO : ""].filter(Boolean).join(" ");
   let out;
   if (anyChange) out = [sayEdits(edits, ads), notes].filter(Boolean).join(" ");
-  else if (rewroteAll) out = reply || "Done, the ads now carry that.";
+  else if (rewroteAll) out = reply || "Done. The ads are updated.";
   else if (CHALLENGE.test(text || "") || ((changed.length || CLAIMS.test(reply || "")) && ads.length)) {
     // Nothing changed this turn: never a reply that says something did.
     const n = namedVersions(text, ads);
@@ -1220,7 +1220,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
 
   if (intent.kind === "greeting") {
     const where = ads.length
-      ? `Your ${ads.length === 1 ? "ad is" : `${ads.length} ads are`} ready. Want a change, or shall I set ${ads.length === 1 ? "it" : "them"} up to run?`
+      ? `Your ${ads.length === 1 ? "ad is" : `${ads.length} ads are`} ready. Tell me what to change, or say run it.`
       : `Send me the price and the best thing about the home and I'll make the ads.`;
     await say(ws, listing.id, await fresh(listing.id, [`Hi${first ? ` ${first}` : ""}. ${where}`, where]));
     return {};
@@ -1243,7 +1243,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
     const answers = {
       plan: `The free plan makes 3 ads, yours to download. ${upgradeText("plan")}`,
       which: ads.length
-        ? "Nobody knows yet, me included. That's why they're different ideas: they run side by side with the same budget, and the one that brings Leads cheapest gets the rest. You'll see it in Monday's report."
+        ? "It's too early to tell. The ads run side by side on the same budget, and the one with the cheapest Leads gets the rest. Monday's report will show which."
         : "Once the ads are made, the test decides. They run side by side and the cheapest Leads win.",
       why: ad && WHY[ad.pattern]
         ? `${VERSION_WORD([v], ads)} ${WHY[ad.pattern]}. The ads are different ideas on purpose, so the test teaches you something.`
@@ -1251,9 +1251,9 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
       download: isPaid(ws)
         ? "Yes. Tap the ··· menu at the top of the listing to download the version you're on as a feed or story image, or copy its text."
         : "Yes. Tap the ··· menu at the top of the listing, or Download under the ad, for the feed or story image, or copy its text.",
-      results: "Leads land in Leads the moment someone fills in the form, and every Monday you get a report: what ran, what it cost, and which version won. No numbers until ads have actually run.",
+      results: "Leads appear in Leads as soon as someone fills in the form. Every Monday you get a report: what ran, what it cost and which ad won. There are no numbers until ads have run.",
       help: ads.length
-        ? `Tell me what to change on any version in plain words, like "make 2 warmer" or "use photo 3", and I'll do it. When you're happy, say run it.`
+        ? `Tell me what to change on any version in plain words, like "make 2 warmer" or "use photo 3", and I'll do it. When you're ready, say run it.`
         : "Send me a listing, a link, the details or photos, and I'll make ads to test against each other.",
       other: null,
     };
@@ -1303,7 +1303,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
   if (intent.kind === "revise") {
     const c = intent.changes;
     if (c.photoMissing) {
-      await say(ws, listing.id, `I don't see ${/^(photo|that photo)/.test(c.photoMissing) ? c.photoMissing : `a ${c.photoMissing} photo`} on this listing. Drop it in here and I'll use it.`);
+      await say(ws, listing.id, `I don't see ${/^(photo|that photo)/.test(c.photoMissing) ? c.photoMissing : `a ${c.photoMissing} photo`} on this listing. Add it here and I'll use it.`);
       return {};
     }
     const done = [];
@@ -1339,7 +1339,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
 
   if (intent.kind === "style_ask") {
     await say(ws, listing.id, await fresh(listing.id, [
-      `Sure. Tell me what you'd like, for example **"navy background"**, **"gold label"**, **"serif font"**, **"text at the top"**, **"bigger text"** or **"photo in a frame"**. Say "all three" to change every version.`,
+      `Tell me what to change, for example **"navy background"**, **"gold label"**, **"serif font"**, **"text at the top"**, **"bigger text"** or **"photo in a frame"**. Say "all three" to change every version.`,
       `What should it look like? A colour name or a hex code works, and so does a font, a layout or a text size.`,
     ]));
     return {};
@@ -1370,7 +1370,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
   }
 
   if (intent.kind === "thanks") {
-    await say(ws, listing.id, await fresh(listing.id, ["When you're happy with them, say run it and I'll show you the plan first.", "Anytime."]));
+    await say(ws, listing.id, await fresh(listing.id, ["When you're ready, say run it and I'll show you the plan first.", "Anytime."]));
     return {};
   }
 
@@ -1381,8 +1381,8 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
     return {};
   }
   await say(ws, listing.id, await fresh(listing.id, [
-    `I didn't follow that one. Is it a change to version ${selected}? Say it plainly, like "shorter", "warmer" or "use photo 2".`,
-    `Still not with you, sorry. Try one change at a time, like "new headline: Morning light" or "version 3, use the kitchen photo".`,
+    `I didn't understand that. Is it a change to version ${selected}? Say it plainly, like "shorter", "warmer" or "use photo 2".`,
+    `I still didn't understand. Try one change at a time, like "new headline: Morning light" or "version 3, use the kitchen photo".`,
   ]));
   return {};
 }

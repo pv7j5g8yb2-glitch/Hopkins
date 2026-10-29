@@ -160,7 +160,7 @@ export async function buildDemo(adminId, tz = "UTC", now = Date.now()) {
     // The chat: the agent's message, the ads, and for the ones that ran, the yes.
     await msg(wsId, id, "agent", "text", L.text, made, { first: true, photos: photoIds });
     const list = ads.map((a) => `- **Ad ${a.version}**: ${a.name}`).join("\n");
-    await msg(wsId, id, "hopkins", "ads", `Here are 3 ads for ${L.address}, each a different idea so the test tells you something:\n\n${list}\n\nTell me what to change, or press Run it.`, made + 60_000, { moment: "new", snapshot: ads.map(({ id: _, ...a }) => a) }, approved ? 0 : 1);
+    await msg(wsId, id, "hopkins", "ads", `Here are 3 ads for ${L.address}, each testing a different idea:\n\n${list}\n\nTell me what to change, or tap Run ad.`, made + 60_000, { moment: "new", snapshot: ads.map(({ id: _, ...a }) => a) }, approved ? 0 : 1);
     if (approved) {
       const at = now - L.run.ago * DAY;
       await run(`INSERT INTO launches (id, workspace_id, listing_id, ad_ids, budget, days, radius_miles, created_at) VALUES (?,?,?,?,?,?,?,?)`, [randomUUID(), wsId, id, JSON.stringify(ads.map((a) => a.id)), L.run.budget, L.run.days, 15, iso(at)]);

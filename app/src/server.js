@@ -75,13 +75,13 @@ app.addHook("onSend", async (request, reply, payload) => {
 let lastAlert = 0;
 app.setErrorHandler((err, request, reply) => {
   const status = err.statusCode >= 400 && err.statusCode < 500 ? err.statusCode : 500;
-  if (status < 500) return reply.code(status).send({ error: status === 413 ? "That's too big to send." : status === 429 ? "Too many tries. Wait a few minutes." : "That didn't come through right. Try again." });
+  if (status < 500) return reply.code(status).send({ error: status === 413 ? "That's too large to send." : status === 429 ? "Too many attempts. Try again in a few minutes." : "Something went wrong. Please try again." });
   request.log.error(err);
   if (Date.now() - lastAlert > 10 * 60 * 1000) {
     lastAlert = Date.now();
     notifyFounder("Hopkins: something broke", `${request.method} ${request.routeOptions?.url || request.url.split("?")[0]}: ${String(err.message || err).slice(0, 160)}`, ["warning"]);
   }
-  return reply.code(500).send({ error: "Something went wrong on my side. Try again in a moment." });
+  return reply.code(500).send({ error: "Something went wrong. Please try again." });
 });
 
 // How long this copy of the server has been up, so a restart (a deploy, or a crash) can be told
@@ -134,13 +134,13 @@ const appUrl = (request) => (process.env.APP_URL || process.env.RENDER_EXTERNAL_
 const clean = (v, max = 200) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 
 app.post("/api/signup", async (request, reply) => {
-  if (tooMany(`signup:${request.ip}`)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`signup:${request.ip}`)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const { email, password, name, business, invite } = request.body || {};
   if (typeof email === "string" && adminSignupBlocked(email.trim())) return reply.code(403).send({ error: "That email can't be used to sign up here." });
-  if (!inviteOk(invite, typeof email === "string" ? email.trim() : "")) return reply.code(403).send({ error: "Hopkins is invite only for now. Check the code, or join the waitlist." });
-  if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) return reply.code(400).send({ error: "That email doesn't look right." });
-  if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the password." });
-  if (await get(`SELECT id FROM users WHERE email = ?`, [email.trim().toLowerCase()])) return reply.code(409).send({ error: "There's already an account with that email. Sign in instead." });
+  if (!inviteOk(invite, typeof email === "string" ? email.trim() : "")) return reply.code(403).send({ error: "That invite code isn't valid. Check it, or join the waitlist." });
+  if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) return reply.code(400).send({ error: "Enter a valid email address." });
+  if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Password must be at least 8 characters." });
+  if (await get(`SELECT id FROM users WHERE email = ?`, [email.trim().toLowerCase()])) return reply.code(409).send({ error: "An account with this email already exists. Sign in instead." });
   const userId = await createAccount({ email: email.trim(), password, name: nameCase(clean(name, 80)), business: clean(business, 120), plan: pilotPlan() });
   setSession(reply, userId);
   const count = await get(`SELECT COUNT(*) AS n FROM workspaces`);
@@ -150,14 +150,14 @@ app.post("/api/signup", async (request, reply) => {
 
 app.post("/api/login", async (request, reply) => {
   const { email, password } = request.body || {};
-  if (tooMany(`login:${request.ip}`, 20)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`login:${request.ip}`, 20)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const user = typeof email === "string" ? await get(`SELECT * FROM users WHERE email = ?`, [email.trim().toLowerCase()]) : null;
   // Wrong passwords for one account: 10 in 10 minutes, from anywhere, then it waits.
   const who = `login-email:${typeof email === "string" ? email.trim().toLowerCase() : ""}`;
-  if (tooMany(who, 9, undefined, { count: false })) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(who, 9, undefined, { count: false })) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   if (!user || typeof password !== "string" || !(await verifyPassword(password, user.pass_hash))) {
     tooMany(who, 9);
-    return reply.code(401).send({ error: "That email and password don't match." });
+    return reply.code(401).send({ error: "Incorrect email or password." });
   }
   setSession(reply, user.id, Number(user.session_ver) || 0);
   return { ok: true };
@@ -167,9 +167,9 @@ app.post("/api/login", async (request, reply) => {
 // inbox. Without it, or if the email fails, the founder's phone hears about it and he sends the
 // link from Admin. The answer is the same whether or not the email has an account.
 app.post("/api/forgot", async (request, reply) => {
-  if (tooMany(`forgot:${request.ip}`, 5)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`forgot:${request.ip}`, 5)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const email = clean(request.body?.email, 200)?.toLowerCase();
-  if (!email || !EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
+  if (!email || !EMAIL_RE.test(email)) return reply.code(400).send({ error: "Enter a valid email address." });
   // At most 3 reset emails an hour to one address, so nobody can flood an inbox or use up the
   // day's emails. The answer looks the same either way.
   if (tooMany(`forgot-email:${email}`, 3, 60 * 60 * 1000)) return { ok: true };
@@ -178,18 +178,18 @@ app.post("/api/forgot", async (request, reply) => {
     const sent = mailReady() && (await sendMail({ to: email, ...resetEmail(await makeResetLink(user.id, appUrl(request))) }));
     if (!sent) {
       await run(`UPDATE users SET reset_asked = ? WHERE id = ?`, [nowIso(), user.id]);
-      notifyFounder("Hopkins: password reset asked", "Someone asked to reset their password. Open Admin to make their reset link.", ["key"]);
+      notifyFounder("Hopkins: password reset requested", "A user requested a password reset. Open Admin to create their reset link.", ["key"]);
     }
   }
   return { ok: true };
 });
 
 app.post("/api/reset", async (request, reply) => {
-  if (tooMany(`reset:${request.ip}`, 10)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`reset:${request.ip}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const { t, password } = request.body || {};
   const user = await userForReset(t);
-  if (!user) return reply.code(400).send({ error: "That reset link has expired or was already used. Ask for a new one." });
-  if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the password." });
+  if (!user) return reply.code(400).send({ error: "This reset link has expired or has already been used. Request a new one." });
+  if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Password must be at least 8 characters." });
   await changePassword(reply, user.id, password);
   return { ok: true };
 });
@@ -210,7 +210,7 @@ app.addHook("preHandler", async (request, reply) => {
   const path = request.url.split("?")[0];
   if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset"].includes(path) || path.startsWith("/api/l/")) return;
   const user = await currentUser(request);
-  if (!user) return reply.code(401).send({ error: "Sign in first." });
+  if (!user) return reply.code(401).send({ error: "Please sign in." });
   request.user = user;
   // When each account was last in the app, for Admin. Written at most every 10 minutes.
   if (!user.last_seen || Date.now() - new Date(user.last_seen).getTime() > 10 * 60 * 1000) {
@@ -245,10 +245,10 @@ app.put("/api/brand", async (request, reply) => {
     if (body[k] === undefined) continue;
     let v = typeof body[k] === "string" ? body[k].trim().slice(0, max) : "";
     if (k === "agent_name") v = nameCase(v);
-    if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Colours need to be hex, like #1F2A36." });
+    if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Enter colours as hex, like #1F2A36." });
     if (k === "voice" && !["plain", "warm", "premium"].includes(v)) continue;
     if (k === "font" && !FONT_KEYS.includes(v)) continue;
-    if (k === "alerts_topic" && v && !/^[A-Za-z0-9_-]{6,64}$/.test(v)) return reply.code(400).send({ error: "The alerts topic can only use letters, numbers, dashes and underscores, 6 to 64 of them." });
+    if (k === "alerts_topic" && v && !/^[A-Za-z0-9_-]{6,64}$/.test(v)) return reply.code(400).send({ error: "Alerts topic: 6 to 64 letters, numbers, hyphens or underscores." });
     brand[k] = v;
   }
   brand.setup_done = true;
@@ -264,14 +264,14 @@ app.patch("/api/account", async (request, reply) => {
   const sets = [], args = [];
   if (b.name !== undefined) { sets.push("name = ?"); args.push(nameCase(clean(b.name, 80))); }
   if (b.avatar_id !== undefined) {
-    if (b.avatar_id && !(await get(`SELECT id FROM photos WHERE id = ? AND workspace_id = ? AND kind = 'avatar'`, [b.avatar_id, request.ws.id]))) return reply.code(400).send({ error: "That photo didn't upload. Try again." });
+    if (b.avatar_id && !(await get(`SELECT id FROM photos WHERE id = ? AND workspace_id = ? AND kind = 'avatar'`, [b.avatar_id, request.ws.id]))) return reply.code(400).send({ error: "Upload failed. Please try again." });
     sets.push("avatar_id = ?"); args.push(b.avatar_id || null);
   }
   if (b.email !== undefined && b.email.trim().toLowerCase() !== user.email) {
     const email = String(b.email).trim().toLowerCase();
-    if (!EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
+    if (!EMAIL_RE.test(email)) return reply.code(400).send({ error: "Enter a valid email address." });
     if (typeof b.password !== "string" || !(await verifyPassword(b.password, user.pass_hash))) return reply.code(401).send({ error: "Enter your current password to change your email." });
-    if (await get(`SELECT id FROM users WHERE email = ?`, [email])) return reply.code(409).send({ error: "There's already an account with that email." });
+    if (await get(`SELECT id FROM users WHERE email = ?`, [email])) return reply.code(409).send({ error: "An account with this email already exists." });
     // Moving onto an admin address would hand out admin; it can only be granted on Render.
     if (isAdmin({ email })) return reply.code(403).send({ error: "That email can't be used here." });
     sets.push("email = ?"); args.push(email);
@@ -281,11 +281,11 @@ app.patch("/api/account", async (request, reply) => {
 });
 
 app.post("/api/account/password", async (request, reply) => {
-  if (tooMany(`pw:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`pw:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const { current, next } = request.body || {};
   const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
-  if (typeof current !== "string" || !(await verifyPassword(current, user.pass_hash))) return reply.code(401).send({ error: "Your current password isn't right." });
-  if (typeof next !== "string" || next.length < 8) return reply.code(400).send({ error: "Use at least 8 characters for the new password." });
+  if (typeof current !== "string" || !(await verifyPassword(current, user.pass_hash))) return reply.code(401).send({ error: "Current password is incorrect." });
+  if (typeof next !== "string" || next.length < 8) return reply.code(400).send({ error: "Password must be at least 8 characters." });
   await changePassword(reply, user.id, next);
   return { ok: true };
 });
@@ -293,7 +293,7 @@ app.post("/api/account/password", async (request, reply) => {
 // Deletes the account and everything in its workspace: listings, photos, ads, chats, leads.
 app.post("/api/account/delete", async (request, reply) => {
   const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
-  if (typeof request.body?.password !== "string" || !(await verifyPassword(request.body.password, user.pass_hash))) return reply.code(401).send({ error: "Your password isn't right." });
+  if (typeof request.body?.password !== "string" || !(await verifyPassword(request.body.password, user.pass_hash))) return reply.code(401).send({ error: "Incorrect password." });
   const ws = request.ws.id;
   for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "listings", "feedback", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [ws]);
   await run(`DELETE FROM workspaces WHERE id = ?`, [ws]);
@@ -303,18 +303,18 @@ app.post("/api/account/delete", async (request, reply) => {
 
 // Feedback from inside the app: kept for Admin, and straight to the founder's phone.
 app.post("/api/feedback", async (request, reply) => {
-  if (tooMany(`feedback:${request.user.id}`, 20)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`feedback:${request.user.id}`, 20)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const body = clean(request.body?.body, 3000);
-  if (!body) return reply.code(400).send({ error: "Write something first." });
+  if (!body) return reply.code(400).send({ error: "Enter a message." });
   await run(`INSERT INTO feedback (id, workspace_id, user_id, body, page, created_at) VALUES (?,?,?,?,?,?)`, [randomUUID(), request.ws.id, request.user.id, body, clean(request.body?.page, 120), nowIso()]);
   notifyFounder(`Hopkins feedback · ${request.ws.name}`, body.slice(0, 300), ["speech_balloon"]);
   return { ok: true };
 });
 
 app.post("/api/alerts/test", async (request, reply) => {
-  if (tooMany(`alerttest:${request.user.id}`, 5)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
-  if (!request.ws.brand.alerts_topic) return reply.code(400).send({ error: "Turn Lead alerts on first." });
-  notifyTopic(request.ws.brand.alerts_topic, "Hopkins test", "Lead alerts work. New Leads will arrive like this.");
+  if (tooMany(`alerttest:${request.user.id}`, 5)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
+  if (!request.ws.brand.alerts_topic) return reply.code(400).send({ error: "Turn on Lead alerts first." });
+  notifyTopic(request.ws.brand.alerts_topic, "Hopkins test alert", "Lead alerts are working. New Leads will appear like this.");
   return { ok: true };
 });
 
@@ -330,13 +330,13 @@ app.post("/api/upgrade-request", async (request) => {
 // Photos arrive already resized by the browser, as base64, with a small thumbnail.
 app.post("/api/photos", { bodyLimit: 12_000_000 }, async (request, reply) => {
   const { data, thumb, mime, listingId, kind, name } = request.body || {};
-  if (typeof data !== "string" || !["image/jpeg", "image/png", "image/webp"].includes(mime)) return reply.code(400).send({ error: "That file isn't a photo I can use." });
+  if (typeof data !== "string" || !["image/jpeg", "image/png", "image/webp"].includes(mime)) return reply.code(400).send({ error: "Use a JPG, PNG or WebP photo." });
   const buf = Buffer.from(data, "base64");
-  if (buf.length > 6_000_000) return reply.code(413).send({ error: "That photo is too big." });
+  if (buf.length > 6_000_000) return reply.code(413).send({ error: "Photos must be under 6 MB." });
   // The bytes have to be the image they say they are, whatever the browser claimed.
   const looks = { "image/jpeg": buf[0] === 0xff && buf[1] === 0xd8, "image/png": buf.subarray(0, 4).toString("hex") === "89504e47", "image/webp": buf.subarray(0, 4).toString() === "RIFF" && buf.subarray(8, 12).toString() === "WEBP" };
-  if (!looks[mime]) return reply.code(400).send({ error: "That file isn't a photo I can use." });
-  if (listingId && !(await loadListing(request.ws.id, listingId))) return reply.code(404).send({ error: "No such listing." });
+  if (!looks[mime]) return reply.code(400).send({ error: "Use a JPG, PNG or WebP photo." });
+  if (listingId && !(await loadListing(request.ws.id, listingId))) return reply.code(404).send({ error: "Listing not found." });
   const id = randomUUID();
   const pos = listingId ? Number((await get(`SELECT COALESCE(MAX(position), -1) + 1 AS p FROM photos WHERE listing_id = ?`, [listingId])).p) : 0;
   const { labelFromName } = await import("./listing.js");
@@ -357,7 +357,7 @@ app.get("/photos/:id", async (request, reply) => {
 
 app.patch("/api/photos/:id", async (request, reply) => {
   const { label } = request.body || {};
-  if (label !== undefined && !PHOTO_LABELS.includes(label)) return reply.code(400).send({ error: "Unknown label." });
+  if (label !== undefined && !PHOTO_LABELS.includes(label)) return reply.code(400).send({ error: "Invalid label." });
   await run(`UPDATE photos SET label = ? WHERE id = ? AND workspace_id = ?`, [label, request.params.id, request.ws.id]);
   return { ok: true };
 });
@@ -403,13 +403,13 @@ async function listingPayload(ws, id) {
 
 app.get("/api/listings/:id", async (request, reply) => {
   const p = await listingPayload(request.ws, request.params.id);
-  return p || reply.code(404).send({ error: "No such listing." });
+  return p || reply.code(404).send({ error: "Listing not found." });
 });
 
 app.post("/api/listings", async (request, reply) => {
   const { text, photoIds, photoNames } = request.body || {};
   const ids = Array.isArray(photoIds) ? photoIds.filter((x) => typeof x === "string").slice(0, 30) : [];
-  if (!clean(text, 5000) && !ids.length) return reply.code(400).send({ error: "Send me photos, a link or the description." });
+  if (!clean(text, 5000) && !ids.length) return reply.code(400).send({ error: "Add photos, a link or a description." });
   // What was said on the New listing screen before this message.
   const prior = Array.isArray(request.body.history) ? request.body.history.slice(-12).filter((m) => m && typeof m.body === "string" && m.body.trim() && ["agent", "hopkins"].includes(m.role)).map((m) => ({ role: m.role, body: clean(m.body, 2000) })) : [];
   // No listing in it ("Hello"): answer, and don't make a listing out of it.
@@ -432,7 +432,7 @@ app.post("/api/listings", async (request, reply) => {
 
 app.patch("/api/listings/:id", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
-  if (!listing) return reply.code(404).send({ error: "No such listing." });
+  if (!listing) return reply.code(404).send({ error: "Listing not found." });
   const b = request.body || {};
   const patch = {};
   for (const k of ["address", "city", "area", "home_type", "open_house"]) if (b[k] !== undefined) patch[k] = clean(b[k], 120);
@@ -450,7 +450,7 @@ app.patch("/api/listings/:id", async (request, reply) => {
 
 app.post("/api/listings/:id/messages", async (request, reply) => {
   const text = clean(request.body?.text, 2000);
-  if (!text) return reply.code(400).send({ error: "Say something first." });
+  if (!text) return reply.code(400).send({ error: "Enter a message." });
   const selected = [1, 2, 3, 4, 5].includes(request.body?.version) ? request.body.version : 1;
   const key = `l:${request.params.id}`;
   await settleTurn(key);
@@ -462,7 +462,7 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
   } finally {
     endTurn(key, turn);
   }
-  if (!r) return reply.code(404).send({ error: "No such listing." });
+  if (!r) return reply.code(404).send({ error: "Listing not found." });
   if (turn.stopped) return { ...(await listingPayload(request.ws, request.params.id)), stopped: true };
   // focus: the version the conversation is now about, so the app can switch to it.
   return { ...(await listingPayload(request.ws, request.params.id)), focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null, upgrade: r.repeat ? r.reason || "run" : null };
@@ -473,7 +473,7 @@ app.post("/api/listings/:id/messages", async (request, reply) => {
 // undone now (only within two minutes of the message, so an old reply is never taken back).
 app.post("/api/listings/:id/stop", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
-  if (!listing) return reply.code(404).send({ error: "No such listing." });
+  if (!listing) return reply.code(404).send({ error: "Listing not found." });
   const turn = stopTurn(`l:${listing.id}`);
   if (turn) {
     // The app has already let go; this answer, once the reply is undone, redraws the chat.
@@ -491,7 +491,7 @@ app.post("/api/new/stop", async (request) => ({ stopped: Boolean(stopTurn(`new:$
 // Editing the latest message: Hopkins forgets the old wording and answers the new one.
 app.post("/api/messages/:id/edit", async (request, reply) => {
   const text = clean(request.body?.text, 2000);
-  if (!text) return reply.code(400).send({ error: "Say something first." });
+  if (!text) return reply.code(400).send({ error: "Enter a message." });
   const selected = [1, 2, 3, 4, 5].includes(request.body?.version) ? request.body.version : 1;
   const msg = await get(`SELECT listing_id FROM messages WHERE id = ? AND workspace_id = ?`, [request.params.id, request.ws.id]);
   const key = msg ? `l:${msg.listing_id}` : null;
@@ -504,7 +504,7 @@ app.post("/api/messages/:id/edit", async (request, reply) => {
   } finally {
     if (turn) endTurn(key, turn);
   }
-  if (!r) return reply.code(409).send({ error: "That message can't be edited any more. Send a new one instead." });
+  if (!r) return reply.code(409).send({ error: "This message can no longer be edited. Send a new message instead." });
   if (turn?.stopped) return { ...(await listingPayload(request.ws, msg.listing_id)), stopped: true };
   return { ...(await listingPayload(request.ws, msg.listing_id)), focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null, upgrade: r.repeat ? r.reason || "run" : null };
 });
@@ -512,21 +512,21 @@ app.post("/api/messages/:id/edit", async (request, reply) => {
 // Several at once, from Select on the Listings page.
 app.post("/api/listings/delete", async (request, reply) => {
   const ids = Array.isArray(request.body?.ids) ? [...new Set(request.body.ids.filter((x) => typeof x === "string"))].slice(0, 200) : [];
-  if (!ids.length) return reply.code(400).send({ error: "Pick a listing first." });
+  if (!ids.length) return reply.code(400).send({ error: "Select a listing first." });
   let deleted = 0;
   for (const id of ids) if (await deleteListing(request.ws, id)) deleted++;
   return { deleted };
 });
 
 app.delete("/api/listings/:id", async (request, reply) => {
-  if (!(await deleteListing(request.ws, request.params.id))) return reply.code(404).send({ error: "No such listing." });
+  if (!(await deleteListing(request.ws, request.params.id))) return reply.code(404).send({ error: "Listing not found." });
   return { ok: true };
 });
 
 // The Style sheet: change how one version (or all of them) looks, straight away.
 app.patch("/api/listings/:id/style", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
-  if (!listing) return reply.code(404).send({ error: "No such listing." });
+  if (!listing) return reply.code(404).send({ error: "Listing not found." });
   const versions = (Array.isArray(request.body?.versions) ? request.body.versions : [1, 2, 3, 4, 5]).map(Number).filter((v) => [1, 2, 3, 4, 5].includes(v));
   const step = Number(request.body?.sizeStep) || 0;
   await restyle(request.ws, listing, versions, request.body?.style || {}, Math.max(-0.3, Math.min(0.3, step)));
@@ -535,7 +535,7 @@ app.patch("/api/listings/:id/style", async (request, reply) => {
 
 app.post("/api/listings/:id/remake", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
-  if (!listing) return reply.code(404).send({ error: "No such listing." });
+  if (!listing) return reply.code(404).send({ error: "Listing not found." });
   // A new set keeps the number of ads the listing has now.
   await makeAds(request.ws, listing, listing.moment, {}, { count: (await currentAds(listing)).length || null });
   return listingPayload(request.ws, listing.id);
@@ -543,7 +543,7 @@ app.post("/api/listings/:id/remake", async (request, reply) => {
 
 app.post("/api/listings/:id/run", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
-  if (!listing) return reply.code(404).send({ error: "No such listing." });
+  if (!listing) return reply.code(404).send({ error: "Listing not found." });
   const { versions, budget, days, confirm } = request.body || {};
   if (confirm) await confirmRun(request.ws, listing.id, confirm);
   else await proposeRun(request.ws, listing, { versions: Array.isArray(versions) && versions.length ? versions : [1, 2, 3, 4, 5], budget, days });
@@ -584,7 +584,7 @@ app.get("/api/leads", async (request) => {
 
 app.patch("/api/leads/:id", async (request, reply) => {
   const { status } = request.body || {};
-  if (!["new", "contacted", "showing", "offer", "closed", "not_a_fit"].includes(status)) return reply.code(400).send({ error: "Unknown status." });
+  if (!["new", "contacted", "showing", "offer", "closed", "not_a_fit"].includes(status)) return reply.code(400).send({ error: "Invalid status." });
   await run(`UPDATE leads SET status = ? WHERE id = ? AND workspace_id = ?`, [status, request.params.id, request.ws.id]);
   return { ok: true };
 });
@@ -596,14 +596,14 @@ app.get("/api/report", async (request, reply) => {
   const from = new Date(q.from), to = new Date(q.to);
   const span = to - from;
   const ok = !isNaN(from) && !isNaN(to) && span >= 6.9 * 86400_000 && span <= 7.1 * 86400_000;
-  if ((q.from || q.to) && !ok) return reply.code(400).send({ error: "That week doesn't exist." });
+  if ((q.from || q.to) && !ok) return reply.code(400).send({ error: "Invalid date range." });
   return weeklyReport(request.ws, ok ? { from: from.toISOString(), to: to.toISOString() } : weekRange(new Date(), timeZone(request)));
 });
 
 // ---------- admin (ADMIN_EMAILS) ----------
 
 app.get("/api/admin/workspaces", async (request, reply) => {
-  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "You don't have access to this page." });
   const rows = await all(
     `SELECT w.id, w.name, w.plan, w.brand, w.created_at, (SELECT GROUP_CONCAT(email) FROM users WHERE workspace_id = w.id) AS emails,
        (SELECT id FROM users WHERE workspace_id = w.id LIMIT 1) AS user_id, (SELECT MAX(last_seen) FROM users WHERE workspace_id = w.id) AS last_seen,
@@ -620,7 +620,7 @@ app.get("/api/admin/workspaces", async (request, reply) => {
 // signed cookie remembers who opened it, so "Back to my account" needs no password.
 const BACK = "hopkins_back";
 app.post("/api/admin/demo", async (request, reply) => {
-  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "You don't have access to this page." });
   const demoId = await buildDemo(request.user.id, timeZone(request));
   const opts = { path: "/", httpOnly: true, sameSite: "lax", signed: true, maxAge: 7 * 86400, secure: process.env.NODE_ENV === "production" };
   reply.setCookie(BACK, `${request.user.id}.${Number(request.user.session_ver || 0)}`, opts);
@@ -630,31 +630,31 @@ app.post("/api/admin/demo", async (request, reply) => {
 app.post("/api/demo/leave", async (request, reply) => {
   const raw = request.cookies[BACK];
   const u = raw ? request.unsignCookie(raw) : { valid: false };
-  if (!u.valid) return reply.code(400).send({ error: "Sign in to your account again." });
+  if (!u.valid) return reply.code(400).send({ error: "Your session has expired. Please sign in again." });
   const [id, ver = "0"] = u.value.split(".");
   const admin = await get(`SELECT id, email, session_ver FROM users WHERE id = ?`, [id]);
-  if (!admin || !isAdmin(admin) || Number(admin.session_ver) !== Number(ver)) return reply.code(400).send({ error: "Sign in to your account again." });
+  if (!admin || !isAdmin(admin) || Number(admin.session_ver) !== Number(ver)) return reply.code(400).send({ error: "Your session has expired. Please sign in again." });
   reply.clearCookie(BACK, { path: "/" });
   setSession(reply, admin.id, Number(admin.session_ver));
   return { ok: true };
 });
 
 app.post("/api/admin/users/:id/reset-link", async (request, reply) => {
-  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
-  if (!(await get(`SELECT id FROM users WHERE id = ?`, [request.params.id]))) return reply.code(404).send({ error: "No such account." });
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "You don't have access to this page." });
+  if (!(await get(`SELECT id FROM users WHERE id = ?`, [request.params.id]))) return reply.code(404).send({ error: "Account not found." });
   return { link: await makeResetLink(request.params.id, appUrl(request)) };
 });
 
 app.get("/api/admin/feedback", async (request, reply) => {
-  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "You don't have access to this page." });
   const rows = await all(`SELECT f.body, f.page, f.created_at, w.name, u.email FROM feedback f LEFT JOIN workspaces w ON w.id = f.workspace_id LEFT JOIN users u ON u.id = f.user_id ORDER BY f.created_at DESC LIMIT 100`);
   return { feedback: rows };
 });
 
 app.patch("/api/admin/workspaces/:id", async (request, reply) => {
-  if (!isAdmin(request.user)) return reply.code(403).send({ error: "Admins only." });
+  if (!isAdmin(request.user)) return reply.code(403).send({ error: "You don't have access to this page." });
   const { plan } = request.body || {};
-  if (!["free", "paid"].includes(plan)) return reply.code(400).send({ error: "Plan is free or paid." });
+  if (!["free", "paid"].includes(plan)) return reply.code(400).send({ error: "Choose Free or Pro." });
   await run(`UPDATE workspaces SET plan = ? WHERE id = ?`, [plan, request.params.id]);
   return { ok: true };
 });
@@ -665,7 +665,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 
 app.get("/l/:slug", async (request, reply) => {
   const listing = await get(`SELECT * FROM listings WHERE slug = ?`, [request.params.slug]);
-  if (!listing || listing.status === "archived") return reply.code(404).type(TYPES.html).send("<!doctype html><title>Not found</title><p style='font-family:sans-serif;padding:40px'>This listing isn't available any more.</p>");
+  if (!listing || listing.status === "archived") return reply.code(404).type(TYPES.html).send("<!doctype html><title>Not found</title><p style='font-family:sans-serif;padding:40px'>This listing is no longer available.</p>");
   const ws = await getWorkspace(listing.workspace_id);
   const photos = await all(`SELECT id FROM photos WHERE listing_id = ? AND kind = 'listing' ORDER BY position LIMIT 12`, [listing.id]);
   const b = ws.brand;
@@ -687,20 +687,20 @@ app.get("/l/:slug", async (request, reply) => {
 });
 
 app.post("/api/l/:slug/lead", async (request, reply) => {
-  if (tooMany(`lead:${request.ip}`, 8)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`lead:${request.ip}`, 8)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const listing = await get(`SELECT * FROM listings WHERE slug = ?`, [request.params.slug]);
-  if (!listing || listing.status === "archived") return reply.code(404).send({ error: "This listing isn't available any more." });
+  if (!listing || listing.status === "archived") return reply.code(404).send({ error: "This listing is no longer available." });
   // A script can fake its address, not the listing: 30 leads an hour on one listing is far more
   // than a real one gets.
-  if (tooMany(`lead-listing:${listing.id}`, 30, 60 * 60 * 1000)) return reply.code(429).send({ error: "Too many tries. Wait a few minutes." });
+  if (tooMany(`lead-listing:${listing.id}`, 30, 60 * 60 * 1000)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const b = request.body || {};
   if (b.website) return { ok: true }; // the hidden field only scripts fill in
   const name = clean(b.name, 80);
   const email = clean(b.email, 120);
   const phone = clean(b.phone, 40);
-  if (!name) return reply.code(400).send({ error: "Add your name." });
-  if (!email && !phone) return reply.code(400).send({ error: "Add a phone number or an email so the agent can reply." });
-  if (email && !EMAIL_RE.test(email)) return reply.code(400).send({ error: "That email doesn't look right." });
+  if (!name) return reply.code(400).send({ error: "Enter your name." });
+  if (!email && !phone) return reply.code(400).send({ error: "Enter a phone number or email." });
+  if (email && !EMAIL_RE.test(email)) return reply.code(400).send({ error: "Enter a valid email address." });
   const wants = ["showing", "info", "offer"].includes(b.wants) ? b.wants : "info";
   await addLead(listing, { name, email, phone, wants, note: clean(b.note, 600), adId: clean(b.v, 40), source: clean(b.src, 40) });
   return { ok: true };

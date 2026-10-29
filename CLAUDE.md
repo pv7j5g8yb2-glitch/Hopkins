@@ -153,6 +153,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   hint is a few words ("Live preview. Tap to expand.", "Pro requested.", "Test sent"), no
   explaining how it works, no reassurance, no second sentence unless it's a warning. Check every
   new string against this before shipping.
+* **Standard software wording (Ismael, 2026-10-29):** errors, buttons and hints read the way
+  ChatGPT, Claude or Gemini would put them, plain and not fancy: "Incorrect email or password",
+  "Listing not found", "Something went wrong. Please try again.", "Select a listing first",
+  "Create ads", "Approve and run", "requires Pro". Never casual ("No such listing", "Too many
+  tries", "Sold, nice", "Drop it in here", "whenever you're ready").
 * **Phones first (Ismael, 2026-10-24):** most use will be on a phone. Design and check every screen at
   iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar, the main
   action fixed at the bottom within thumb reach, menus as bottom sheets that swipe away (down, or up

@@ -79,7 +79,7 @@ button:disabled{opacity:.6}
       <div class="f"><label for="name">Name</label><input id="name" autocomplete="name"></div>
       <div class="f"><label for="phone">Phone</label><input id="phone" type="tel" autocomplete="tel"></div>
       <div class="f"><label for="email">Email</label><input id="email" type="email" autocomplete="email"></div>
-      <div class="f"><label for="note">Anything to add? (optional)</label><textarea id="note" rows="2" placeholder="Best times, questions"></textarea></div>
+      <div class="f"><label for="note">Message (optional)</label><textarea id="note" rows="2" placeholder="Preferred times or questions"></textarea></div>
       <input class="hp" id="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <button id="go" type="submit">Send</button>
       <div class="err" id="err"></div>
@@ -128,7 +128,7 @@ button:disabled{opacity:.6}
     try {
       const res = await fetch(`/api/l/${d.slug}/lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const r = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(r.error || "That didn't send. Try again.");
+      if (!res.ok) throw new Error(r.error || "Couldn't send. Please try again.");
       $("f").innerHTML = '<div class="done"><b>Sent.</b><span></span></div>';
       $("f").querySelector("span").textContent = `${b.agent || b.business} has your details and will be in touch.`;
     } catch (err) {

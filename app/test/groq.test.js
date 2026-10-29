@@ -66,7 +66,7 @@ test("Groq runs the chat when it's the only key", async () => {
   // A long wait: it says it's busy instead of pretending not to understand.
   next = ["429:40"];
   const busy = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "what do you think of the photos?", version: 1 });
-  assert.match(busy.json.messages.at(-1).body, /a lot of messages at once/);
+  assert.match(busy.json.messages.at(-1).body, /too many requests right now/);
   // "Now?" after that: the model gets the unanswered question and the nudge as one message,
   // without the busy reply in between, so it answers the question.
   next = [{ reply: "They're strong. The porch shot leads.", action: "none", version: 0, ads: [] }];
@@ -75,7 +75,7 @@ test("Groq runs the chat when it's the only key", async () => {
   const last = calls.at(-1).body.messages.at(-1);
   assert.equal(last.role, "user");
   assert.match(last.content, /what do you think of the photos\?\s+Now\?/);
-  assert.ok(!calls.at(-1).body.messages.some((m) => /a lot of messages/.test(m.content)));
+  assert.ok(!calls.at(-1).body.messages.some((m) => /too many requests/.test(m.content)));
   // Something the rules can do still gets done.
   next = ["429:40"];
   const done = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "make version 3 shorter", version: 3 });
@@ -307,7 +307,7 @@ test("a copied line keeps its own punctuation, and asking for a face in the bott
   next = [{ reply: "Done.", action: "revise", version: 1, remove: [], moment: "none", ads: [1, 2, 3].map((v) => ({ ...ad(v), overlay: copy.json.ads[v - 1].overlay, style: style({ layout: "fade" }) })), listing_patch: null, budget: 0, days: 0 }];
   const face = await c("POST", `/api/listings/${id}/messages`, { text: "can you add a picture of my face in the bottom right", version: 1 });
   assert.deepEqual(face.json.ads.map((x) => x.style.layout), copy.json.ads.map((x) => x.style.layout));
-  assert.match(face.json.messages.at(-1).body, /^To put your photo on the ads, add it first/);
+  assert.match(face.json.messages.at(-1).body, /^Add your photo first/);
 });
 
 test("thanks never reaches the model, a colour change keeps the words, and the model sees each ad's Leads", async () => {

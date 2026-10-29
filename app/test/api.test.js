@@ -201,7 +201,7 @@ test("a listing past the free ads is saved, says where the free ads went, and ca
   const msg = second.json.messages.at(-1);
   assert.equal(msg.kind, "upgrade");
   assert.match(msg.body, /went on 412 Oak Street/);
-  assert.match(msg.body, /tap Make the ads/);
+  assert.match(msg.body, /tap Create ads/);
   const ws = (await c("GET", "/api/me")).json.workspace.id;
   const boss = client(app);
   await boss("POST", "/api/login", { email: "boss@hopkins.test", password: "password123" });
