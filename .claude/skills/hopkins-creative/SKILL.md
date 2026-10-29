@@ -251,9 +251,10 @@ app's previews) shows the blue verified badge after the handle (Ismael, 2026-10-
   quarters were still watching at 4s, then it fell to roughly 15% by 6s, right after the cut from
   the clip into the explainer (the cut is at 4.3s). Likes came during the clip. 6 likes, 3 saves,
   0 shares, 0 follows. Audience 18 to 34 (88%), US 19%, India 17%, Australia 12%: a broad crowd
-  drawn by the clip, not team leaders. Lesson: the cut reads as a new, unrelated video. Next time
-  the payoff has to show on the clip itself (the hook line on screen and the voice starting under
-  it from the first second) so the explainer is the answer they're waiting for, not a reset.
+  drawn by the clip, not team leaders. Still the best reel yet: about 10 times the others, the
+  first over 500 views and over 3 likes (Ismael). Most viewers left at the cut into the explainer.
+  Ismael's rule: his hook clips are never changed, no text and no voice on them, ever. Any fix for
+  the cut belongs in the explainer that follows, never on the clip.
 
 - 2026-10-28 (reels, format): a found hook clip first, untouched (Ismael's: a jug given one push,
   rolling away on its own), then a hard cut into the explainer with "Here's how you're gonna...".

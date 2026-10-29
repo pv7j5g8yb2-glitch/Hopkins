@@ -129,6 +129,10 @@ What content and ad creative actually works on Instagram for real estate lives i
 for @gethopkins and for what the product makes for customers. When Ismael sends new
 examples of what's winning, add the learning to its log with the date.
 
+**Hook clips stay untouched (Ismael, 2026-10-29):** when Ismael sends a hook clip for a reel, it
+plays exactly as sent: no text, no voice, no trim over it. The Hopkins part follows after the cut.
+The jug reel built this way is the best so far (836 views, about 10 times the others).
+
 **Instagram mockups (Ismael, 2026-10-25):** wherever an Instagram account, post, ad or story is
 recreated (the app's ad previews, reels, posts, the landing page), put Instagram's blue verified
 badge after the handle.
