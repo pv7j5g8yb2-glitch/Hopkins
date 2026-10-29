@@ -81,9 +81,9 @@ export function parsePrice(text) {
 // way a person would ("$2,400/mo" is rent). This is only the backup for when there's no model:
 // rent words, or the price itself given per month. A sale's HOA, tax or payment per month, or
 // its "rental income", doesn't count.
-const NOT_RENT = /\b(rental (income|potential|unit|suite|history)|rent (out )?the (guest|adu|basement|unit|cottage)|could (also )?be rented|(hoa|fees?|dues|taxes|tax|payment|mortgage|utilities|insurance|assessment)\b[^.$]{0,25}\$\s?[\d,.]+\s*(\/\s?mo|per month|a month|monthly)\w*)/gi;
+const NOT_RENT = /\b(rental (income|potential|unit|suite|history)|rent (out )?the (guest|adu|basement|unit|cottage)|could (also )?be rented|(hoa|fees?|dues|taxes|tax|payment|mortgage|utilities|insurance|assessment)\b[^.$\d]{0,25}\$?\s?[\d,.]+\s*(\/\s?mo|per month|a month|monthly)\w*)/gi;
 const RENT_WORDS = /\b(for rent|for lease|to let|now leasing|rental|lease term|security deposit|\d+ month lease|available (now|from|immediately)|pets? (allowed|ok|considered)|move in date)\b/i;
-const RENT_PRICE = /(?:\$|€|£|\baed\s?)\s?(\d{1,3}(?:,\d{3})+|\d{3,6})(?:\.\d{2})?\s*(?:\/\s?(?:mo|mth|month)\b|per month\b|a month\b|each month\b|monthly\b|pcm\b|p\/m\b)|\brent(?: is)?:?\s*(?:\$|€|£)\s?(\d{1,3}(?:,\d{3})+|\d{3,6})/i;
+const RENT_PRICE = /(?:(?:\$|€|£|\baed\s?)\s?|\b)(\d{1,3}(?:,\d{3})+|\d{3,6})(?:\.\d{2})?\s*(?:\/\s?(?:mo|mth|month)\b|per month\b|a month\b|each month\b|monthly\b|pcm\b|p\/m\b)|\brent(?: is)?:?\s*(?:\$|€|£)\s?(\d{1,3}(?:,\d{3})+|\d{3,6})/i;
 export function parseDeal(text = "") {
   const t = String(text).replace(/\s+/g, " ").replace(NOT_RENT, " ");
   return RENT_WORDS.test(t) || RENT_PRICE.test(t) ? "rent" : null;
