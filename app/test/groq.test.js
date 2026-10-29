@@ -405,3 +405,18 @@ test("Stop while a listing is being made: no listing, nothing counted", async ()
   assert.equal((await c("GET", "/api/listings")).json.listings.length, 0);
   assert.equal((await c("GET", "/api/me")).json.usage.adsMade, made);
 });
+
+test("a question with a price in it gets an answer like any assistant, not a new listing", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "asks@test.com", password: "password123", invite: "EARLY1", name: "Ana Ruiz" });
+  next = [{ is_listing: false, reply: "15% of $650,000 is **$97,500**." }];
+  const r = await c("POST", "/api/listings", { text: "what's 15% of $650,000?" });
+  assert.equal(r.json.chat.reply, "15% of $650,000 is **$97,500**.");
+  assert.equal((await c("GET", "/api/listings")).json.listings.length, 0);
+  // The model was asked to be a general assistant, not to push for a listing.
+  assert.match(calls.at(-1).body.messages[0].content, /everyday assistant/);
+  // A real listing that reads like a question is still a listing when the model says so.
+  next = [{ is_listing: true, reply: "" }, 500, 500];
+  const l = await c("POST", "/api/listings", { text: "can you make ads for 12 Elm St, Austin, 3 bed 2 bath, $585,000?" });
+  assert.equal(l.json.ads.length, 3);
+});

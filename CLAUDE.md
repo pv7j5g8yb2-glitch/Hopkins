@@ -147,8 +147,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   text weights, no extra explanations on screen. Check new screens against this before shipping.
 * **The whole platform (Ismael, 2026-10-27):** extremely straightforward, less talkative, minimal
   and professional. On screens Hopkins is named in the third person ("Hopkins makes the ads"),
-  never "I". Hopkins' chat replies are one or two plain sentences unless more is asked for: no
-  small talk, no enthusiasm, no filler, no offers of more help.
+  never "I". In the chat Hopkins is relaxed and professional, like a smart colleague (Ismael,
+  2026-10-29): friendly, natural, short for quick things and as long as a real request needs, no
+  hype, no filler, no offers of more help. It's a normal assistant too, like ChatGPT or Claude:
+  it helps with anything (an email to a client, a maths question, general advice) without steering
+  back to the listing or the ads, and a question that mentions a price isn't turned into a listing.
 * **Words on screen are short (Ismael, 2026-10-27):** serious software, not a novel. A label or
   hint is a few words ("Live preview. Tap to expand.", "Pro requested.", "Test sent"), no
   explaining how it works, no reassurance, no second sentence unless it's a warning. Check every

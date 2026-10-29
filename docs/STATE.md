@@ -768,3 +768,8 @@ personal in here.
   straight budget answer. The first set took 104 seconds on the free model, too slow (Gemini billing
   still undecided). One test account ("Rental Check", rental-check-...@hopkins.test) was left on
   the live site by a run cut off by a redeploy; the second run deleted its own.
+* **Chat as a normal assistant (Ismael, 2026-10-29):** the model's instructions now say it helps
+  with anything, relaxed and professional, without steering back to the listing; on the New listing
+  screen a question or request that mentions a home fact goes to the model first
+  (`answerIfNotListing`), which says whether it's really a listing. On a blocked link only messages
+  about the listing get the fixed "restricts access" reply.

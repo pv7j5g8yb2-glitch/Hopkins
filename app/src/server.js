@@ -10,7 +10,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
+  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
 } from "./hopkins.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { nameCase } from "./names.js";
@@ -431,6 +431,11 @@ app.post("/api/listings", async (request, reply) => {
   // No listing in it ("Hello"): answer, and don't make a listing out of it.
   if (!looksLikeListing(clean(text, 5000) || "", ids)) {
     return { chat: { reply: await newChat(request.ws, [...prior, { role: "agent", body: clean(text, 2000) }], timeZone(request)) } };
+  }
+  // A question that happens to mention a price or a bed count is answered, not made a listing.
+  if (!ids.length) {
+    const answer = await answerIfNotListing(request.ws, [...prior, { role: "agent", body: clean(text, 2000) }], clean(text, 5000) || "", timeZone(request));
+    if (answer) return { chat: { reply: answer } };
   }
   // The listing's chat starts with that conversation, so it carries on as one thread.
   const key = `new:${request.ws.id}`;

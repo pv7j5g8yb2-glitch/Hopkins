@@ -116,6 +116,16 @@ export async function accountSummary(ws, tz = "UTC") {
   return [week(last, "Last week"), week(now, "This week so far"), "Each listing:", ...rows, top, "Cost per Lead exists only per listing (all its spend over all its Leads); never give one for a week."].filter(Boolean).join("\n");
 }
 
+// A message with a home fact in it that reads like a question or a request ("what's 15% of
+// $650,000?", "write a caption for a 3 bed"): the model decides whether it's a listing to make
+// ads for. Returns the reply when it isn't, null when it is (or there's no model to ask).
+const ASKING = /\?\s*$|^\s*(what|whats|what's|how|can|could|should|would|will|is|are|do|does|did|why|when|where|which|who|write|draft|help|tell|explain|calculate|compare|give me|show me|any)\b/i;
+export async function answerIfNotListing(ws, history, text, tz = "UTC") {
+  if (!aiEnabled || URL_RE.test(text) || !ASKING.test(text)) return null;
+  const r = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz), decide: true });
+  return r && !r.isListing && r.reply.trim() ? plainWords(r.reply) : null;
+}
+
 export async function newChat(ws, history, tz = "UTC") {
   const text = history.at(-1)?.body || "";
   const lastReply = [...history].reverse().find((m) => m.role === "hopkins")?.body;
@@ -268,6 +278,8 @@ async function importPhotos(ws, listingId, list) {
 // What Hopkins says, every time, when a link won't let it in: the property photos and the
 // details, nothing else, in a professional way (Ismael, 2026-10-28).
 const LINK_BLOCKED = () => "The link you sent restricts access, so I can't see your listing. Please send the property photos and the details: the address, price, beds, baths and what stands out.";
+// About the listing or its ads, or a short nudge ("now?", "and?") that follows the last reply.
+const ABOUT_LISTING = { test: (s) => /\b(ads?|listing|link|url|home|house|property|condo|apartment|photos?|pictures?|pics|price|rent|beds?|baths?|bedrooms?|bathrooms?|address|details|access|blocked|zillow|realtor\.com|redfin|idealista)\b|\b(can'?t|cannot|can you|couldn'?t|didn'?t|won'?t) (you )?(see|open|read|access|get (in|to))\b|\bneed from me\b|\bwhat (else )?(do )?you need\b/i.test(s) || s.trim().split(/\s+/).length <= 3 };
 const STILL_NEED = "I still need the property photos and the details to make the ads: the address, price, beds, baths and what stands out.";
 
 // With a model, it reads the listing and labels the photos better than the rules can. Returns
@@ -845,7 +857,9 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
   // A link the site wouldn't let Hopkins read, and nothing else yet: until the agent sends the
   // facts or photos, every question gets the same true answer, not the model's guess (it once
   // said "I don't have browsing ability" right after a Zillow link had worked, 2026-10-28).
-  if (!ads.length && listing.link && !listing.description && text.trim() && !looksLikeListing(text)) {
+  // Only for messages about the listing or its ads: anything else ("write me an email to a
+  // client") goes to the model like any other chat (Ismael, 2026-10-29: a normal assistant).
+  if (!ads.length && listing.link && !listing.description && text.trim() && !looksLikeListing(text) && (!aiEnabled || ABOUT_LISTING.test(text))) {
     await say(ws, listing.id, await fresh(listing.id, [LINK_BLOCKED(), STILL_NEED]));
     return {};
   }
