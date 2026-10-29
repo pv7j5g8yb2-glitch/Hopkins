@@ -791,3 +791,12 @@ personal in here.
   turns into a listing when a later message has photos or a property's details (`handleMessage`
   reads it with `readAndMake`); a question that only mentions a price stays a chat. Report still
   lists only threads with a property (`PROPERTY()`).
+* **The Render loading screen at 16:48 (2026-10-29):** not the pinger. /healthz now shows who last
+  pinged it, per source: after 17 quiet minutes the same instance was still up and cron-job.org had
+  pinged at 17:10. The app had been asleep only about 7 minutes after the last use, which the
+  15 minute sleep can't explain; Render's docs say it "might restart a Free web service at any
+  time". Only a paid instance for hopkins-app stops that (waiting on Ismael).
+* **Claude/ChatGPT connector (MCP), recommendation 2026-10-29:** not now. Later, one direction only:
+  Hopkins as an MCP server that Claude, ChatGPT and Gemini can use (Leads, Monday report, ad
+  results first; making ads later, still approved in Hopkins). Their Claude can't power Hopkins.
+  Revisit once ads go live through Meta and pilots use Hopkins weekly.
