@@ -445,27 +445,42 @@ app.post("/api/listings/:id/seen", async (request) => {
 });
 
 // A new thread, like ChatGPT and Claude: the first message makes it at once, so it's in the
-// sidebar (named from that message) before Hopkins answers; /first then gets the answer.
+// sidebar (named from that message) before Hopkins answers. The answer starts on the server right
+// away, so it comes even if the agent leaves or closes the page (Ismael, 2026-10-29); /first
+// waits for it (or starts it, if it isn't running and hasn't been given).
+const firstRuns = new Map();
+function runFirst(ws, id, tz) {
+  if (firstRuns.has(id)) return firstRuns.get(id);
+  const key = `l:${id}`;
+  const run = (async () => {
+    await settleTurn(key);
+    const turn = startTurn(key);
+    try {
+      const r = await firstReply(ws, id, tz);
+      if (r && turn.stopped) await undoFirst(ws, id);
+      return { r, stopped: turn.stopped };
+    } finally {
+      endTurn(key, turn);
+    }
+  })()
+    .catch((err) => { console.error("The first answer failed:", err.message); return { r: null, failed: true }; })
+    .finally(() => firstRuns.delete(id));
+  firstRuns.set(id, run);
+  return run;
+}
 app.post("/api/listings/start", async (request, reply) => {
   const { text, photoIds, photoNames } = request.body || {};
   const ids = Array.isArray(photoIds) ? photoIds.filter((x) => typeof x === "string").slice(0, 30) : [];
   if (!clean(text, 5000) && !ids.length) return reply.code(400).send({ error: "Add photos, a link or a description." });
   const listing = await startThread(request.ws, { text: clean(text, 5000) || "", photoIds: ids, photoNames: photoNames && typeof photoNames === "object" ? photoNames : {} });
+  runFirst(request.ws, listing.id, timeZone(request));
   return { listing: { id: listing.id } };
 });
 app.post("/api/listings/:id/first", async (request, reply) => {
-  const key = `l:${request.params.id}`;
-  await settleTurn(key);
-  const turn = startTurn(key);
-  let r;
-  try {
-    r = await firstReply(request.ws, request.params.id, timeZone(request));
-    if (r && turn.stopped) await undoFirst(request.ws, request.params.id);
-  } finally {
-    endTurn(key, turn);
-  }
+  const { r, stopped, failed } = await runFirst(request.ws, request.params.id, timeZone(request));
+  if (failed) return reply.code(500).send({ error: "Something went wrong. Please try again." });
   if (!r) return reply.code(404).send({ error: "Listing not found." });
-  return { ...(await listingPayload(request.ws, request.params.id)), ...(turn.stopped ? { stopped: true } : { focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null }) };
+  return { ...(await listingPayload(request.ws, request.params.id)), ...(stopped ? { stopped: true } : { focus: [1, 2, 3, 4, 5].includes(r.focus) ? r.focus : null }) };
 });
 
 app.post("/api/listings", async (request, reply) => {

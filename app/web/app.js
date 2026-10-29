@@ -61,7 +61,8 @@
     // safe to repeat, so a GET quietly tries again a couple of times before giving up.
     for (let attempt = 0; ; attempt++) {
       try {
-        res = await fetch(path, { method, signal: opts.signal, headers: { ...(opts.body ? { "Content-Type": "application/json" } : {}), "X-Time-Zone": TZ }, body: opts.body ? JSON.stringify(opts.body) : undefined });
+        // keepalive: a message being sent still reaches the server if the page closes meanwhile.
+        res = await fetch(path, { method, signal: opts.signal, keepalive: Boolean(opts.keepalive), headers: { ...(opts.body ? { "Content-Type": "application/json" } : {}), "X-Time-Zone": TZ }, body: opts.body ? JSON.stringify(opts.body) : undefined });
       } catch (err) {
         if (opts.signal?.aborted) throw Object.assign(new Error("Stopped"), { stopped: true });
         if (method === "GET" && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
@@ -612,8 +613,8 @@
     // A search bar where the count was (Ismael, 2026-10-29), in Liquid Glass on phones.
     const typing = document.activeElement?.id === "cq";
     const q = (S.chatQ || "").trim().toLowerCase();
-    const words = (l) => [listingName(l), l.address, l.area, l.city, l.auto_title].filter(Boolean).join(" ").toLowerCase();
-    const shown = props.filter((l) => !q || words(l).includes(q));
+    // Only what's on the card: a match on a hidden city or name read as wrong (Ismael, 2026-10-29).
+    const shown = props.filter((l) => !q || listingName(l).toLowerCase().includes(q));
     const cardsHtml = () => `${shown.map(card).join("")}${sel || q ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}`;
     const top = sel ? `<p class="lede">${n ? `${n} selected` : "Select chats to delete"}</p>` : props.length ? "" : `<p class="lede">Your chats appear here.</p>`;
     main.innerHTML = `${mtop("Chats")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Chats</h1>${top}</div>
@@ -857,7 +858,7 @@
         photoIds.push(r.id);
         photoNames[r.id] = f.name;
       }
-      const { listing } = await api("/api/listings/start", { body: { text, photoIds, photoNames }, signal: ctrl.signal });
+      const { listing } = await api("/api/listings/start", { body: { text, photoIds, photoNames }, signal: ctrl.signal, keepalive: true });
       // From here the thread exists: it shows in the sidebar and opens, whatever happens next.
       const id = listing.id;
       const here = () => location.hash === `#/l/${id}`;
@@ -985,7 +986,7 @@
     const signal = stoppable(l);
     let next;
     try {
-      next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id], ...(photoIds.length ? { photoIds } : {}) }, signal });
+      next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id], ...(photoIds.length ? { photoIds } : {}) }, signal, keepalive: text.length < 30000 });
     } catch (err) {
       if (err.stopped) throw err;
       // No answer (no signal, the server's down): stop thinking.
@@ -1453,7 +1454,7 @@
       ${week ? `<a class="fchip" href="#/leads">This week ${ICON.x}</a>` : ""}
       ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search Leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
       <div class="list" id="leadList" style="border-top:0">${leads.map(item).join("")}</div><p class="lnone" id="lnone" hidden></p>`
-        : week && all.length ? `<p class="cnone">No Leads this week.</p>` : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each lead shows the ad it came from.</div>`}</div></div>`;
+        : week && all.length ? `<p class="cnone">No Leads this week.</p>` : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each lead also shows the ad it came from.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");
@@ -1626,7 +1627,9 @@
       const v = value(x), lead = ranked && i === 0 && v;
       const medal = ranked && v && i < 3 ? ` m${i + 1}` : "";
       const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a Lead" : "") : v === 1 ? "Lead" : "Leads";
-      return `<button class="rb-row${v ? "" : " zero"}" data-act="reportListing" data-id="${x.id}">
+      // Greyed only when nothing's happening: no Leads and no ads running. An active listing keeps
+      // its colour even before its first Lead (Ismael, 2026-10-29).
+      return `<button class="rb-row${v || pass.active(x) ? "" : " zero"}" data-act="reportListing" data-id="${x.id}">
         ${ranked ? `<span class="rb-rank${medal}">${v ? i + 1 : ""}</span>` : ""}
         <i class="th cover-mini"></i>
         <span class="rb-mid"><b>${esc(listingName(S.listings.find((l) => l.id === x.id) || { title: x.name }))}</b>

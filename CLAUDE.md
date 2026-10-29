@@ -213,11 +213,17 @@ The product's code is in `app/` (its README says what works and how to run it).
   invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
 * **Chats (Ismael, 2026-10-29):** everything is a chat, like ChatGPT and Claude: "New chat", the
   Chats tab and screen (a "Search chats" bar where the count was, Liquid Glass on phones, plain on
-  a laptop; it matches the name, address, area and city), "Delete chat", "Rename chat". The first message makes the chat
+  a laptop; it matches only the name on each card, nothing hidden), "Delete chat", "Rename chat". The first message makes the chat
   at once: it's in the sidebar and opens with the thinking mark before Hopkins answers, named from
   that message in a few words by the model (the first words stand in until then; a property's
   address wins). A chat with a property in it (facts, a link, photos) gets its ads, whether that
   comes in the first message or later; photos sent on their own in a chat are a message too.
+* **Answers always come (Ismael, 2026-10-29):** Hopkins answers every message even if the agent
+  leaves, closes the page or loses the connection: the server finishes the work on its own (a new
+  chat's first answer starts on the server the moment the chat is made), the browser finishes
+  sending the message if the page closes (keepalive), and the answer waits with its gold dot.
+* **Report rows (Ismael, 2026-10-29):** a listing with ads running keeps its colour on Report even
+  with no Leads yet; only one with nothing running and no Leads is greyed.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft
   corners), like ChatGPT and Claude. The agent's message stays with Copy and Edit, the reply
   never comes, anything it changed goes back, and the model never sees a stopped request. Stopping a thread's first answer keeps the thread and the
@@ -262,7 +268,7 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Lead with a capital L (Ismael, 2026-10-27):** "Lead" and "Leads" are always capitalised in the
   app and in Hopkins' replies ("3 Leads", "cost per Lead", "New Lead"). Ad copy and buyer pages
   are not the app. One exception he asked for (2026-10-29): the empty Leads screen says "Each lead
-  shows the ad it came from."
+  also shows the ad it came from."
 * **Names start with capitals (Ismael, 2026-10-28):** every part of a person's name (first, middle,
   last, each side of a hyphen or apostrophe) starts with a capital, however it was typed: Leads,
   the account name and the agent name on the brand. Only first letters change, so "McDonald"

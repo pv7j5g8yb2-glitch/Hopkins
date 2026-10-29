@@ -753,3 +753,16 @@ test("a chat that turns into a listing gets its ads: details in a later message,
   const sent = m.json.messages.find((x) => x.role === "agent" && x.data?.photos);
   assert.deepEqual(sent.data.photos, [photo.json.id]);
 });
+
+test("a new chat gets its answer even if the app never asks for it (the page was closed)", async () => {
+  const { c } = await signup("closed@ellery.test");
+  const s = await c("POST", "/api/listings/start", { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000" });
+  // No call to /first: the answer was started on the server with the chat.
+  // Watched from the chat list, the way the sidebar sees it: opening the chat would read it.
+  let row;
+  for (let i = 0; i < 50 && !row?.unread; i++) { await new Promise((r) => setTimeout(r, 100)); row = (await c("GET", "/api/listings")).json.listings.find((l) => l.id === s.json.listing.id); }
+  assert.ok(row.unread, "the answer waits with its dot");
+  const got = (await c("GET", `/api/listings/${s.json.listing.id}`)).json;
+  assert.equal(got.ads.length, 3);
+  assert.ok(got.messages.some((m) => m.role === "hopkins"));
+});

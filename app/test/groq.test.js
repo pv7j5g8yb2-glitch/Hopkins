@@ -420,3 +420,28 @@ test("a question with a price in it gets an answer like any assistant, not a new
   const l = await c("POST", "/api/listings", { text: "can you make ads for 12 Elm St, Austin, 3 bed 2 bath, $585,000?" });
   assert.equal(l.json.ads.length, 3);
 });
+
+test("Hopkins still answers when the connection drops mid reply, like a closed page", async () => {
+  const http = await import("node:http");
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "gone@test.com", password: "password123", invite: "EARLY1", name: "Gone Away" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
+  // The cookie for a raw request, as a browser would send it.
+  const login = await app.inject({ method: "POST", url: "/api/login", payload: { email: "gone@test.com", password: "password123" }, remoteAddress: "10.9.9.9" });
+  const cookie = [].concat(login.headers["set-cookie"]).map((x) => x.split(";")[0]).join("; ");
+  const addr = await app.listen({ port: 0, host: "127.0.0.1" });
+  delay = 800;
+  next = [{ reply: "Ad 1 is the one I'd run first.", action: "none", version: 1, remove: [], moment: "none", ads: [], listing_patch: null, budget: 0, days: 0 }];
+  await new Promise((done) => {
+    const req = http.request(`${addr}/api/listings/${l.json.listing.id}/messages`, { method: "POST", headers: { "Content-Type": "application/json", cookie } });
+    req.on("error", () => done());
+    req.end(JSON.stringify({ text: "which one would you run first?" }));
+    setTimeout(() => { req.destroy(); done(); }, 200);
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  delay = 0;
+  const after = await c("GET", `/api/listings/${l.json.listing.id}`);
+  assert.equal(after.json.messages.at(-1).body, "Ad 1 is the one I'd run first.");
+  await app.close();
+});
