@@ -207,11 +207,12 @@ The product's code is in `app/` (its README says what works and how to run it).
   listing or an ad never gives any back. Running any ad needs the paid plan too.
 * **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
   invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
-* **Threads (Ismael, 2026-10-29):** like ChatGPT and Claude, the first message on New listing
-  makes the thread at once: it's in the sidebar and opens with the thinking mark before Hopkins
-  answers, named from that message in a few words by the model (the first words stand in until
-  then; a property's address wins). A thread with a property in it (facts, a link, photos, ads) is
-  a listing; a plain chat stays in Recent but not in Listings, its count or Report.
+* **Chats (Ismael, 2026-10-29):** everything is a chat, like ChatGPT and Claude: "New chat", the
+  Chats tab and screen ("2 chats"), "Delete chat", "Rename chat". The first message makes the chat
+  at once: it's in the sidebar and opens with the thinking mark before Hopkins answers, named from
+  that message in a few words by the model (the first words stand in until then; a property's
+  address wins). A chat with a property in it (facts, a link, photos) gets its ads, whether that
+  comes in the first message or later; photos sent on their own in a chat are a message too.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft
   corners), like ChatGPT and Claude. The agent's message stays with Copy and Edit, the reply
   never comes, anything it changed goes back, and the model never sees a stopped request. Stopping a thread's first answer keeps the thread and the
@@ -250,9 +251,9 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the
   system only allows". Claude never says "Anthropic doesn't let me". Hopkins says "I can't" or "I
   can only", and when something needs a step from the agent, it says the step.
-* **Property, not home (Ismael, 2026-10-29):** everywhere in the app, its pages and Hopkins' chat
-  it's "property" ("1 property", "2 properties", "describe the property"), singular for one. Only
-  ad copy, written for buyers and renters, may say "home".
+* **Property, not home (Ismael, 2026-10-29):** wherever the app or Hopkins' chat talks about the
+  place itself it's "property" ("describe the property"), singular for one. Only ad copy, written
+  for buyers and renters, may say "home". The threads themselves are chats.
 * **Lead with a capital L (Ismael, 2026-10-27):** "Lead" and "Leads" are always capitalised in the
   app and in Hopkins' replies ("3 Leads", "cost per Lead", "New Lead"). Ad copy and buyer pages
   are not the app.

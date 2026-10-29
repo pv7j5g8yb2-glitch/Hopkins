@@ -730,3 +730,26 @@ test("the first message makes the thread at once, named from it, then Hopkins an
   assert.equal(stopped.json.messages.length, 1);
   assert.equal((await c("GET", "/api/me")).json.usage.adsMade, before);
 });
+
+test("a chat that turns into a listing gets its ads: details in a later message, or photos on their own", async () => {
+  const { c } = await signup("turns@ellery.test");
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [(await c("GET", "/api/me")).json.workspace.id]);
+  const s = await c("POST", "/api/listings/start", { text: "hi, quick one" });
+  await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  // A question with a price in it stays a chat.
+  const q = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "what's 15% of $650,000?" });
+  assert.equal(q.json.ads.length, 0);
+  const r = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000, big back yard" });
+  assert.equal(r.json.ads.length, 3);
+  assert.equal(r.json.listing.address, "12 Elm St");
+  assert.ok((await c("GET", "/api/listings")).json.listings.find((l) => l.id === s.json.listing.id).property);
+
+  // Photos sent on their own in a chat are a message, and make it a listing too.
+  const t = await c("POST", "/api/listings/start", { text: "hello" });
+  await c("POST", `/api/listings/${t.json.listing.id}/first`, {});
+  const photo = await c("POST", "/api/photos", { data: TINY_JPEG, thumb: TINY_JPEG, mime: "image/jpeg", name: "kitchen-1.jpg", listingId: t.json.listing.id });
+  const m = await c("POST", `/api/listings/${t.json.listing.id}/messages`, { text: "", photoIds: [photo.json.id, "not-mine"] });
+  assert.equal(m.json.ads.length, 3);
+  const sent = m.json.messages.find((x) => x.role === "agent" && x.data?.photos);
+  assert.deepEqual(sent.data.photos, [photo.json.id]);
+});

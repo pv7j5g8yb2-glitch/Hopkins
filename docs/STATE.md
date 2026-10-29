@@ -786,3 +786,8 @@ personal in here.
   answered in 11 seconds with two texts, not a listing. "2 bed 2 bath condo in Midtown Atlanta,
   2400/mo..." was named "2 bed condo in Midtown" and became a listing with 3 ads, but took 111
   seconds on the free model.
+* **Chats (Ismael, 2026-10-29: "why not just call it Chat"):** Listings became Chats (tab, screen,
+  Today's count, menus, toasts); the Chats screen lists every thread. A chat with no property yet
+  turns into a listing when a later message has photos or a property's details (`handleMessage`
+  reads it with `readAndMake`); a question that only mentions a price stays a chat. Report still
+  lists only threads with a property (`PROPERTY()`).

@@ -466,7 +466,7 @@
     return `<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open Lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
       <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Create new ads" : "Create ads"}</button>
-      <button class="danger" data-act="delListingAsk">${ICON.trash}Delete listing</button>`;
+      <button class="danger" data-act="delListingAsk">${ICON.trash}Delete chat</button>`;
   }
 
   // ---------- frame ----------
@@ -480,9 +480,8 @@
 
   // The tab you tapped lights up straight away, before its screen has loaded.
   function markNav() {
-    const [view, id] = location.hash.slice(2).split("/");
-    // A plain chat isn't a listing, so Listings doesn't light up for it.
-    const nav = view === "l" ? (S.listings.find((x) => x.id === id)?.property ? "listings" : "") : view || "today";
+    const view = location.hash.slice(2).split("/")[0];
+    const nav = view === "l" ? "listings" : view || "today";
     $$(".nv,.tabbar a").forEach((a) => a.classList.toggle("on", a.dataset.nav === nav));
   }
 
@@ -575,7 +574,7 @@
         <li><div class="tx"><b>Your approval</b><p>Nothing runs without it.</p></div></li></ol>`;
     } else {
       body = `<nav class="stats-mini" aria-label="At a glance">
-          <a href="#/listings"><b>${properties().length}</b><span>${properties().length === 1 ? "Listing" : "Listings"}</span></a>
+          <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Chat" : "Chats"}</span></a>
           <a href="#/leads"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
           <a href="#/today" data-act="toWaiting"><b>${waiting.length}</b><span>Needs review</span></a></nav>
 
@@ -592,8 +591,8 @@
 
   // Clearing listings out, the way Photos does it: Select, tick the ones to go, Delete. Holding
   // a card (or right clicking it on a laptop) opens its own menu: select, mark as sold, delete.
-  // Only threads with a property in them: a plain chat stays in Recent (2026-10-29).
-  const properties = () => S.listings.filter((l) => l.property);
+  // Chats: every thread, a listing or not, like ChatGPT and Claude (Ismael, 2026-10-29).
+  const properties = () => S.listings;
   function viewListings() {
     const props = properties();
     const sel = S.selecting && props.length;
@@ -602,10 +601,10 @@
     const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}</div>
       <div class="bd"><b>${esc(listingName(l))}</b>${l.unread ? `<span class="dot" aria-label="New reply"></span>` : ""}</div></a>`; };
     const n = S.picked.size;
-    const lede = sel ? (n ? `${n} selected` : "Select listings to delete") : props.length ? `${props.length} ${props.length === 1 ? "property" : "properties"}` : "Your listings appear here.";
-    main.innerHTML = `${mtop("Listings")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Listings</h1><p class="lede">${lede}</p></div>
+    const lede = sel ? (n ? `${n} selected` : "Select chats to delete") : props.length ? `${props.length} ${props.length === 1 ? "chat" : "chats"}` : "Your chats appear here.";
+    main.innerHTML = `${mtop("Chats")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Chats</h1><p class="lede">${lede}</p></div>
       ${props.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
-      <div class="cards ${sel ? "selecting" : ""}">${props.map(card).join("")}${sel ? "" : `<a class="card-new" href="#/new">${ICON.plus}New listing</a>`}</div></div></div>
+      <div class="cards ${sel ? "selecting" : ""}">${props.map(card).join("")}${sel ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}</div></div></div>
       ${sel ? `<div class="selbar lg"><button class="sec-btn" data-act="selectAll">${n === props.length ? "Select none" : "Select all"}</button>
         <button class="btn del-btn" data-act="delPicked" ${n ? "" : "disabled"}>${ICON.trash}${n ? `Delete ${n}` : "Delete"}</button></div>` : ""}`;
     bindHold();
@@ -651,14 +650,14 @@
       <button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button>
       <button data-act="selectOne" data-id="${l.id}">${ICON.check}Select</button>
       <button data-act="markSold" data-id="${l.id}" data-rent="${l.deal === "rent" ? 1 : 0}" data-sold="${l.status === "sold" ? 0 : 1}">${ICON.flag}${l.deal === "rent" ? (l.status === "sold" ? "Mark as for rent" : "Mark as rented") : l.status === "sold" ? "Mark as for sale" : "Mark as sold"}</button>
-      <div class="sep"></div><button class="danger" data-act="delOne" data-id="${l.id}">${ICON.trash}Delete listing</button>`);
+      <div class="sep"></div><button class="danger" data-act="delOne" data-id="${l.id}">${ICON.trash}Delete chat</button>`);
   }
 
   async function deleteListings(ids) {
     await api("/api/listings/delete", { body: { ids } });
     S.selecting = false;
     await Promise.all([loadMe(), loadListings(), loadInbox()]);
-    toast(ids.length === 1 ? "Listing deleted" : `${ids.length} listings deleted`);
+    toast(ids.length === 1 ? "Chat deleted" : `${ids.length} chats deleted`);
     if (S.current && ids.includes(S.current.listing.id)) { S.current = null; location.hash = "#/listings"; }
     if (location.hash.startsWith("#/listings")) viewListings();
     drawSide();
@@ -788,8 +787,8 @@
 
   function viewNew() {
     S.newChat = [];
-    main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">listing?</span></h1><p>Add photos, then paste the link or describe the property.</p>
+    main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
+      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">working on?</span></h1><p>Send a listing, photos or any question.</p>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing need Pro.
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="link" data-upgrade>Ask for Pro</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
@@ -917,6 +916,16 @@
     drawPreview();
     settleSegs();
     bindComposer(async (text, files) => {
+      // A chat with no ads yet: photos are part of the message, and a property sent here makes
+      // it a listing with its ads (2026-10-29).
+      if (files.length && !p.ads.length && !S.editing) {
+        const urls = files.map((f) => URL.createObjectURL(f));
+        $("#hint").textContent = `Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}…`;
+        const ids = [];
+        for (const f of files) ids.push((await uploadPhoto(f, { listingId: l.id })).id);
+        $("#hint").textContent = "";
+        return say(text, ids, urls);
+      }
       if (files.length) {
         $("#hint").textContent = `Uploading ${files.length} ${files.length === 1 ? "photo" : "photos"}…`;
         for (const f of files) await uploadPhoto(f, { listingId: l.id });
@@ -947,14 +956,15 @@
     return ctrl.signal;
   }
 
-  async function say(text) {
+  async function say(text, photoIds = [], urls = []) {
     const l = S.current.listing;
+    if (urls.length) $("#thread")?.insertAdjacentHTML("beforeend", sentPhotos(urls, " in"));
     showTyping(text);
     const my = current();
     const signal = stoppable(l);
     let next;
     try {
-      next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id] }, signal });
+      next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id], ...(photoIds.length ? { photoIds } : {}) }, signal });
     } catch (err) {
       if (err.stopped) throw err;
       // No answer (no signal, the server's down): stop thinking.
@@ -1635,7 +1645,7 @@
       <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per Lead</div></div>
       <form class="spendf" data-id="${x.id}"><label for="spendIn">Ad spend to date</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
       <p class="small">Available once Meta is connected.</p></form>
-      <div class="sep"></div><a href="#/l/${x.id}">${ICON.eye}Open listing</a>`, { top: true });
+      <div class="sep"></div><a href="#/l/${x.id}">${ICON.eye}Open chat</a>`, { top: true });
   }
 
   // ---------- Brand ----------
@@ -1789,7 +1799,7 @@
       await api("/api/account", { method: "PATCH", body: { avatar_id: "" } });
       await loadMe(); drawSide(); viewSettings(); toast("Photo removed");
     } else if (act === "deleteAsk") {
-      openPop(t, `<div class="note"><b>Delete your account?</b>Your listings, ads, Leads and photos will be permanently deleted.</div>
+      openPop(t, `<div class="note"><b>Delete your account?</b>Your chats, ads, Leads and photos will be permanently deleted.</div>
         <div style="padding:6px 10px 4px"><div class="fld"><label for="delPw">Your password</label><input id="delPw" type="password" autocomplete="current-password"></div></div>
         <button class="danger" data-act="deleteYes">${ICON.alert}Delete everything</button>`);
       setTimeout(() => $("#delPw") && $("#delPw").focus(), 50);
@@ -2093,8 +2103,8 @@
         const item = S.listings.find((x) => x.id === t.dataset.id) || (S.current && S.current.listing.id === t.dataset.id ? S.current.listing : null);
         if (!item) return;
         // On a phone it opens at the top, so the keyboard doesn't cover it.
-        openPop(from(item.id) || $(`[data-card="${item.id}"]`) || $("[data-act=listmenu]") || t, `<div class="note"><b>Rename listing</b></div>
-          <form class="rename" data-id="${item.id}"><input id="renameIn" maxlength="80" value="${esc(listingName(item))}" placeholder="${esc(item.address || "Name this listing")}" autocomplete="off" enterkeyhint="done">
+        openPop(from(item.id) || $(`[data-card="${item.id}"]`) || $("[data-act=listmenu]") || t, `<div class="note"><b>Rename chat</b></div>
+          <form class="rename" data-id="${item.id}"><input id="renameIn" maxlength="80" value="${esc(listingName(item))}" placeholder="${esc(item.address || "Name this chat")}" autocomplete="off" enterkeyhint="done">
           <button class="btn" type="submit">Save</button></form>`, { top: true });
         // Focused in the same tap, or iOS won't bring up the keyboard.
         const input = $("#renameIn");
@@ -2111,18 +2121,18 @@
         viewListings(); drawSide();
       } else if (act === "delOne" || act === "delPicked") {
         const ids = act === "delOne" ? [t.dataset.id] : [...S.picked];
-        const name = ids.length === 1 ? listingName(S.listings.find((x) => x.id === ids[0]) || {}) : `${ids.length} listings`;
-        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, chats, photos and Leads go too. It can't be undone.</div>
-          <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "listing" : `${ids.length} listings`}</button>`);
+        const name = ids.length === 1 ? listingName(S.listings.find((x) => x.id === ids[0]) || {}) : `${ids.length} chats`;
+        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, photos and Leads will also be deleted. This can't be undone.</div>
+          <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "chat" : `${ids.length} chats`}</button>`);
       } else if (act === "delYes") await deleteListings(t.dataset.ids.split(","));
       else if (act === "delListingAsk") {
-        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, chat, photos and Leads will also be deleted. This can't be undone.</div>
-          <button class="danger" data-act="delListingYes">${ICON.trash}Delete listing</button>`);
+        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, photos and Leads will also be deleted. This can't be undone.</div>
+          <button class="danger" data-act="delListingYes">${ICON.trash}Delete chat</button>`);
       } else if (act === "delListingYes") {
         await api(`/api/listings/${l.id}`, { method: "DELETE" });
         S.current = null;
         await Promise.all([loadMe(), loadListings(), loadInbox()]);
-        toast("Listing deleted");
+        toast("Chat deleted");
         location.hash = "#/listings";
       }
       else if (act === "dlmenu") {

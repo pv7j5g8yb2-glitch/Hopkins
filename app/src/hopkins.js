@@ -120,6 +120,9 @@ export async function accountSummary(ws, tz = "UTC") {
 // $650,000?", "write a caption for a 3 bed"): the model decides whether it's a listing to make
 // ads for. Returns the reply when it isn't, null when it is (or there's no model to ask).
 const ASKING = /\?\s*$|^\s*(what|whats|what's|how|can|could|should|would|will|is|are|do|does|did|why|when|where|which|who|write|draft|help|tell|explain|calculate|compare|give me|show me|any)\b/i;
+// A property in the message, as far as the rules can tell. With no model to ask, a question
+// that only mentions a price ("what's 15% of $650,000?") isn't one.
+const seemsListing = (text) => looksLikeListing(text) && (aiEnabled || !ASKING.test(text));
 export async function answerIfNotListing(ws, history, text, tz = "UTC") {
   if (!aiEnabled || URL_RE.test(text) || !ASKING.test(text)) return null;
   const r = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz), decide: true });
@@ -321,7 +324,7 @@ async function answerFirst(ws, listing, text, photoIds, tz, { inPlace = false } 
   let answer = null;
   if (!photoIds.length && !URL_RE.test(text)) {
     const history = [{ role: "agent", body: text }];
-    answer = looksLikeListing(text) ? await answerIfNotListing(ws, history, text, tz) : await newChat(ws, history, tz);
+    answer = seemsListing(text) ? await answerIfNotListing(ws, history, text, tz) : await newChat(ws, history, tz);
   }
   if (!answer) return readAndMake(ws, listing, text, { inPlace });
   await say(ws, listing.id, answer);
@@ -945,10 +948,10 @@ async function directEdit(ws, listing, ads, text, selected) {
   return { focus: shown.length === 1 ? shown[0] : undefined };
 }
 
-export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC") {
+export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC", photoIds = []) {
   const listing = await loadListing(ws.id, listingId);
   if (!listing) return null;
-  const sent = await postMessage(ws.id, listingId, "agent", "text", text);
+  const sent = await postMessage(ws.id, listingId, "agent", "text", text, photoIds.length ? { photos: photoIds } : null);
   await keepUndo(listingId, sent.id);
   const direct = await directEdit(ws, listing, await currentAds(listing), text, selected);
   if (direct) return direct;
@@ -958,6 +961,16 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     return {};
   }
   const ads = await currentAds(listing);
+  // A chat that turns into a listing (Ismael, 2026-10-29): no property in the thread yet, then
+  // photos or a property's details. It's read and gets its ads, like a first message would.
+  // A question that only mentions a price is answered instead.
+  const hasProperty = listing.address || listing.price || listing.beds || listing.sqft || listing.home_type || listing.link;
+  if (!ads.length && !hasProperty && (photoIds.length || seemsListing(text))) {
+    const answer = photoIds.length || URL_RE.test(text) ? null : await answerIfNotListing(ws, [{ role: "agent", body: text }], text, tz);
+    if (!answer) return readAndMake(ws, listing, text);
+    await say(ws, listing.id, answer);
+    return {};
+  }
   // A link the site wouldn't let Hopkins read, and nothing else yet: until the agent sends the
   // facts or photos, every question gets the same true answer, not the model's guess (it once
   // said "I don't have browsing ability" right after a Zillow link had worked, 2026-10-28).

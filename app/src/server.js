@@ -508,15 +508,19 @@ app.patch("/api/listings/:id", async (request, reply) => {
 });
 
 app.post("/api/listings/:id/messages", async (request, reply) => {
-  const text = clean(request.body?.text, 2000);
-  if (!text) return reply.code(400).send({ error: "Enter a message." });
+  const text = clean(request.body?.text, 2000) || "";
+  // Photos sent in the chat are part of the message (ones already uploaded to this listing).
+  const asked = Array.isArray(request.body?.photoIds) ? request.body.photoIds.filter((x) => typeof x === "string").slice(0, 30) : [];
+  const photoIds = [];
+  for (const id of asked) if (await get(`SELECT 1 FROM photos WHERE id = ? AND workspace_id = ? AND listing_id = ?`, [id, request.ws.id, request.params.id])) photoIds.push(id);
+  if (!text && !photoIds.length) return reply.code(400).send({ error: "Enter a message." });
   const selected = [1, 2, 3, 4, 5].includes(request.body?.version) ? request.body.version : 1;
   const key = `l:${request.params.id}`;
   await settleTurn(key);
   const turn = startTurn(key);
   let r;
   try {
-    r = await handleMessage(request.ws, request.params.id, text, selected, timeZone(request));
+    r = await handleMessage(request.ws, request.params.id, text, selected, timeZone(request), photoIds);
     if (r && turn.stopped) await undoLatestReply(request.ws, request.params.id);
   } finally {
     endTurn(key, turn);
