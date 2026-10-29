@@ -99,12 +99,12 @@ const STARTED = new Date().toISOString();
 // Which model provider answers ("gemini", "claude", "groq" or none), never a key.
 // pinged: when the health check was last asked before this request, and by what (the keep awake
 // pinger, cron-job.org, or someone else), so it's easy to tell whether the pinger still runs.
-let lastPing = null;
+const pinged = {};
 app.get("/healthz", async (request) => {
-  const prev = lastPing;
+  const seen = { ...pinged };
   const ua = String(request.headers["user-agent"] || "");
-  lastPing = { at: new Date().toISOString(), by: /cron-job/i.test(ua) ? "cron-job.org" : /render/i.test(ua) ? "render" : "other" };
-  return { ok: true, started: STARTED, ai: provider || "none", pinged: prev };
+  pinged[/cron-job/i.test(ua) ? "cron-job.org" : /render/i.test(ua) ? "render" : "other"] = new Date().toISOString();
+  return { ok: true, started: STARTED, ai: provider || "none", pinged: seen };
 });
 
 for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest", "heic-worker.js"]) {
