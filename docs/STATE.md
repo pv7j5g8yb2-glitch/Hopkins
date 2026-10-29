@@ -781,3 +781,8 @@ personal in here.
   its ads, anything else a chat reply; the model names it, `titleAI`, into `listings.auto_title`).
   `PROPERTY()` in hopkins.js decides what counts as a listing. The old POST /api/listings still
   does it all in one call (the tests use it).
+* **Threads checked live (2026-10-29):** the thread was there in about 2 seconds both times. "can
+  you write a short text to a buyer who went quiet..." was named "Text to a quiet buyer" and
+  answered in 11 seconds with two texts, not a listing. "2 bed 2 bath condo in Midtown Atlanta,
+  2400/mo..." was named "2 bed condo in Midtown" and became a listing with 3 ads, but took 111
+  seconds on the free model.
