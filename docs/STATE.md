@@ -820,3 +820,9 @@ personal in here.
   META_APP_ID and META_APP_SECRET on Render (docs/META.md), then a first real test on his own ad
   account with a small budget. Not done yet: story size images (Meta adapts the feed image), the
   agent's Instagram account as the ad's identity (the Page shows instead), Lead ads.
+* **Cost of opening Meta to everyone (checked 2026-10-29):** App Review and Business Verification
+  cost nothing; the only cost is the registered business Meta verifies against. In Ireland a
+  registered business name (sole trader, RBN1) is €20 online on CRO's CORE, up to four weeks to
+  process; a limited company is about €50 online (Form A1, from a Xero guide, not CRO's own page).
+  Whether Meta accepts a sole trader's business name isn't settled; a company is the safe bet.
+  A family member's existing registered business can own the Meta app instead.
