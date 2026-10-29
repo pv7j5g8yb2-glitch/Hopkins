@@ -158,6 +158,46 @@ await client.executeMultiple(`
   CREATE INDEX IF NOT EXISTS messages_listing_idx ON messages(listing_id, created_at);
   CREATE INDEX IF NOT EXISTS leads_listing_idx ON leads(listing_id);
 
+  -- Meta (2026-10-29): one connection per workspace, its token encrypted (src/meta.js), and the
+  -- ad account and Page the agent picked.
+  CREATE TABLE IF NOT EXISTS meta_connections (
+    workspace_id TEXT PRIMARY KEY,
+    fb_user_id TEXT NOT NULL,
+    fb_name TEXT,
+    token TEXT NOT NULL,
+    expires_at TEXT,
+    ad_account_id TEXT,
+    ad_account_name TEXT,
+    currency TEXT,
+    page_id TEXT,
+    page_name TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  -- Each approved ad as the app drew it (the feed image), sent to Meta when it runs.
+  CREATE TABLE IF NOT EXISTS ad_renders (
+    ad_id TEXT NOT NULL,
+    format TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    data BLOB NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (ad_id, format)
+  );
+  -- An approved ad on Meta: its own ad set, creative and ad, and where Meta's review stands.
+  CREATE TABLE IF NOT EXISTS meta_ads (
+    ad_id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    listing_id TEXT NOT NULL,
+    launch_id TEXT NOT NULL,
+    meta_ad_id TEXT NOT NULL,
+    adset_id TEXT,
+    creative_id TEXT,
+    status TEXT,
+    told TEXT,
+    created_at TEXT NOT NULL
+  );
+
   -- What pilot users tell the founder from the app (account menu, Send feedback).
   CREATE TABLE IF NOT EXISTS feedback (
     id TEXT PRIMARY KEY,
@@ -191,7 +231,10 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   "ALTER TABLE listings ADD COLUMN seen_at TEXT",
   // auto_title: the thread's name from its first message, in a few words, like Claude names a
   // chat (2026-10-29). The agent's own name (title) and the address come first.
-  "ALTER TABLE listings ADD COLUMN auto_title TEXT"]) {
+  "ALTER TABLE listings ADD COLUMN auto_title TEXT",
+  // The launch on Meta: its campaign, why it failed if it did, and when it was last checked.
+  "ALTER TABLE launches ADD COLUMN meta_campaign_id TEXT", "ALTER TABLE launches ADD COLUMN meta_error TEXT",
+  "ALTER TABLE launches ADD COLUMN synced_at TEXT", "ALTER TABLE launches ADD COLUMN meta_spend REAL"]) {
   // Only "already there" is expected; anything else is logged, not hidden.
   try { await client.execute(sql); } catch (err) { if (!/duplicate column/i.test(err.message)) console.error(`Migration failed (${sql}):`, err.message); }
 }

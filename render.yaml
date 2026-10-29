@@ -23,3 +23,8 @@ services:
         sync: false
       - key: DATABASE_AUTH_TOKEN
         sync: false
+      # Meta (Facebook and Instagram ads), docs/META.md. Without them the Meta section stays hidden.
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false

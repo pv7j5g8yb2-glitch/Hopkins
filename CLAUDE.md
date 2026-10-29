@@ -222,6 +222,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   leaves, closes the page or loses the connection: the server finishes the work on its own (a new
   chat's first answer starts on the server the moment the chat is made), the browser finishes
   sending the message if the page closes (keepalive), and the answer waits with its gold dot.
+* **Meta (2026-10-29):** one connection for Facebook and Instagram, from the agent's own ad account
+  under their own Page (Settings, Connect Meta). Approving a plan sends the ads: one Housing
+  campaign, one ad set per ad with an equal share of the budget, a 15 mile radius, no age, gender
+  or ZIP targeting, each ad linking to the property's page with its own ad. The chat hears once when
+  ads go live or are rejected, and spend comes back every 30 minutes. Setup steps: `docs/META.md`.
 * **Report rows (Ismael, 2026-10-29):** a listing with ads running keeps its colour on Report even
   with no Leads yet; only one with nothing running and no Leads is greyed.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft

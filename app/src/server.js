@@ -11,7 +11,9 @@ import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPl
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
+  metaConnection, syncMeta,
 } from "./hopkins.js";
+import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaRevoke, readSignedRequest, checkState, seal, unseal, MetaError } from "./meta.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
 import { nameCase } from "./names.js";
 import { FONT_KEYS } from "./style.js";
@@ -67,6 +69,8 @@ const CSP = [
 ].join("; ");
 
 export const app = Fastify({ logger: process.env.NODE_ENV !== "test", bodyLimit: 1_000_000, trustProxy: true });
+// Plain forms, which Meta's data deletion callback sends (signed_request).
+app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (request, body, done) => done(null, Object.fromEntries(new URLSearchParams(body))));
 await app.register(cookie, { secret: COOKIE_SECRET });
 
 // Plain safety headers on every answer.
@@ -232,7 +236,7 @@ app.addHook("onSend", async (request, reply, payload) => {
 
 app.addHook("preHandler", async (request, reply) => {
   const path = request.url.split("?")[0];
-  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset"].includes(path) || path.startsWith("/api/l/")) return;
+  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset", "/api/meta/deletion"].includes(path) || path.startsWith("/api/l/")) return;
   const user = await currentUser(request);
   if (!user) return reply.code(401).send({ error: "Please sign in." });
   request.user = user;
@@ -258,7 +262,96 @@ app.get("/api/me", async (request) => {
     kinds: KIND_NAMES,
     moments: MOMENTS,
     photoLabels: PHOTO_LABELS,
+    meta: await metaSummary(ws),
   };
+});
+
+// ---------- Meta (Facebook and Instagram) ----------
+
+// Where the agent stands with Meta, for Settings and for knowing whether approving sends the ads.
+async function metaSummary(ws) {
+  if (!metaReady()) return { available: false };
+  const c = await metaConnection(ws.id);
+  if (!c) return { available: true, connected: false };
+  const expired = c.expires_at && new Date(c.expires_at) < new Date();
+  return { available: true, connected: !expired, expired: Boolean(expired), name: c.fb_name, adAccountId: c.ad_account_id, adAccountName: c.ad_account_name, pageId: c.page_id, pageName: c.page_name, ready: Boolean(!expired && c.ad_account_id && c.page_id) };
+}
+const metaRedirect = (request) => `${appUrl(request)}/api/meta/callback`;
+
+app.get("/api/meta", async (request, reply) => {
+  const summary = await metaSummary(request.ws);
+  if (!summary.connected) return summary;
+  try {
+    const c = await metaConnection(request.ws.id);
+    return { ...summary, ...(await metaAssets(unseal(c.token))) };
+  } catch (err) {
+    return { ...summary, error: err.message };
+  }
+});
+app.get("/api/meta/connect", async (request, reply) => {
+  if (!metaReady()) return reply.code(404).send({ error: "Meta isn't set up yet." });
+  return reply.redirect(loginUrl(request.ws.id, metaRedirect(request)));
+});
+// Back from Facebook: the token is kept (encrypted), and when there's only one ad account or one
+// Page it's picked straight away.
+app.get("/api/meta/callback", async (request, reply) => {
+  const { code, state, error } = request.query || {};
+  if (error || !code) return reply.redirect("/#/settings");
+  if (!checkState(state, request.ws.id)) return reply.code(400).send({ error: "That sign in link has expired. Please try again." });
+  try {
+    const me = await finishLogin(String(code), metaRedirect(request));
+    const found = await metaAssets(me.token);
+    const account = found.adAccounts.length === 1 ? found.adAccounts[0] : null;
+    const page = found.pages.length === 1 ? found.pages[0] : null;
+    const now = nowIso();
+    await run(`INSERT OR REPLACE INTO meta_connections (workspace_id, fb_user_id, fb_name, token, expires_at, ad_account_id, ad_account_name, currency, page_id, page_name, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [request.ws.id, me.userId, me.name, seal(me.token), me.expiresAt, account?.id || null, account?.name || null, account?.currency || null, page?.id || null, page?.name || null, now, now]);
+    return reply.redirect("/#/settings");
+  } catch (err) {
+    console.error("Meta sign in failed:", err.message);
+    return reply.redirect("/#/settings");
+  }
+});
+app.patch("/api/meta", async (request, reply) => {
+  const c = await metaConnection(request.ws.id);
+  if (!c) return reply.code(400).send({ error: "Connect Meta first." });
+  const found = await metaAssets(unseal(c.token));
+  const { adAccountId, pageId } = request.body || {};
+  const account = adAccountId !== undefined ? found.adAccounts.find((a) => a.id === adAccountId) : null;
+  const page = pageId !== undefined ? found.pages.find((p) => p.id === pageId) : null;
+  if (adAccountId !== undefined && !account) return reply.code(400).send({ error: "Ad account not found." });
+  if (pageId !== undefined && !page) return reply.code(400).send({ error: "Page not found." });
+  if (account) await run(`UPDATE meta_connections SET ad_account_id = ?, ad_account_name = ?, currency = ?, updated_at = ? WHERE workspace_id = ?`, [account.id, account.name, account.currency, nowIso(), request.ws.id]);
+  if (page) await run(`UPDATE meta_connections SET page_id = ?, page_name = ?, updated_at = ? WHERE workspace_id = ?`, [page.id, page.name, nowIso(), request.ws.id]);
+  return metaSummary(request.ws);
+});
+app.delete("/api/meta", async (request) => {
+  const c = await metaConnection(request.ws.id);
+  if (c) { await metaRevoke(unseal(c.token)); await run(`DELETE FROM meta_connections WHERE workspace_id = ?`, [request.ws.id]); }
+  return { ok: true };
+});
+// Meta's data deletion callback (required for App Review): a person removed Hopkins from their
+// Facebook settings, so their Meta connection goes.
+app.post("/api/meta/deletion", async (request, reply) => {
+  const data = readSignedRequest(request.body?.signed_request);
+  if (!data?.user_id) return reply.code(400).send({ error: "Invalid request." });
+  await run(`DELETE FROM meta_connections WHERE fb_user_id = ?`, [String(data.user_id)]);
+  const code = randomUUID();
+  return { url: `${appUrl(request)}/privacy`, confirmation_code: code };
+});
+
+// Each approved ad as the app drew it, kept to send to Meta (PNG or JPEG, best quality).
+app.post("/api/ads/:id/render", { bodyLimit: 12_000_000 }, async (request, reply) => {
+  const ad = await get(`SELECT id, revision FROM ads WHERE id = ? AND workspace_id = ?`, [request.params.id, request.ws.id]);
+  if (!ad) return reply.code(404).send({ error: "Ad not found." });
+  const { data, format = "feed" } = request.body || {};
+  const buf = typeof data === "string" ? Buffer.from(data, "base64") : null;
+  const png = buf && buf.subarray(0, 4).toString("hex") === "89504e47";
+  const jpeg = buf && buf[0] === 0xff && buf[1] === 0xd8;
+  if (!buf || !(png || jpeg) || !["feed", "story"].includes(format)) return reply.code(400).send({ error: "That file isn't an image." });
+  if (buf.length > 8_000_000) return reply.code(413).send({ error: "That image is too large." });
+  await run(`INSERT OR REPLACE INTO ad_renders (ad_id, format, mime, data, revision, created_at) VALUES (?,?,?,?,?,?)`, [ad.id, format, png ? "image/png" : "image/jpeg", buf, Number(ad.revision) || 0, nowIso()]);
+  return { ok: true };
 });
 
 const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60 };
@@ -635,7 +728,7 @@ app.post("/api/listings/:id/run", async (request, reply) => {
   const listing = await loadListing(request.ws.id, request.params.id);
   if (!listing) return reply.code(404).send({ error: "Listing not found." });
   const { versions, budget, days, confirm } = request.body || {};
-  if (confirm) await confirmRun(request.ws, listing.id, confirm);
+  if (confirm) await confirmRun(request.ws, listing.id, confirm, { base: appUrl(request) });
   else await proposeRun(request.ws, listing, { versions: Array.isArray(versions) && versions.length ? versions : [1, 2, 3, 4, 5], budget, days });
   return listingPayload(request.ws, listing.id);
 });
@@ -804,4 +897,6 @@ if (process.env.NODE_ENV !== "test" && !process.env.NO_LISTEN) {
   await forgetGuessedCities().catch((err) => console.error("City clean up failed:", err.message));
   await capitaliseNames().catch((err) => console.error("Name clean up failed:", err.message));
   await app.listen({ port: Number(process.env.PORT || 3200), host: "0.0.0.0" });
+  // Running campaigns on Meta, checked every 30 minutes: spend, and ads going live or rejected.
+  if (metaReady()) setInterval(() => syncMeta().catch((err) => console.error("Meta check failed:", err.message)), 30 * 60 * 1000);
 }

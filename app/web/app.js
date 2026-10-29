@@ -1753,6 +1753,38 @@
 
   // ---------- Settings ----------
 
+  // Meta (Facebook and Instagram): connect once, pick the ad account and the Page the ads run
+  // under. One connection covers both apps.
+  function metaGroup() {
+    const m = S.me.meta || {};
+    if (!m.available) return "";
+    if (!m.connected) return `<div class="group"><h4>Meta</h4><p class="small">Run ads on Facebook and Instagram from your own ad account.</p>
+      <div style="margin-top:12px"><a class="sec-btn" href="/api/meta/connect">${m.expired ? "Reconnect Meta" : "Connect Meta"}</a></div></div>`;
+    return `<div class="group" id="metaGroup"><h4>Meta</h4><p>Connected as ${esc(m.name || "you")}.</p>
+      <div class="grid2" style="margin-top:12px"><div class="fld"><label for="metaAcct">Ad account</label><select id="metaAcct"><option value="">${esc(m.adAccountName || "Choose…")}</option></select></div>
+      <div class="fld"><label for="metaPage">Facebook Page</label><select id="metaPage"><option value="">${esc(m.pageName || "Choose…")}</option></select></div></div>
+      <div style="margin-top:12px"><button class="link" data-act="metaOff">Disconnect</button></div></div>`;
+  }
+  async function fillMeta() {
+    if (!S.me.meta?.connected || !$("#metaGroup")) return;
+    const m = await api("/api/meta").catch(() => null);
+    if (!m || !$("#metaGroup")) return;
+    // Meta wouldn't answer with this login (expired or removed): say so, with the way back.
+    if (m.error) {
+      $("#metaGroup").insertAdjacentHTML("beforeend", `<p class="small" style="margin-top:10px">This connection no longer works. <a class="link" href="/api/meta/connect">Reconnect Meta</a></p>`);
+      return;
+    }
+    const fill = (sel, items, current) => {
+      const el = $(sel);
+      el.innerHTML = `${items.some((x) => x.id === current) ? "" : `<option value="">Choose…</option>`}${items.map((x) => `<option value="${esc(x.id)}" ${x.id === current ? "selected" : ""}>${esc(x.name)}</option>`).join("")}`;
+    };
+    fill("#metaAcct", m.adAccounts || [], m.adAccountId);
+    fill("#metaPage", m.pages || [], m.pageId);
+    const save = async (body) => { S.me.meta = await api("/api/meta", { method: "PATCH", body }); toast("Saved"); };
+    $("#metaAcct").addEventListener("change", (e) => e.target.value && save({ adAccountId: e.target.value }));
+    $("#metaPage").addEventListener("change", (e) => e.target.value && save({ pageId: e.target.value }));
+  }
+
   function viewSettings() {
     const u = S.me.user, b = S.me.workspace.brand, use = S.me.usage;
     const fld = (id, label, value, type = "text", ph = "", auto = "off") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="${auto}"></div>`;
@@ -1779,6 +1811,7 @@
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
         : `<p class="small">Get a notification for every new Lead.</p>
            <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
+      ${metaGroup()}
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>Billed monthly. Cancel anytime.</p>`
         : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
@@ -1800,6 +1833,7 @@
       viewSettings();
       toast("Photo updated");
     });
+    fillMeta();
   }
 
   async function settingsAction(act, t) {
@@ -1861,6 +1895,29 @@
   }
 
   // ---------- clicks ----------
+
+  // The plan's ads, drawn at full size and kept on the server for Meta.
+  async function sendRenders(planId) {
+    const plan = S.current.messages.find((m) => m.id === planId)?.data;
+    const ads = S.current.ads.filter((a) => (plan?.versions || []).includes(a.version));
+    for (const ad of ads) {
+      const c = document.createElement("canvas");
+      await Creative.render(c, renderOpts(ad, "feed"));
+      const blob = await new Promise((r) => c.toBlob(r, "image/png"));
+      await api(`/api/ads/${ad.id}/render`, { body: { format: "feed", data: await blobBase64(blob) } });
+    }
+  }
+  // Meta's answer comes a little after the approval; the chat picks it up while it's open.
+  function waitForMeta(id, seen, tries = 0) {
+    if (tries > 30) return;
+    setTimeout(async () => {
+      if (location.hash !== `#/l/${id}` || S.busy) return waitForMeta(id, seen, tries + 1);
+      const p = await api(`/api/listings/${id}`).catch(() => null);
+      if (!p || location.hash !== `#/l/${id}`) return;
+      if (p.messages.length > seen) { drawListing(p, true); return; }
+      waitForMeta(id, seen, tries + 1);
+    }, 4000);
+  }
 
   async function download(format) {
     const l = S.current.listing;
@@ -2060,6 +2117,7 @@
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
+      else if (act === "metaOff") { await api("/api/meta", { method: "DELETE" }); await loadMe(); viewSettings(); toast("Meta disconnected"); }
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "reportListing") reportSheet(t);
       else if (act === "openAd") { S.selected[t.dataset.id] = Number(t.dataset.v); S.openAds = true; }
@@ -2196,10 +2254,13 @@
         refreshSide();
       } else if (t.dataset.confirm) {
         t.disabled = true;
+        // With Meta connected, each approved ad goes as the app draws it (feed size, PNG).
+        if (S.me.meta?.ready) await sendRenders(t.dataset.confirm).catch((err) => { t.disabled = false; throw err; });
         const next = await api(`/api/listings/${l.id}/run`, { body: { confirm: t.dataset.confirm } });
         celebrate("Approved");
         drawListing(next);
         refreshSide();
+        if (S.me.meta?.ready) waitForMeta(l.id, next.messages.length);
       } else if (t.dataset.fill) { const ta = $("#ta"); ta.value = t.dataset.fill; ta.dispatchEvent(new Event("input")); ta.focus(); }
       else if (t.dataset.upgrade !== undefined) {
         t.disabled = true;

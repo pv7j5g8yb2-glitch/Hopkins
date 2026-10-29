@@ -810,3 +810,13 @@ personal in here.
   Verification and App Review stay. Whether a sole trader's registered business name is enough for
   verification isn't settled in what Meta publishes (outside guides disagree); a limited company
   is the safe bet. No business is registered yet (see "Business accounts" under Working with Ismael).
+* **Meta built (2026-10-29), not yet tried with a real Meta app:** `app/src/meta.js` (login,
+  encrypted long lived token, ad accounts and Pages, launch, spend and review status), routes in
+  server.js (/api/meta, /api/meta/connect, /api/meta/callback, PATCH and DELETE /api/meta,
+  /api/meta/deletion, /api/ads/:id/render), Settings has a Meta section, approving uploads each ad
+  as a full size PNG (about 2.8 MB) before the plan is sent, and `syncMeta` runs every 30 minutes.
+  Tested against a fake Graph API (test/meta.test.js) and once against Meta's real API with a made
+  up token (it refused it, as it should). Next: Ismael creates the Meta app and sets
+  META_APP_ID and META_APP_SECRET on Render (docs/META.md), then a first real test on his own ad
+  account with a small budget. Not done yet: story size images (Meta adapts the feed image), the
+  agent's Instagram account as the ad's identity (the Page shows instead), Lead ads.

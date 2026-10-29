@@ -19,6 +19,7 @@ const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].inclu
 import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
+import { metaReady, unseal, launch as metaLaunch, campaignState, MetaError } from "./meta.js";
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency", "deal"];
 export const DEFAULT_BUDGET = 200;
@@ -990,7 +991,9 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     // Each ad's Leads, so "which one is working?" gets real numbers, never "engagement".
     const leadRows = await all(`SELECT ad_id, SUM(CASE WHEN wants = 'showing' THEN 1 ELSE 0 END) AS showings, COUNT(*) AS n FROM leads WHERE listing_id = ? GROUP BY ad_id`, [listingId]);
     const leads = Object.fromEntries(leadRows.map((x) => [x.ad_id, { n: Number(x.n), showings: Number(x.showings) }]));
-    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz) });
+    const c = metaReady() ? await metaConnection(ws.id) : null;
+    const meta = c ? { connected: true, ready: Boolean(c.ad_account_id && c.page_id), adAccountName: c.ad_account_name, pageName: c.page_name } : null;
+    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz), meta });
     if (r) return applyAI(ws, listing, ads, photos, r, text);
     busy = takeFailure() === "busy";
     if (busy && needsModel(text)) {
@@ -1541,7 +1544,7 @@ export async function proposeRun(ws, listing, { versions = [1, 2, 3, 4, 5], budg
   return { plan };
 }
 
-export async function confirmRun(ws, listingId, messageId) {
+export async function confirmRun(ws, listingId, messageId, { base = "" } = {}) {
   const listing = await loadListing(ws.id, listingId);
   if (!listing) return null;
   if (!isPaid(ws)) {
@@ -1555,8 +1558,9 @@ export async function confirmRun(ws, listingId, messageId) {
   const plan = safeJson(msg.data, null);
   const ads = (await currentAds(listing)).filter((a) => plan.versions.includes(a.version));
   const now = nowIso();
+  const launchId = randomUUID();
   await run(`INSERT INTO launches (id, workspace_id, listing_id, ad_ids, budget, days, radius_miles, created_at) VALUES (?,?,?,?,?,?,?,?)`,
-    [randomUUID(), ws.id, listingId, JSON.stringify(ads.map((a) => a.id)), plan.budget, plan.days, plan.radius, now]);
+    [launchId, ws.id, listingId, JSON.stringify(ads.map((a) => a.id)), plan.budget, plan.days, plan.radius, now]);
   for (const ad of ads) {
     await run(`UPDATE ads SET status = 'approved', updated_at = ? WHERE id = ?`, [now, ad.id]);
     await run(
@@ -1565,9 +1569,90 @@ export async function confirmRun(ws, listingId, messageId) {
     );
   }
   await clearActions(listingId);
-  await say(ws, listingId, `Approved: ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live once Meta is connected. Until then, download them from Ads and post or boost them yourself.`);
+  const conn = metaReady() ? await metaConnection(ws.id) : null;
+  if (conn?.ad_account_id && conn.page_id) {
+    await say(ws, listingId, `Approved: ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. Sending them to Meta now.`);
+    // Meta's calls take a while; the answer doesn't wait on them, and the result comes in the chat.
+    sendToMeta(ws, listing, launchId, ads, plan, base, conn).catch((err) => console.error("Sending to Meta failed:", err.message));
+    return { ok: true };
+  }
+  await say(ws, listingId, `Approved: ${ads.length} ${ads.length === 1 ? "ad" : "ads"}, $${plan.budget} over ${plan.days} days. They go live once Meta is connected in Settings. Until then, download them from Ads and post or boost them yourself.`);
   notifyFounder("Hopkins: ads approved", `A workspace approved ${ads.length} ads ($${plan.budget} over ${plan.days} days). Waiting on Meta.`);
   return { ok: true };
+}
+
+// ---------- Meta ----------
+
+export const metaConnection = (workspaceId) => get(`SELECT * FROM meta_connections WHERE workspace_id = ?`, [workspaceId]);
+const COUNTRY_CODES = { "United States": "US", Canada: "CA", Australia: "AU", "United Arab Emirates": "AE", "United Kingdom": "GB", Ireland: "IE" };
+
+// The approved ads, sent to the agent's own ad account: their images (drawn by the app when
+// they were approved), each linking to the property's page with its own ad, so every Lead is
+// counted against the ad that brought it.
+async function sendToMeta(ws, listing, launchId, ads, plan, base, conn) {
+  try {
+    const images = [];
+    for (const a of ads) images.push(await get(`SELECT data FROM ad_renders WHERE ad_id = ? AND format = 'feed'`, [a.id]));
+    const missing = ads.filter((a, i) => !images[i]);
+    if (missing.length) throw new MetaError(`${VERSION_WORD(missing.map((a) => a.version), ads)} had no image to send. Approve the plan again from the app.`);
+    const place = [listing.address, listing.area, listing.city].filter(Boolean).join(", ");
+    if (!place) throw new MetaError("the property has no address or city to show the ads around. Tell me where it is, then approve again.");
+    const r = await metaLaunch({
+      token: unseal(conn.token), adAccountId: conn.ad_account_id, pageId: conn.page_id,
+      country: COUNTRY_CODES[ws.brand.country] || "US", name: listingTitle(listing),
+      ads: ads.map((a, i) => ({ id: a.id, version: a.version, image: Buffer.from(images[i].data), link: `${base}/l/${listing.slug}?v=${a.id}&src=meta`, text: a.primary_text, headline: a.headline })),
+      budget: plan.budget, days: plan.days, radiusMiles: plan.radius, place,
+    });
+    await run(`UPDATE launches SET status = 'sent', meta_campaign_id = ? WHERE id = ?`, [r.campaignId, launchId]);
+    for (const m of r.ads) {
+      await run(`INSERT OR REPLACE INTO meta_ads (ad_id, workspace_id, listing_id, launch_id, meta_ad_id, adset_id, creative_id, status, told, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+        [m.adId, ws.id, listing.id, launchId, m.metaAdId, m.adsetId, m.creativeId, "PENDING_REVIEW", null, nowIso()]);
+    }
+    await say(ws, listing.id, `Sent to Meta: ${ads.length} ${ads.length === 1 ? "ad" : "ads"} for Facebook and Instagram. Each one goes live once Meta reviews it, usually within a day.`);
+    notifyFounder("Hopkins: ads sent to Meta", `${ads.length} ads, $${plan.budget} over ${plan.days} days.`);
+  } catch (err) {
+    await run(`UPDATE launches SET status = 'failed', meta_error = ? WHERE id = ?`, [String(err.message).slice(0, 300), launchId]);
+    // An expired or removed login (Meta's code 190) is the agent's step to take, said plainly.
+    const why = err.code === 190 ? "the Meta connection has expired. Reconnect Meta in Settings, then approve again" : polish(String(err.message)).replace(/\.$/, "");
+    await say(ws, listing.id, `Meta didn't take the ads: ${why}.`);
+    notifyFounder("Hopkins: Meta refused a launch", String(err.message).slice(0, 200), ["warning"]);
+  }
+}
+
+// What Meta says since the last look, for every campaign still running: the spend goes on the
+// listing (Report and cost per Lead use it), and the chat hears once when ads go live or are
+// rejected, with Meta's reason.
+export async function syncMeta() {
+  if (!metaReady()) return;
+  const launches = await all(`SELECT * FROM launches WHERE status = 'sent' AND meta_campaign_id IS NOT NULL`);
+  for (const l of launches) {
+    try {
+      const conn = await metaConnection(l.workspace_id);
+      if (!conn) continue;
+      const ads = await all(`SELECT * FROM meta_ads WHERE launch_id = ?`, [l.id]);
+      const state = await campaignState(unseal(conn.token), l.meta_campaign_id, ads.map((a) => a.meta_ad_id));
+      await run(`UPDATE launches SET meta_spend = ?, synced_at = ? WHERE id = ?`, [state.spend, nowIso(), l.id]);
+      const total = await get(`SELECT SUM(meta_spend) AS s FROM launches WHERE listing_id = ? AND meta_spend IS NOT NULL`, [l.listing_id]);
+      await run(`UPDATE listings SET spend = ? WHERE id = ?`, [Math.round((Number(total?.s) || 0) * 100) / 100, l.listing_id]);
+      const ws = await getWorkspace(l.workspace_id);
+      const mine = await all(`SELECT id, version FROM ads WHERE listing_id = ?`, [l.listing_id]);
+      const versionOf = (adId) => mine.find((a) => a.id === adId)?.version;
+      const live = [], rejected = [];
+      for (const s of state.ads) {
+        const row = ads.find((a) => a.meta_ad_id === s.id);
+        if (!row) continue;
+        await run(`UPDATE meta_ads SET status = ? WHERE ad_id = ?`, [s.status, row.ad_id]);
+        if (s.status === "ACTIVE" && row.told !== "live") { live.push(versionOf(row.ad_id)); await run(`UPDATE meta_ads SET told = 'live' WHERE ad_id = ?`, [row.ad_id]); }
+        if (s.status === "DISAPPROVED" && row.told !== "rejected") { rejected.push({ v: versionOf(row.ad_id), why: s.why }); await run(`UPDATE meta_ads SET told = 'rejected' WHERE ad_id = ?`, [row.ad_id]); }
+      }
+      const named = (vs) => vs.length > 1 ? `Ads ${vs.slice(0, -1).join(", ")} and ${vs.at(-1)}` : `Ad ${vs[0]}`;
+      if (live.length && ws) await say(ws, l.listing_id, `${named(live.filter(Boolean))} ${live.length > 1 ? "are" : "is"} live on Facebook and Instagram.`);
+      for (const r of rejected) if (ws) await say(ws, l.listing_id, `Meta rejected Ad ${r.v}${r.why ? `: ${r.why}` : "."}`);
+      if (new Date(new Date(l.created_at).getTime() + (Number(l.days) + 1) * 86400000) < new Date()) await run(`UPDATE launches SET status = 'ended' WHERE id = ?`, [l.id]);
+    } catch (err) {
+      console.error("Checking Meta failed for a launch:", err.message);
+    }
+  }
 }
 
 // ---------- leads ----------
