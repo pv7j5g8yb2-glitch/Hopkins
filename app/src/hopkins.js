@@ -138,7 +138,7 @@ export async function newChat(ws, history, tz = "UTC") {
   const options =
     intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos whenever you're ready."]
     : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes 3 ads, yours to download. ${upgradeText("plan")}`]
-    : intent.kind === "question" && intent.topic === "help" ? [`I make ads for each listing, each a different idea, so you can test them against each other. You change them with me here, and nothing runs until you say yes. ${ask}`]
+    : intent.kind === "question" && intent.topic === "help" ? [`I make ads for each listing, each a different idea, so you can test them against each other. You change them with me here, and nothing runs without your approval. ${ask}`]
     : intent.kind === "thanks" ? ["Anytime."]
     : [`I need a listing to start. ${ask}`, `I didn't catch a listing in that. Paste the link or add the photos and I'll take it from there.`];
   return (options.map((o) => o.trim()).find((o) => o !== lastReply) || options[0]).trim();
@@ -1420,7 +1420,7 @@ export async function proposeRun(ws, listing, { versions = [1, 2, 3, 4, 5], budg
   plan.perDay = Math.round((plan.budget / plan.days) * 100) / 100;
   await clearActions(listing.id);
   const split = plan.versions.length > 1 ? `, split evenly across the ${plan.versions.length} ads so the test is fair` : "";
-  await say(ws, listing.id, `Here's the plan: $${plan.budget} over ${plan.days} days${split}. Say yes to run it.`, "plan", plan, true);
+  await say(ws, listing.id, `Here's the plan: $${plan.budget} over ${plan.days} days${split}. Approve it to run.`, "plan", plan, true);
   return { plan };
 }
 

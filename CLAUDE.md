@@ -106,7 +106,7 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   grain on both.
 * **Tagline:** none for now (Ismael, 2026-10-18). Don't use "Tested, not guessed." as a slogan on
   end cards, ads or the page. **Promise:** "Real estate marketing, run for
-  you. Nothing goes live without your yes."
+  you. Nothing goes live without your approval." ("Your yes" reads oddly, Ismael 2026-10-29: never use it.)
 * **Wording in public copy:** say "real estate" (agents, teams, brokerages), never
   "estate agent", because the US, Canada, Australia and the UAE all say real estate.
   Never use "Realtor" (a trademark for NAR members only). Messages to Ismael stay in
