@@ -389,7 +389,7 @@ app.delete("/api/photos/:id", async (request) => {
 app.get("/api/listings", async (request) => {
   await numberUntitled(request.ws.id);
   const rows = await all(
-    `SELECT l.id, l.title, l.address, l.area, l.city, l.untitled_no, l.price, l.currency, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at, l.created_at,
+    `SELECT l.id, l.title, l.address, l.area, l.city, l.untitled_no, l.price, l.currency, l.deal, l.beds, l.baths, l.sqft, l.status, l.moment, l.updated_at, l.created_at,
        (SELECT id FROM photos WHERE listing_id = l.id ORDER BY position LIMIT 1) AS photo_id,
        (SELECT COUNT(*) FROM leads WHERE listing_id = l.id) AS leads,
        (SELECT COUNT(*) FROM messages WHERE listing_id = l.id AND needs_action = 1) AS waiting,
@@ -414,7 +414,7 @@ async function listingPayload(ws, id) {
   const first = await firstMessageId(listing);
   for (const m of messages) { m.data = m.data ? JSON.parse(m.data) : null; m.editable = Boolean(m.editable) || m.id === first; }
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency) }, photos, ads: checked, messages, leads: Number(leads.n) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency, listing.deal) }, photos, ads: checked, messages, leads: Number(leads.n) };
 }
 
 app.get("/api/listings/:id", async (request, reply) => {
@@ -590,7 +590,7 @@ app.get("/api/inbox", async (request) => {
 
 app.get("/api/leads", async (request) => {
   const leads = await all(
-    `SELECT leads.*, listings.address, listings.area, ads.version, ads.pattern, ads.name AS ad_name FROM leads
+    `SELECT leads.*, listings.address, listings.area, listings.deal, ads.version, ads.pattern, ads.name AS ad_name FROM leads
      JOIN listings ON listings.id = leads.listing_id LEFT JOIN ads ON ads.id = leads.ad_id
      WHERE leads.workspace_id = ? ORDER BY leads.created_at DESC LIMIT 500`,
     [request.ws.id]
@@ -686,7 +686,7 @@ app.get("/l/:slug", async (request, reply) => {
   const photos = await all(`SELECT id FROM photos WHERE listing_id = ? AND kind = 'listing' ORDER BY position LIMIT 12`, [listing.id]);
   const b = ws.brand;
   const data = {
-    slug: listing.slug, address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency),
+    slug: listing.slug, address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal), deal: listing.deal || "sale",
     facts: factsLine(listing), openHouse: listing.open_house, status: listing.status, photos: photos.map((p) => p.id),
     brand: { business: b.business || ws.name, agent: b.agent_name || "", phone: b.phone || "", license: b.license || "", primary: b.primary || "#1F2A36", accent: b.accent || "#C8A96A", font: b.font || "modern", logo: b.logo_id || null },
   };
@@ -717,7 +717,7 @@ app.post("/api/l/:slug/lead", async (request, reply) => {
   if (!name) return reply.code(400).send({ error: "Enter your name." });
   if (!email && !phone) return reply.code(400).send({ error: "Enter a phone number or email." });
   if (email && !EMAIL_RE.test(email)) return reply.code(400).send({ error: "Enter a valid email address." });
-  const wants = ["showing", "info", "offer"].includes(b.wants) ? b.wants : "info";
+  const wants = ["showing", "info", "offer", "apply"].includes(b.wants) ? b.wants : "info";
   await addLead(listing, { name, email, phone, wants, note: clean(b.note, 600), adId: clean(b.v, 40), source: clean(b.src, 40) });
   return { ok: true };
 });

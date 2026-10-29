@@ -754,7 +754,11 @@ personal in here.
   kept at 1920 on the short side (was 1600 on the long side, which stretched landscape photos in
   story ads 1.6 times), JPEG 0.92 (was 0.86), and Zillow photos at 1536 wide (was 1152).
 * **Try an example removed (Ismael, 2026-10-29)** from the New listing screen.
-* **Open question (2026-10-29): rentals.** Ismael asked if Hopkins should also serve agents and
-  teams that rent homes out. The app today assumes a sale everywhere (no rent price per month, the
-  buyer page offers "Talk about an offer", the "sold" moment, ad copy). Recommendation given: yes,
-  as a second listing type, same purpose. Waiting on his answer.
+* **Rentals built (Ismael said yes, 2026-10-29).** Each listing has a deal, sale or rent
+  (`listings.deal`). The model decides it from what was sent; `parseDeal`/`parseRent` in
+  `src/listing.js` are the backup (a sale's "HOA $250/mo" or "rental income" isn't rent). Rent shows
+  per month everywhere, ads say "For rent", the buyer page offers Apply (Leads with wants "apply"),
+  Rented replaces Sold, the Lead status Offer reads Application, rental fair housing terms (no
+  Section 8, students only, mature tenants) are caught, and New listing asks "What are you
+  listing?". Zillow's FOR_RENT pages and schema.org lease offers say "For rent". Before this the
+  code dropped any price under $10,000, so "$2,400/mo" got no price.

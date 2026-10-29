@@ -31,6 +31,12 @@ const CTA_LINES = {
   warm: "Come and see it for yourself. Tap to book a showing.",
   premium: "Private showings by appointment. Tap to arrange yours.",
 };
+const RENT_CTA = "Tap to see the photos, book a showing or apply.";
+
+// A home for rent says so where a sale says "Just listed", and is rented, not sold (2026-10-29).
+const listedWord = (l) => (l.deal === "rent" ? "For rent" : "Just listed");
+const doneWord = (l) => (l.deal === "rent" ? "Just rented" : "Just sold");
+export const momentName = (moment, deal) => (moment === "sold" && deal === "rent" ? "Just rented" : moment === "new" && deal === "rent" ? "For rent" : MOMENTS[moment]);
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -57,18 +63,18 @@ function pickPhoto(photos, want, used) {
 function momentLead(l, moment, extra = {}) {
   if (moment === "price") {
     return extra.oldPrice && l.price && extra.oldPrice > l.price
-      ? `New price. Was ${formatPrice(extra.oldPrice, l.currency)}, now ${formatPrice(l.price, l.currency)}.`
-      : `New price: ${formatPrice(l.price, l.currency)}.`;
+      ? `New price. Was ${formatPrice(extra.oldPrice, l.currency, l.deal)}, now ${formatPrice(l.price, l.currency, l.deal)}.`
+      : `New price: ${formatPrice(l.price, l.currency, l.deal)}.`;
   }
   if (moment === "open_house") return l.open_house ? `Open house ${l.open_house}. Come by, no appointment needed.` : "Open house this weekend.";
-  if (moment === "sold") return `Just sold in ${place(l) || "the area"}.`;
+  if (moment === "sold") return `${doneWord(l)} in ${place(l) || "the area"}.`;
   return "";
 }
 
 function kickerFor(l, moment, fallback) {
   if (moment === "price") return "New price";
   if (moment === "open_house") return l.open_house ? `Open house · ${l.open_house}` : "Open house";
-  if (moment === "sold") return "Just sold";
+  if (moment === "sold") return doneWord(l);
   return fallback;
 }
 
@@ -93,16 +99,19 @@ export function writeVersion(pattern, ctx, opts = {}) {
   const angle = opts.angle || 0;
   const where = place(l);
   const facts = factsLine(l);
-  const price = formatPrice(l.price, l.currency);
+  const price = formatPrice(l.price, l.currency, l.deal);
   const type = l.home_type || "home";
   const lead = momentLead(l, moment, extra);
-  const ctaLine = moment === "sold" ? "Thinking about selling nearby? Send me a message."
+  const rent = l.deal === "rent";
+  const listed = listedWord(l);
+  const ctaLine = moment === "sold" ? (rent ? "Have a place to rent out nearby? Send me a message." : "Thinking about selling nearby? Send me a message.")
     : moment === "open_house" ? "Tap for the photos and the details."
+    : rent ? RENT_CTA
     : CTA_LINES[voice] || CTA_LINES.plain;
   const used = opts.usedPhotos || new Set();
   const showPrice = price && moment !== "price";
   const factSentence = !facts && !where
-    ? (showPrice ? `Listed at ${price}.` : "")
+    ? (showPrice ? `${rent ? "For rent at" : "Listed at"} ${price}.` : "")
     : sentence([facts ? cap(facts) : cap(type), where ? `in ${where}` : "", showPrice ? `, ${price}.` : "."]).replace(" ,", ",");
   // The facts version already names the place in its first line.
   const factsOnly = facts ? `${cap(facts)}${showPrice ? `, ${price}` : ""}.` : showPrice ? `${price}.` : "";
@@ -116,8 +125,8 @@ export function writeVersion(pattern, ctx, opts = {}) {
       pattern,
       name: f ? cap(f.name) : where ? where : "The home",
       overlay,
-      kicker: kickerFor(l, moment, where ? `Just listed · ${where}` : "Just listed"),
-      headline: fit(l.beds ? `${l.beds} bed ${type} in ${where || "town"}` : `Just listed${where ? " in " + where : ""}`, 40),
+      kicker: kickerFor(l, moment, where ? `${listed} · ${where}` : listed),
+      headline: fit(l.beds ? `${l.beds} bed ${type} ${rent ? "for rent " : ""}in ${where || "town"}` : `${listed}${where ? " in " + where : ""}`, 40),
       body: [lead, overlay, length !== "short" && second ? second.detail : "", factSentence, length === "long" && feats[2] ? feats[2].detail : ""],
       photoWant: f ? f.photo : "exterior",
     };
@@ -128,21 +137,21 @@ export function writeVersion(pattern, ctx, opts = {}) {
       pattern,
       name: f ? cap(f.name.replace(/^the /, "")) : "The details",
       overlay,
-      kicker: kickerFor(l, moment, where || "Just listed"),
-      headline: fit(f ? `${cap(f.name.replace(/^the /, ""))}${where ? " in " + where : ""}` : `Just listed${where ? " in " + where : ""}`, 40),
+      kicker: kickerFor(l, moment, where || listed),
+      headline: fit(f ? `${cap(f.name.replace(/^the /, ""))}${where ? " in " + where : ""}` : `${listed}${where ? " in " + where : ""}`, 40),
       body: [lead, overlay, length !== "short" && f ? f.life : "", factSentence],
       photoWant: f ? f.photo : "living",
     };
   } else {
-    const momentOverlay = moment === "price" ? `Now ${shortPrice(l.price, l.currency)}.` : moment === "sold" ? "Just sold." : moment === "open_house" ? "Open house." : "Just listed.";
+    const momentOverlay = moment === "price" ? `Now ${shortPrice(l.price, l.currency, l.deal)}.` : moment === "sold" ? `${doneWord(l)}.` : moment === "open_house" ? "Open house." : `${listed}.`;
     ad = {
       pattern: "facts",
-      name: moment === "price" ? "New price" : moment === "open_house" ? "Open house" : moment === "sold" ? "Just sold" : l.price ? `${shortPrice(l.price, l.currency)}${where && where.length < 16 ? ` in ${where}` : ""}` : "The numbers",
+      name: moment === "price" ? "New price" : moment === "open_house" ? "Open house" : moment === "sold" ? doneWord(l) : l.price ? `${shortPrice(l.price, l.currency, l.deal)}${where && where.length < 16 ? ` in ${where}` : ""}` : "The numbers",
       overlay: momentOverlay,
       kicker: facts || cap(type),
-      headline: fit([shortPrice(l.price, l.currency), where].filter(Boolean).join(" in ") || `New ${type}`, 40),
+      headline: fit([shortPrice(l.price, l.currency, l.deal), where].filter(Boolean).join(" in ") || `New ${type}`, 40),
       body: [
-        lead || `Just listed${l.address ? `: ${l.address}` : ""}${where ? `, ${where}` : ""}.`,
+        lead || `${listed}${l.address ? `: ${l.address}` : ""}${where ? `, ${where}` : ""}.`,
         moment === "price" ? (facts ? `${cap(facts)}.` : "") : factsOnly,
         length !== "short" && feats.length ? `${cap(feats.slice(0, 3).map((f) => f.name.replace(/^the /, "")).join(", ").replace(/, ([^,]*)$/, " and $1"))}.` : "",
       ],

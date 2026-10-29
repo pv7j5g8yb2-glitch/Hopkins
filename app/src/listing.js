@@ -77,10 +77,28 @@ export function parsePrice(text) {
   return v >= 10_000 && v < 1_000_000_000 ? Math.round(v) : null;
 }
 
+// For sale or for rent (Ismael, 2026-10-29). The model decides this from everything said, the
+// way a person would ("$2,400/mo" is rent). This is only the backup for when there's no model:
+// rent words, or the price itself given per month. A sale's HOA, tax or payment per month, or
+// its "rental income", doesn't count.
+const NOT_RENT = /\b(rental (income|potential|unit|suite|history)|rent (out )?the (guest|adu|basement|unit|cottage)|could (also )?be rented|(hoa|fees?|dues|taxes|tax|payment|mortgage|utilities|insurance|assessment)\b[^.$]{0,25}\$\s?[\d,.]+\s*(\/\s?mo|per month|a month|monthly)\w*)/gi;
+const RENT_WORDS = /\b(for rent|for lease|to let|now leasing|rental|lease term|security deposit|\d+ month lease|available (now|from|immediately)|pets? (allowed|ok|considered)|move in date)\b/i;
+const RENT_PRICE = /(?:\$|€|£|\baed\s?)\s?(\d{1,3}(?:,\d{3})+|\d{3,6})(?:\.\d{2})?\s*(?:\/\s?(?:mo|mth|month)\b|per month\b|a month\b|each month\b|monthly\b|pcm\b|p\/m\b)|\brent(?: is)?:?\s*(?:\$|€|£)\s?(\d{1,3}(?:,\d{3})+|\d{3,6})/i;
+export function parseDeal(text = "") {
+  const t = String(text).replace(/\s+/g, " ").replace(NOT_RENT, " ");
+  return RENT_WORDS.test(t) || RENT_PRICE.test(t) ? "rent" : null;
+}
+export function parseRent(text = "") {
+  const m = String(text).replace(/\s+/g, " ").replace(NOT_RENT, " ").match(RENT_PRICE);
+  const v = m ? num(m[1] || m[2]) : 0;
+  return v >= 100 && v <= 200_000 ? v : null;
+}
+
 export function parseListingText(text = "") {
   const t = text.replace(/\s+/g, " ").trim();
   const out = { features: [] };
-  out.price = parsePrice(t);
+  out.deal = parseDeal(t);
+  out.price = out.deal === "rent" ? parseRent(t) || parsePrice(t) : parsePrice(t);
   if (out.price) out.currency = parseCurrency(t);
   const beds = t.match(/(\d+(?:\.\d)?)\s*-?\s*(?:bed(room)?s?|bd|br)\b/i);
   if (beds) out.beds = Number(beds[1]);
@@ -102,19 +120,22 @@ export function parseListingText(text = "") {
   return out;
 }
 
-export function formatPrice(p, cur) {
+// A rent is always shown per month: "$2,400/mo".
+export function formatPrice(p, cur, deal) {
   if (!p) return "";
-  return sym(cur) + Number(p).toLocaleString("en-US");
+  return sym(cur) + Number(p).toLocaleString("en-US") + (deal === "rent" ? "/mo" : "");
 }
 
-export function shortPrice(p, cur) {
+export function shortPrice(p, cur, deal) {
   if (!p) return "";
+  if (deal === "rent") return formatPrice(p, cur, deal);
   if (p >= 1_000_000) return sym(cur) + (p / 1_000_000).toFixed(p % 1_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, "") + "M";
   return sym(cur) + Math.round(p / 1000) + "K";
 }
 
-export function priceBand(p) {
+export function priceBand(p, deal) {
   if (!p) return "unknown";
+  if (deal === "rent") return p < 1500 ? "rent under 1.5k" : p < 3000 ? "rent 1.5k to 3k" : p < 6000 ? "rent 3k to 6k" : "rent 6k plus";
   if (p < 300_000) return "under 300k";
   if (p < 600_000) return "300k to 600k";
   if (p < 1_000_000) return "600k to 1m";
@@ -206,7 +227,7 @@ export function pageFacts(html) {
   const place = [p.streetAddress, p.city, p.state].filter((x) => typeof x === "string" && x).join(", ");
   const bits = [
     place && `${place}.`,
-    n(p.price) && `Price $${n(p.price).toLocaleString("en-US")}.`,
+    n(p.price) && (/RENT/i.test(String(p.homeStatus || "")) ? `For rent: $${n(p.price).toLocaleString("en-US")} per month.` : `Price $${n(p.price).toLocaleString("en-US")}.`),
     [n(p.bedrooms) && `${p.bedrooms} bed`, n(p.bathrooms) && `${p.bathrooms} bath`, n(p.livingArea) && `${n(p.livingArea).toLocaleString("en-US")} sq ft`].filter(Boolean).join(", ").replace(/.$/, "$&."),
     n(p.yearBuilt) && `Built in ${p.yearBuilt}.`,
     typeof p.description === "string" && p.description.slice(0, 2500),
@@ -245,7 +266,7 @@ export function ldFacts(html) {
   const description = homes.map((n) => n.description).filter((d) => typeof d === "string").sort((a, b) => b.length - a.length)[0];
   const bits = [
     addr && `${[addr.streetAddress, addr.addressLocality, addr.addressRegion].filter(Boolean).join(", ")}.`,
-    offer && `Price ${money(num(offer.price))}.`,
+    offer && (/LeaseOut|Rent/i.test(String(offer.businessFunction || "")) ? `For rent: ${money(num(offer.price))} per month.` : `Price ${money(num(offer.price))}.`),
     [beds && `${beds} bed`, baths && `${baths} bath`, num(size) && `${num(size).toLocaleString("en-US")} ${sizeUnit}`].filter(Boolean).join(", ").replace(/.$/, "$&."),
     description && decode(description).slice(0, 2500),
   ].filter((b) => b && b !== ".");

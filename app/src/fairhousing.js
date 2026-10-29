@@ -17,6 +17,12 @@ const RULES = [
   { re: /\b(empty[- ]nesters?|retirees|newlyweds|young professionals|couples|singles)\b/i, level: "block", why: "describes the buyer instead of the home", fix: "anyone" },
   { re: /\b(mature|older) (buyers?|persons?|people|residents?|couples?)\b/i, level: "block", why: "names an age group", fix: "" },
   { re: /\bstudents?\b/i, level: "caution", why: "can read as a preference for or against a group", fix: "" },
+  // Rentals: source of income is protected in many states and cities, and occupancy limits by
+  // who the tenant is are familial status (2026-10-29).
+  { re: /\b(no (section 8|vouchers?|housing (vouchers?|assistance)|hcv)|section 8 not accepted|vouchers? not accepted)\b/i, level: "block", why: "source of income is protected in many states and cities", fix: "" },
+  { re: /\b(students|professionals|working professionals) only\b/i, level: "block", why: "limits who can rent by who they are", fix: "" },
+  { re: /\b(ideal|perfect|suits?|suitable) for (a )?(single (person|professional)|one person|a couple)\b/i, level: "block", why: "names who the home suits by family status", fix: "" },
+  { re: /\bmature tenants?\b/i, level: "block", why: "names an age group", fix: "" },
   // Sex
   { re: /\bbachelor pad\b/i, level: "block", why: "suggests a preference by sex and family status", fix: "one bedroom retreat" },
   { re: /\b(man cave|she shed)\b/i, level: "caution", why: "describes a room by sex", fix: "bonus room" },

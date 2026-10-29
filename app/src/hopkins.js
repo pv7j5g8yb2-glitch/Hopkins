@@ -20,7 +20,7 @@ import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 
-const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency"];
+const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency", "deal"];
 export const DEFAULT_BUDGET = 200;
 export const DEFAULT_DAYS = 10;
 
@@ -110,7 +110,7 @@ export async function accountSummary(ws, tz = "UTC") {
   const week = (r, label) => `${label} (${day(r.since)} to ${day(new Date(new Date(r.until).getTime() - 1).toISOString())}): ${r.total} ${r.total === 1 ? "Lead" : "Leads"}, ${r.showings} asked for a showing.`;
   const rows = now.listings.slice(0, 15).map((l) => {
     const prev = last.listings.find((x) => x.id === l.id);
-    return `- ${l.name}: ${l.status === "sold" ? "sold" : l.running ? "ads approved" : l.drafts ? "ads waiting for a yes" : "no ads yet"}; Leads: ${prev?.leads || 0} last week, ${l.leads} this week so far, ${l.allLeads} in all${l.spend > 0 ? `; spent $${l.spend} in all${l.cpl ? `, $${l.cpl} a Lead` : ""}` : ""}.`;
+    return `- ${l.name}: ${l.status === "sold" ? (l.deal === "rent" ? "rented" : "sold") : l.running ? "ads approved" : l.drafts ? "ads waiting for a yes" : "no ads yet"}; Leads: ${prev?.leads || 0} last week, ${l.leads} this week so far, ${l.allLeads} in all${l.spend > 0 ? `; spent $${l.spend} in all${l.cpl ? `, $${l.cpl} a Lead` : ""}` : ""}.`;
   });
   const top = last.topAds.length ? `Top ads last week: ${last.topAds.map((a) => `${a.name} on ${now.listings.find((l) => l.id === a.listing_id)?.name || "a listing"} (${a.leads})`).join("; ")}.` : "";
   return [week(last, "Last week"), week(now, "This week so far"), "Each listing:", ...rows, top, "Cost per Lead exists only per listing (all its spend over all its Leads); never give one for a week."].filter(Boolean).join("\n");
@@ -212,12 +212,12 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
 
   const id = randomUUID();
   const now = nowIso();
-  const listing = { id, workspace_id: ws.id, address: null, city: null, area: null, price: null, currency: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
+  const listing = { id, workspace_id: ws.id, address: null, city: null, area: null, price: null, currency: null, deal: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
   listing.slug = slugFor(listing);
   await run(
-    `INSERT INTO listings (id, workspace_id, slug, address, city, area, price, currency, beds, baths, sqft, home_type, features, description, link, open_house, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [id, ws.id, listing.slug, listing.address, listing.city, listing.area, listing.price, listing.currency, listing.beds, listing.baths, listing.sqft, listing.home_type,
+    `INSERT INTO listings (id, workspace_id, slug, address, city, area, price, currency, deal, beds, baths, sqft, home_type, features, description, link, open_house, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id, ws.id, listing.slug, listing.address, listing.city, listing.area, listing.price, listing.currency, listing.deal, listing.beds, listing.baths, listing.sqft, listing.home_type,
       JSON.stringify(listing.features || []), source || null, link, listing.open_house, now, now]
   );
 
@@ -242,7 +242,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
     await say(ws, id, LINK_BLOCKED(link));
     return fresh;
   }
-  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest) });
+  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : fresh.deal === "rent" ? "What's the monthly rent?" : "What's the asking price?"), count: countFrom(rest) });
   return fresh;
 }
 
@@ -330,13 +330,13 @@ function introFor(moment, listing, ads = []) {
     const one = `**Ad 1**${ads[0].name ? `, ${ads[0].name.charAt(0).toLowerCase()}${ads[0].name.slice(1)}` : ""}`;
     if (moment === "price") return `The price changed on ${where}, so here's ${one}, for the new price. A new price gives people who scrolled past a reason to look again.`;
     if (moment === "open_house") return `Here's ${one}, for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}. Run it in the days before.`;
-    if (moment === "sold") return `Sold. Here's ${one}, for people nearby who might sell next.`;
+    if (moment === "sold") return listing.deal === "rent" ? `Rented. Here's ${one}, for owners nearby who might rent out next.` : `Sold. Here's ${one}, for people nearby who might sell next.`;
     return `Here's ${one}, for ${where}. Tell me what to change, or tap Run ad.`;
   }
   const list = `\n\n${IDEAS(ads)}\n\n`;
   if (moment === "price") return `The price changed on ${where}, so here are ${ads.length} ads for the new price:${list}A new price gives people who scrolled past a reason to look again.`;
   if (moment === "open_house") return `Here are ${ads.length} ads for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}:${list}Run them in the days before it.`;
-  if (moment === "sold") return `Sold. Here are ${ads.length} ads for people nearby who might sell next:${list}`.trim();
+  if (moment === "sold") return (listing.deal === "rent" ? `Rented. Here are ${ads.length} ads for owners nearby who might rent out next:${list}` : `Sold. Here are ${ads.length} ads for people nearby who might sell next:${list}`).trim();
   return `Here are ${ads.length} ads for ${where}, each testing a different idea:${list}Tell me what to change, or tap Run ad.`;
 }
 
@@ -995,9 +995,9 @@ async function editFirst(ws, listing, msg, text) {
   if (linkInfo?.photos?.length && !(await get(`SELECT 1 FROM photos WHERE listing_id = ? AND kind = 'listing'`, [listing.id]))) await importPhotos(ws, listing.id, linkInfo.photos);
   const source = [rest, linkInfo?.title, linkInfo?.description].filter(Boolean).join("\n");
   const parsed = parseListingText(source);
-  const facts = { address: null, city: null, area: null, price: null, currency: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
-  await run(`UPDATE listings SET address = ?, city = ?, area = ?, price = ?, currency = ?, beds = ?, baths = ?, sqft = ?, home_type = ?, open_house = ?, features = ?, description = ?, link = ?, moment = 'new', updated_at = ? WHERE id = ? AND workspace_id = ?`,
-    [facts.address, facts.city, facts.area, facts.price, facts.currency, facts.beds, facts.baths, facts.sqft, facts.home_type, facts.open_house, JSON.stringify(facts.features || []), source || null, link, nowIso(), listing.id, ws.id]);
+  const facts = { address: null, city: null, area: null, price: null, currency: null, deal: null, beds: null, baths: null, sqft: null, home_type: null, open_house: null, ...parsed };
+  await run(`UPDATE listings SET address = ?, city = ?, area = ?, price = ?, currency = ?, deal = ?, beds = ?, baths = ?, sqft = ?, home_type = ?, open_house = ?, features = ?, description = ?, link = ?, moment = 'new', updated_at = ? WHERE id = ? AND workspace_id = ?`,
+    [facts.address, facts.city, facts.area, facts.price, facts.currency, facts.deal, facts.beds, facts.baths, facts.sqft, facts.home_type, facts.open_house, JSON.stringify(facts.features || []), source || null, link, nowIso(), listing.id, ws.id]);
   await postMessage(ws.id, listing.id, "agent", "text", [rest, link].filter(Boolean).join("\n"), { ...safeJson(msg.data, {}), first: true });
   const missing = await readListing(ws, listing.id, { rest, linkInfo, features: facts.features });
   const fresh = await loadListing(ws.id, listing.id);
@@ -1005,7 +1005,7 @@ async function editFirst(ws, listing, msg, text) {
     await say(ws, listing.id, LINK_BLOCKED(link));
     return {};
   }
-  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : "What's the asking price?"), count: countFrom(rest), inPlace: true });
+  await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : fresh.deal === "rent" ? "What's the monthly rent?" : "What's the asking price?"), count: countFrom(rest), inPlace: true });
   return { focus: 1 };
 }
 
@@ -1047,7 +1047,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   // Facts the agent typed that the model left out ("€1,250,000" once never reached the listing,
   // 2026-10-28): only where the listing has nothing yet.
   const typed = text ? parseListingText(text) : {};
-  for (const k of ["price", "beds", "baths", "sqft", "address"]) if (typed[k] && !patch[k] && !listing[k]) patch[k] = typed[k];
+  for (const k of ["price", "beds", "baths", "sqft", "address", "deal"]) if (typed[k] && !patch[k] && !listing[k]) patch[k] = typed[k];
   if (patch.price && text) { const cur = parseCurrency(text); if (cur) patch.currency = cur; }
   // New facts the feature list has no name for ("it has solar panels") are kept in the agent's
   // own words, so every later rewrite still knows them.
@@ -1444,7 +1444,7 @@ export async function confirmRun(ws, listingId, messageId) {
     await run(`UPDATE ads SET status = 'approved', updated_at = ? WHERE id = ?`, [now, ad.id]);
     await run(
       `INSERT OR IGNORE INTO tests (id, workspace_id, listing_id, ad_id, home_type, city, price_band, pattern, moment, audience, started_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      [randomUUID(), ws.id, listingId, ad.id, listing.home_type, listing.city, priceBand(listing.price), ad.pattern, ad.moment, JSON.stringify(plan.audience), now]
+      [randomUUID(), ws.id, listingId, ad.id, listing.home_type, listing.city, priceBand(listing.price, listing.deal), ad.pattern, ad.moment, JSON.stringify(plan.audience), now]
     );
   }
   await clearActions(listingId);
@@ -1465,7 +1465,7 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
     [id, ws.id, listing.id, ad?.id || null, name, email || null, phone || null, wants, note || null, source || null, nowIso()]
   );
   if (ad) await run(`UPDATE tests SET leads = leads + 1 WHERE ad_id = ?`, [ad.id]);
-  const what = wants === "showing" ? "wants a showing" : wants === "offer" ? "wants to talk about an offer" : "has a question";
+  const what = wants === "showing" ? "wants a showing" : wants === "offer" ? "wants to talk about an offer" : wants === "apply" ? "wants to apply" : "has a question";
   const contact = [phone, email].filter(Boolean).join(", ");
   await say(ws, listing.id, `New Lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""}`, "lead", { leadId: id }, false);
   if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New Lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
@@ -1483,7 +1483,7 @@ export async function weeklyReport(ws, range = weekRange()) {
      WHERE leads.workspace_id = ? AND leads.created_at >= ? AND leads.created_at < ? ORDER BY leads.created_at DESC`,
     [ws.id, since, until]
   );
-  const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, status, spend, moment, created_at, (SELECT id FROM photos WHERE listing_id = listings.id ORDER BY position LIMIT 1) AS photo_id FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
+  const listings = await all(`SELECT id, title, address, area, city, untitled_no, price, deal, status, spend, moment, created_at, (SELECT id FROM photos WHERE listing_id = listings.id ORDER BY position LIMIT 1) AS photo_id FROM listings WHERE workspace_id = ? ORDER BY created_at DESC`, [ws.id]);
   // For the chart and the comparison: the week before, and every lead so far per listing (spend
   // is typed in as a running total, so cost per lead is spend over all its leads, not this week's).
   // The week before, and for a week still going, the same stretch of it so far: Monday 00:00 up
@@ -1508,7 +1508,7 @@ export async function weeklyReport(ws, range = weekRange()) {
     for (const x of ls) if (x.version) byVersion[`Ad ${x.version}`] = (byVersion[`Ad ${x.version}`] || 0) + 1;
     const spend = Number(l.spend || 0);
     return {
-      id: l.id, name: listingTitle(l), status: l.status, leads: ls.length, photo_id: l.photo_id || null, allLeads: allTime[l.id] || 0,
+      id: l.id, name: listingTitle(l), status: l.status, deal: l.deal || null, leads: ls.length, photo_id: l.photo_id || null, allLeads: allTime[l.id] || 0,
       showings: ls.filter((x) => x.wants === "showing").length, spend, cpl: spend > 0 && allTime[l.id] ? Math.round((spend / allTime[l.id]) * 100) / 100 : null,
       byVersion, running: launchedIds.has(l.id), drafts: draftIds.has(l.id),
     };

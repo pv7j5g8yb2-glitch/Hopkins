@@ -145,7 +145,7 @@ export function readIntent(text, { selected = 1, photos = [], ads = [] } = {}) {
   }
 
   // Sold, under contract.
-  if (/\b(it'?s |it has |just |got )?(sold|under contract|went pending|is pending)\b/.test(low) && !/\b(not|isn'?t|hasn'?t) (sold|under)/.test(low)) {
+  if (/\b(it'?s |it has |just |got )?(sold|under contract|went pending|is pending|rented|leased|been let|is let)\b/.test(low) && !/\b(not|isn'?t|hasn'?t) (sold|under|rented|leased)/.test(low)) {
     intent.kind = "moment";
     intent.moment = "sold";
     return intent;

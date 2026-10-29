@@ -179,6 +179,14 @@ The product's code is in `app/` (its README says what works and how to run it).
   0.92), photos from a link are taken at the largest size the site gives, ads download as PNG at
   1080 by 1350 (feed) and 1080 by 1920 (story). Speed comes from doing the work in parallel and
   showing progress, never from lowering quality.
+* **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
+  purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
+  rent", book a showing or apply), its page offers Apply, and it's rented, not sold.
+* **Common sense first (lesson, 2026-10-29):** Ismael was furious that Hopkins acted "like a
+  military robot": the code dropped any price under $10,000, so "$2,400/mo" got no price at all.
+  The model judges what things mean, the way an experienced marketer would ("$2,400/mo" is rent,
+  "3/2" is 3 bed 2 bath); code rules are only the backup for when there's no model, and never
+  override an obvious reading. Before adding a rule, ask what a person would understand.
 * **Ads are never a fixed set (Ismael, 2026-10-25):** no set names like "The life / The standout /
   The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
   its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the

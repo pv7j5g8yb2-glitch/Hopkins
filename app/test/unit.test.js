@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseListingText, parsePrice, formatPrice, shortPrice } from "../src/listing.js";
+import { parseListingText, parsePrice, formatPrice, shortPrice, parseDeal } from "../src/listing.js";
 import { writeSet, writeVersion, houseRuleProblems, polish } from "../src/writer.js";
 import { checkWording, cleanWording, audienceFor } from "../src/fairhousing.js";
 import { readIntent, targetVersions } from "../src/rules.js";
@@ -180,4 +180,29 @@ test("listing pages on other portals give their full facts, and Canada is in Can
   assert.equal(parseListingText("1338 E 37th Ave, Vancouver, BC V5W 1G5. Price $1,638,000. 4 bed, 2 bath").currency, "CAD");
   assert.equal(parseListingText("215 Acton Avenue, Toronto, Ontario. $1,000,000, 3 bed").currency, "CAD");
   assert.equal(parseListingText("a 4-bed, 2-bath home, $334,999").baths, 2);
+});
+
+test("a rental is read as a rental, with its rent per month; a sale's HOA per month isn't rent", () => {
+  const rent = parseListingText("2 bed condo in Midtown, Atlanta, GA. $2,400/mo, available now.");
+  assert.equal(rent.deal, "rent");
+  assert.equal(rent.price, 2400);
+  assert.equal(formatPrice(rent.price, rent.currency, rent.deal), "$2,400/mo");
+  assert.equal(shortPrice(15000, null, "rent"), "$15,000/mo");
+  assert.equal(parseListingText("Downtown loft for rent, 1 bed 1 bath, $1850 a month").price, 1850);
+  assert.equal(parseListingText("Rent: $3,200. 12 month lease. Pets allowed.").price, 3200);
+  for (const sale of ["3 bed 2 bath craftsman, $649,000. HOA $250/mo.", "Duplex with rental income from the ADU. $899,000", "412 Oak Street, Austin, TX. $649,000"]) {
+    assert.equal(parseDeal(sale), null, sale);
+  }
+  // The ads for it are written for renters.
+  const ads = writeSet({ listing: { ...rent, city: "Atlanta", area: "Midtown", home_type: "condo" }, photos: [], brand: {} });
+  const all = ads.map((a) => [a.overlay, a.kicker, a.headline, a.primary_text, a.name].join(" ")).join(" ");
+  assert.match(all, /\$2,400\/mo/);
+  assert.match(all, /For rent/);
+  assert.doesNotMatch(all, /Just listed|\$2,400(?!\/mo)/);
+  assert.ok(ads.every((a) => !houseRuleProblems(a.primary_text).length));
+});
+
+test("rental wording that excludes people is caught", () => {
+  assert.deepEqual(checkWording("No Section 8. Students only.").map((f) => f.term), ["No Section 8", "Students only"]);
+  assert.equal(checkWording("Mature tenants preferred")[0].level, "block");
 });

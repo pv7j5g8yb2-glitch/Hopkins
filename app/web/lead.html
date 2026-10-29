@@ -74,7 +74,7 @@ button:disabled{opacity:.6}
       <div class="chips">
         <label><input type="radio" name="wants" value="showing" checked>Book a showing</label>
         <label><input type="radio" name="wants" value="info">Ask a question</label>
-        <label><input type="radio" name="wants" value="offer">Talk about an offer</label>
+        <label><input type="radio" name="wants" value="offer" id="third"><span id="thirdText">Talk about an offer</span></label>
       </div>
       <div class="f"><label for="name">Name</label><input id="name" autocomplete="name"></div>
       <div class="f"><label for="phone">Phone</label><input id="phone" type="tel" autocomplete="tel"></div>
@@ -105,7 +105,10 @@ button:disabled{opacity:.6}
   $("addr").textContent = [d.address, d.area || d.city].filter(Boolean).join(", ") || "New listing";
   $("price").textContent = d.price;
   $("facts").textContent = d.facts;
-  if (d.status === "sold") $("badges").innerHTML = '<span class="sold">Sold</span>';
+  // A home for rent: renters apply instead of making an offer, and it's rented, not sold.
+  const rent = d.deal === "rent";
+  if (rent) { $("third").value = "apply"; $("thirdText").textContent = "Apply"; }
+  if (d.status === "sold") $("badges").innerHTML = `<span class="sold">${rent ? "Rented" : "Sold"}</span>`;
   else if (d.openHouse) { const s = document.createElement("span"); s.className = "oh"; s.textContent = "Open house: " + d.openHouse; $("badges").appendChild(s); }
   const initials = (b.agent || b.business || "").split(" ").map((w) => w[0]).join("").slice(0, 2);
   $("agent").innerHTML = `<div class="av"></div><div><b></b><br>${b.phone ? `<a href="tel:${b.phone.replace(/[^\d+]/g, "")}"></a>` : ""}</div>`;
@@ -114,7 +117,7 @@ button:disabled{opacity:.6}
   if (b.phone) $("agent").querySelector("a").textContent = b.phone;
   if (b.license) $("license").textContent = b.license;
   document.querySelectorAll("input[name=wants]").forEach((r) => r.addEventListener("change", () => {
-    $("ftitle").textContent = { showing: "Book a showing", info: "Ask a question", offer: "Talk about an offer" }[r.value];
+    $("ftitle").textContent = { showing: "Book a showing", info: "Ask a question", offer: "Talk about an offer", apply: "Apply" }[r.value];
   }));
   if (d.status === "sold") { document.querySelector("input[value=info]").checked = true; $("ftitle").textContent = "Ask about homes like this"; }
   $("f").addEventListener("submit", async (e) => {

@@ -666,3 +666,29 @@ test("asked how they did, Hopkins answers with the account's own numbers, even w
   assert.match(r.json.chat.reply, /This week so far: 2\./);
   assert.match(r.json.chat.reply, /Report/);
 });
+
+test("a rental: rent per month, ads for renters, Apply on its page, and rented instead of sold", async () => {
+  const { c } = await signup("rent@ellery.test");
+  const created = await c("POST", "/api/listings", { text: "2 bed 2 bath condo at 88 Peachtree Street in Midtown, Atlanta, GA. $2,400/mo, available now, pets allowed." });
+  const l = created.json.listing;
+  assert.equal(l.deal, "rent");
+  assert.equal(l.price, 2400);
+  assert.equal(l.priceText, "$2,400/mo");
+  const msgs = created.json.messages.map((m) => m.body).join(" ");
+  assert.doesNotMatch(msgs, /asking price/);
+  const copy = created.json.ads.map((a) => [a.overlay, a.kicker, a.headline, a.primary_text].join(" ")).join(" ");
+  assert.match(copy, /\/mo/);
+  assert.doesNotMatch(copy, /Just listed/);
+  const page = await client(app)("GET", `/l/${l.slug}`);
+  assert.match(page.body, /"deal":"rent"/);
+  assert.match(page.body, /"price":"\$2,400\/mo"/);
+  const anon = client(app);
+  assert.equal((await anon("POST", `/api/l/${l.slug}/lead`, { name: "jo", phone: "404 555 0100", wants: "apply" })).status, 200);
+  const lead = (await c("GET", "/api/leads")).json.leads[0];
+  assert.equal(lead.wants, "apply");
+  assert.equal(lead.deal, "rent");
+  // "It's rented" is the rented moment, and its ads say so (new ads, so on Pro).
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [(await c("GET", "/api/me")).json.workspace.id]);
+  const done = await c("POST", `/api/listings/${l.id}/messages`, { text: "it's rented" });
+  assert.match(done.json.messages.at(-1).body, /^Rented\./);
+});

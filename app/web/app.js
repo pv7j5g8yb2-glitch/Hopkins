@@ -193,7 +193,10 @@
   const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 });
   // A home's price in its own currency (ad spend stays in dollars).
   const SYM = { EUR: "€", GBP: "£", AED: "AED ", CAD: "$", AUD: "$" };
-  const homePrice = (l, short) => !l.price ? "" : (SYM[l.currency] || "$") + (short && l.price >= 1e6 ? `${(l.price / 1e6).toFixed(2).replace(/\.?0+$/, "")}M` : Number(l.price).toLocaleString("en-US"));
+  // A rent is always per month: "$2,400/mo".
+  // A rental is rented, not sold (2026-10-29).
+  const doneWord = (l) => (l.deal === "rent" ? "Rented" : "Sold");
+  const homePrice = (l, short) => !l.price ? "" : (SYM[l.currency] || "$") + (l.deal !== "rent" && short && l.price >= 1e6 ? `${(l.price / 1e6).toFixed(2).replace(/\.?0+$/, "")}M` : Number(l.price).toLocaleString("en-US")) + (l.deal === "rent" ? "/mo" : "");
   // A listing with no photo gets a cover made from its own details instead of an empty square,
   // in the brand's style: oxblood ground, the price in gold (the number that matters), the
   // facts in cream, and the two pebbles drawn large and faint, placed differently per listing.
@@ -595,7 +598,7 @@
     document.body.classList.toggle("selecting", Boolean(sel));
     if (!sel) S.picked = new Set();
     const card = (l, i) => { const pc = photoOrCover(l); return `<a class="card-l ${S.picked.has(l.id) ? "picked" : ""}" href="#/l/${l.id}" data-card="${l.id}" style="animation-delay:${sel ? 0 : Math.min(i, 8) * 0.04}s"><div class="ph${pc.cls}" style="${pc.style}">${pc.inner}${sel ? `<i class="tick">${ICON.check}</i>` : ""}
-      ${l.status === "sold" ? `<span class="chip green">Sold</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
+      ${l.status === "sold" ? `<span class="chip green">${doneWord(l)}</span>` : l.waiting ? `<span class="chip gold">Ads ready</span>` : l.approved ? `<span class="chip">Approved</span>` : ""}</div>
       <div class="bd"><b>${esc(listingName(l))}</b></div></a>`; };
     const n = S.picked.size;
     const lede = sel ? (n ? `${n} selected` : "Select listings to delete") : S.listings.length ? `${S.listings.length} ${S.listings.length === 1 ? "home" : "homes"}` : "Your listings appear here.";
@@ -646,7 +649,7 @@
       <a href="#/l/${l.id}">${ICON.eye}Open</a>
       <button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button>
       <button data-act="selectOne" data-id="${l.id}">${ICON.check}Select</button>
-      <button data-act="markSold" data-id="${l.id}" data-sold="${l.status === "sold" ? 0 : 1}">${ICON.flag}${l.status === "sold" ? "Mark as for sale" : "Mark as sold"}</button>
+      <button data-act="markSold" data-id="${l.id}" data-rent="${l.deal === "rent" ? 1 : 0}" data-sold="${l.status === "sold" ? 0 : 1}">${ICON.flag}${l.deal === "rent" ? (l.status === "sold" ? "Mark as for rent" : "Mark as rented") : l.status === "sold" ? "Mark as for sale" : "Mark as sold"}</button>
       <div class="sep"></div><button class="danger" data-act="delOne" data-id="${l.id}">${ICON.trash}Delete listing</button>`);
   }
 
@@ -794,7 +797,7 @@
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New listing", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New listing</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">selling?</span></h1><p>Add photos, then paste the link or describe the home.</p>
+      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">listing?</span></h1><p>Add photos, then paste the link or describe the home.</p>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing need Pro.
         ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="link" data-upgrade>Ask for Pro</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
@@ -916,7 +919,7 @@
     const seen = S.seen[l.id] ?? (S.fresh === l.id ? 1 : p.messages.length);
     const reveal = S.fresh === l.id;
     S.fresh = null;
-    const chip = l.status === "sold" ? `<span class="chip green">Sold</span>` : l.moment !== "new" ? `<span class="chip gold">${esc(S.me.moments[l.moment])}</span>` : "";
+    const chip = l.status === "sold" ? `<span class="chip green">${doneWord(l)}</span>` : l.moment !== "new" ? `<span class="chip gold">${esc(l.deal === "rent" && l.moment === "sold" ? "Just rented" : S.me.moments[l.moment])}</span>` : "";
     const sub = [l.priceText, l.facts].filter(Boolean).join(" · ");
     const firstPhoto = p.photos[0];
     main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab" data-seg="view"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub, rename: l.id })}
@@ -1410,7 +1413,9 @@
   // ---------- Leads ----------
 
   const STATUS = { new: "New", contacted: "Contacted", showing: "Showing booked", offer: "Offer", closed: "Closed", not_a_fit: "Not a fit" };
-  const WANTS = { showing: "Wants a showing", info: "Has a question", offer: "Wants to talk about an offer" };
+  const WANTS = { showing: "Wants a showing", info: "Has a question", offer: "Wants to talk about an offer", apply: "Wants to apply" };
+  // On a rental, the offer step is the application (2026-10-29).
+  const statusName = (x, k) => (k === "offer" && x.deal === "rent" ? "Application" : STATUS[k]);
 
   async function viewLeads() {
     const my = current();
@@ -1423,7 +1428,7 @@
       <div class="tx"><b>${esc(x.name)}</b><p>${esc(WANTS[x.wants] || x.wants)}${x.note ? `: "${esc(x.note)}"` : ""}</p>
       <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? `Ad ${x.version}` : "Lead page"} · ${ago(x.created_at)}</div>
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
-      <select data-lead="${x.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div></div>`;
+      <select data-lead="${x.id}" aria-label="Status">${Object.keys(STATUS).map((k) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${statusName(x, k)}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Leads</h1>${leads.length ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
       ${leads.length ? `<button class="sel-btn round" data-act="leadSearch" aria-label="Search Leads">${ICON.search}</button>` : ""}</div>
       ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search Leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
@@ -1436,7 +1441,7 @@
       toast("Saved");
     }));
     // Search: name, phone, email, home, what they asked and the status, as they type.
-    const words = leads.map((x) => [x.name, x.email, x.phone, x.phone && tel(x.phone), x.address, x.area, x.note, WANTS[x.wants], STATUS[x.status], x.version && `Ad ${x.version}`].filter(Boolean).join(" ").toLowerCase());
+    const words = leads.map((x) => [x.name, x.email, x.phone, x.phone && tel(x.phone), x.address, x.area, x.note, WANTS[x.wants], statusName(x, x.status), x.version && `Ad ${x.version}`].filter(Boolean).join(" ").toLowerCase());
     const rows = $$("#leadList .lead");
     $("#lq")?.addEventListener("input", (e) => {
       const q = e.target.value.trim().toLowerCase();
@@ -2117,7 +2122,7 @@
       else if (act === "markSold") {
         await api(`/api/listings/${t.dataset.id}`, { method: "PATCH", body: { status: t.dataset.sold === "1" ? "sold" : "active" } });
         await loadListings();
-        toast(t.dataset.sold === "1" ? "Marked as sold" : "Marked as for sale");
+        toast(t.dataset.rent === "1" ? (t.dataset.sold === "1" ? "Marked as rented" : "Marked as for rent") : t.dataset.sold === "1" ? "Marked as sold" : "Marked as for sale");
         viewListings(); drawSide();
       } else if (act === "delOne" || act === "delPicked") {
         const ids = act === "delOne" ? [t.dataset.id] : [...S.picked];

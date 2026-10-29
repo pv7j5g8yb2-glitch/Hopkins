@@ -14,7 +14,7 @@ says yes. Separate from `survey/` (the waitlist server) and `platform/`
 * **Feedback and errors.** Send feedback from the account menu; it shows in Admin and reaches the
   founder's phone (`NTFY_TOPIC`), as does any server error. Privacy page at `/privacy`.
 * **Brand.** Business name, colors, logo, type, voice. Every ad follows it. Set on first sign in.
-* **A listing in.** Photos of any size, kept at 1920 pixels on the short side (so a story ad is never stretched), at most 4096 on the long side, JPEG quality 0.92. iPhone HEIC photos open in Safari directly; elsewhere `web/heic-worker.js` decodes them in parallel workers with libheif in WebAssembly (`web/libheif.js` and `web/libheif.wasm`, libheif-js 1.23.5, LGPL-3.0, unmodified, loaded only when a HEIC is picked) plus the link or the description. Hopkins
+* **A listing in, for sale or for rent** (the model tells which; a rent is shown per month). Photos of any size, kept at 1920 pixels on the short side (so a story ad is never stretched), at most 4096 on the long side, JPEG quality 0.92. iPhone HEIC photos open in Safari directly; elsewhere `web/heic-worker.js` decodes them in parallel workers with libheif in WebAssembly (`web/libheif.js` and `web/libheif.wasm`, libheif-js 1.23.5, LGPL-3.0, unmodified, loaded only when a HEIC is picked) plus the link or the description. Hopkins
   reads the price, beds, baths, size, address, area and features. Links: it reads what the
   page says about itself, and with no photos sent it brings in up to 12 of the listing's own
   photos from the page. Zillow works fully (checked 2026-10-27): the photos (1152 wide, with
