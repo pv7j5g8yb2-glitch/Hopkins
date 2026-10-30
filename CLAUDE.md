@@ -110,8 +110,9 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   you. Nothing goes live without your yes."
 * **Wording in public copy:** say "real estate" (agents, teams, brokerages), never
   "estate agent", because the US, Canada, Australia and the UAE all say real estate.
-  Never use "Realtor" (a trademark for NAR members only). Messages to Ismael stay in
-  Irish English.
+  "Realtor" is fine in reels and social posts, where it is what the audience calls itself
+  ("Realtors!" opens the reel format; Ismael, 2026-10-30). Keep "real estate agents" on the
+  site and in ads. Messages to Ismael stay in Irish English.
 * **"Built in Silicon Valley" is true** (Ismael, 2026-10-18). It stays in the footer and can be used in
   public copy. Never question it, call it false or remove it.
 * **Voice: never "we", "us" or "our"** in anything public (page, posts, captions,
@@ -151,7 +152,7 @@ real value. Never confusing or complex: one point, plain words, a clear tip.
 
 **What failed, never repeat it (Ismael, 2026-10-30, after reel 17; keep forever).** Ismael's verdict on reels 1 to 17: too slow, boring, no interesting hook, the voice is bad, the timing and pronunciation feel wrong, sentences cut in half by pauses, things that don't make sense, animated cartoon cards for everything, sound effects that don't fit. So:
 * The synthetic voice (Kokoro) is not good enough for public reels. Use a real human voice (Ismael's or another person's) or no voice. Don't ship another reel on it.
-* Keep the animated style, but never drawn or cartoon visuals (Ismael, 2026-10-30). Every picture inside a reel is a real image: real ads, real screenshots, real photos of people, homes and places. Before building, give Ismael a numbered list of the exact images needed (what each shows, file name, upright 9:16 or square); he sends them and the animation is built around them.
+* Keep the current animated Hopkins style (oxblood ground, cream cards, captions, motion, the UI cards built in brand) (Ismael, 2026-10-30). Only the pictures of real things that pop up inside it are real photos, never drawn: listings, homes, rooms, people, places, real ads. Before building, give Ismael a numbered list of just those images (what each shows, file name); he sends them.
 * Sound effects only where a real thing happens on screen and the sound fits it, otherwise none. Never a pop or whoosh on every line.
 * Pace: fast. Every second earns its place. If a line can be cut, cut it.
 * Every line must make sense on its own, heard once, at speed.
