@@ -292,8 +292,9 @@ The product's code is in `app/` (its README says what works and how to run it).
   time", Ismael 2026-10-27),
   a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
   spend are not final.
-* **Solo plan:** there will be one for single agents, priced below the team plans. No
-  price set yet. Teams and brokerages get early access first.
+* **Solo plan:** there will be one for single agents, priced below the team plans. Suggested
+  ladder (not decided, `docs/STATE.md`, Pricing): Solo $99, then $299, $449, $599, $749 for up to 5,
+  10, 15, 20 users. Teams and brokerages get early access first.
 * **Waitlist offer:** 30% off the first year.
 * **Autopilot:** optional. The owner sets a monthly budget and goal once, Hopkins makes,
   tests and runs ads within it, reports every Monday, and can be paused anytime. The

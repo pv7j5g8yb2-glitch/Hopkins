@@ -100,6 +100,17 @@ personal in here.
   creative engine. Start it after the usage reset. First entry: the "Places I'd take someone
   visiting [City]" local guide carousel (1,259 likes, 1,680 shares), a format for customers' ads.
 
+## Pricing (brought over 2026-10-30 from the session on branch claude/compassionate-goodall-6o9ro6)
+
+* Ismael's first ladder: Solo $99, up to 5 users $299, up to 10 $349, up to 15 $499, up to 20 $799,
+  above that a quote. Issues: up to 5 is pointless at $50 less than up to 10, and the 15 to 20 jump
+  is $300 for 5 seats.
+* Follow up (2026-10-24): a cheap 10 user tier isn't a decoy (extra seats are useless to a 4 person
+  team, so they still pick 5; 6 to 10 person teams just get a bargain). An up to 10 plan is needed.
+  Suggested ladder, not decided: Solo $99, up to 5 $299, up to 10 $449, up to 15 $599, up to 20
+  $749, above that by quote. Per seat: $99, $60, $45, $40, $37.50.
+* Most agents would be on Solo ($99 a month, about $1,190 a year), so plan numbers on that, not $299.
+
 ## Goal: 10 users by 1 January 2027 (set 2026-10-30)
 
 A user is a real estate agent or team who makes ads in Hopkins, ideally with them running on Meta.
