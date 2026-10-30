@@ -105,6 +105,11 @@ personal in here.
 A user is a real estate agent or team who makes ads in Hopkins, ideally with them running on Meta.
 The first 10 don't need App Review or a registered business: they join the Meta app as testers
 (should work, untested with ads until Ismael's own test).
+Being a tester (Meta's App Roles docs, checked 2026-10-30): no developer account and no download.
+Ismael adds them by their Facebook account, they tap Accept once (Facebook, Settings & privacy,
+Apps and websites), then Connect Meta in Hopkins like any user. Meta requires an agreement that
+they're testing the app, so the pilot needs a line they agree to. If the app sits in a business
+portfolio, roles are added in Business Manager instead.
 
 1. By 8 Nov: Meta app made (docs/META.md), keys on Render, one small real ad run through Hopkins
    on Ismael's own ad account. Render on a paid instance before inviting anyone (free restarts).
