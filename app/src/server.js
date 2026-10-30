@@ -15,6 +15,7 @@ import {
 } from "./hopkins.js";
 import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaRevoke, readSignedRequest, checkState, seal, unseal, MetaError } from "./meta.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./plans.js";
+import { stripeReady, checkout, getSession, portal, readEvent } from "./stripe.js";
 import { nameCase } from "./names.js";
 import { FONT_KEYS } from "./style.js";
 import { buildDemo, DEMO_DOMAIN } from "./demo.js";
@@ -236,7 +237,7 @@ app.addHook("onSend", async (request, reply, payload) => {
 
 app.addHook("preHandler", async (request, reply) => {
   const path = request.url.split("?")[0];
-  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset", "/api/meta/deletion"].includes(path) || path.startsWith("/api/l/")) return;
+  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset", "/api/meta/deletion", "/api/stripe/webhook"].includes(path) || path.startsWith("/api/l/")) return;
   const user = await currentUser(request);
   if (!user) return reply.code(401).send({ error: "Please sign in." });
   request.user = user;
@@ -258,6 +259,7 @@ app.get("/api/me", async (request) => {
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
     plan: planOf(ws),
     plans: PLANS,
+    billing: { ready: stripeReady(), customer: Boolean(ws.stripe_customer) },
     admin: isAdmin(request.user),
     demo: request.user.email.endsWith(DEMO_DOMAIN) && Boolean(request.cookies[BACK]),
     ai: aiEnabled,
@@ -438,13 +440,67 @@ app.post("/api/alerts/test", async (request, reply) => {
   return { ok: true };
 });
 
-// No card payments yet: picking a plan asks for it, and the founder switches it on in Admin.
-app.post("/api/upgrade-request", async (request, reply) => {
-  const ws = request.ws;
-  const plan = findPlan((request.body || {}).plan) || PLANS[0];
-  notifyFounder("Hopkins: upgrade request", `${ws.name} asked for ${plan.name} ($${plan.price} a month). Their account email is in the admin view.`, ["moneybag"]);
-  await run(`UPDATE workspaces SET brand = json_set(brand, '$.upgrade_requested', ?, '$.upgrade_plan', ?) WHERE id = ?`, [nowIso(), plan.id, ws.id]);
-  return { ok: true };
+// ---------- plans (self-serve, Stripe) ----------
+
+// A plan starts the moment Stripe says the subscription is paid: on the way back from Checkout
+// (so the agent sees it at once) and from the webhook (so nothing is missed if they close the tab).
+async function startPlan(workspaceId, planId, customer, subscription) {
+  const plan = findPlan(planId);
+  if (!plan) return;
+  const ws = await get(`SELECT name, plan, tier, stripe_subscription FROM workspaces WHERE id = ?`, [workspaceId]);
+  if (!ws) return;
+  if (ws.plan === "paid" && ws.tier === plan.id && ws.stripe_subscription === subscription) return;
+  await run(`UPDATE workspaces SET plan = 'paid', tier = ?, stripe_customer = ?, stripe_subscription = ? WHERE id = ?`, [plan.id, customer || null, subscription || null, workspaceId]);
+  notifyFounder("Hopkins: new subscription", `${ws.name} is on ${plan.name} ($${plan.price}/mo).`, ["moneybag"]);
+}
+app.post("/api/billing/checkout", async (request, reply) => {
+  if (!stripeReady()) return reply.code(400).send({ error: "Payments are not available yet." });
+  const plan = findPlan((request.body || {}).plan);
+  if (!plan) return reply.code(400).send({ error: "Choose a plan." });
+  const base = appUrl(request);
+  const s = await checkout({ plan, workspaceId: request.ws.id, email: request.user.email, customer: request.ws.stripe_customer,
+    successUrl: `${base}/api/billing/return?session_id={CHECKOUT_SESSION_ID}`, cancelUrl: `${base}/#/settings` });
+  return { url: s.url };
+});
+app.get("/api/billing/return", async (request, reply) => {
+  const id = String(request.query?.session_id || "");
+  try {
+    const s = id && stripeReady() ? await getSession(id) : null;
+    if (s && s.client_reference_id === request.ws.id && s.status === "complete") {
+      await startPlan(request.ws.id, s.metadata?.plan, s.customer, s.subscription);
+      return reply.redirect("/#/settings/upgraded");
+    }
+  } catch (err) {
+    console.error("Checkout return failed:", err.message);
+  }
+  return reply.redirect("/#/settings");
+});
+app.post("/api/billing/portal", async (request, reply) => {
+  if (!stripeReady() || !request.ws.stripe_customer) return reply.code(400).send({ error: "No subscription found." });
+  const s = await portal({ customer: request.ws.stripe_customer, returnUrl: `${appUrl(request)}/#/settings` });
+  return { url: s.url };
+});
+// Stripe's webhook needs the body exactly as sent to check its signature, so its route reads it raw.
+app.register(async (scope) => {
+  scope.removeContentTypeParser("application/json");
+  scope.addContentTypeParser("application/json", { parseAs: "string" }, (request, body, done) => done(null, body));
+  scope.post("/api/stripe/webhook", async (request, reply) => {
+    const event = readEvent(request.body, request.headers["stripe-signature"]);
+    if (!event) return reply.code(400).send({ error: "Invalid signature." });
+    const o = event.data?.object || {};
+    if (event.type === "checkout.session.completed" && o.mode === "subscription") {
+      await startPlan(o.client_reference_id || o.metadata?.workspace, o.metadata?.plan, o.customer, o.subscription);
+    } else if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+      const ws = await get(`SELECT id FROM workspaces WHERE stripe_subscription = ?`, [o.id]);
+      const ended = event.type === "customer.subscription.deleted" || ["canceled", "unpaid", "incomplete_expired"].includes(o.status);
+      if (ws && ended) {
+        await run(`UPDATE workspaces SET plan = 'free', tier = NULL, stripe_subscription = NULL WHERE id = ?`, [ws.id]);
+      } else if (ws && findPlan(o.metadata?.plan)) {
+        await run(`UPDATE workspaces SET tier = ? WHERE id = ?`, [o.metadata.plan, ws.id]);
+      }
+    }
+    return { received: true };
+  });
 });
 
 // ---------- photos ----------
@@ -801,8 +857,7 @@ app.get("/api/admin/workspaces", async (request, reply) => {
      FROM workspaces w WHERE w.id NOT IN (SELECT workspace_id FROM users WHERE email LIKE '%${DEMO_DOMAIN}') ORDER BY w.created_at DESC`
   );
   return { workspaces: rows.map((r) => {
-    const b = JSON.parse(r.brand || "{}");
-    return { ...r, tier: r.plan === "paid" ? findPlan(r.tier)?.id || PLANS[0].id : null, upgrade_requested: b.upgrade_requested || null, upgrade_plan: findPlan(b.upgrade_plan)?.name || null, brand: undefined };
+    return { ...r, tier: r.plan === "paid" ? findPlan(r.tier)?.id || PLANS[0].id : null, brand: undefined };
   }), plans: PLANS };
 });
 

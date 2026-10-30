@@ -451,8 +451,8 @@
   function accountMenu() {
     const u = S.me.usage;
     const plan = paid()
-      ? `<div class="note"><b>${esc(S.me.plan.name)} plan</b></div>`
-      : `<div class="note"><b>Free plan</b></div>`;
+      ? `<div class="note"><b>${esc(S.me.plan.name)}</b></div>`
+      : `<div class="note"><b>Free</b></div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
       <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
       ${S.me.demo ? `<button data-act="demoLeave">${ICON.back}Back to my account</button>` : ""}<button data-act="feedbackAsk">${ICON.msg}Send feedback</button>
@@ -496,7 +496,7 @@
           <i class="th cover-mini"></i>
           <div class="nm"><b>${esc(listingName(l))}</b></div>${l.unread && !(route[0] === "l" && route[1] === l.id) ? `<span class="dot" aria-label="New reply"></span>` : ""}<button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
-    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? `${esc(S.me.plan.name)} plan` : "Free plan"}</span></span>${ICON.chev}</button>`;
+    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? esc(S.me.plan.name) : "Free"}</span></span>${ICON.chev}</button>`;
   }
 
   // ---------- routing ----------
@@ -529,6 +529,7 @@
       else if (view === "settings") {
         viewSettings();
         if (id === "meta-failed") { toast("Couldn't connect to Meta. Please try again."); history.replaceState(null, "", "#/settings"); }
+        if (id === "upgraded" && S.me.plan) { toast(`Upgraded to ${S.me.plan.name}`); history.replaceState(null, "", "#/settings"); }
       }
       else await viewToday();
     } catch (e) {
@@ -825,8 +826,7 @@
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">working on?</span></h1><p>Send a listing, photos or any question.</p>
-      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Free ads used.</b>
-        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Upgrade requested</span>` : `<button class="link" data-upgrade>Upgrade</button>`}</div>` : ""}</div>
+      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Free ads used.</b> <button class="link" data-upgrade>Upgrade</button></div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
@@ -1106,20 +1106,19 @@
     if (next.upgrade) upgradeSheet(next.upgrade);
   }
 
-  // The plans, as a card over the screen: what Run it, a new ad past the free 3, or Upgrade opens
-  // (Ismael, 2026-10-30). No card payments yet, so choosing one asks for it and the founder
-  // switches it on in Admin.
+  // The plans, as a card over the screen: what Run it, a new ad past the free 3, or Upgrade opens.
+  // Self-serve (Ismael, 2026-10-30): the button goes straight to Stripe Checkout. Over 20 agents is
+  // by quote, by email.
   const agentsLine = (p) => (p.agents === 1 ? "1 agent" : p.agents === 2 ? "2 agents" : `Up to ${p.agents} agents`);
   function upgradeSheet(reason = "plans", anchor) {
-    const b = S.me.workspace.brand;
-    const asked = b.upgrade_requested && (S.me.plans.find((p) => p.id === b.upgrade_plan) || S.me.plans[0]);
     if (!S.pickPlan) S.pickPlan = S.me.plans[0].id;
     const pick = S.me.plans.find((p) => p.id === S.pickPlan);
     const title = reason === "run" ? "Upgrade to run ads" : reason === "plans" ? "Upgrade your plan" : "Upgrade for more ads";
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
       <h3>${title}</h3>
-      <div class="plans">${S.me.plans.map((p) => `<button class="pl${p.id === S.pickPlan ? " sel" : ""}" data-plan="${p.id}"><span><b>${esc(p.name)}</b><span>${agentsLine(p)}</span></span><b>$${p.price}<span>/mo</span></b></button>`).join("")}</div>
-      ${asked ? `<p class="upsell-done">${esc(asked.name)} requested</p>` : `<button class="btn" data-request>Request ${esc(pick.name)}</button>`}
+      <div class="plans">${S.me.plans.map((p) => `<button class="pl${p.id === S.pickPlan ? " sel" : ""}" data-plan="${p.id}"><span><b>${esc(p.name)}</b><span>${agentsLine(p)}</span></span><b>$${p.price}<span>/mo</span></b></button>`).join("")}
+        <a class="pl" href="mailto:gethopkins@gmail.com?subject=Hopkins%20for%20a%20team%20of%20over%2020"><span><b>Enterprise</b><span>Over 20 agents</span></span><b class="pl-q">Contact sales</b></a></div>
+      <button class="btn" data-checkout>Upgrade to ${esc(pick.name)}</button>
       <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
 
@@ -1258,8 +1257,7 @@
           ${m.needs_action ? `<div class="acts"><button class="btn" data-confirm="${m.id}">Approve and run</button><button class="link" data-fill="Run it with $300 over 14 days">Change the budget</button></div>` : ""}</div>`);
       }
       if (m.kind === "upgrade") {
-        const asked = S.me.workspace.brand.upgrade_requested;
-        return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Upgrade"}</button></div>`);
+        return wrap(`${text}${paid() ? "" : `<div class="acts"><button class="btn" data-upgrade>Upgrade</button></div>`}`);
       }
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
       if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open Leads</a></div>`);
@@ -1826,9 +1824,9 @@
         : `<div><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       ${metaGroup()}
       <div class="group"><h4>Plan</h4>${paid()
-        ? `<p>${esc(S.me.plan.name)} plan</p>`
-        : `<p>Free plan</p>
-           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">${esc((S.me.plans.find((p) => p.id === b.upgrade_plan) || S.me.plans[0]).name)} requested</span>` : `<button class="btn" data-upgrade>Upgrade</button>`}</div>`}</div>
+        ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
+           ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="sec-btn" data-act="billing">Manage</button></div>` : ""}`
+        : `<p>Free</p><div style="margin-top:12px"><button class="btn" data-upgrade>Upgrade</button></div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
         <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
@@ -1893,7 +1891,7 @@
     if (my !== current()) return;
     main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Admin</h1><p class="lede">Only you see this.</p></div><button class="sec-btn" data-act="demoOpen">Open demo account</button></div>
       <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
-          <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}${w.upgrade_requested ? ` · <b>asked for ${esc(w.upgrade_plan || "a plan")} ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
+          <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}</span></div>
           <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option>${plans.map((p) => `<option value="${p.id}" ${w.tier === p.id ? "selected" : ""}>${esc(p.name)}, $${p.price}</option>`).join("")}</select>
           ${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Reset requested ${ago(w.reset_asked)}` : "Reset link"}</button>` : ""}</div></div>`).join("")}</div>
       <div class="head" style="margin-top:34px"><h2>Feedback</h2></div>
@@ -2118,13 +2116,13 @@
     if (pl) {
       S.pickPlan = pl.dataset.plan;
       $$("#pop .pl").forEach((x) => x.classList.toggle("sel", x === pl));
-      const go = $("#pop [data-request]");
-      if (go) go.textContent = `Request ${S.me.plans.find((p) => p.id === S.pickPlan).name}`;
+      const go = $("#pop [data-checkout]");
+      if (go) go.textContent = `Upgrade to ${S.me.plans.find((p) => p.id === S.pickPlan).name}`;
       buzz(5);
       return;
     }
     if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=limenu],[data-act=dlmenu],[data-act=repCal],[data-act=repSort]")) closePop();
-    const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-request],[data-copy],[data-dl],[data-use],[data-say]");
+    const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-checkout],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
     const act = t.dataset.act;
     if (t.closest("#pop") && act !== "deleteYes") closePop();
@@ -2139,6 +2137,7 @@
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
+      else if (act === "billing") { const { url } = await api("/api/billing/portal", { body: {} }); location.href = url; }
       else if (act === "metaOff") { await api("/api/meta", { method: "DELETE" }); await loadMe(); viewSettings(); toast("Meta disconnected"); }
       else if (act === "account") openPop(t, accountMenu());
       else if (act === "reportListing") reportSheet(t);
@@ -2286,13 +2285,9 @@
         if (S.me.meta?.ready) waitForMeta(l.id, next.messages.length);
       } else if (t.dataset.fill) { const ta = $("#ta"); ta.value = t.dataset.fill; ta.dispatchEvent(new Event("input")); ta.focus(); }
       else if (t.dataset.upgrade !== undefined) upgradeSheet("plans", t);
-      else if (t.dataset.request !== undefined) {
-        const plan = S.me.plans.find((p) => p.id === S.pickPlan) || S.me.plans[0];
-        await api("/api/upgrade-request", { body: { plan: plan.id } });
-        await loadMe();
-        if (location.hash.startsWith("#/settings")) viewSettings();
-        else if (S.current && location.hash.startsWith("#/l/")) drawListing(S.current, true);
-        toast(`${plan.name} requested`);
+      else if (t.dataset.checkout !== undefined) {
+        const { url } = await api("/api/billing/checkout", { body: { plan: S.pickPlan || S.me.plans[0].id } });
+        location.href = url;
       } else if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); buzz(6); toast(t.dataset.copied || "Link copied"); }
       else if (t.dataset.dl) { await download(t.dataset.dl); toast("Downloaded"); }
       else if (t.dataset.use) {

@@ -234,6 +234,9 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   "ALTER TABLE listings ADD COLUMN auto_title TEXT",
   // tier: which paid plan (solo, duo, team, teamplus, max, maxplus); empty on a paid account is Solo.
   "ALTER TABLE workspaces ADD COLUMN tier TEXT",
+  // The Stripe customer and subscription behind a self-serve plan (2026-10-30).
+  "ALTER TABLE workspaces ADD COLUMN stripe_customer TEXT",
+  "ALTER TABLE workspaces ADD COLUMN stripe_subscription TEXT",
   // The launch on Meta: its campaign, why it failed if it did, and when it was last checked.
   "ALTER TABLE launches ADD COLUMN meta_campaign_id TEXT", "ALTER TABLE launches ADD COLUMN meta_error TEXT",
   "ALTER TABLE launches ADD COLUMN synced_at TEXT", "ALTER TABLE launches ADD COLUMN meta_spend REAL"]) {

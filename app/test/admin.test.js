@@ -34,7 +34,7 @@ test("admin can't be claimed, only granted, and only admins reach admin", async 
   assert.equal((await client(app)("GET", "/api/admin/workspaces")).status, 401);
 });
 
-test("plans: an agent asks for one, the founder switches it on, and the account shows its name", async () => {
+test("plans: the founder can switch one on by hand (pilots, quotes), and the account shows its name", async () => {
   const boss = client(app);
   await boss("POST", "/api/login", { email: "boss@hopkins.test", password: "password123" });
   const agent = client(app);
@@ -42,10 +42,6 @@ test("plans: an agent asks for one, the founder switches it on, and the account 
   const me = (await agent("GET", "/api/me")).json;
   assert.deepEqual(me.plans.map((p) => [p.name, p.price, p.agents]), [["Solo", 99, 1], ["Duo", 149, 2], ["Team", 299, 5], ["Team Plus", 549, 10], ["Max", 799, 15], ["Max Plus", 999, 20]]);
   assert.equal(me.plan, null, "free has no paid plan");
-
-  assert.equal((await agent("POST", "/api/upgrade-request", { plan: "duo" })).status, 200);
-  const asked = (await boss("GET", "/api/admin/workspaces")).json.workspaces.find((w) => w.id === me.workspace.id);
-  assert.equal(asked.upgrade_plan, "Duo");
 
   assert.equal((await boss("PATCH", `/api/admin/workspaces/${me.workspace.id}`, { plan: "duo" })).status, 200);
   const now = (await agent("GET", "/api/me")).json;

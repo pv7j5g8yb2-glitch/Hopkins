@@ -158,7 +158,7 @@ The product's code is in `app/` (its README says what works and how to run it).
   explaining how it works, no reassurance, no second sentence unless it's a warning. Check every
   new string against this before shipping. Ismael was angry again on 2026-10-30 ("0 of 3 free ads
   made", "Duo, $149 a month", a footer of billing terms under the plans): say only what ChatGPT or
-  Claude would, "Free plan", "Duo plan", "Upgrade your plan", "Upgrade to run ads". No counts, terms
+  Claude would, "Free", "Duo", "Upgrade your plan", "Upgrade to run ads". No counts, terms
   or descriptions nobody asked for. Write as a 9 figure software company.
 * **Standard software wording (Ismael, 2026-10-29):** errors, buttons and hints read the way
   ChatGPT, Claude or Gemini would put them, plain and not fancy: "Incorrect email or password",
@@ -289,11 +289,14 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Plans (Ismael, 2026-10-30, replacing the single "Pro" plan):** priced by the agents whose names go
   on the ads, unlimited listings on every plan: Solo $99 a month (1 agent), Duo $149 (2), Team $299
   (up to 5), Team Plus $549 (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), more than 20
-  by quote. Free stays 3 ads. On screen the action is "Upgrade" and the plan shows as "Duo plan";
-  prices only in the plan picker ("$149/mo"); "Pro" is gone. `PLANS` in `app/src/plans.js` is the one list; the chat, the
-  plan picker, Settings, Admin and the waitlist page all follow it. No card payments yet: choosing a
-  plan asks for it and Ismael switches it on in Admin. The account corner and menu show the
-  person's own name, not the brokerage they work at.
+  by quote. Free stays 3 ads. Plans show by name alone, "Duo", "Free", never "Duo plan" (Ismael,
+  2026-10-30). Prices only in the plan picker ("$149/mo"); "Billed monthly. Cancel anytime." only
+  under the plan in Settings, nowhere else. Self-serve: "Upgrade to Duo" goes straight to Stripe
+  Checkout and the plan starts when it's paid, never a request or a call; only Enterprise (over 20
+  agents) is "Contact sales". Settings, Manage opens Stripe's portal to cancel. `PLANS` in
+  `app/src/plans.js` is the one list; Admin can still switch a plan by hand (pilots, quotes). Setup:
+  `docs/STRIPE.md`. "Pro" is gone. The account corner and menu show the person's own name, not the
+  brokerage they work at.
 * **Paid (Ismael, 2026-10-27):** a normal monthly subscription, billed every month from the day they
   sign up. Never say billing waits for the first ad to go live. In copy it's "billed monthly", never
   "paid monthly" (Ismael, 2026-10-27). Month to month, cancel anytime ("anytime", never "any

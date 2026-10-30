@@ -105,8 +105,11 @@ personal in here.
 * **Decided (Ismael, 2026-10-30) and built:** Solo $99, Duo $149, Team $299 (up to 5), Team Plus $549
   (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), more than 20 by quote; unlimited
   listings; counted by agents on the ads. In the app (picker, Settings, account menu, chat, Admin)
-  and on the waitlist page. Still to build: card payments (Stripe), and a profile per agent so the
-  agent count means something (today one agent name per account). History below.
+  and on the waitlist page. Self-serve with Stripe Checkout (built 2026-10-30, off until
+  STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are on Render, docs/STRIPE.md; needs a Stripe account
+  in the registered business's name). Still to build: a profile per agent so the agent count means
+  something (today one agent name per account), and changing plan once subscribed (today: cancel in
+  the portal, then pick again). History below.
 
 * Ismael's first ladder: Solo $99, up to 5 users $299, up to 10 $349, up to 15 $499, up to 20 $799,
   above that a quote. Issues: up to 5 is pointless at $50 less than up to 10, and the 15 to 20 jump

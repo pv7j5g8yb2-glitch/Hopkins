@@ -30,3 +30,8 @@ services:
         sync: false
       - key: META_CONFIG_ID
         sync: false
+      # Stripe (self-serve plans), docs/STRIPE.md. Without them Upgrade says payments aren't available.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
