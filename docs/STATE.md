@@ -100,6 +100,22 @@ personal in here.
   creative engine. Start it after the usage reset. First entry: the "Places I'd take someone
   visiting [City]" local guide carousel (1,259 likes, 1,680 shares), a format for customers' ads.
 
+## Goal: 10 users by 1 January 2027 (set 2026-10-30)
+
+A user is a real estate agent or team who makes ads in Hopkins, ideally with them running on Meta.
+The first 10 don't need App Review or a registered business: they join the Meta app as testers
+(should work, untested with ads until Ismael's own test).
+
+1. By 8 Nov: Meta app made (docs/META.md), keys on Render, one small real ad run through Hopkins
+   on Ismael's own ad account. Render on a paid instance before inviting anyone (free restarts).
+   Ask Nemanja what he does.
+2. By 22 Nov: the first real agent running ads from Hopkins. Pilot offer: Pro free during the
+   pilot, they pay their own ad spend, they give feedback. Agents come from the reels (hook clip
+   style, the best so far), the waitlist, and Ismael posting as the founder where agents talk
+   (r/realtors, real estate Facebook groups), looking for 10 agents to try it.
+3. By 31 Dec: 10. Each pilot added as a tester, set up by Ismael on a call or in a DM. A reel
+   every week, numbers only when real. A pilot's real Lead, with their permission, is the proof.
+
 ## Waitlist site (waitlist.kirmistudio.com)
 
 * Server: `survey/` (Fastify), deployed on Render from branch `claude/exciting-wright-8ml9uc` on
