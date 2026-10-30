@@ -396,6 +396,7 @@ a.row:hover{background:var(--hover)}
 .steps li:before{content:counter(s);width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--soft);flex:none}
 .steps li.done:before{content:"";background:var(--green) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='m6 12.5 4 4L18 8' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/16px no-repeat;border-color:var(--green)}
 .steps li.next{box-shadow:0 0 0 1.5px var(--gold),0 8px 24px rgba(142,107,44,.12)}
+.pilot{font-size:13px;color:var(--quiet);margin-top:14px;text-align:center;text-wrap:balance}
 .steps .tx{flex:1}.steps b{font-weight:600;display:block}.steps p{font-size:13.5px;color:var(--quiet)}
 .progress{display:flex;align-items:center;gap:10px;margin:-6px 0 18px;font-size:13px;color:var(--quiet)}
 .progress .meter{flex:1;max-width:220px;margin:0}
