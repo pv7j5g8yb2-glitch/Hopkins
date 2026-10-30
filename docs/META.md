@@ -27,9 +27,10 @@ this is what has to be set up on Meta's side, once, by Ismael.
 * `META_APP_ID`: the App ID from App settings, Basic
 * `META_APP_SECRET`: the App Secret from the same page (keep it private)
 * `META_CONFIG_ID`: only if you made a Login configuration
-* `APP_URL`: `https://hopkins-app.onrender.com`
 
-Once these are set, Settings shows a Meta section with Connect Meta.
+The app's own address comes from Render (`RENDER_EXTERNAL_URL`), so `APP_URL` is only needed on a
+custom domain. Once these are set and deployed, Connect Meta on Today and in Settings opens
+Facebook's login. Before that, it says "Meta connection is not available yet."
 
 ## 3. Test it on your own account first
 
@@ -48,8 +49,10 @@ the spend and tells the chat once when ads go live or Meta rejects one, with Met
 ## 4. Pilots, before App Review
 
 People with a role on the app can use it fully before any review. In the app's dashboard, App
-roles, add each pilot agent as a Tester. They accept from their own developers.facebook.com
-account (a free Meta developer account). Then they connect Meta in Hopkins like you did.
+roles, add each pilot agent as a Tester by their Facebook account (in Business Manager instead if
+the app is in a business portfolio). Testers don't need a developer account: they tap Accept once
+in Facebook, Settings & privacy, Apps and websites. Then they connect Meta in Hopkins like you
+did. Meta only allows testers who have agreed to test the app: that's in Ismael's invite message.
 
 ## 5. App Review and Business Verification (to open it to everyone)
 
