@@ -151,13 +151,15 @@ real value. Never confusing or complex: one point, plain words, a clear tip.
 11. Not only paid ads (Ismael, 2026-10-30). Most reels give genuine niche advice on how agents win buyers and sellers: personal and local content, life over listings, being the agent people already feel they know, referrals, past clients, standing out in their city. Paid ads are one topic among many, not the whole account.
 
 **What failed, never repeat it (Ismael, 2026-10-30, after reel 17; keep forever).** Ismael's verdict on reels 1 to 17: too slow, boring, no interesting hook, the voice is bad, the timing and pronunciation feel wrong, sentences cut in half by pauses, things that don't make sense, animated cartoon cards for everything, sound effects that don't fit. So:
-* The synthetic voice (Kokoro) is not good enough for public reels. Use a real human voice (Ismael's or another person's) or no voice. Don't ship another reel on it.
+* The synthetic voice (Kokoro) is not good enough for public reels. Default voice now: ElevenLabs "Jerry B." (voice id J9NvviOEdVm6E7Hwdpdj, model eleven_v4), one continuous take, silences tightened with `content/reels/align_ext.py` (Ismael, 2026-10-30: sounds more human, pronunciation good). Ismael's own recording also works with the same aligner.
 * Keep the current animated Hopkins style (oxblood ground, cream cards, captions, motion, the UI cards built in brand) (Ismael, 2026-10-30). Only the pictures of real things that pop up inside it are real photos, never drawn: listings, homes, rooms, people, places, real ads. Before building, give Ismael a numbered list of just those images (what each shows, file name); he sends them.
 * Sound effects only where a real thing happens on screen and the sound fits it, otherwise none. Never a pop or whoosh on every line.
 * Pace: fast. Every second earns its place. If a line can be cut, cut it.
 * Every line must make sense on its own, heard once, at speed.
 * The hook has to be genuinely surprising or useful in the first second, judged as a stranger scrolling, not as the maker.
-* Don't make another reel with the old pipeline until Ismael agrees the new approach.
+* The approach of reel 17 v3 is agreed (Ismael, 2026-10-30, "way way better"): Hopkins animated style, no drawings, ElevenLabs voice, straight instructions, ends on "save this".
+* On screen text always starts with a capital letter, never a fully lowercase word or line ("Both listings", not "both listings").
+* Reveal lists creatively, e.g. three face down cards with a "?" that flip as each point is said, instead of a plain number. Push for more creative reveals like this every reel.
 
 ## Product decisions (Hopkins)
 
