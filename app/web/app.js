@@ -583,8 +583,7 @@
         <ol class="steps">
         <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colours, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
         <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
-        <li><div class="tx"><b>Your approval</b><p>Nothing runs without it.</p></div></li></ol>
-        ${S.me.pilot ? `<p class="pilot">By using Hopkins during the pilot, you agree to test it and share feedback.</p>` : ""}`;
+        <li><div class="tx"><b>Your approval</b><p>Nothing runs without it.</p></div></li></ol>`;
     } else {
       body = `<nav class="stats-mini" aria-label="At a glance">
           <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Chat" : "Chats"}</span></a>

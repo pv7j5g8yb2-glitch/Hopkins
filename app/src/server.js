@@ -263,9 +263,6 @@ app.get("/api/me", async (request) => {
     moments: MOMENTS,
     photoLabels: PHOTO_LABELS,
     meta: await metaSummary(ws),
-    // While sign ups are by invite, everyone is a pilot and agrees to test Hopkins (Meta asks for
-    // that agreement before someone can be a tester on the app).
-    pilot: pilotPlan() === "paid",
   };
 });
 
