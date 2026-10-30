@@ -112,9 +112,11 @@ they're testing the app. That's agreed in Ismael's own message when he invites t
 screen (Ismael, 2026-10-30: a line in the app scares people off). If the app sits in a business
 portfolio, roles are added in Business Manager instead.
 
-1. By 8 Nov: Meta app made (docs/META.md), keys on Render, one small real ad run through Hopkins
-   on Ismael's own ad account. Render on a paid instance before inviting anyone (free restarts).
-   Ask Nemanja what he does.
+1. By 8 Nov: Meta app made (docs/META.md), keys on Render, the whole flow run through Hopkins at no
+   cost: a Meta sandbox ad account (no card, never spends; Hopkins is untested against one). Ismael
+   doesn't spend his own money on ads (2026-10-30): the first real ads, and the App Review
+   recordings, come from the first pilot's own ad account, with their permission. Render on a paid
+   instance before inviting anyone (free restarts). Ask Nemanja what he does.
 2. By 22 Nov: the first real agent running ads from Hopkins. Pilot offer: Pro free during the
    pilot, they pay their own ad spend, they give feedback. Agents come from the reels (hook clip
    style, the best so far), the waitlist, and Ismael posting as the founder where agents talk
