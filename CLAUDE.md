@@ -141,13 +141,22 @@ real value. Never confusing or complex: one point, plain words, a clear tip.
 2. Straightforward inside: one point, plain words, a tip someone can use today.
 3. "Follow @gethopkins" on screen at the end, silent (the engine's gold chip plus the end card). Never in the voiceover.
 4. Pronunciation spot on: every reel is checked with faster-whisper against the script before it is rendered, and any misread word is fixed in `vo.py`.
-5. Human timing: varied pauses like a person talking, short silences in the middle of sentences where someone would think or let a point land, longer ones after a question, never one even rhythm.
+5. Human timing means a fast, natural pace (Ismael, 2026-10-30, revised after reel 17). Never split one sentence across two pauses, never leave long silences, never pause where a person wouldn't. Pauses only between thoughts, and short.
 6. Every reel ships with its hook cover, made at the same time (entry in `content/reels/hooks.js`, rendered with `covers.mjs`), checked as an image, and sent with the reel. A reel without its cover is not finished.
 7. Send every finished reel and its cover in the chat as files, not only paths.
 8. The advice has to be worth stealing (Ismael, 2026-10-23, after reels 12 to 16 flopped with him). Basic tips any agent already knows (cut hashtags, one call to action, link the listing page, no logo intro) are rookie content and get no engagement. Bar: an agent who has run ads for five years learns something, or sees something they have never seen said. Use insider mechanics, real numbers with a source, a contrarian take, or a real story with a turn. Never a list of obvious fixes.
 9. Long enough to say something: 45 to 90 seconds with a story, a stake and a payoff. Thirty second tip reels are too thin.
 10. Before building a batch, show Ismael the hooks and the one line angle for each and get a yes. Building five on unchecked ideas wastes his time.
 11. Not only paid ads (Ismael, 2026-10-30). Most reels give genuine niche advice on how agents win buyers and sellers: personal and local content, life over listings, being the agent people already feel they know, referrals, past clients, standing out in their city. Paid ads are one topic among many, not the whole account.
+
+**What failed, never repeat it (Ismael, 2026-10-30, after reel 17; keep forever).** Ismael's verdict on reels 1 to 17: too slow, boring, no interesting hook, the voice is bad, the timing and pronunciation feel wrong, sentences cut in half by pauses, things that don't make sense, animated cartoon cards for everything, sound effects that don't fit. So:
+* The synthetic voice (Kokoro) is not good enough for public reels. Use a real human voice (Ismael's or another person's) or no voice. Don't ship another reel on it.
+* No more reels made only of animated illustration cards. Use real footage, real screens, real ads, real places and people; motion graphics only as a light layer on top.
+* Sound effects only where a real thing happens on screen and the sound fits it, otherwise none. Never a pop or whoosh on every line.
+* Pace: fast. Every second earns its place. If a line can be cut, cut it.
+* Every line must make sense on its own, heard once, at speed.
+* The hook has to be genuinely surprising or useful in the first second, judged as a stranger scrolling, not as the maker.
+* Don't make another reel with the old pipeline until Ismael agrees the new approach.
 
 ## Product decisions (Hopkins)
 
