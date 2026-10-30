@@ -160,7 +160,7 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Standard software wording (Ismael, 2026-10-29):** errors, buttons and hints read the way
   ChatGPT, Claude or Gemini would put them, plain and not fancy: "Incorrect email or password",
   "Listing not found", "Something went wrong. Please try again.", "Select a listing first",
-  "Create ads", "Approve and run", "requires Pro". Never casual ("No such listing", "Too many
+  "Create ads", "Approve and run", "requires an upgrade". Never casual ("No such listing", "Too many
   tries", "Sold, nice", "Drop it in here", "whenever you're ready").
 * **Phones first (Ismael, 2026-10-24):** most use will be on a phone. Design and check every screen at
   iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar, the main
@@ -283,18 +283,20 @@ The product's code is in `app/` (its README says what works and how to run it).
   last, each side of a hyphen or apostrophe) starts with a capital, however it was typed: Leads,
   the account name and the agent name on the brand. Only first letters change, so "McDonald"
   stays as typed. `app/src/names.js`; names saved before are fixed when the server starts.
-* **The paid plan is called Pro (Ismael, 2026-10-27)** everywhere a user sees it ("Pro", "Ask for
-  Pro", "on Pro"), never "paid plan". The account corner and menu show the person's own name, not
-  the brokerage they work at.
+* **Plans (Ismael, 2026-10-30, replacing the single "Pro" plan):** priced by the agents whose names go
+  on the ads, unlimited listings on every plan: Solo $99 a month (1 agent), Duo $149 (2), Team $299
+  (up to 5), Team Plus $549 (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), more than 20
+  by quote. Free stays 3 ads. On screen the action is "Upgrade" and the plan shows by its name
+  ("Duo, $149 a month"); "Pro" is gone. `PLANS` in `app/src/plans.js` is the one list; the chat, the
+  plan picker, Settings, Admin and the waitlist page all follow it. No card payments yet: choosing a
+  plan asks for it and Ismael switches it on in Admin. The account corner and menu show the
+  person's own name, not the brokerage they work at.
 * **Paid (Ismael, 2026-10-27):** a normal monthly subscription, billed every month from the day they
   sign up. Never say billing waits for the first ad to go live. In copy it's "billed monthly", never
   "paid monthly" (Ismael, 2026-10-27). Month to month, cancel anytime ("anytime", never "any
   time", Ismael 2026-10-27),
-  a flat price with no cut of ad spend. From $299 a month; higher tiers by monthly ad
-  spend are not final.
-* **Solo plan:** there will be one for single agents, priced below the team plans. Suggested
-  ladder (not decided, `docs/STATE.md`, Pricing): Solo $99, then $299, $449, $599, $749 for up to 5,
-  10, 15, 20 users. Teams and brokerages get early access first.
+  a flat price with no cut of ad spend, never priced by ad spend.
+* **Early access:** teams and brokerages first.
 * **Waitlist offer:** 30% off the first year.
 * **Autopilot:** optional. The owner sets a monthly budget and goal once, Hopkins makes,
   tests and runs ads within it, reports every Monday, and can be paused anytime. The

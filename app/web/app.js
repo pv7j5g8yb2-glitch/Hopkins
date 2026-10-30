@@ -451,7 +451,7 @@
   function accountMenu() {
     const u = S.me.usage;
     const plan = paid()
-      ? `<div class="note"><b>Pro</b>Billed monthly. Cancel anytime.</div>`
+      ? `<div class="note"><b>${esc(S.me.plan.name)}</b>$${S.me.plan.price} a month. Billed monthly.</div>`
       : `<div class="note"><b>Free plan</b><div class="meter"><i style="width:${Math.min(100, (u.adsMade / u.freeLimit) * 100)}%"></i></div>${Math.min(u.adsMade, u.freeLimit)} of ${u.freeLimit} free ads made</div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
       <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
@@ -496,7 +496,7 @@
           <i class="th cover-mini"></i>
           <div class="nm"><b>${esc(listingName(l))}</b></div>${l.unread && !(route[0] === "l" && route[1] === l.id) ? `<span class="dot" aria-label="New reply"></span>` : ""}<button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
-    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? "Pro" : "Free plan"}</span></span>${ICON.chev}</button>`;
+    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? esc(S.me.plan.name) : "Free plan"}</span></span>${ICON.chev}</button>`;
   }
 
   // ---------- routing ----------
@@ -825,8 +825,8 @@
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">working on?</span></h1><p>Send a listing, photos or any question.</p>
-      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing need Pro.
-        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="link" data-upgrade>Ask for Pro</button>`}</div>` : ""}</div>
+      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing require an upgrade.
+        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Upgrade requested.</span>` : `<button class="link" data-upgrade>Upgrade</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
@@ -1106,19 +1106,22 @@
     if (next.upgrade) upgradeSheet(next.upgrade);
   }
 
-  // The paid plan, as a card over the screen: what Run it (or a new ad past the free 3) needs.
-  // It replaces posting the same upgrade note into the chat every time.
-  function upgradeSheet(reason = "run", anchor) {
-    const asked = S.me.workspace.brand.upgrade_requested;
-    const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : `You've used your <span class="serif">3 free ads.</span>`;
-    const line = reason === "run"
-      ? "Running ads requires Pro."
-      : "New ads require Pro. Changes are included.";
+  // The plans, as a card over the screen: what Run it, a new ad past the free 3, or Upgrade opens
+  // (Ismael, 2026-10-30). No card payments yet, so choosing one asks for it and the founder
+  // switches it on in Admin.
+  const agentsLine = (p) => (p.agents === 1 ? "1 agent" : p.agents === 2 ? "2 agents" : `Up to ${p.agents} agents`);
+  function upgradeSheet(reason = "plans", anchor) {
+    const b = S.me.workspace.brand;
+    const asked = b.upgrade_requested && (S.me.plans.find((p) => p.id === b.upgrade_plan) || S.me.plans[0]);
+    if (!S.pickPlan) S.pickPlan = S.me.plans[0].id;
+    const pick = S.me.plans.find((p) => p.id === S.pickPlan);
+    const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : reason === "plans" ? `Choose a <span class="serif">plan.</span>` : `You've used your <span class="serif">3 free ads.</span>`;
+    const line = reason === "run" ? "Running ads requires an upgrade." : reason === "plans" ? "Unlimited listings on every plan." : "New ads require an upgrade. Changes are included.";
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
-      <img class="upsell-mark" src="/static/mark.svg" alt="">
       <h3>${title}</h3><p>${line}</p>
-      <ul><li><b>From $${S.me.usage.priceFrom} a month</b>, billed monthly</li><li>Month to month, cancel anytime</li><li>No cut of your ad spend</li><li>30% off the first year if you joined the waitlist</li></ul>
-      ${asked ? `<p class="upsell-done">Pro requested.</p>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}
+      <div class="plans">${S.me.plans.map((p) => `<button class="pl${p.id === S.pickPlan ? " sel" : ""}" data-plan="${p.id}"><span><b>${esc(p.name)}</b><span>${agentsLine(p)}</span></span><b>$${p.price}<span>/mo</span></b></button>`).join("")}</div>
+      <p class="upsell-small">Over 20 agents by quote. Billed monthly. Cancel anytime. No cut of your ad spend.</p>
+      ${asked ? `<p class="upsell-done">${esc(asked.name)} requested.</p>` : `<button class="btn" data-request>Request ${esc(pick.name)}</button>`}
       <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
 
@@ -1258,8 +1261,8 @@
       }
       if (m.kind === "upgrade") {
         const asked = S.me.workspace.brand.upgrade_requested;
-        return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Ask for Pro"}</button>
-          ${asked ? `<span class="small">You'll get an email when your seat is ready.</span>` : ""}</div>`);
+        return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Upgrade"}</button>
+          ${asked ? `<span class="small">You'll get an email when it's on.</span>` : ""}</div>`);
       }
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
       if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open Leads</a></div>`);
@@ -1827,9 +1830,9 @@
            <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       ${metaGroup()}
       <div class="group"><h4>Plan</h4>${paid()
-        ? `<p>Billed monthly. Cancel anytime.</p>`
+        ? `<p>${esc(S.me.plan.name)}, $${S.me.plan.price} a month</p><p class="small">${agentsLine(S.me.plan)}. Billed monthly. Cancel anytime.</p>`
         : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
-           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">Pro requested.</span>` : `<button class="btn" data-upgrade>Ask for Pro</button>`}</div>`}</div>
+           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">${esc((S.me.plans.find((p) => p.id === b.upgrade_plan) || S.me.plans[0]).name)} requested.</span>` : `<button class="btn" data-upgrade>Upgrade</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
         <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
@@ -1890,12 +1893,12 @@
 
   async function viewAdmin() {
     const my = current();
-    const [{ workspaces }, { feedback }] = await Promise.all([api("/api/admin/workspaces"), api("/api/admin/feedback")]);
+    const [{ workspaces, plans }, { feedback }] = await Promise.all([api("/api/admin/workspaces"), api("/api/admin/feedback")]);
     if (my !== current()) return;
     main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Admin</h1><p class="lede">Only you see this.</p></div><button class="sec-btn" data-act="demoOpen">Open demo account</button></div>
       <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
-          <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}${w.upgrade_requested ? ` · <b>asked to upgrade ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
-          <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option><option value="paid" ${w.plan === "paid" ? "selected" : ""}>Pro</option></select>
+          <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}${w.upgrade_requested ? ` · <b>asked for ${esc(w.upgrade_plan || "a plan")} ${ago(w.upgrade_requested)}</b>` : ""}</span></div>
+          <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option>${plans.map((p) => `<option value="${p.id}" ${w.tier === p.id ? "selected" : ""}>${esc(p.name)}, $${p.price}</option>`).join("")}</select>
           ${w.user_id ? `<button class="sec-btn" data-act="resetLink" data-user="${w.user_id}">${w.reset_asked ? `Reset requested ${ago(w.reset_asked)}` : "Reset link"}</button>` : ""}</div></div>`).join("")}</div>
       <div class="head" style="margin-top:34px"><h2>Feedback</h2></div>
       ${feedback.length ? `<div class="fb-list">${feedback.map((f) => `<div class="fb"><p>${esc(f.body)}</p><span class="small">${esc(f.name || "")} · ${esc(f.email || "")} · ${esc(f.page || "")} · ${ago(f.created_at)}</span></div>`).join("")}</div>` : `<p class="lede">No feedback yet.</p>`}
@@ -2115,8 +2118,17 @@
       buzz(5);
       return viewListings();
     }
+    const pl = e.target.closest("[data-plan]");
+    if (pl) {
+      S.pickPlan = pl.dataset.plan;
+      $$("#pop .pl").forEach((x) => x.classList.toggle("sel", x === pl));
+      const go = $("#pop [data-request]");
+      if (go) go.textContent = `Request ${S.me.plans.find((p) => p.id === S.pickPlan).name}`;
+      buzz(5);
+      return;
+    }
     if (!e.target.closest("#pop") && !e.target.closest("[data-act=account],[data-act=listmenu],[data-act=limenu],[data-act=dlmenu],[data-act=repCal],[data-act=repSort]")) closePop();
-    const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-copy],[data-dl],[data-use],[data-say]");
+    const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-request],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
     const act = t.dataset.act;
     if (t.closest("#pop") && act !== "deleteYes") closePop();
@@ -2250,7 +2262,7 @@
         S.fresh = l.id;
         const next = await api(`/api/listings/${l.id}/remake`, { body: {} });
         drawListing(next);
-        if (!next.ads.length && next.messages.length === before) toast("New ads require Pro");
+        if (!next.ads.length && next.messages.length === before) toast("New ads require an upgrade");
         refreshSide();
       }
       else if (t.dataset.say) { if (!S.busy) { S.busy = true; buzz(6); try { await say(t.dataset.say); } finally { S.busy = false; } } }
@@ -2277,13 +2289,14 @@
         refreshSide();
         if (S.me.meta?.ready) waitForMeta(l.id, next.messages.length);
       } else if (t.dataset.fill) { const ta = $("#ta"); ta.value = t.dataset.fill; ta.dispatchEvent(new Event("input")); ta.focus(); }
-      else if (t.dataset.upgrade !== undefined) {
-        t.disabled = true;
-        S.me.workspace.brand.upgrade_requested = new Date().toISOString();
-        await api("/api/upgrade-request", { body: {} });
+      else if (t.dataset.upgrade !== undefined) upgradeSheet("plans", t);
+      else if (t.dataset.request !== undefined) {
+        const plan = S.me.plans.find((p) => p.id === S.pickPlan) || S.me.plans[0];
+        await api("/api/upgrade-request", { body: { plan: plan.id } });
         await loadMe();
-        t.textContent = "Requested";
-        toast("Sent");
+        if (location.hash.startsWith("#/settings")) viewSettings();
+        else if (S.current && location.hash.startsWith("#/l/")) drawListing(S.current, true);
+        toast(`${plan.name} requested`);
       } else if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); buzz(6); toast(t.dataset.copied || "Link copied"); }
       else if (t.dataset.dl) { await download(t.dataset.dl); toast("Downloaded"); }
       else if (t.dataset.use) {

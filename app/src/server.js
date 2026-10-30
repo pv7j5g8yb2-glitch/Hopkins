@@ -14,7 +14,7 @@ import {
   metaConnection, syncMeta,
 } from "./hopkins.js";
 import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaRevoke, readSignedRequest, checkState, seal, unseal, MetaError } from "./meta.js";
-import { adsMade, FREE_AD_LIMIT, PRICE_FROM } from "./plans.js";
+import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./plans.js";
 import { nameCase } from "./names.js";
 import { FONT_KEYS } from "./style.js";
 import { buildDemo, DEMO_DOMAIN } from "./demo.js";
@@ -256,6 +256,8 @@ app.get("/api/me", async (request) => {
     user: { email: request.user.email, name: request.user.name, avatar_id: request.user.avatar_id || null },
     workspace: { id: ws.id, name: ws.name, plan: ws.plan, brand: ws.brand, created_at: ws.created_at },
     usage: { adsMade: made, freeLimit: FREE_AD_LIMIT, priceFrom: PRICE_FROM },
+    plan: planOf(ws),
+    plans: PLANS,
     admin: isAdmin(request.user),
     demo: request.user.email.endsWith(DEMO_DOMAIN) && Boolean(request.cookies[BACK]),
     ai: aiEnabled,
@@ -436,10 +438,12 @@ app.post("/api/alerts/test", async (request, reply) => {
   return { ok: true };
 });
 
-app.post("/api/upgrade-request", async (request) => {
+// No card payments yet: picking a plan asks for it, and the founder switches it on in Admin.
+app.post("/api/upgrade-request", async (request, reply) => {
   const ws = request.ws;
-  notifyFounder("Hopkins: upgrade request", `${ws.name} asked for Pro. Their account email is in the admin view.`, ["moneybag"]);
-  await run(`UPDATE workspaces SET brand = json_set(brand, '$.upgrade_requested', ?) WHERE id = ?`, [nowIso(), ws.id]);
+  const plan = findPlan((request.body || {}).plan) || PLANS[0];
+  notifyFounder("Hopkins: upgrade request", `${ws.name} asked for ${plan.name} ($${plan.price} a month). Their account email is in the admin view.`, ["moneybag"]);
+  await run(`UPDATE workspaces SET brand = json_set(brand, '$.upgrade_requested', ?, '$.upgrade_plan', ?) WHERE id = ?`, [nowIso(), plan.id, ws.id]);
   return { ok: true };
 });
 
@@ -789,14 +793,17 @@ app.get("/api/report", async (request, reply) => {
 app.get("/api/admin/workspaces", async (request, reply) => {
   if (!isAdmin(request.user)) return reply.code(403).send({ error: "You don't have access to this page." });
   const rows = await all(
-    `SELECT w.id, w.name, w.plan, w.brand, w.created_at, (SELECT GROUP_CONCAT(email) FROM users WHERE workspace_id = w.id) AS emails,
+    `SELECT w.id, w.name, w.plan, w.tier, w.brand, w.created_at, (SELECT GROUP_CONCAT(email) FROM users WHERE workspace_id = w.id) AS emails,
        (SELECT id FROM users WHERE workspace_id = w.id LIMIT 1) AS user_id, (SELECT MAX(last_seen) FROM users WHERE workspace_id = w.id) AS last_seen,
        (SELECT MAX(reset_asked) FROM users WHERE workspace_id = w.id) AS reset_asked,
        (SELECT COUNT(*) FROM listings WHERE workspace_id = w.id) AS listings, (SELECT COUNT(*) FROM ads WHERE workspace_id = w.id) AS ads,
        (SELECT COUNT(*) FROM leads WHERE workspace_id = w.id) AS leads
      FROM workspaces w WHERE w.id NOT IN (SELECT workspace_id FROM users WHERE email LIKE '%${DEMO_DOMAIN}') ORDER BY w.created_at DESC`
   );
-  return { workspaces: rows.map((r) => ({ ...r, upgrade_requested: JSON.parse(r.brand || "{}").upgrade_requested || null, brand: undefined })) };
+  return { workspaces: rows.map((r) => {
+    const b = JSON.parse(r.brand || "{}");
+    return { ...r, tier: r.plan === "paid" ? findPlan(r.tier)?.id || PLANS[0].id : null, upgrade_requested: b.upgrade_requested || null, upgrade_plan: findPlan(b.upgrade_plan)?.name || null, brand: undefined };
+  }), plans: PLANS };
 });
 
 // A one time password reset link for an account, to send to the person yourself.
@@ -837,9 +844,11 @@ app.get("/api/admin/feedback", async (request, reply) => {
 
 app.patch("/api/admin/workspaces/:id", async (request, reply) => {
   if (!isAdmin(request.user)) return reply.code(403).send({ error: "You don't have access to this page." });
+  // "free", or one of the paid plans ("paid" alone is Solo).
   const { plan } = request.body || {};
-  if (!["free", "paid"].includes(plan)) return reply.code(400).send({ error: "Choose Free or Pro." });
-  await run(`UPDATE workspaces SET plan = ? WHERE id = ?`, [plan, request.params.id]);
+  const tier = plan === "paid" ? PLANS[0] : findPlan(plan);
+  if (plan !== "free" && !tier) return reply.code(400).send({ error: "Choose a plan." });
+  await run(`UPDATE workspaces SET plan = ?, tier = ? WHERE id = ?`, [tier ? "paid" : "free", tier ? tier.id : null, request.params.id]);
   return { ok: true };
 });
 

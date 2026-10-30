@@ -232,6 +232,8 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   // auto_title: the thread's name from its first message, in a few words, like Claude names a
   // chat (2026-10-29). The agent's own name (title) and the address come first.
   "ALTER TABLE listings ADD COLUMN auto_title TEXT",
+  // tier: which paid plan (solo, duo, team, teamplus, max, maxplus); empty on a paid account is Solo.
+  "ALTER TABLE workspaces ADD COLUMN tier TEXT",
   // The launch on Meta: its campaign, why it failed if it did, and when it was last checked.
   "ALTER TABLE launches ADD COLUMN meta_campaign_id TEXT", "ALTER TABLE launches ADD COLUMN meta_error TEXT",
   "ALTER TABLE launches ADD COLUMN synced_at TEXT", "ALTER TABLE launches ADD COLUMN meta_spend REAL"]) {

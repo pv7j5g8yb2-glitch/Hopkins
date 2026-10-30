@@ -100,7 +100,13 @@ personal in here.
   creative engine. Start it after the usage reset. First entry: the "Places I'd take someone
   visiting [City]" local guide carousel (1,259 likes, 1,680 shares), a format for customers' ads.
 
-## Pricing (brought over 2026-10-30 from the session on branch claude/compassionate-goodall-6o9ro6)
+## Pricing
+
+* **Decided (Ismael, 2026-10-30) and built:** Solo $99, Duo $149, Team $299 (up to 5), Team Plus $549
+  (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), more than 20 by quote; unlimited
+  listings; counted by agents on the ads. In the app (picker, Settings, account menu, chat, Admin)
+  and on the waitlist page. Still to build: card payments (Stripe), and a profile per agent so the
+  agent count means something (today one agent name per account). History below.
 
 * Ismael's first ladder: Solo $99, up to 5 users $299, up to 10 $349, up to 15 $499, up to 20 $799,
   above that a quote. Issues: up to 5 is pointless at $50 less than up to 10, and the 15 to 20 jump

@@ -16,7 +16,7 @@ import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI
 // needs real understanding gets an honest "give me a moment" instead of "I didn't follow".
 const BUSY = "I'm receiving too many requests right now. Please try again in a few seconds.";
 const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].includes(readIntent(text).kind);
-import { canMake, isPaid, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
+import { canMake, isPaid, planOf, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
 import { metaReady, unseal, launch as metaLaunch, campaignState, MetaError } from "./meta.js";
@@ -126,7 +126,7 @@ const ASKING = /\?\s*$|^\s*(what|whats|what's|how|can|could|should|would|will|is
 const seemsListing = (text) => looksLikeListing(text) && (aiEnabled || !ASKING.test(text));
 export async function answerIfNotListing(ws, history, text, tz = "UTC") {
   if (!aiEnabled || URL_RE.test(text) || !ASKING.test(text)) return null;
-  const r = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz), decide: true });
+  const r = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz), decide: true });
   return r && !r.isListing && r.reply.trim() ? plainWords(r.reply) : null;
 }
 
@@ -134,7 +134,7 @@ export async function newChat(ws, history, tz = "UTC") {
   const text = history.at(-1)?.body || "";
   const lastReply = [...history].reverse().find((m) => m.role === "hopkins")?.body;
   if (aiEnabled) {
-    const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz) });
+    const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz) });
     if (reply) return plainWords(reply);
     if (takeFailure() === "busy" && needsModel(text)) return BUSY;
   }
@@ -763,7 +763,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
     if (current.length && (moment === "price" || moment === "open_house")) {
       const photos = await loadPhotos(listing.id, aiEnabled);
       await rewriteAds(ws, listing, current, photos, moment === "price" ? "the new price" : "the open house", extra);
-      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be new ads, which require Pro.`, "text", { snapshot: await snapshot(listing) });
+      await say(ws, listing.id, `I've put the ${moment === "price" ? "new price" : "open house"} into your ads. A separate set of ${moment === "price" ? "price" : "open house"} ads would be new ads, which require an upgrade.`, "text", { snapshot: await snapshot(listing) });
     }
     // Asking again doesn't stack the same message; the app shows a short note instead.
     const last = await get(`SELECT kind FROM messages WHERE listing_id = ? ORDER BY created_at DESC LIMIT 1`, [listing.id]);
@@ -986,7 +986,7 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
 
   if (aiEnabled) {
     const history = await all(`SELECT role, body, data FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
-    const plan = { paid: isPaid(ws), adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
+    const plan = { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
     const agentPhoto = await hasAgentPhoto(ws);
     // Each ad's Leads, so "which one is working?" gets real numbers, never "engagement".
     const leadRows = await all(`SELECT ad_id, SUM(CASE WHEN wants = 'showing' THEN 1 ELSE 0 END) AS showings, COUNT(*) AS n FROM leads WHERE listing_id = ? GROUP BY ad_id`, [listingId]);
