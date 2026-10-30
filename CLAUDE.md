@@ -158,7 +158,8 @@ real value. Never confusing or complex: one point, plain words, a clear tip.
 * Every line must make sense on its own, heard once, at speed.
 * The hook has to be genuinely surprising or useful in the first second, judged as a stranger scrolling, not as the maker.
 * The approach of reel 17 v3 is agreed (Ismael, 2026-10-30, "way way better"): Hopkins animated style, no drawings, ElevenLabs voice, straight instructions, ends on "save this".
-* On screen text always starts with a capital letter, never a fully lowercase word or line ("Both listings", not "both listings").
+* On screen text in full capital letters (Ismael, 2026-10-30: looks better), never lowercase ("BOTH LISTINGS", not "both listings").
+* One simple visual per point (Ismael, 2026-10-30): always pick the easiest way to get the tip across without overloading the screen, while keeping it creative and satisfying to watch. One idea on screen at a time; if it needs explaining, it is too busy.
 * Reveal lists creatively, e.g. three face down cards with a "?" that flip as each point is said, instead of a plain number. Push for more creative reveals like this every reel.
 
 ## Product decisions (Hopkins)
