@@ -122,6 +122,12 @@ portfolio, roles are added in Business Manager instead.
 3. By 31 Dec: 10. Each pilot added as a tester, set up by Ismael on a call or in a DM. A reel
    every week, numbers only when real. A pilot's real Lead, with their permission, is the proof.
 
+Meta app (2026-10-30): "Hopkins" created by Ismael on his own new Facebook account, contact
+gethopkins@gmail.com, use case "Create & manage ads with Marketing API" (Facebook Login for Business
+came with it), no business portfolio yet on purpose: a Kirmi Studio portfolio exists, and the app
+gets connected once the business is registered and its name is known. Unpublished. Next: the use
+case's permissions, App settings Basic, the redirect URI, then the keys on Render.
+
 ## Waitlist site (waitlist.kirmistudio.com)
 
 * Server: `survey/` (Fastify), deployed on Render from branch `claude/exciting-wright-8ml9uc` on
