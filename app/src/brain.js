@@ -186,7 +186,7 @@ function photoBlocks(photos) {
 }
 
 // One request, JSON back. system is text; messages are {role, content} where content is a
-// string or Claude content blocks (images are only sent to Claude).
+// string or Claude content blocks (images go to Claude and Gemini, never to Groq).
 async function call({ system, messages, schema, effort, temperature = 0.4 }) {
   try {
     if (provider === "claude") {
@@ -203,66 +203,21 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
       return JSON.parse(res.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
     }
     if (provider === "gemini") {
-      const out = await gemini({ system, messages, schema, temperature });
-      if (out) return out;
-      if (!process.env.GROQ_API_KEY) return null;
-      console.error("Gemini didn't answer; Groq is answering instead.");
-    }
-    if (provider === "groq" || (provider === "gemini" && process.env.GROQ_API_KEY)) {
-      const text = (c) => (typeof c === "string" ? c : c.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
-      const body = (model) => JSON.stringify({
-        model,
-        // Low for writing so it sticks to the facts it was given; a bit higher for talking.
-        temperature,
-        // gpt-oss thinks before it answers, and the thinking counts against the free allowance.
-        ...(model.startsWith("openai/gpt-oss") ? { reasoning_effort: effort === "medium" ? "medium" : "low" } : {}),
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` },
-          ...messages.map((m) => ({ role: m.role, content: text(m.content) })),
-        ],
-      });
-      // Each free model has its own allowance (about 8,000 tokens a minute and 200,000 a day,
-      // checked 2026-10-25). When one is used up, the next one answers.
-      // Each free model allows about 8,000 tokens a minute and a chat message uses 5,000 or so,
-      // so right after a new listing every model can be spent for a few seconds. Rather than
-      // say "busy", Hopkins waits for the first one to free up (up to 25 seconds) and asks again.
-      for (let round = 0; round < 2; round++) {
-      for (const model of groqModels()) {
-        let waited = false;
-        for (let attempt = 0; ; attempt++) {
-          const res = await fetchImpl(GROQ_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-            body: body(model),
-            signal: AbortSignal.timeout(45000),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.usage) console.info(`Groq ${model}: ${data.usage.total_tokens} tokens`);
-            return JSON.parse(data.choices[0].message.content);
-          }
-          const err = await res.text();
-          // Groq now and then fails to produce valid JSON (a 400 json_validate_failed); one
-          // retry usually fixes it.
-          if (attempt === 0 && res.status === 400 && err.includes("json_validate_failed")) continue;
-          if (res.status !== 429) throw new Error(`Groq ${res.status}: ${err.slice(0, 200)}`);
-          // Over a limit: Groq says how long to wait. Up to 10 seconds is worth waiting once;
-          // past that, this model rests and the next one is asked.
-          const wait = retryAfter(res, err);
-          if (!waited && wait > 0 && wait <= 10) { waited = true; await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
-          resting.set(model, Date.now() + Math.min(wait || 60, 6 * 3600) * 1000);
-          console.error(`Groq ${model} is over its limit for ${Math.round(wait)}s: ${err.slice(0, 160)}`);
-          break;
-        }
+      const asked = gemini({ system, messages, schema, temperature });
+      if (!process.env.GROQ_API_KEY) return await asked;
+      // Free Gemini usually answers in a few seconds, but now and then it hangs until each
+      // model times out in turn, which left a simple question waiting ten minutes (Ismael,
+      // 2026-10-30). So when it hasn't answered in 12 seconds, Groq is asked too and the first
+      // answer wins. Photos only go to Gemini, so a request with photos just waits for it.
+      if (hasImages(messages)) {
+        const out = await asked;
+        if (out) return out;
+        console.error("Gemini didn't answer; Groq is answering instead.");
+        return await groq({ system, messages, schema, effort, temperature });
       }
-      const soonest = Math.min(...[GROQ_MODEL, ...GROQ_BACKUPS].map((m) => resting.get(m) || 0)) - Date.now();
-      if (round > 0 || soonest > 25000) break;
-      await new Promise((r) => setTimeout(r, Math.max(0, soonest) + 300));
-      }
-      lastFailure = "busy";
-      throw new Error("Groq: every free model is over its limit");
+      return await hedged(asked, () => groq({ system, messages, schema, effort, temperature }), HEDGE_MS);
     }
+    if (provider === "groq") return await groq({ system, messages, schema, effort, temperature });
     return null;
   } catch (err) {
     if (err.status === 429 || err.status === 529) lastFailure = "busy";
@@ -270,6 +225,88 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
     return null;
   }
 }
+
+// Groq's free models, best first: the backup when Gemini fails or is slow, or the only one.
+async function groq({ system, messages, schema, effort, temperature }) {
+  const text = (c) => (typeof c === "string" ? c : c.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
+  const body = (model) => JSON.stringify({
+    model,
+    // Low for writing so it sticks to the facts it was given; a bit higher for talking.
+    temperature,
+    // gpt-oss thinks before it answers, and the thinking counts against the free allowance.
+    ...(model.startsWith("openai/gpt-oss") ? { reasoning_effort: effort === "medium" ? "medium" : "low" } : {}),
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` },
+      ...messages.map((m) => ({ role: m.role, content: text(m.content) })),
+    ],
+  });
+  // Each free model has its own allowance (about 8,000 tokens a minute and 200,000 a day,
+  // checked 2026-10-25). When one is used up, the next one answers.
+  // Each free model allows about 8,000 tokens a minute and a chat message uses 5,000 or so,
+  // so right after a new listing every model can be spent for a few seconds. Rather than
+  // say "busy", Hopkins waits for the first one to free up (up to 25 seconds) and asks again.
+  for (let round = 0; round < 2; round++) {
+  for (const model of groqModels()) {
+    let waited = false;
+    for (let attempt = 0; ; attempt++) {
+      const res = await fetchImpl(GROQ_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        body: body(model),
+        signal: AbortSignal.timeout(45000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.usage) console.info(`Groq ${model}: ${data.usage.total_tokens} tokens`);
+        return JSON.parse(data.choices[0].message.content);
+      }
+      const err = await res.text();
+      // Groq now and then fails to produce valid JSON (a 400 json_validate_failed); one
+      // retry usually fixes it.
+      if (attempt === 0 && res.status === 400 && err.includes("json_validate_failed")) continue;
+      if (res.status !== 429) throw new Error(`Groq ${res.status}: ${err.slice(0, 200)}`);
+      // Over a limit: Groq says how long to wait. Up to 10 seconds is worth waiting once;
+      // past that, this model rests and the next one is asked.
+      const wait = retryAfter(res, err);
+      if (!waited && wait > 0 && wait <= 10) { waited = true; await new Promise((r) => setTimeout(r, wait * 1000 + 250)); continue; }
+      resting.set(model, Date.now() + Math.min(wait || 60, 6 * 3600) * 1000);
+      console.error(`Groq ${model} is over its limit for ${Math.round(wait)}s: ${err.slice(0, 160)}`);
+      break;
+    }
+  }
+  const soonest = Math.min(...[GROQ_MODEL, ...GROQ_BACKUPS].map((m) => resting.get(m) || 0)) - Date.now();
+  if (round > 0 || soonest > 25000) break;
+  await new Promise((r) => setTimeout(r, Math.max(0, soonest) + 300));
+  }
+  lastFailure = "busy";
+  throw new Error("Groq: every free model is over its limit");
+}
+
+// The first answer of the two. The backup is only asked when the first hasn't answered in ms
+// (or failed), so it's rarely used and its free allowance lasts.
+const HEDGE_MS = Number(process.env.AI_HEDGE_MS) || 12000;
+const SLOW = Symbol("slow");
+async function hedged(asked, backup, ms) {
+  const first = asked.catch((err) => { console.error("Gemini failed:", err.message); return null; });
+  let timer;
+  const early = await Promise.race([first, new Promise((r) => { timer = setTimeout(() => r(SLOW), ms); })]);
+  clearTimeout(timer);
+  if (early !== SLOW) {
+    if (early) return early;
+    console.error("Gemini didn't answer; Groq is answering instead.");
+    return backup();
+  }
+  console.error(`Gemini is slow (over ${Math.round(ms / 1000)}s); asking Groq too.`);
+  const second = backup().catch((err) => { console.error("Groq failed:", err.message); return null; });
+  return new Promise((resolve) => {
+    let left = 2;
+    const done = (v) => { if (v) resolve(v); else if (--left === 0) resolve(null); };
+    first.then(done);
+    second.then(done);
+  });
+}
+const hasImages = (messages) => messages.some((m) => Array.isArray(m.content) && m.content.some((b) => b.type && b.type !== "text"));
 
 // The Groq models to ask, best first, minus any resting after a limit. The best one is always
 // tried when everything is resting, so a short limit never blocks the chat for long.

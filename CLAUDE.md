@@ -225,6 +225,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   leaves, closes the page or loses the connection: the server finishes the work on its own (a new
   chat's first answer starts on the server the moment the chat is made), the browser finishes
   sending the message if the page closes (keepalive), and the answer waits with its gold dot.
+  Free Gemini sometimes hangs for minutes (a simple question took ten, 2026-10-30): after 12
+  seconds Groq is asked too and the first answer wins (`hedged` in `app/src/brain.js`).
 * **Meta (2026-10-29):** one connection for Facebook and Instagram, from the agent's own ad account
   under their own Page (Settings, Connect Meta). Approving a plan sends the ads: one Housing
   campaign, one ad set per ad with an equal share of the budget, a 15 mile radius, no age, gender
