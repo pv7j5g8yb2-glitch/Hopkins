@@ -1,139 +1,109 @@
 <!doctype html><html><head><meta charset="utf-8"></head><body>
 <script src="engine.js"></script>
 <script>
-// Reel 17 v2, "Realtors!" format: the agent with all the listings isn't better, just everywhere.
-// No drawings: text and Hopkins cards only. Voice: ElevenLabs (Jerry B.), aligned with align_ext.py.
+// Reel 17 v3, "Realtors!": the agent with all the listings just posts more, and not listings.
+// Three posts that win listings without a house in them. Straight tips, ends on "save this".
 const {$,$$,P,ease,inout,vis,pop,draw,icon}=E;
 const R={
-hook:2,
-sfx:[{s:"hit",at:.02,shake:16},{s:"stamp",at:"isntbetterthanyou",shake:12},{s:"tick",at:"p13"},{s:"ding",at:"p18"}],
+hook:1,
+sfx:[{s:"hit",at:.02,shake:16},{s:"stamp",at:"p2",shake:12},{s:"tick",at:"p9"},{s:"ding",at:"p15"}],
 script:[
  "Realtors!",
- "The agent getting all the listings in your town [isn't better than you.]",
- "They're just everywhere.",
- "A lot of sellers only call one agent.",
- "The one they already know.",
- "So the listing isn't won at the appointment.",
- "It's won months earlier, when they first think about moving.",
- "Here's what you're gonna do.",
- "Stop posting only listings.",
- "Nobody's thinking about moving while they look at a kitchen they'll never buy.",
- "Post your town.",
+ "The agent getting all the listings in your town isn't better than you.",
+ "They just post more.",
+ "And not listings.",
+ "Here are three posts that win you listings, without posting a single house.",
+ "One. Your town.",
  "The ^coffee spot, the Saturday ^market, the street with the best Christmas ^lights.",
- "Have an opinion.",
- "Best street for a first home. Worst school pickup in town.",
- "People argue, share, and remember you.",
- "Post on the same day every week, so people start expecting you.",
- "Psychologists call it the [mere exposure effect.]",
- "People like what they've seen before.",
- "Six months of that, and when someone says, “we should sell,”",
- "yours is the name they say.",
- "Send this to an agent who only posts listings.",
+ "Sellers want an agent who knows the area. So show them you do.",
+ "Two. A hot take.",
+ "Best street in town for a first home. Put it in a poll.",
+ "People argue in the comments, and comments push your post to more people.",
+ "Three. A past client's story.",
+ "Not a photo of a sold sign.",
+ "What they were scared of, and how it worked out.",
+ "Post one of these every week, on the same day.",
+ "In six months, when someone in your town decides to sell, you're the name they already know.",
+ "Save this, so you've got next week's post.",
 ],
 css:`
-#vs{position:absolute;left:0;width:1080px;top:700px;display:flex;justify-content:center;gap:36px}
+#vs{position:absolute;left:0;width:1080px;top:820px;display:flex;justify-content:center;gap:36px}
 .pf{width:420px;padding:34px 30px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;position:relative}
-.av{width:150px;height:150px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:700}
+.av{width:140px;height:140px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:700}
 #you .av{background:var(--plum);color:var(--cream)}#top .av{background:var(--gold);color:var(--ox)}
 .pf .nm{font-size:40px;font-weight:700}
 .pf .k{font-size:22px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);margin-top:8px}
 .pf .v{font-size:96px;font-weight:700;letter-spacing:-.04em;line-height:1}
 .pf .s{font-size:26px;color:var(--quiet)}
 .st{position:absolute;opacity:0}
-.st span{display:inline-block;background:var(--plum);color:var(--cream);font-size:40px;font-weight:700;padding:14px 26px;border-radius:16px;border:5px solid var(--cream);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.st span{display:inline-block;background:var(--plum);color:var(--cream);font-size:42px;font-weight:700;padding:14px 28px;border-radius:16px;border:5px solid var(--cream);box-shadow:0 18px 40px rgba(0,0,0,.45)}
 .st.g span{background:var(--gold);color:var(--ox);border-color:var(--ox)}
-#call{left:190px;top:680px;width:700px;padding:28px 34px}
-#call .h{font-size:24px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);margin-bottom:10px}
-.row{padding:20px 16px;border-top:1px solid rgba(42,15,20,.1);font-size:34px;font-weight:700;opacity:.3;border-radius:14px}
-.row.k{opacity:1}
-#tl{position:absolute;left:110px;top:820px;width:860px;height:300px}
-#tl .bar{position:absolute;left:0;right:0;top:40px;height:12px;border-radius:6px;background:rgba(244,235,221,.18)}
-#tl .bar i{display:block;height:100%;width:0;border-radius:6px;background:var(--gold)}
-.pt{position:absolute;top:84px;width:330px;font-size:34px;font-weight:700;line-height:1.2;opacity:0}
-#pa{left:0}#pb{right:0;text-align:right}
-.pt small{display:block;font-size:24px;color:var(--rose);margin-top:8px;font-weight:400}
-.dot{position:absolute;top:22px;width:48px;height:48px;border-radius:50%;background:var(--cream);opacity:0}
-#da{left:-10px}#db{right:-10px}
-#mo{position:absolute;left:0;width:860px;top:-30px;text-align:center;font-size:30px;color:var(--rose);font-weight:700;opacity:0}
-#won{position:absolute;left:-30px;top:-120px;opacity:0}
-#three{position:absolute;left:0;width:1080px;top:780px;display:flex;justify-content:center;gap:30px}
-#three b{width:250px;height:250px;border-radius:30px;background:var(--cream);color:var(--ox);display:flex;align-items:center;justify-content:center;font-size:150px;opacity:0}
-#post{left:190px;top:660px;width:700px;padding:30px 34px}
-#post .hd{display:flex;align-items:center;gap:14px;font-size:24px;font-weight:700;margin-bottom:18px}
-#post .hd i{display:block;width:50px;height:50px;border-radius:50%;background:var(--plum)}
-#post .tx{font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
-#post .lk{font-size:24px;color:var(--quiet);margin-top:14px}
-#town{position:absolute;left:0;width:1080px;top:1080px;display:flex;flex-direction:column;align-items:center;gap:18px}
-.pl{padding:22px 34px;border-radius:22px;background:var(--gold);color:var(--ox);font-size:38px;font-weight:700;opacity:0;box-shadow:0 20px 50px rgba(0,0,0,.4)}
-#poll{left:170px;top:670px;width:740px;padding:34px 38px}
-#poll .q{font-size:40px;font-weight:700;line-height:1.2;margin-bottom:22px}
+#big{position:absolute;left:0;width:1080px;top:760px;text-align:center}
+#big b{display:block;font-size:330px;line-height:.9;letter-spacing:-.06em;color:var(--gold);opacity:0}
+#big span{display:block;font-size:56px;font-weight:700;margin-top:10px;opacity:0}
+#big small{display:block;font-size:34px;color:var(--rose);margin-top:22px;opacity:0}
+.tip{position:absolute;left:110px;top:640px;width:860px}
+.tip .n{display:inline-flex;align-items:center;gap:20px;font-size:64px;font-weight:700;letter-spacing:-.03em}
+.tip .n i{font-style:normal;width:96px;height:96px;border-radius:50%;background:var(--gold);color:var(--ox);display:flex;align-items:center;justify-content:center;font-size:56px}
+#pl{display:flex;flex-direction:column;gap:18px;margin-top:40px}
+.tp{align-self:flex-start;padding:24px 34px;border-radius:22px;background:var(--cream);color:var(--ink);font-size:40px;font-weight:700;opacity:0;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.why{margin-top:40px;font-size:36px;font-weight:700;color:var(--gold);opacity:0}
+#poll{margin-top:40px;padding:34px 38px;position:relative}
+#poll .q{font-size:40px;font-weight:700;line-height:1.2;margin-bottom:20px}
 .op{position:relative;height:76px;border-radius:16px;background:rgba(42,15,20,.07);margin-top:14px;overflow:hidden}
 .op i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(215,174,98,.6)}
 .op span{position:absolute;left:22px;top:19px;font-size:30px;font-weight:700}
-.op em{position:absolute;right:22px;top:19px;font-size:30px;font-weight:700;font-style:normal}
-#cm{margin-top:22px;font-size:28px;font-weight:700;color:var(--quiet);opacity:0}
-#cal{left:170px;top:680px;width:740px;padding:30px 36px}
+#sold{margin-top:40px;padding:34px 38px;position:relative;font-size:52px;font-weight:700;color:var(--quiet)}
+#sold s{text-decoration-thickness:6px;text-decoration-color:var(--plum)}
+#story{margin-top:26px;padding:32px 38px;opacity:0}
+#story .r{display:flex;gap:18px;align-items:flex-start;font-size:34px;font-weight:700;line-height:1.25;padding:10px 0}
+#story .r b{flex:none;width:52px;height:52px;border-radius:50%;background:var(--gold);color:var(--ox);display:flex;align-items:center;justify-content:center;font-size:26px}
+#cal{left:170px;top:700px;width:740px;padding:30px 36px}
 #cal .h{font-size:24px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);margin-bottom:16px}
 #wk{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .wd{height:110px;border-radius:18px;background:rgba(42,15,20,.06);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--quiet)}
 .wd.on{background:var(--gold);color:var(--ox)}
-#mx{position:absolute;left:90px;width:900px;top:760px;text-align:center}
-#mx .t{font-family:"Instrument Serif";font-style:italic;font-size:120px;line-height:1;color:var(--gold);opacity:0}
-#mx .s{font-size:30px;color:var(--rose);margin-top:30px;line-height:1.35;opacity:0}
-#bub{position:absolute;left:170px;top:700px;opacity:0}
+#bub{position:absolute;left:170px;top:720px;opacity:0}
 #bub span{display:inline-block;background:var(--cream);color:var(--ink);font-size:58px;font-weight:700;padding:30px 44px;border-radius:40px 40px 40px 8px;box-shadow:0 30px 70px rgba(0,0,0,.45)}
-#bub small{display:block;font-size:24px;color:var(--rose);margin:0 0 12px 10px;font-weight:700}
 #nm{position:absolute;left:0;width:1080px;top:1000px;display:flex;justify-content:center;opacity:0}
 #nm .c{background:var(--gold);color:var(--ox);padding:30px 56px;border-radius:30px;font-size:60px;font-weight:700;box-shadow:0 30px 70px rgba(0,0,0,.45)}
-#snd{position:absolute;left:0;width:1080px;top:820px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:36px;font-weight:700;color:var(--rose)}
+#sv{position:absolute;left:0;width:1080px;top:780px;display:flex;flex-direction:column;align-items:center;gap:30px;font-size:44px;font-weight:700}
 `,
 scenes:`
 <div class="scene" id="s1"><div id="vs">
- <div class="card pf" id="you"><div class="av">You</div><div class="nm">You</div><div class="k">Posts this month</div><div class="v">2</div><div class="s">both listings</div></div>
- <div class="card pf" id="top"><div class="av">Top</div><div class="nm">The top agent</div><div class="k">Posts this month</div><div class="v">22</div><div class="s">the town, opinions, life</div></div></div>
- <div class="st" id="nb" style="left:150px;top:640px"><span style="transform:rotate(-8deg)">Not better than you</span></div>
- <div class="st g" id="ev" style="left:600px;top:1260px"><span style="transform:rotate(6deg)">Everywhere</span></div></div>
-<div class="scene" id="s2"><div class="card" id="call"><div class="h">Who does a seller call?</div>
- ${["The agent from a billboard","The agent from Google","The one they already know","The one a friend mentioned"].map((n,i)=>`<div class="row${i===2?" k":""}" id="rw${i}">${n}</div>`).join("")}</div></div>
-<div class="scene" id="s3"><div id="tl"><div class="bar"><i></i></div><div class="dot" id="da"></div><div class="dot" id="db"></div>
- <div class="pt" id="pa">They first think about moving<small>at the kitchen table</small></div>
- <div class="pt" id="pb">The listing appointment<small>months later</small></div>
- <div class="st g" id="won"><span style="font-size:34px;transform:rotate(-6deg)">Won here</span></div></div></div>
-<div class="scene" id="s4"><div id="three"><b id="n1">1</b><b id="n2">2</b><b id="n3">3</b></div></div>
-<div class="scene" id="s5"><div class="card" id="post"><div class="hd"><i></i>Your post</div><div class="tx">JUST LISTED!<br>4 bed, 3 bath, call today</div><div class="lk">Liked by other agents, not sellers</div></div>
- <div class="st" id="nm2" style="left:520px;top:600px"><span style="transform:rotate(8deg)">Nobody's moving</span></div>
- <div id="town"><div class="pl" id="t0">The coffee spot</div><div class="pl" id="t1">The Saturday market</div><div class="pl" id="t2">The best Christmas lights</div></div></div>
-<div class="scene" id="s6"><div class="card" id="poll"><div class="q">Best street in town for a first home?</div>
- ${[["Maple Avenue",46],["Ridge Road",31],["Oak Street",23]].map(([o,v],i)=>`<div class="op" id="op${i}"><i></i><span>${o}</span></div>`).join("")}
- <div id="cm">The comments turn into an argument</div></div></div>
-<div class="scene" id="s7"><div class="card" id="cal"><div class="h">Every Tuesday: the town post</div>
+ <div class="card pf" id="you"><div class="av">You</div><div class="nm">You</div><div class="k">Posts this month</div><div class="v">2</div><div class="s" id="ys">both listings</div></div>
+ <div class="card pf" id="top"><div class="av">Top</div><div class="nm">The top agent</div><div class="k">Posts this month</div><div class="v">22</div><div class="s" id="ts">the town, opinions, clients</div></div></div>
+ <div class="st g" id="pm" style="left:560px;top:760px"><span style="transform:rotate(6deg)">Just posts more</span></div></div>
+<div class="scene" id="s2"><div id="big"><b>3</b><span>posts that win listings</span><small>not one house in them</small></div></div>
+<div class="scene" id="s3"><div class="tip"><div class="n"><i>1</i>Your town</div>
+ <div id="pl"><div class="tp" id="t0">The coffee spot</div><div class="tp" id="t1">The Saturday market</div><div class="tp" id="t2">The best Christmas lights</div></div>
+ <div class="why" id="w1">Shows you know the area</div></div></div>
+<div class="scene" id="s4"><div class="tip"><div class="n"><i>2</i>A hot take</div>
+ <div class="card" id="poll" style="position:relative"><div class="q">Best street in town for a first home?</div>
+ ${["Maple Avenue","Ridge Road","Oak Street"].map((o,i)=>`<div class="op" id="op${i}"><i></i><span>${o}</span></div>`).join("")}</div>
+ <div class="why" id="w2">Comments push it further</div></div></div>
+<div class="scene" id="s5"><div class="tip"><div class="n"><i>3</i>A client's story</div>
+ <div class="card" id="sold" style="position:relative"><s>SOLD! Congrats to the Smiths!</s></div>
+ <div class="card" id="story" style="position:relative"><div class="r"><b>1</b>What they were scared of</div><div class="r"><b>2</b>How it worked out</div></div></div></div>
+<div class="scene" id="s6"><div class="card" id="cal"><div class="h">One a week, same day</div>
  <div id="wk">${Array.from({length:8},(_,i)=>`<div class="wd" id="wd${i}">Week ${i+1}</div>`).join("")}</div></div></div>
-<div class="scene" id="s8"><div id="mx"><div class="t">The mere exposure effect</div><div class="s">Robert Zajonc, 1968. The more often people see something, the more they tend to like it.</div></div></div>
-<div class="scene" id="s9"><div id="bub"><small>A text, six months from now</small><span>“We should sell.”</span></div>
- <div id="nm"><div class="c">Your name</div></div></div>
-<div class="scene" id="s10"><div id="snd">${icon("send",170,"#D7AE62",1.4)}Send this</div></div>
+<div class="scene" id="s7"><div id="bub"><span>“We should sell.”</span></div><div id="nm"><div class="c">Your name</div></div></div>
+<div class="scene" id="s8"><div id="sv">${icon("save",170,"#D7AE62",1.6)}Save this</div></div>
 `,
 update(t,C,endAt){
- vis("#s1",t,-1,C.p3);E.slam("#you",t,-.1,{s:1.3,r:-5});E.slam("#top",t,.05,{s:1.3,r:5});
- E.slam("#nb",t,C.isntbetterthanyou,{s:1.9,r:-8});E.slam("#ev",t,C.p2,{s:1.9,r:6});
+ vis("#s1",t,-1,C.p4);E.slam("#you",t,-.1,{s:1.3,r:-5});E.slam("#top",t,.05,{s:1.3,r:5});
+ E.slam("#pm",t,C.p2,{s:1.9,r:6});
  $("#top").style.boxShadow=`0 0 0 ${7*ease(P(t,C.p2,C.p2+.3))}px var(--gold),0 40px 90px rgba(0,0,0,.45)`;
- vis("#s2",t,C.p3,C.p5);vis("#call",t,C.p3,null,{dy:40});
- $("#rw2").style.background=`rgba(215,174,98,${.45*ease(P(t,C.p4,C.p4+.3))})`;
- vis("#s3",t,C.p5,C.p7);vis("#pb",t,C.p5,null,{dy:20});vis("#db",t,C.p5,null,{dy:0});
- vis("#pa",t,C.p6,null,{dy:20});vis("#da",t,C.p6,null,{dy:0});
- $("#tl .bar i").style.width=(ease(P(t,C.p6,C.p6+1.2))*100)+"%";E.slam("#won",t,C.p6+.6,{s:1.8,r:-6});
- vis("#s4",t,C.p7,C.p8);["#n1","#n2","#n3"].forEach((n,i)=>pop(n,P(t,C.p7+.2+i*.18,C.p7+.45+i*.18)));
- vis("#s5",t,C.p8,C.p12);vis("#post",t,C.p8,null,{dy:40});E.slam("#nm2",t,C.p9+.3,{s:1.8,r:8});
- $("#post").style.opacity=Math.min(+$("#post").style.opacity||0,1-.55*ease(P(t,C.p10,C.p10+.3)));
- [["#t0",C.coffee],["#t1",C.market],["#t2",C.lights]].forEach(([c,a])=>E.slam(c,t,a-.05,{s:1.25,r:0}));
- vis("#s6",t,C.p12,C.p15);vis("#poll",t,C.p12,null,{dy:40});
- [46,31,23].forEach((w,i)=>{$(`#op${i} i`).style.width=(ease(P(t,C.p13+i*.12,C.p13+i*.12+.8))*w)+"%"});
- vis("#cm",t,C.p14,null,{dy:20});
- vis("#s7",t,C.p15,C.p16);vis("#cal",t,C.p15,null,{dy:40});
- Array.from({length:8}).forEach((_,i)=>{$("#wd"+i).className="wd"+(t>=C.p15+.3+i*.22?" on":"")});
- vis("#s8",t,C.p16,C.p18);vis("#mx .t",t,C.p16+.4,null,{dy:30});vis("#mx .s",t,C.p17,null,{dy:20});
- vis("#s9",t,C.p18,C.p20);E.slam("#bub",t,C.p18+.5,{s:1.3,r:-3});E.slam("#nm",t,C.p19,{s:1.4,r:2});
- vis("#s10",t,C.p20,endAt);draw("#snd path",P(t,C.p20,C.p20+.7));
+ const nk=ease(P(t,C.p3,C.p3+.3));$("#ys").style.color=nk>0?`rgb(${125+90*nk},${104+70*nk},${98})`:"";$("#ts").style.color=nk>0?"#8E6B2C":"";$("#ts").style.fontWeight=nk>0?"700":"";
+ vis("#s2",t,C.p4,C.p5);pop("#big b",P(t,C.p4,C.p4+.35));vis("#big span",t,C.p4+.3,null,{dy:20});vis("#big small",t,C.p4+1.6,null,{dy:20});
+ vis("#s3",t,C.p5,C.p8);[["#t0",C.coffee],["#t1",C.market],["#t2",C.lights]].forEach(([c,a])=>E.slam(c,t,a-.05,{s:1.2,r:0}));vis("#w1",t,C.p7,null,{dy:20});
+ vis("#s4",t,C.p8,C.p11);vis("#poll",t,C.p9,null,{dy:40});
+ [46,31,23].forEach((w,i)=>{$(`#op${i} i`).style.width=(ease(P(t,C.p9+.6+i*.12,C.p9+1.4+i*.12))*w)+"%"});vis("#w2",t,C.p10,null,{dy:20});
+ vis("#s5",t,C.p11,C.p14);vis("#sold",t,C.p12,null,{dy:30});
+ $("#sold").style.opacity=Math.min(+$("#sold").style.opacity||0,1-.5*ease(P(t,C.p13,C.p13+.3)));vis("#story",t,C.p13,null,{dy:30});
+ vis("#s6",t,C.p14,C.p15);Array.from({length:8}).forEach((_,i)=>{$("#wd"+i).className="wd"+(t>=C.p14+.3+i*.2?" on":"")});
+ vis("#s7",t,C.p15,C.p16);E.slam("#bub",t,C.p15+.2,{s:1.3,r:-3});E.slam("#nm",t,C.p15+2.2,{s:1.4,r:2});
+ vis("#s8",t,C.p16,endAt);draw("#sv path",P(t,C.p16,C.p16+.7));
 }};
 E.boot(R);
 render(0);

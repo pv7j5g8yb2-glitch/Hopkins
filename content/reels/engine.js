@@ -31,6 +31,7 @@ body{font-family:"Inter Tight",sans-serif;-webkit-font-smoothing:antialiased;col
 #end .cta{margin-top:84px;font-size:46px;font-weight:700;color:var(--ox);background:var(--gold);padding:28px 56px;border-radius:70px}
 #fol{position:absolute;left:0;width:1080px;top:1420px;display:flex;justify-content:center;opacity:0}
 #fol span{display:inline-flex;align-items:center;gap:16px;font-size:44px;font-weight:700;color:var(--ox);background:var(--gold);padding:24px 48px;border-radius:70px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+#wm svg path[fill="#5B4873"],#end svg path[fill="#5B4873"]{fill:#8E78AA}
 #fade{position:absolute;inset:0;background:var(--ox);opacity:0;pointer-events:none}
 `;
 const E={};window.E=E;
@@ -88,6 +89,7 @@ const I={
  plan:'<rect x="3.5" y="3.5" width="17" height="17" rx="1.5" pathLength="1"/><path d="M3.5 12h7v8.5M10.5 3.5v5M14.5 12h6M14.5 12v3" pathLength="1"/>',
  key:'<circle cx="8" cy="15" r="4.5" pathLength="1"/><path d="M11.2 11.8 20 3M16.5 6.5l2.5 2.5M14 9l2 2" pathLength="1"/>',
  home:'<path d="M3 11 12 4l9 7M5.5 9.5V20h13V9.5M10 20v-5h4v5" pathLength="1"/>',
+ save:'<path d="M6.5 3.5h11v17l-5.5-4-5.5 4Z" pathLength="1"/>',
  alert:'<path d="M12 3 2 20h20Z" pathLength="1"/><path d="M12 10v4.5M12 17.2v.3" pathLength="1"/>',
 };
 E.icon=(name,size=64,color="currentColor",w=1.8,cls="")=>`<svg class="ico ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" stroke="${color}" stroke-width="${w}">${I[name]}</svg>`;
