@@ -151,7 +151,7 @@ real value. Never confusing or complex: one point, plain words, a clear tip.
 
 **What failed, never repeat it (Ismael, 2026-10-30, after reel 17; keep forever).** Ismael's verdict on reels 1 to 17: too slow, boring, no interesting hook, the voice is bad, the timing and pronunciation feel wrong, sentences cut in half by pauses, things that don't make sense, animated cartoon cards for everything, sound effects that don't fit. So:
 * The synthetic voice (Kokoro) is not good enough for public reels. Use a real human voice (Ismael's or another person's) or no voice. Don't ship another reel on it.
-* No more reels made only of animated illustration cards. Use real footage, real screens, real ads, real places and people; motion graphics only as a light layer on top.
+* Keep the animated style, but never drawn or cartoon visuals (Ismael, 2026-10-30). Every picture inside a reel is a real image: real ads, real screenshots, real photos of people, homes and places. Before building, give Ismael a numbered list of the exact images needed (what each shows, file name, upright 9:16 or square); he sends them and the animation is built around them.
 * Sound effects only where a real thing happens on screen and the sound fits it, otherwise none. Never a pop or whoosh on every line.
 * Pace: fast. Every second earns its place. If a line can be cut, cut it.
 * Every line must make sense on its own, heard once, at speed.
