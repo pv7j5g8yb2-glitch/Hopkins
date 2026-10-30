@@ -296,7 +296,8 @@ app.get("/api/meta/connect", async (request, reply) => {
 // Page it's picked straight away.
 app.get("/api/meta/callback", async (request, reply) => {
   const { code, state, error } = request.query || {};
-  if (error || !code) return reply.redirect("/#/settings");
+  // Cancelling on Facebook just comes back; anything else that stops the connection is said.
+  if (error || !code) return reply.redirect(request.query?.error_reason === "user_denied" || !error ? "/#/settings" : "/#/settings/meta-failed");
   if (!checkState(state, request.ws.id)) return reply.code(400).send({ error: "That sign in link has expired. Please try again." });
   try {
     const me = await finishLogin(String(code), metaRedirect(request));
@@ -309,7 +310,7 @@ app.get("/api/meta/callback", async (request, reply) => {
     return reply.redirect("/#/settings");
   } catch (err) {
     console.error("Meta sign in failed:", err.message);
-    return reply.redirect("/#/settings");
+    return reply.redirect("/#/settings/meta-failed");
   }
 });
 app.patch("/api/meta", async (request, reply) => {

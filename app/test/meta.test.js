@@ -12,13 +12,14 @@ const { syncMeta } = await import("../src/hopkins.js");
 const { all, run, get } = await import("../src/db.js");
 
 const calls = [];
-const state = { status: "ACTIVE", feedback: null };
+const state = { status: "ACTIVE", feedback: null, loginFails: false };
 meta.setMetaFetchForTests(async (url, init = {}) => {
   const u = new URL(url);
   const path = u.pathname.replace(/^\/v[\d.]+\//, "");
   const params = init.body ? Object.fromEntries(new URLSearchParams(init.body)) : Object.fromEntries(u.searchParams);
   calls.push({ method: init.method || "GET", path, params });
   const ok = (body) => ({ ok: true, status: 200, json: async () => body });
+  if (path === "oauth/access_token" && state.loginFails) return { ok: false, status: 400, json: async () => ({ error: { message: "Invalid verification code format.", code: 100 } }) };
   if (path === "oauth/access_token") return ok(params.code ? { access_token: "short-token" } : { access_token: "long-token", expires_in: 5184000 });
   if (path === "me") return ok({ id: "fb-1", name: "Sam Ellery" });
   if (path === "me/adaccounts") return ok({ data: [{ id: "act_77", name: "Ellery Ads", account_status: 1, currency: "USD" }] });
@@ -52,6 +53,14 @@ test("connect Meta, approve, and the ads go to the agent's own ad account in the
   assert.match(dialog.searchParams.get("scope"), /ads_management/);
   // A made up state is refused; the real one connects, and the one ad account and Page are picked.
   assert.equal((await c("GET", "/api/meta/callback?code=abc&state=nope")).status, 400);
+  // A login Meta won't finish comes back to Settings with a notice; cancelling comes back quietly.
+  const signed = encodeURIComponent(dialog.searchParams.get("state"));
+  state.loginFails = true;
+  const failed = await app.inject({ method: "GET", url: `/api/meta/callback?code=abc&state=${signed}`, headers: { cookie: await cookieOf(c) } });
+  assert.equal(failed.headers.location, "/#/settings/meta-failed");
+  state.loginFails = false;
+  const cancelled = await app.inject({ method: "GET", url: "/api/meta/callback?error=access_denied&error_reason=user_denied", headers: { cookie: await cookieOf(c) } });
+  assert.equal(cancelled.headers.location, "/#/settings");
   const back = await app.inject({ method: "GET", url: `/api/meta/callback?code=abc&state=${encodeURIComponent(dialog.searchParams.get("state"))}`, headers: { cookie: await cookieOf(c) } });
   assert.equal(back.statusCode, 302);
   assert.equal(back.headers.location, "/#/settings");

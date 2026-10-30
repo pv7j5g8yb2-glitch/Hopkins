@@ -526,7 +526,10 @@
       }
       else if (view === "brand") await viewBrand();
       else if (view === "admin") await viewAdmin();
-      else if (view === "settings") viewSettings();
+      else if (view === "settings") {
+        viewSettings();
+        if (id === "meta-failed") { toast("Couldn't connect to Meta. Please try again."); history.replaceState(null, "", "#/settings"); }
+      }
       else await viewToday();
     } catch (e) {
       if (e.message !== "signed out" && seq === routeSeq) main.innerHTML = `${mtop("Hopkins")}<div class="page"><p class="err">${esc(e.message)}</p></div>`;
