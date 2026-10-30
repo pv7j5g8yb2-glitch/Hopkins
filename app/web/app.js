@@ -451,8 +451,8 @@
   function accountMenu() {
     const u = S.me.usage;
     const plan = paid()
-      ? `<div class="note"><b>${esc(S.me.plan.name)}</b>$${S.me.plan.price} a month. Billed monthly.</div>`
-      : `<div class="note"><b>Free plan</b><div class="meter"><i style="width:${Math.min(100, (u.adsMade / u.freeLimit) * 100)}%"></i></div>${Math.min(u.adsMade, u.freeLimit)} of ${u.freeLimit} free ads made</div>`;
+      ? `<div class="note"><b>${esc(S.me.plan.name)} plan</b></div>`
+      : `<div class="note"><b>Free plan</b></div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
       <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
       ${S.me.demo ? `<button data-act="demoLeave">${ICON.back}Back to my account</button>` : ""}<button data-act="feedbackAsk">${ICON.msg}Send feedback</button>
@@ -496,7 +496,7 @@
           <i class="th cover-mini"></i>
           <div class="nm"><b>${esc(listingName(l))}</b></div>${l.unread && !(route[0] === "l" && route[1] === l.id) ? `<span class="dot" aria-label="New reply"></span>` : ""}<button class="more" data-act="limenu" data-id="${l.id}" aria-label="More for ${esc(listingName(l))}">${ICON.dots}</button></a>`).join("")
       : `<div class="empty-side">Nothing yet.</div>`;
-    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? esc(S.me.plan.name) : "Free plan"}</span></span>${ICON.chev}</button>`;
+    $("#acct").innerHTML = `<button data-act="account"><span class="av" ${avatarStyle()}>${esc(initials())}</span><span class="nm"><b>${esc(myName())}</b><span>${paid() ? `${esc(S.me.plan.name)} plan` : "Free plan"}</span></span>${ICON.chev}</button>`;
   }
 
   // ---------- routing ----------
@@ -825,8 +825,8 @@
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">working on?</span></h1><p>Send a listing, photos or any question.</p>
-      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Your ${S.me.usage.freeLimit} free ads are used.</b> Ads for this listing require an upgrade.
-        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Upgrade requested.</span>` : `<button class="link" data-upgrade>Upgrade</button>`}</div>` : ""}</div>
+      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Free ads used.</b>
+        ${S.me.workspace.brand.upgrade_requested ? `<span class="small">Upgrade requested</span>` : `<button class="link" data-upgrade>Upgrade</button>`}</div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
@@ -1115,13 +1115,11 @@
     const asked = b.upgrade_requested && (S.me.plans.find((p) => p.id === b.upgrade_plan) || S.me.plans[0]);
     if (!S.pickPlan) S.pickPlan = S.me.plans[0].id;
     const pick = S.me.plans.find((p) => p.id === S.pickPlan);
-    const title = reason === "run" ? `Ready to <span class="serif">run?</span>` : reason === "plans" ? `Choose a <span class="serif">plan.</span>` : `You've used your <span class="serif">3 free ads.</span>`;
-    const line = reason === "run" ? "Running ads requires an upgrade." : reason === "plans" ? "Unlimited listings on every plan." : "New ads require an upgrade. Changes are included.";
+    const title = reason === "run" ? "Upgrade to run ads" : reason === "plans" ? "Upgrade your plan" : "Upgrade for more ads";
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
-      <h3>${title}</h3><p>${line}</p>
+      <h3>${title}</h3>
       <div class="plans">${S.me.plans.map((p) => `<button class="pl${p.id === S.pickPlan ? " sel" : ""}" data-plan="${p.id}"><span><b>${esc(p.name)}</b><span>${agentsLine(p)}</span></span><b>$${p.price}<span>/mo</span></b></button>`).join("")}</div>
-      <p class="upsell-small">Over 20 agents by quote. Billed monthly. Cancel anytime. No cut of your ad spend.</p>
-      ${asked ? `<p class="upsell-done">${esc(asked.name)} requested.</p>` : `<button class="btn" data-request>Request ${esc(pick.name)}</button>`}
+      ${asked ? `<p class="upsell-done">${esc(asked.name)} requested</p>` : `<button class="btn" data-request>Request ${esc(pick.name)}</button>`}
       <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
 
@@ -1261,8 +1259,7 @@
       }
       if (m.kind === "upgrade") {
         const asked = S.me.workspace.brand.upgrade_requested;
-        return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Upgrade"}</button>
-          ${asked ? `<span class="small">You'll get an email when it's on.</span>` : ""}</div>`);
+        return wrap(`${text}<div class="acts"><button class="btn" data-upgrade ${asked ? "disabled" : ""}>${asked ? "Requested" : "Upgrade"}</button></div>`);
       }
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
       if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open Leads</a></div>`);
@@ -1775,7 +1772,7 @@
   function metaGroup() {
     const m = S.me.meta || {};
     if (!m.available) return "";
-    if (!m.connected) return `<div class="group"><h4>Meta</h4><p class="small">Run ads on Facebook and Instagram from your own ad account.</p>
+    if (!m.connected) return `<div class="group"><h4>Meta</h4><p class="small">Facebook and Instagram ads.</p>
       <div style="margin-top:12px"><a class="sec-btn" href="/api/meta/connect">${m.expired ? "Reconnect Meta" : "Connect Meta"}</a></div></div>`;
     return `<div class="group" id="metaGroup"><h4>Meta</h4><p>Connected as ${esc(m.name || "you")}.</p>
       <div class="grid2" style="margin-top:12px"><div class="fld"><label for="metaAcct">Ad account</label><select id="metaAcct"><option value="">${esc(m.adAccountName || "Choose…")}</option></select></div>
@@ -1788,7 +1785,7 @@
     if (!m || !$("#metaGroup")) return;
     // Meta wouldn't answer with this login (expired or removed): say so, with the way back.
     if (m.error) {
-      $("#metaGroup").insertAdjacentHTML("beforeend", `<p class="small" style="margin-top:10px">This connection no longer works. <a class="link" href="/api/meta/connect">Reconnect Meta</a></p>`);
+      $("#metaGroup").insertAdjacentHTML("beforeend", `<p class="small" style="margin-top:10px">Connection expired. <a class="link" href="/api/meta/connect">Reconnect</a></p>`);
       return;
     }
     const fill = (sel, items, current) => {
@@ -1823,16 +1820,15 @@
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
       <div class="group"><h4>Lead alerts</h4>${b.alerts_topic
-        ? `<p>On. New Leads are sent to your phone.</p>
+        ? `<p>On</p>
            <ol class="steps-small"><li>Install ntfy from the App Store or Google Play.</li><li>Tap +, then subscribe to <b>${esc(b.alerts_topic)}</b> <button class="link" data-copy="${esc(b.alerts_topic)}" data-copied="Name copied">Copy</button></li><li>Send a test to check it arrives.</li></ol>
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
-        : `<p class="small">Get a notification for every new Lead.</p>
-           <div style="margin-top:12px"><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
+        : `<div><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       ${metaGroup()}
       <div class="group"><h4>Plan</h4>${paid()
-        ? `<p>${esc(S.me.plan.name)}, $${S.me.plan.price} a month</p><p class="small">${agentsLine(S.me.plan)}. Billed monthly. Cancel anytime.</p>`
-        : `<p>Free plan</p><div class="meter" style="max-width:260px"><i style="width:${Math.min(100, (use.adsMade / use.freeLimit) * 100)}%"></i></div><p class="small">${Math.min(use.adsMade, use.freeLimit)} of ${use.freeLimit} free ads made.</p>
-           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">${esc((S.me.plans.find((p) => p.id === b.upgrade_plan) || S.me.plans[0]).name)} requested.</span>` : `<button class="btn" data-upgrade>Upgrade</button>`}</div>`}</div>
+        ? `<p>${esc(S.me.plan.name)} plan</p>`
+        : `<p>Free plan</p>
+           <div style="margin-top:12px">${b.upgrade_requested ? `<span class="small">${esc((S.me.plans.find((p) => p.id === b.upgrade_plan) || S.me.plans[0]).name)} requested</span>` : `<button class="btn" data-upgrade>Upgrade</button>`}</div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
         <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
@@ -2200,7 +2196,7 @@
           <div class="note" style="word-break:break-all;user-select:all;-webkit-user-select:all">${esc(link)}</div>
           <button data-copy="${esc(link)}" data-copied="Reset link copied">${ICON.copy}Copy link</button>`);
       }
-      else if (act === "metaSoon") toast("Meta connection is not available yet.");
+      else if (act === "metaSoon") toast("Not available yet");
       else if (act === "feedbackAsk") {
         openPop($(".mtop .av") || t, `<div class="note"><b>Send feedback</b>Report a problem or suggest a feature.</div>
           <form class="feedback"><textarea id="fbIn" rows="4" maxlength="3000" placeholder="Describe the issue or idea"></textarea>
@@ -2248,7 +2244,7 @@
         openPop(t, `<button data-dl="feed">${ICON.down}Feed image</button><button data-dl="story">${ICON.down}Story image</button>
           <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>
           <button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>
-          <div class="sep"></div><div class="note">Post or boost it yourself. Use the ad link so Leads are tracked here.</div>`);
+          <div class="sep"></div><div class="note">Use the ad link so Leads are tracked.</div>`);
       }
       else if (act === "logout") { await api("/api/logout", { body: {} }); location.href = "/login"; }
       else if (act === "chat" || act === "ads") showAds(act === "ads");

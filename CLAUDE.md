@@ -156,7 +156,10 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Words on screen are short (Ismael, 2026-10-27):** serious software, not a novel. A label or
   hint is a few words ("Live preview. Tap to expand.", "Pro requested.", "Test sent"), no
   explaining how it works, no reassurance, no second sentence unless it's a warning. Check every
-  new string against this before shipping.
+  new string against this before shipping. Ismael was angry again on 2026-10-30 ("0 of 3 free ads
+  made", "Duo, $149 a month", a footer of billing terms under the plans): say only what ChatGPT or
+  Claude would, "Free plan", "Duo plan", "Upgrade your plan", "Upgrade to run ads". No counts, terms
+  or descriptions nobody asked for. Write as a 9 figure software company.
 * **Standard software wording (Ismael, 2026-10-29):** errors, buttons and hints read the way
   ChatGPT, Claude or Gemini would put them, plain and not fancy: "Incorrect email or password",
   "Listing not found", "Something went wrong. Please try again.", "Select a listing first",
@@ -286,8 +289,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Plans (Ismael, 2026-10-30, replacing the single "Pro" plan):** priced by the agents whose names go
   on the ads, unlimited listings on every plan: Solo $99 a month (1 agent), Duo $149 (2), Team $299
   (up to 5), Team Plus $549 (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), more than 20
-  by quote. Free stays 3 ads. On screen the action is "Upgrade" and the plan shows by its name
-  ("Duo, $149 a month"); "Pro" is gone. `PLANS` in `app/src/plans.js` is the one list; the chat, the
+  by quote. Free stays 3 ads. On screen the action is "Upgrade" and the plan shows as "Duo plan";
+  prices only in the plan picker ("$149/mo"); "Pro" is gone. `PLANS` in `app/src/plans.js` is the one list; the chat, the
   plan picker, Settings, Admin and the waitlist page all follow it. No card payments yet: choosing a
   plan asks for it and Ismael switches it on in Admin. The account corner and menu show the
   person's own name, not the brokerage they work at.
