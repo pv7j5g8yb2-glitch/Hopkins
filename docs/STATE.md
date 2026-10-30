@@ -110,6 +110,14 @@ personal in here.
   Suggested ladder, not decided: Solo $99, up to 5 $299, up to 10 $449, up to 15 $599, up to 20
   $749, above that by quote. Per seat: $99, $60, $45, $40, $37.50.
 * Most agents would be on Solo ($99 a month, about $1,190 a year), so plan numbers on that, not $299.
+* Proposal (2026-10-30, not decided): price by how many listings run at once, with seats second,
+  because on teams the lead usually runs marketing for everyone (seat pricing would sell them one
+  seat), and pricing by ad spend reads as a penalty for spending and breaks "no cut of ad spend".
+  Free $0 (3 ads, download, nothing runs); Solo $99 (2 logins, 3 listings running at once); Team
+  $299 (5 logins, 10 at once); Team Plus $599 (15 logins, 25 at once); Brokerage by quote. Yearly
+  billing: 2 months free. Ad spend always paid to Meta directly. At a guessed mix (70% Solo, 25%
+  Team, 5% bigger) the average account is about $174 a month, so $1M to $2M ARR (a $10M company at
+  5 to 10 times) is about 480 to 960 accounts. The waitlist page still says "From $299 a month".
 
 ## Goal: 10 users by 1 January 2027 (set 2026-10-30)
 
