@@ -578,11 +578,22 @@
     const leadsWeek = S.leadsWeek ?? S.inbox.filter((m) => m.kind === "lead").length;
     let body;
     if (!S.listings.length) {
+      // Brand, then Meta (where the ads run), then the first listing, then the approval.
       const brandDone = S.me.workspace.brand.setup_done;
-      body = `<div class="progress"><div class="meter"><i style="width:${brandDone ? 34 : 6}%"></i></div>${brandDone ? "1 of 3 done" : "Let's start"}</div>
+      const m = S.me.meta || {};
+      const metaDone = Boolean(m.ready);
+      const done = (brandDone ? 1 : 0) + (metaDone ? 1 : 0);
+      const metaNext = brandDone && !metaDone;
+      const metaBtn = metaDone ? `<a class="link" href="#/settings">Edit</a>`
+        : !m.available ? `<button class="${metaNext ? "btn" : "link"}" data-act="metaSoon">Connect</button>`
+        : m.connected ? `<a class="${metaNext ? "btn" : "link"}" href="#/settings">Finish</a>`
+        : `<a class="${metaNext ? "btn" : "link"}" href="/api/meta/connect">Connect</a>`;
+      const listingNext = brandDone && metaDone;
+      body = `<div class="progress"><div class="meter"><i style="width:${done ? done * 25 : 6}%"></i></div>${done ? `${done} of 4 done` : "Let's start"}</div>
         <ol class="steps">
         <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colours, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
-        <li class="${brandDone ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="btn" href="#/new">Start</a>` : ""}</li>
+        <li class="${metaDone ? "done" : metaNext ? "next" : ""}"><div class="tx"><b>Connect Meta</b><p>Facebook and Instagram ads.</p></div>${brandDone ? metaBtn : ""}</li>
+        <li class="${listingNext ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="${listingNext ? "btn" : "link"}" href="#/new">Start</a>` : ""}</li>
         <li><div class="tx"><b>Your approval</b><p>Nothing runs without it.</p></div></li></ol>`;
     } else {
       body = `<nav class="stats-mini" aria-label="At a glance">
@@ -594,7 +605,7 @@
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     // The count lives in the row below, so the line under the greeting is just the day.
-    const lede = !S.listings.length ? "Three steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+    const lede = !S.listings.length ? "Four steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
     const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, <span class="serif">${esc(first)}</span>` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
     if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
   }
@@ -2177,6 +2188,7 @@
           <div class="note" style="word-break:break-all;user-select:all;-webkit-user-select:all">${esc(link)}</div>
           <button data-copy="${esc(link)}" data-copied="Reset link copied">${ICON.copy}Copy link</button>`);
       }
+      else if (act === "metaSoon") toast("Meta connection is not available yet.");
       else if (act === "feedbackAsk") {
         openPop($(".mtop .av") || t, `<div class="note"><b>Send feedback</b>Report a problem or suggest a feature.</div>
           <form class="feedback"><textarea id="fbIn" rows="4" maxlength="3000" placeholder="Describe the issue or idea"></textarea>

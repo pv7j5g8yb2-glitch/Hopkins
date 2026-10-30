@@ -194,6 +194,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   2026-10-29): Chats opens Chats; "Leads this week" opens Leads filtered to this week (a dark
   "This week ×" chip clears it); "Active listings" (listings with approved ads) opens Report on
   this week with its Active filter on.
+* **First steps (Ismael, 2026-10-30):** a new account's Today shows four steps: your brand, Connect
+  Meta, your first listing, your approval. Meta comes straight after the brand, never last.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.
