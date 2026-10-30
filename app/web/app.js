@@ -244,11 +244,9 @@
     return `<div class="mtop"><a class="logo" href="#/today"><img src="/static/mark.svg" alt="">Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account" ${avatarStyle()}>${esc(initials())}</button></div>`;
   }
   const buzz = (ms = 8) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
+  // Real moments get a plain notice, not a celebration (Ismael, 2026-10-30: it felt like a game).
   function celebrate(text) {
-    $("#winText").textContent = text;
-    $("#win").classList.add("on");
-    buzz([10, 40, 18]);
-    setTimeout(() => $("#win").classList.remove("on"), 1300);
+    toast(text);
   }
 
   // Photos are resized in the browser so uploads are quick on a phone connection.
@@ -590,8 +588,7 @@
         : m.connected ? `<a class="${metaNext ? "btn" : "link"}" href="#/settings">Finish</a>`
         : `<a class="${metaNext ? "btn" : "link"}" href="/api/meta/connect">Connect</a>`;
       const listingNext = brandDone && metaDone;
-      body = `<div class="progress"><div class="meter"><i style="width:${done ? done * 25 : 6}%"></i></div>${done ? `${done} of 4 done` : "Let's start"}</div>
-        <ol class="steps">
+      body = `<ol class="steps">
         <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colours, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
         <li class="${metaDone ? "done" : metaNext ? "next" : ""}"><div class="tx"><b>Connect Meta</b><p>Facebook and Instagram ads.</p></div>${brandDone ? metaBtn : ""}</li>
         <li class="${listingNext ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="${listingNext ? "btn" : "link"}" href="#/new">Start</a>` : ""}</li>
@@ -607,7 +604,7 @@
     }
     // The count lives in the row below, so the line under the greeting is just the day.
     const lede = !S.listings.length ? "Four steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
-    const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, <span class="serif">${esc(first)}</span>` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
+    const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, ${esc(first)}` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
     if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
   }
 
@@ -825,7 +822,7 @@
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you <span class="serif">working on?</span></h1><p>Send a listing, photos or any question.</p>
+      <div class="msgs" id="msgs"><div class="intro"><h1>What are you working on?</h1>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Free ads used.</b> <button class="link" data-upgrade>Upgrade</button></div>` : ""}</div>
       <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
@@ -1252,7 +1249,7 @@
       }
       if (m.kind === "plan") {
         const d = m.data;
-        return wrap(`${text}<div class="plan"><div class="big">${money(d.budget)} <span class="serif" style="font-weight:400">over</span> ${d.days} days</div>
+        return wrap(`${text}<div class="plan"><div class="big">${money(d.budget)} over ${d.days} days</div>
           <div class="meta">${money(d.perDay)} a day · ${esc(d.audience.location)}, ${d.audience.radiusMiles} miles · Housing category</div>
           ${m.needs_action ? `<div class="acts"><button class="btn" data-confirm="${m.id}">Approve and run</button><button class="link" data-fill="Run it with $300 over 14 days">Change the budget</button></div>` : ""}</div>`);
       }
@@ -1703,7 +1700,7 @@
     const field = (k, label, ph = "", hint = "") => `<div class="fld"><label for="f_${k}">${label}</label><input id="f_${k}" name="${k}" value="${esc(b[k] || "")}" placeholder="${esc(ph)}" autocomplete="off">${hint ? `<p class="small">${hint}</p>` : ""}</div>`;
     const radio = (k, opts) => `<div class="choice">${opts.map(([v, l]) => `<label><input type="radio" name="${k}" value="${v}" ${(b[k] || opts[0][0]) === v ? "checked" : ""}>${l}</label>`).join("")}</div>`;
     main.innerHTML = `${first ? `<div class="mtop"><span class="logo"><img src="/static/mark.svg" alt="">Hopkins</span></div>` : mtop("Brand")}<div class="page"><div class="wrap">
-      <div class="head"><h1>${first ? `Make it <span class="serif">yours</span>` : "Brand"}</h1></div>
+      <div class="head"><h1>Brand</h1></div>
       <div class="brandgrid"><form class="form" id="brandForm">
         <div class="group"><h4>Details</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
         <div class="group"><h4>Branding</h4><div style="display:flex;flex-direction:column;gap:14px">

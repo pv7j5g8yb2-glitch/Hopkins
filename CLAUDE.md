@@ -170,7 +170,13 @@ The product's code is in `app/` (its README says what works and how to run it).
   action fixed at the bottom within thumb reach, menus as bottom sheets that swipe away (down, or up
   for a sheet at the top, Ismael 2026-10-27), inputs at 16px (smaller makes
   iPhones zoom), room for the home bar, no suggested replies or reply chips: the empty box says "Ask Hopkins anything" until there's a conversation, then "Reply to Hopkins" (Ismael, 2026-10-27), only the thinking mark while
-  Hopkins works, never a list of steps (Ismael, 2026-10-27), small rewards on real moments (approved, first ads), never a blank screen.
+  Hopkins works, never a list of steps (Ismael, 2026-10-27), never a blank screen.
+* **Serious software, not a game (Ismael, 2026-10-30):** the app "felt like a mobile game". Look and
+  move like Linear, Stripe, ChatGPT or Claude: flat buttons with 8px corners that dim when pressed
+  (never grow or bounce), cards at 12px with a hairline and no drop shadow, lists as hairline rows,
+  page titles 24px semibold in plain Inter Tight (no italic serif in the app), no progress bars, no
+  celebrations (a plain notice instead), no springy or staggered entrances, notices as a small dark
+  bar. The serif accent stays for marketing (posts, ads, the waitlist page), not the product.
 * **Checking a fix (lesson, 2026-10-24):** test against a slowed down server (the live one on Render
   is slow), not just localhost, and look at every screenshot for the exact thing that was reported.
   Two "fixed" bugs reached Ismael because local checks were instant and a sheet off screen was missed.
