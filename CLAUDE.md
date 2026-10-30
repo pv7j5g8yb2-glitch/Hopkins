@@ -120,6 +120,9 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
 * **Personality:** a quiet expert. Plain, precise, shows the numbers, never hype. In reels it talks
   like one person telling a friend or colleague what they think: everyday words, swearing is fine
   where natural (Ismael, 2026-10-19). Facts stay exact.
+* **A software company (Ismael, 2026-10-30):** Hopkins acts like ChatGPT or Higgsfield, which
+  never DM people out of nowhere. Ismael messaging early waitlist sign ups himself is only for this
+  early stage: short, human, one question, sent by him.
 * **Recurring stories:** Wanamaker's half, tested not guessed, the empty Monday.
 
 ## Creative playbook
