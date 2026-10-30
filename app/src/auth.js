@@ -50,6 +50,8 @@ export function isAdmin(user) {
 // (Ismael, 2026-10-26). PILOT_PLAN=free puts new sign ups on the free plan instead, for when
 // sign ups open to everyone.
 export const pilotPlan = () => (process.env.PILOT_PLAN === "free" ? "free" : "paid");
+// Sign ups without an invite code, for when Hopkins opens to everyone (OPEN_SIGNUPS=1).
+export const openSignups = () => process.env.OPEN_SIGNUPS === "1";
 
 export async function createAccount({ email, password, name, business, plan = "free" }) {
   const wsId = randomUUID();

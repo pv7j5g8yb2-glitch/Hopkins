@@ -109,7 +109,11 @@ personal in here.
   STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are on Render, docs/STRIPE.md; needs a Stripe account
   in the registered business's name). Still to build: a profile per agent so the agent count means
   something (today one agent name per account), and changing plan once subscribed (today: cancel in
-  the portal, then pick again). History below.
+  the portal, then pick again). Tested live in Stripe's sandbox on 2026-10-30: Duo paid with the
+  test card, the plan switched on at once, the portal showed $149/month and Cancel. Terms page at
+  /terms (linked from sign in and Settings). Open sign ups are built but off: OPEN_SIGNUPS=1 on
+  Render lets anyone join on Free (an invite code still makes a pilot); turn it on only with live
+  Stripe keys. History below.
 
 * Ismael's first ladder: Solo $99, up to 5 users $299, up to 10 $349, up to 15 $499, up to 20 $799,
   above that a quote. Issues: up to 5 is pointless at $50 less than up to 10, and the 15 to 20 jump

@@ -72,7 +72,7 @@ button:disabled{opacity:.6}
     <div class="err" id="err"></div>
   </form>
   <div class="switch" id="switch"></div>
-  <p class="foot"><span>No invite code? <a href="https://waitlist.kirmistudio.com">Join the waitlist</a>.</span><a href="/privacy">Privacy policy</a></p>
+  <p class="foot"><span id="wait">No invite code? <a href="https://waitlist.kirmistudio.com">Join the waitlist</a>.</span><span><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></span></p>
 </div>
 <script>
 (function () {
@@ -89,6 +89,12 @@ button:disabled{opacity:.6}
     $("switch").innerHTML = 'Already have an account? <a href="/login">Sign in</a>';
     const code = params.get("invite");
     if (code) $("invite").value = code;
+    // Open to everyone: no invite box, unless the link brought a code.
+    fetch("/api/open").then((r) => r.json()).then((o) => {
+      if (!o.open) return;
+      $("wait").style.display = "none";
+      if (!code) $("invite").closest(".signup-only").style.display = "none";
+    }).catch(() => {});
   } else if (mode === "forgot") {
     $("title").innerHTML = "Forgot your <em>password?</em>";
     $("sub").textContent = "Enter your account email to receive a reset link.";

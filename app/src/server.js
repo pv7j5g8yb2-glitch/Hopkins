@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { run, get, all, nowIso } from "./db.js";
-import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
+import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, openSignups, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
@@ -34,7 +34,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "app.js", "glass.js", "creative.js", "login.html", "lead.html", "privacy.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "app.js", "glass.js", "creative.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -134,6 +134,7 @@ app.get("/", async (request, reply) => {
 app.get("/login", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/signup", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/privacy", async (_, reply) => reply.type(TYPES.html).send(files["privacy.html"]));
+app.get("/terms", async (_, reply) => reply.type(TYPES.html).send(files["terms.html"]));
 app.get("/reset", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/forgot", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 
@@ -162,15 +163,19 @@ const appUrl = (request) => (process.env.APP_URL || process.env.RENDER_EXTERNAL_
 
 const clean = (v, max = 200) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 
+app.get("/api/open", async () => ({ open: openSignups() }));
 app.post("/api/signup", async (request, reply) => {
   if (tooMany(`signup:${request.ip}`)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const { email, password, name, business, invite } = request.body || {};
   if (typeof email === "string" && adminSignupBlocked(email.trim())) return reply.code(403).send({ error: "That email can't be used to sign up here." });
-  if (!inviteOk(invite, typeof email === "string" ? email.trim() : "")) return reply.code(403).send({ error: "That invite code isn't valid. Check it, or join the waitlist." });
+  // With OPEN_SIGNUPS=1 anyone can sign up and starts on Free; an invite code still makes a pilot.
+  const coded = inviteOk(invite, typeof email === "string" ? email.trim() : "");
+  if (!coded && !openSignups()) return reply.code(403).send({ error: "That invite code isn't valid. Check it, or join the waitlist." });
+  const plan = coded && String(invite || "").trim() ? pilotPlan() : openSignups() ? "free" : pilotPlan();
   if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) return reply.code(400).send({ error: "Enter a valid email address." });
   if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Password must be at least 8 characters." });
   if (await get(`SELECT id FROM users WHERE email = ?`, [email.trim().toLowerCase()])) return reply.code(409).send({ error: "An account with this email already exists. Sign in instead." });
-  const userId = await createAccount({ email: email.trim(), password, name: nameCase(clean(name, 80)), business: clean(business, 120), plan: pilotPlan() });
+  const userId = await createAccount({ email: email.trim(), password, name: nameCase(clean(name, 80)), business: clean(business, 120), plan });
   setSession(reply, userId);
   const count = await get(`SELECT COUNT(*) AS n FROM workspaces`);
   notifyFounder("New Hopkins account", `${count.n} accounts in total.`, ["tada"]);
@@ -237,7 +242,7 @@ app.addHook("onSend", async (request, reply, payload) => {
 
 app.addHook("preHandler", async (request, reply) => {
   const path = request.url.split("?")[0];
-  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset", "/api/meta/deletion", "/api/stripe/webhook"].includes(path) || path.startsWith("/api/l/")) return;
+  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset", "/api/meta/deletion", "/api/stripe/webhook", "/api/open"].includes(path) || path.startsWith("/api/l/")) return;
   const user = await currentUser(request);
   if (!user) return reply.code(401).send({ error: "Please sign in." });
   request.user = user;

@@ -54,3 +54,25 @@ test("plans: the founder can switch one on by hand (pilots, quotes), and the acc
   await boss("PATCH", `/api/admin/workspaces/${me.workspace.id}`, { plan: "free" });
   assert.equal((await agent("GET", "/api/me")).json.plan, null);
 });
+
+test("open sign ups: off by default, then anyone can join on Free while an invite code still makes a pilot; Terms is public", async () => {
+  assert.equal((await client(app)("POST", "/api/signup", { email: "nocode@example.com", password: "password123" })).status, 403);
+  assert.deepEqual((await client(app)("GET", "/api/open")).json, { open: false });
+  process.env.OPEN_SIGNUPS = "1";
+  process.env.PILOT_PLAN = "paid";
+  try {
+    assert.deepEqual((await client(app)("GET", "/api/open")).json, { open: true });
+    const stranger = client(app);
+    assert.equal((await stranger("POST", "/api/signup", { email: "stranger@example.com", password: "password123", name: "Ana Ruiz" })).status, 200);
+    assert.equal((await stranger("GET", "/api/me")).json.workspace.plan, "free");
+    const pilot = client(app);
+    assert.equal((await pilot("POST", "/api/signup", { email: "pilot2@example.com", password: "password123", invite: "early1" })).status, 200);
+    assert.equal((await pilot("GET", "/api/me")).json.workspace.plan, "paid");
+  } finally {
+    delete process.env.OPEN_SIGNUPS;
+    process.env.PILOT_PLAN = "free";
+  }
+  const terms = await app.inject({ method: "GET", url: "/terms" });
+  assert.equal(terms.statusCode, 200);
+  assert.match(terms.body, /Cancel anytime in Settings, Manage/);
+});
