@@ -374,8 +374,9 @@ personal in here.
 * The waitlist is small (no full teams on it yet, Ismael, 2026-10-22). Don't plan around a batch of
   teams; the first users are whoever signs up, solo agents included.
 * First real waitlist sign up (2026-10-30): probably Instagram @newanjaz (private, Serbian network),
-  under $500 a month on ads. Not a team, but a real person to learn from. Ismael is to ask him one
-  question himself (what he sells or rents, and where) before deciding on an invite.
+  under $500 a month on ads. His entry: just him, "Somewhere else" (not US, Canada, UK, Ireland,
+  Australia or UAE), no business name or Instagram given, came from an Instagram link. Nothing in
+  it says he works in real estate, so Ismael is to ask him himself before deciding on an invite.
 * Next, in order: (1) deploy it, run Ismael's own test listings through it, then invite whoever is
   on the waitlist (free plan, invite codes); (2) the Meta app: Marketing API with the Housing category, lead ads, then App
   Review (list below), tested first on Ismael's own ad account; (3) pull real spend and leads in,
