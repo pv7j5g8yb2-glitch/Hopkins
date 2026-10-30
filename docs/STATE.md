@@ -118,6 +118,12 @@ personal in here.
   billing: 2 months free. Ad spend always paid to Meta directly. At a guessed mix (70% Solo, 25%
   Team, 5% bigger) the average account is about $174 a month, so $1M to $2M ARR (a $10M company at
   5 to 10 times) is about 480 to 960 accounts. The waitlist page still says "From $299 a month".
+* Revised (Ismael, 2026-10-30): unlimited listings (one costs a few cents of AI; most agents have
+  a handful). Plans count agents, the ones whose names go on the ads, not logins, so a team can't
+  share one Solo. Proposed, not decided: $99 a month for the first agent, $49 for each agent after,
+  unlimited listings; 25+ agents or a property manager with many rentals by quote. Free plan, yearly
+  billing with 2 months free, no cut of ad spend and the waitlist's 30% off stay. Needs a profile per
+  agent in Hopkins (today one agent name per account), built when a team signs up.
 
 ## Goal: 10 users by 1 January 2027 (set 2026-10-30)
 
