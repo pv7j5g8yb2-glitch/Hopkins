@@ -1097,3 +1097,14 @@ select option{color:#111;background:#fff}
 .drop.quiet .grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
 section.chat.drag{outline:1px dashed rgba(255,255,255,.4);outline-offset:-12px}
 .steps.setup .tx b{font-weight:500}
+/* Liquid Glass with real refraction (web/lens.js, phones). A lensed panel draws the background
+   through a lens in its own canvas, so its flat tint, CSS blur and painted-on rim come off. */
+.lens-c{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;border-radius:inherit;display:none}
+.lensing .lensed{isolation:isolate}
+.lensing .lensed>.lens-c{display:block}
+.lensing .lensed:not(.lg-lens){background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:transparent!important;box-shadow:0 12px 32px -10px rgba(0,0,0,.38),0 2px 6px rgba(0,0,0,.14)!important}
+.lensing .steps.lensed,.lensing .attn.lensed,.lensing .stats-mini.lensed,.lensing .notice.lensed,.lensing .crm-row.lensed{box-shadow:none!important}
+.lensing .lg-lens.lensed{background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:0 4px 14px -4px rgba(0,0,0,.35)!important}
+.lensing .tabbar:before{opacity:.55}
+.lensing .lensed.lg:before,.lensing .lensed.lg:after{display:none}
+.lensing .stats-mini.lensed{border-radius:20px;overflow:hidden}

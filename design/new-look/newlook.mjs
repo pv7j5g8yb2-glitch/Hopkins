@@ -2,7 +2,7 @@ import { chromium, devices } from "playwright";
 import { measure } from "./measure.mjs";
 const BASE = "http://localhost:3200", OUT = process.argv[2];
 const fails = [];
-const b = await chromium.launch();
+const b = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 async function run(ctxOpts, tag) {
   const ctx = await b.newContext(ctxOpts);
   const p = await ctx.newPage();

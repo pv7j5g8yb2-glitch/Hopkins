@@ -220,8 +220,14 @@ The product's code is in `app/` (its README says what works and how to run it).
   `design/new-look/newlook.mjs` walks every screen on a phone and a laptop and `measure.py` checks
   each piece of text; run them after any visual change (0 failing on 2026-10-31).
 * **Liquid Glass (Ismael, 2026-10-24):** Apple's iOS 26 style, on phones only, never laptop or desktop
-  (same as Claude and ChatGPT). Started on the bottom tab bar only, so Ismael can judge it against
-  Apple's before it spreads. It has to match Apple's, not be a cheap copy.
+  (same as Claude and ChatGPT). It has to match Apple's, not be a cheap copy. Since 2026-10-31
+  (Ismael: "a white background made less bright is NOT Apple Liquid Glass") every glass panel on
+  phones (tab bar and its drop, message box, Ask box, panels, cards, sheets, buttons, notices) has
+  all three: refraction (what's behind magnified in the middle and bent at the edges), a rim of
+  light along the edge, and a glint that slides as the panel moves. Browsers can't bend what's
+  behind an element on iPhone, so `app/web/lens.js` draws the background picture through a lens
+  with WebGL for each panel; content scrolling under a floating bar isn't bent, only the
+  background. Inputs can't hold the lens and keep the frosted look.
 
 * **Best quality, always (Ismael, 2026-10-29):** ads are always given in the best quality and
   resolution. Photos are kept at 1920 pixels on the short side (4096 at most on the long side, JPEG
