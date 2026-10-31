@@ -44,6 +44,8 @@ export function checkout({ plan, workspaceId, email, customer, successUrl, cance
     ...(customer ? { customer } : { customer_email: email }),
     line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: plan.price * 100, recurring: { interval: "month" }, product_data: { name: `Hopkins ${plan.name}` } } }],
     allow_promotion_codes: true,
+    // Always US dollars, wherever the agent is (Ismael, 2026-10-31): no local currency at checkout.
+    adaptive_pricing: { enabled: false },
     metadata: { workspace: workspaceId, plan: plan.id },
     subscription_data: { metadata: { workspace: workspaceId, plan: plan.id } },
     success_url: successUrl,

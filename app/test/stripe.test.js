@@ -44,6 +44,8 @@ test("choosing Duo opens Checkout at $149 a month, and the plan starts on the wa
   assert.equal(p.mode, "subscription");
   assert.equal(p["line_items[0][price_data][unit_amount]"], "14900");
   assert.equal(p["line_items[0][price_data][recurring][interval]"], "month");
+  assert.equal(p["line_items[0][price_data][currency]"], "usd");
+  assert.equal(p["adaptive_pricing[enabled]"], "false", "USD for everyone, no local currency");
   assert.equal(p.customer_email, "pay@duo.test");
   assert.match(p.success_url, /^https:\/\/hopkins\.test\/api\/billing\/return\?session_id=\{CHECKOUT_SESSION_ID\}$/);
   assert.equal((await c("POST", "/api/billing/checkout", { plan: "gold" })).status, 400);
