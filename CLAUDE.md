@@ -105,11 +105,14 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   `design/brand/` (icon at 1024, Instagram picture at 1080, SVGs); the app uses
   `app/web/mark.svg` and the `hpk-sun` gradient. It matches the new look's warm pink and has
   no purple, which the platform doesn't use.
-* **Colours (new look, Ismael, 2026-10-31; oxblood, cream, gold and plum are retired everywhere):**
-  a blue dusk (`#0F3A73` to `#0C2B5C`) seen through reeded glass with one warm house shape moving
-  through it, made by `design/new-look/field.py` (phone and laptop versions in `app/web/`). White
-  text; secondary text white at 80 to 90%. Glass: dark blue tint (`rgba(10,30,70,.34)` and up)
-  with a light edge. The one action that matters is a white pill with navy text (`#0C2747`).
+* **Colours (Ismael, 2026-10-31: black replaced the blue dusk the same evening, "matches the logo
+  since it's on black"; oxblood, cream, gold, plum and navy are retired everywhere):** a graphite
+  black (`#0B0B0D` to `#18181B`, never flat #000) seen through reeded glass with one warm house
+  shape moving through it, made by `FIELD_SKY=black python3 design/new-look/field.py` (phone
+  `26 3 1179 2556 0.66 0.7 0.86`, laptop `18 3 2400 1500 0.78 0.7 0.86`, saved as
+  `app/web/field-phone.jpg` and `field-desk.jpg`). White text; secondary text white at 80 to 90%.
+  Glass: a graphite tint with a light edge. The one action that matters is a white pill with dark
+  text. Browser bar `#0B0B0D`.
   The warm accent is the sunset (`#FFC3A0`, `#F0708A`, `#B9408F`), used for the mark and small
   details (unread dot `#FFB49A`), never as a big fill. Success `#62D69F`, danger `#FF9B91`.
 * **Type:** Inter Tight. Big headings light (300) and tight, everything else regular or semibold.

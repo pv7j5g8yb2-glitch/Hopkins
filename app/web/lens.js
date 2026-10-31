@@ -59,7 +59,7 @@ void main(){
   vec3 col = vec3(soft(s + split).r, soft(s).g, soft(s - split).b);
   // A touch brighter and richer than what's behind, then the blue tint that keeps text readable.
   col = mix(vec3(dot(col, vec3(.299, .587, .114))), col, 1.18) * 1.04;
-  col = mix(col, vec3(.035, .11, .26), tint);
+  col = mix(col, vec3(.06, .06, .065), tint);
   // Rim: a thin line of light on the edge, strongest facing the light (top left), a fainter
   // line opposite, and a soft glow just inside where the glass curves.
   vec2 L = normalize(vec2(-.55, -.85));
