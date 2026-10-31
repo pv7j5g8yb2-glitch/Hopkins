@@ -29,6 +29,7 @@ meta.setMetaFetchForTests(async (url, init = {}) => {
   if (path.endsWith("/adsets")) return ok({ id: `adset-${calls.filter((c) => c.path.endsWith("/adsets")).length}` });
   if (path.endsWith("/adcreatives")) return ok({ id: `cr-${calls.length}` });
   if (path.endsWith("/ads")) return ok({ id: `metaad-${calls.filter((c) => c.path.endsWith("/ads")).length}` });
+  if (path.startsWith("camp-") && path.endsWith("/insights") && state.tokenDead) return { ok: false, status: 400, json: async () => ({ error: { message: "Error validating access token: The user has changed their password.", code: 190 } }) };
   if (path.endsWith("/insights")) return ok({ data: [{ spend: "12.34" }] });
   if (path.startsWith("metaad-")) return ok(path === "metaad-2" && state.feedback ? { effective_status: "DISAPPROVED", ad_review_feedback: { global: { "Housing ads": state.feedback } } } : { effective_status: state.status });
   if (path === "me/permissions") return ok({ success: true });
@@ -234,5 +235,29 @@ test("spend more, spend less or run longer changes the ads already on Meta, all 
   await c("POST", `/api/listings/${id}/pause`, {});
   m = await say("double the budget");
   assert.match(m.body, /\$1,700 over 17 days.*They're still paused\. Say resume to start them again\.$/);
+});
+
+test("Meta dropping the login in the background is said once in the chat, and Settings asks to reconnect", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "gone@ellery.test", password: "password123", invite: "EARLY1", name: "Cy Moore" });
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [ws]);
+  await run(`INSERT INTO meta_connections (workspace_id, fb_user_id, fb_name, token, ad_account_id, page_id, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)`,
+    [ws, "fb-5", "Cy Moore", meta.seal("token-5"), "act_9", "page-9", new Date().toISOString(), new Date().toISOString()]);
+  const l = await c("POST", "/api/listings", { text: "3 Elm Ct, Austin, TX. 2 bed 2 bath, $455,000" });
+  const id = l.json.listing.id;
+  const plan = await c("POST", `/api/listings/${id}/run`, { versions: [1, 2, 3], budget: 200, days: 10 });
+  for (const ad of plan.json.ads) await c("POST", `/api/ads/${ad.id}/render`, { format: "feed", data: PNG });
+  await c("POST", `/api/listings/${id}/run`, { confirm: plan.json.messages.at(-1).id });
+  await waitFor(c, id, /Sent to Meta/);
+
+  state.tokenDead = true;
+  await syncMeta();
+  await syncMeta();
+  const said = (await c("GET", `/api/listings/${id}`)).json.messages.filter((m) => /^Meta disconnected/.test(m.body));
+  assert.equal(said.length, 1, "said once");
+  assert.equal(said[0].body, "Meta disconnected, so I can't see or change the ads for 3 Elm Ct. They're still running on Meta. Reconnect Meta in Settings.");
+  assert.equal((await c("GET", "/api/me")).json.meta.expired, true);
+  state.tokenDead = false;
 });
 

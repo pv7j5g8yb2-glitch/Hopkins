@@ -930,3 +930,13 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
     the free model (Meta not connected on the test account, so the Meta part is tested with fakes).
   - Moments: coming_soon, under_contract, back, each with its own ads and line.
   - Still open from the list: organic posts (the biggest), changing the button, a PDF flyer.
+* **Gemini's review of the code (Ismael pasted it, 2026-10-31), checked against the code:** right
+  that Hopkins only works when asked, and that a background Meta disconnect was silent (fixed the
+  same day). Wrong or against Ismael's decisions: the fair housing "bug" (warn, never block is his
+  rule), giving free ads back on delete, lowering free download quality, the "harsh palette" (that
+  list turns harsh colours into refined ones), "pull new listings from the CRM" (Follow Up Boss holds
+  people, not listings; listing feeds need each MLS's approval), SMS or WhatsApp (they cost money per
+  message), infrastructure jargon on screen, and dropping the "chat like ChatGPT" positioning. Also
+  8 figures is ARR, not MRR: 5,600 agents at $150 is $10M a year. Proposed next: Hopkins starts the
+  work from what it already knows (a weekly plan to approve, moving budget from an ad with no Leads,
+  a chat with no ads), then organic posts, then the brand filled in from a link.

@@ -253,7 +253,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   under their own Page (Settings, Connect Meta). Approving a plan sends the ads: one Housing
   campaign, one ad set per ad with an equal share of the budget, a 15 mile radius, no age, gender
   or ZIP targeting, each ad linking to the property's page with its own ad. The chat hears once when
-  ads go live or are rejected, and spend comes back every 30 minutes. Setup steps: `docs/META.md`.
+  ads go live or are rejected, and spend comes back every 30 minutes. If Meta drops the login in the
+  background, the chat and the phone hear once straight away (2026-10-31). Setup steps: `docs/META.md`.
 * **Stopping running ads (lesson, 2026-10-31):** Ismael typed "Stop the ad" and got a new run plan,
   "No stop them!" deleted all three ads, and "stop this active ad" got "paused" while nothing had
   changed. He was furious: Hopkins has to be ready for every situation an agent can be in. Now:

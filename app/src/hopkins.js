@@ -1961,7 +1961,7 @@ export async function syncMeta() {
       if (!conn) continue;
       const ads = await all(`SELECT * FROM meta_ads WHERE launch_id = ?`, [l.id]);
       const state = await campaignState(unseal(conn.token), l.meta_campaign_id, ads.map((a) => a.meta_ad_id));
-      await run(`UPDATE launches SET meta_spend = ?, synced_at = ? WHERE id = ?`, [state.spend, nowIso(), l.id]);
+      await run(`UPDATE launches SET meta_spend = ?, synced_at = ?, meta_error = CASE WHEN meta_error = 'expired' THEN NULL ELSE meta_error END WHERE id = ?`, [state.spend, nowIso(), l.id]);
       const total = await get(`SELECT SUM(meta_spend) AS s FROM launches WHERE listing_id = ? AND meta_spend IS NOT NULL`, [l.listing_id]);
       await run(`UPDATE listings SET spend = ? WHERE id = ?`, [Math.round((Number(total?.s) || 0) * 100) / 100, l.listing_id]);
       const ws = await getWorkspace(l.workspace_id);
@@ -1981,6 +1981,21 @@ export async function syncMeta() {
       if (new Date(new Date(l.created_at).getTime() + (Number(l.days) + 1) * 86400000) < new Date()) await run(`UPDATE launches SET status = 'ended' WHERE id = ?`, [l.id]);
     } catch (err) {
       console.error("Checking Meta failed for a launch:", err.message);
+      // Meta dropped the login in the background (a password change, removed permissions): the
+      // agent hears at once, in the chat and on their phone, not when they next try to change
+      // something. Said once per run; the ads keep running on Meta meanwhile.
+      if (err.code === 190 && l.meta_error !== "expired") {
+        try {
+          await run(`UPDATE meta_connections SET expires_at = ? WHERE workspace_id = ?`, [nowIso(), l.workspace_id]);
+          await run(`UPDATE launches SET meta_error = 'expired' WHERE id = ?`, [l.id]);
+          const ws = await getWorkspace(l.workspace_id);
+          const listing = ws && (await loadListing(ws.id, l.listing_id));
+          if (listing) {
+            await say(ws, listing.id, `Meta disconnected, so I can't see or change the ads for ${listingTitle(listing)}. They're still running on Meta. Reconnect Meta in Settings.`);
+            if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, "Meta disconnected", `Reconnect Meta in Settings to keep managing the ads for ${listingTitle(listing)}.`);
+          }
+        } catch (e) { console.error("Telling the agent Meta disconnected failed:", e.message); }
+      }
     }
   }
 }
