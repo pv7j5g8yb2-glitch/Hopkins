@@ -1018,4 +1018,12 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   clearly, and posts it. Needs Instagram's and Facebook's publishing permissions through App Review,
   so it waits. ChatGPT's review the same night suggested a weekly plan on Today too; Ismael's call
   on whether Hopkins prepares drafts unasked is still open.
+* **Connecting an agent's own ChatGPT or Claude inside Hopkins (checked 2026-10-31, from news and
+  guides, not the official docs):** OpenAI's "Sign in with ChatGPT" (rolled out in 2026, plan use
+  announced at DevDay, 29 September) lets approved partner apps run their AI on a Plus or Pro
+  user's plan, with the user setting a weekly cap. Partners are a short approved list, so Hopkins
+  would have to be accepted. It doesn't give access to their chat history or memory. Anthropic
+  doesn't allow consumer Claude subscriptions in third-party apps; only an API key works. Idea for
+  later: agents on ChatGPT Plus power Hopkins' AI with their own plan, so quality goes up at no cost
+  to Hopkins.
 
