@@ -1,0 +1,191 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --t1:#fff;--t2:rgba(255,255,255,.74);--t3:rgba(255,255,255,.52);
+  --glass:rgba(220,236,255,.10);--glass2:rgba(230,242,255,.10);--edge:rgba(255,255,255,.22);--edge2:rgba(255,255,255,.15);
+  --gold:#E9C07A;--ink:#0C2747;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:393px;height:852px;overflow:hidden}
+body{font-family:"Inter Tight",system-ui,sans-serif;color:var(--t1);-webkit-font-smoothing:antialiased;letter-spacing:-.011em;
+  background:#1d5ea3 url(field.png) center/cover no-repeat;position:relative}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column}
+
+.status{height:54px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:16px 30px 0 34px;font-weight:600;font-size:16.5px;letter-spacing:-.02em}
+.status .r{display:flex;gap:7px;align-items:center}
+.status svg{height:12px;fill:#fff}
+.bat{width:25px;height:12px;border-radius:3.5px;border:1px solid rgba(255,255,255,.55);padding:1.5px;position:relative}
+.bat:after{content:"";position:absolute;right:-3px;top:3.5px;width:1.5px;height:4px;border-radius:1px;background:rgba(255,255,255,.55)}
+.bat i{display:block;height:100%;width:78%;background:#fff;border-radius:1.5px}
+
+.glass{background:var(--glass);border:1px solid var(--edge);backdrop-filter:blur(30px) saturate(1.35);-webkit-backdrop-filter:blur(30px) saturate(1.35)}
+.inner{background:var(--glass2);border:1px solid var(--edge2);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+
+/* header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 0 22px;height:56px;flex:none}
+.logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:500;letter-spacing:-.035em}
+.logo img{width:21px;height:21px}
+.circle{width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.circle.white{background:#fff;color:var(--ink);font-size:13px;font-weight:600;letter-spacing:-.01em}
+
+/* the week panel, after the schedule card */
+.panel{margin:10px 14px 0;border-radius:26px;padding:10px 12px 12px}
+.handle{width:34px;height:4px;border-radius:2px;background:rgba(255,255,255,.9);margin:0 auto 12px}
+.where{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t2);padding:0 6px 10px}
+.where svg{width:12px;height:12px;stroke:var(--t2);fill:none;stroke-width:1.8}
+.card{border-radius:18px;padding:12px 14px 0;overflow:hidden}
+.card+.card{margin-top:8px}
+.card .t{display:flex;justify-content:space-between;align-items:baseline}
+.card .t b{font-size:15.5px;font-weight:500;letter-spacing:-.02em}
+.card .t span{font-size:11.5px;color:var(--t3);display:flex;gap:5px;align-items:center}
+.card .t span svg{width:10px;height:10px;fill:var(--t3)}
+.card .k{display:flex;justify-content:space-between;margin-top:9px;font-size:10.5px;color:var(--t3)}
+.card .v{display:flex;justify-content:space-between;align-items:center;margin-top:1px;font-size:22px;font-weight:400;letter-spacing:-.03em}
+.card .v .pill{font-size:10.5px;font-weight:500;color:var(--t2);background:rgba(255,255,255,.12);border-radius:999px;padding:3px 8px;letter-spacing:0}
+.ruler{height:15px;margin:9px -14px 0;opacity:.55;
+  background:
+   repeating-linear-gradient(90deg,rgba(255,255,255,.75) 0 1px,transparent 1px 25px) 0 100%/100% 15px no-repeat,
+   repeating-linear-gradient(90deg,rgba(255,255,255,.45) 0 1px,transparent 1px 5px) 0 100%/100% 8px no-repeat;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+
+/* the greeting */
+.hello{padding:0 22px;margin-top:auto}
+.hello h1{font-weight:300;font-size:45px;line-height:1.02;letter-spacing:-.045em}
+.hello p{margin-top:12px;font-size:13.5px;line-height:1.45;color:var(--t2);max-width:300px}
+.acts{display:flex;align-items:center;gap:18px;margin-top:18px}
+.wbtn{height:40px;padding:0 17px;border-radius:999px;background:#fff;color:var(--ink);font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;letter-spacing:-.015em}
+.wbtn svg,.tlink svg{width:11px;height:11px;stroke:currentColor;stroke-width:1.8;fill:none}
+.tlink{font-size:14px;font-weight:400;display:flex;align-items:center;gap:6px}
+
+/* the row of chats, after the feature row */
+.rowline{margin:22px 22px 0;height:1px;background:rgba(255,255,255,.22);position:relative}
+.rowline:before{content:"";position:absolute;left:0;top:-.5px;height:2px;width:30%;background:var(--gold);border-radius:1px}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px 22px 0}
+.feat svg{width:15px;height:15px;stroke:var(--gold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.feat b{display:block;margin-top:8px;font-size:12.5px;font-weight:500;line-height:1.3}
+.feat span{display:block;font-size:11.5px;color:var(--t2);line-height:1.3}
+.feat.dim{opacity:.62}.feat.dimmer{opacity:.42}
+
+/* tab bar, after the nav pill */
+.tabs{position:absolute;left:14px;right:14px;bottom:24px;display:flex;gap:10px;align-items:center}
+.tabbar{flex:1;height:62px;border-radius:999px;display:flex;align-items:center;justify-content:space-between;padding:0 6px}
+.tab{flex:1;height:50px;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:500;color:var(--t2)}
+.tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{background:rgba(255,255,255,.2);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.tab.on i{position:absolute}
+.plus{width:62px;height:62px;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center;flex:none}
+.plus svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round}
+.spacer{height:104px;flex:none}
+
+/* chat */
+.chdr{display:flex;align-items:center;gap:11px;padding:8px 16px 0 16px;height:60px;flex:none}
+.back svg{width:17px;height:17px;stroke:#fff;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ttl b{display:block;font-size:16px;font-weight:500;letter-spacing:-.025em}
+.ttl span{display:block;font-size:12px;color:var(--t2);margin-top:1px}
+.seg{margin-left:auto;display:flex;border-radius:999px;padding:3px}
+.seg i{font-style:normal;font-size:13px;font-weight:500;padding:8px 14px;border-radius:999px;color:var(--t2)}
+.seg i.on{background:#fff;color:var(--ink)}
+.thread{padding:14px 16px 0;flex:1;overflow:hidden}
+.me{margin-left:auto;max-width:80%;border-radius:20px 20px 6px 20px;padding:11px 14px;font-size:15px;line-height:1.42}
+.hop{display:flex;gap:10px;margin-top:16px}
+.hop img{width:20px;height:20px;margin-top:2px;flex:none}
+.hop p{font-size:15px;line-height:1.5;color:rgba(255,255,255,.93)}
+.hop p b{font-weight:500;color:#fff}
+.ads{display:flex;gap:10px;margin:14px -16px 0 30px;overflow:hidden}
+.ad{flex:none;width:178px;height:222px;border-radius:16px;overflow:hidden;position:relative}
+.ad.sel{box-shadow:0 0 0 1.5px #fff}
+.ad img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ad:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(8,14,28,.82))}
+.ad .c{position:absolute;left:13px;right:13px;bottom:12px;z-index:1}
+.ad .k{font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:#F1D29C}
+.ad .h{font-size:19px;font-weight:600;line-height:1.04;letter-spacing:-.035em;margin-top:5px}
+.ad .s{font-size:11px;color:rgba(255,255,255,.86);margin-top:5px}
+.ad .w{font-size:7px;color:rgba(255,255,255,.7);margin-top:9px}
+.adl{display:flex;gap:10px;margin:9px 0 0 30px;font-size:11.5px;color:var(--t2)}
+.adl span{width:178px}
+.adl b{font-weight:500;color:#fff}
+.plan{margin:14px 0 0 30px;border-radius:22px;padding:12px 12px 12px}
+.plan .card{padding-bottom:0}
+.go{margin-top:10px;height:44px;border-radius:999px;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:7px;font-size:14.5px;font-weight:500}
+.go svg{width:11px;height:11px;stroke:currentColor;stroke-width:1.9;fill:none}
+.composer{position:absolute;left:14px;right:14px;bottom:26px;height:56px;border-radius:999px;display:flex;align-items:center;gap:10px;padding:0 6px 0 18px}
+.composer svg.p{width:19px;height:19px;stroke:#fff;stroke-width:1.8;fill:none;stroke-linecap:round}
+.composer span{flex:1;font-size:16px;color:var(--t2)}
+.send{width:44px;height:44px;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center}
+.send svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style></head>
+<body><div class="screen" id="s"></div>
+<script>
+const st = `<div class="status"><span>9:41</span><span class="r">
+ <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+ <svg viewBox="0 0 16 12"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.3-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .7 3.3L2 4.6a8.4 8.4 0 0 1 6-2.4Zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.8l1.3 1.3c.9-.8 2.1-1.3 3.4-1.3Zm0 3.5c-.5 0-1 .2-1.3.5L8 11.2l1.3-1.4c-.3-.3-.8-.5-1.3-.5Z"/></svg>
+ <span class="bat"><i></i></span></span></div>`;
+const arrow = `<svg viewBox="0 0 12 12"><path d="M3 9 9 3M4 3h5v5"/></svg>`;
+const ic = {
+  home:'<svg viewBox="0 0 24 24"><path d="M4.5 10.2 12 4l7.5 6.2V19a1 1 0 0 1-1 1H15v-5.5H9V20H5.5a1 1 0 0 1-1-1z"/></svg>',
+  chats:'<svg viewBox="0 0 24 24"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 4v-4.2A2.5 2.5 0 0 1 5 12.5z"/></svg>',
+  leads:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.1-3.6 3.8-5.2 7-5.2s5.9 1.6 7 5.2"/></svg>',
+  report:'<svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  cal:'<svg viewBox="0 0 12 12"><rect x="1.5" y="2" width="9" height="8.5" rx="2"/><path d="M1.5 5h9M4 1v2M8 1v2"/></svg>',
+  bars:'<svg viewBox="0 0 10 10"><rect x="0" y="6" width="2" height="4" rx=".5"/><rect x="4" y="3" width="2" height="7" rx=".5"/><rect x="8" y="0" width="2" height="10" rx=".5"/></svg>',
+  person:'<svg viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.6"/><path d="M3 14c.8-2.6 2.7-3.8 5-3.8s4.2 1.2 5 3.8"/></svg>',
+  spark:'<svg viewBox="0 0 16 16"><path d="M8 2v3M8 11v3M2 8h3M11 8h3M3.8 3.8l2 2M10.2 10.2l2 2M12.2 3.8l-2 2M5.8 10.2l-2 2"/></svg>',
+  key:'<svg viewBox="0 0 16 16"><circle cx="5.5" cy="10.5" r="3"/><path d="M7.6 8.4 13 3M11 5l1.6 1.6"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  up:'<svg viewBox="0 0 24 24"><path d="M12 19V6M6.5 11.5 12 6l5.5 5.5"/></svg>',
+};
+const tabs = `<div class="tabs"><div class="tabbar glass">
+  <div class="tab on">${ic.home}Today</div><div class="tab">${ic.chats}Chats</div><div class="tab">${ic.leads}Leads</div><div class="tab">${ic.report}Report</div></div>
+  <div class="plus">${ic.plus}</div></div>`;
+const today = `${st}
+<div class="hdr"><div class="logo"><img src="mark.svg">Hopkins</div><div class="circle white">SE</div></div>
+<div class="panel glass">
+  <div class="handle"></div>
+  <div class="where">${ic.cal}This week, 27 Oct to 2 Nov</div>
+  <div class="card inner">
+    <div class="t"><b>Leads</b><span>${ic.bars}Last week 9</span></div>
+    <div class="k"><span>So far</span><span>Asked for a showing</span></div>
+    <div class="v"><span>12</span><span class="pill">3 today</span><span>5</span></div>
+    <div class="ruler"></div></div>
+  <div class="card inner">
+    <div class="t"><b>Active listings</b><span>${ic.bars}On Meta</span></div>
+    <div class="k"><span>Running</span><span>Spent this week</span></div>
+    <div class="v"><span>3</span><span class="pill">2 waiting</span><span>$412</span></div>
+    <div class="ruler"></div></div>
+</div>
+<div class="hello">
+  <h1>Good afternoon,<br>Sam</h1>
+  <p>Dana Price asked for a showing on 412 Oak Street, and 3 ads are waiting for your approval.</p>
+  <div class="acts"><div class="wbtn">Open chats ${arrow}</div><div class="tlink">Report ${arrow}</div></div>
+</div>
+<div class="rowline"></div>
+<div class="feats">
+  <div class="feat">${ic.person}<b>412 Oak Street</b><span>New Lead</span></div>
+  <div class="feat dim">${ic.spark}<b>1100 Wilshire</b><span>3 ads ready</span></div>
+  <div class="feat dimmer">${ic.key}<b>22 Cedar Ave</b><span>Under contract</span></div>
+</div>
+<div class="spacer"></div>
+${tabs}`;
+const chat = `${st}
+<div class="chdr"><div class="circle glass back">${ic.back}</div><div class="ttl"><b>412 Oak Street</b><span>$649,000 · 3 bed, 2 bath</span></div><div class="seg glass"><i class="on">Chat</i><i>Ads</i></div></div>
+<div class="thread">
+  <div class="me inner">Make them about the pool, and under the price put "minutes from Lake Travis"</div>
+  <div class="hop"><img src="mark.svg"><p>Here are 3 ads for <b>412 Oak Street</b>, each testing a different idea. The line under the price reads <b>"Minutes from Lake Travis."</b></p></div>
+  <div class="ads">
+    <div class="ad sel"><img src="lakeway-1.jpg"><div class="c"><div class="k">Just listed · Lakeway</div><div class="h">Sunset, by<br>your own pool.</div><div class="s">Minutes from Lake Travis.</div><div class="w">Sam Ellery · Ellery Realty</div></div></div>
+    <div class="ad"><img src="westover-1.jpg"><div class="c"><div class="k">$649K · Lakeway</div><div class="h">Swim before<br>work.</div><div class="w">Sam Ellery · Ellery Realty</div></div></div>
+  </div>
+  <div class="adl"><span><b>Ad 1</b> · The sunset</span><span><b>Ad 2</b> · Morning swim</span></div>
+  <div class="plan glass">
+    <div class="card inner"><div class="t"><b>Plan</b><span>${ic.bars}3 ads, split evenly</span></div>
+      <div class="k"><span>Budget</span><span>Days</span></div>
+      <div class="v"><span>$200</span><span class="pill">$20 a day</span><span>10</span></div><div class="ruler"></div></div>
+    <div class="go">Approve and run ${arrow}</div>
+  </div>
+</div>
+<div class="composer glass"><svg class="p" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Reply to Hopkins</span><div class="send">${ic.up}</div></div>`;
+document.getElementById("s").innerHTML = location.hash === "#chat" ? chat : today;
+</script></body></html>
