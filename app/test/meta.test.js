@@ -218,7 +218,7 @@ test("spend more, spend less or run longer changes the ads already on Meta, all 
 
   calls.length = 0;
   m = await say("run them another week");
-  assert.match(m.body, /\$500 over 17 days/);
+  assert.match(m.body, /\$850 over 17 days on Facebook and Instagram, \$50 a day/, "the same spend a day, for longer");
   assert.ok(posts().every((x) => x.params.end_time === "2026-11-17T12:00:00.000Z"), "each ad set ends 7 days later");
 
   // Meta refuses the second ad set: the first goes back, and the reply says nothing changed.
@@ -226,13 +226,13 @@ test("spend more, spend less or run longer changes the ads already on Meta, all 
   calls.length = 0;
   m = await say("lower the budget to $100");
   assert.equal(m.body, "Nothing changed: The budget is too low for what has already been spent.");
-  assert.deepEqual(posts().map((x) => [x.path, x.params.lifetime_budget]), [[sets[0], "3333"], [sets[1], "3333"], [sets[0], "16666"]]);
-  assert.equal((await get(`SELECT budget FROM launches WHERE listing_id = ?`, [id])).budget, 500);
+  assert.deepEqual(posts().map((x) => [x.path, x.params.lifetime_budget]), [[sets[0], "3333"], [sets[1], "3333"], [sets[0], "28333"]]);
+  assert.equal((await get(`SELECT budget FROM launches WHERE listing_id = ?`, [id])).budget, 850);
   state.adsetFails = null;
 
   // Paused ads keep their pause.
   await c("POST", `/api/listings/${id}/pause`, {});
   m = await say("double the budget");
-  assert.match(m.body, /\$1000 over 17 days.*They're still paused\. Say resume to start them again\.$/);
+  assert.match(m.body, /\$1,700 over 17 days.*They're still paused\. Say resume to start them again\.$/);
 });
 

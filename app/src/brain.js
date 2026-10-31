@@ -523,6 +523,14 @@ const SET_SCHEMA = {
 // A set of ads for one listing. count is how many; brief is what the agent asked for, if
 // anything ("one ad about the pool"); keep lists ads that stay, so new ones are different;
 // fix says what was wrong with a first try.
+// What each stage's ads are for, so every ad in the set says the stage, not just the house.
+const STAGE_BRIEF = {
+  coming_soon: "Every ad says it's coming soon and gets people to ask for the details before it's on the market.",
+  under_contract: "Every ad says it's under contract. They speak to buyers who want one like it and to owners nearby thinking of selling, never as if it's still for sale.",
+  back: "Every ad says it's back on the market: a second chance for the people who missed it.",
+  sold: "Every ad says it's sold (or rented). They speak to owners nearby thinking of selling (or renting out).",
+};
+
 export async function writeSetAI({ listing, photos, brand, moment, extra, count = 3, brief = "", keep = [], fix = "" }) {
   const from = keep.length ? Math.max(...keep.map((a) => a.version)) + 1 : 1;
   const content = [
@@ -532,7 +540,7 @@ export async function writeSetAI({ listing, photos, brand, moment, extra, count 
       text: `The listing: ${JSON.stringify(factsFor(listing))}
 Photos: ${photoList(photos)}
 Brand voice: ${brand.voice || "plain"}. Agent: ${brand.agent_name || ""}${brand.business ? `, ${brand.business}` : ""}.
-Moment: ${moment}${extra?.oldPrice ? ` (the price was ${extra.oldPrice})` : ""}.
+Moment: ${moment}${extra?.oldPrice ? ` (the price was ${extra.oldPrice})` : ""}.${STAGE_BRIEF[moment] ? ` ${STAGE_BRIEF[moment]}` : ""}
 ${keep.length ? `Ads that stay, so make yours different from them:\n${keep.map((a) => `${adLine(a, photos)}: ${a.overlay} / ${a.headline}`).join("\n")}\n` : ""}${brief ? `What the agent asked for: ${brief}\n` : ""}
 Write ${count === 1 ? "one ad" : `${count} ads`}, numbered from ${from}.${fix ? `\n\nYour last try had problems, fix them: ${fix}` : ""}`,
     },

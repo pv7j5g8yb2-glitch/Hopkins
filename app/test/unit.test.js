@@ -248,11 +248,12 @@ test("budget and length changes to a running ad, read the way an agent says them
     "add $100": { budget: 300, days: null },
     "$50 more": { budget: 250, days: null },
     "cut it by $50": { budget: 150, days: null },
-    "run it another week": { budget: null, days: 17 },
-    "extend by 5 days": { budget: null, days: 15 },
-    "3 more days please": { budget: null, days: 13 },
-    "make it 3 weeks": { budget: null, days: 21 },
-    "extend it": { budget: null, days: 17 },
+    "run it for 2 weeks at $300": { budget: 300, days: 14 },
+    "run it another week": { budget: 340, days: 17 },
+    "extend by 5 days": { budget: 300, days: 15 },
+    "3 more days please": { budget: 260, days: 13 },
+    "make it 3 weeks": { budget: 420, days: 21 },
+    "extend it": { budget: 340, days: 17 },
     "$300 over 14 days": { budget: 300, days: 14 },
   };
   for (const [text, want] of Object.entries(cases)) assert.deepEqual(readRunChange(text, run), want, text);

@@ -853,7 +853,8 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
   // The first set says once how to change the look (Ismael, 2026-10-27: people didn't know).
   const firstSet = moment === "new" && !(await get(`SELECT 1 FROM messages WHERE listing_id = ? AND kind = 'ads'`, [listing.id]));
   const tip = firstSet ? 'Tap **Style** to change the look, or just say it ("navy background", "classic font").' : null;
-  const body = [reply || introFor(moment, listing, set), note].filter(Boolean).join(" ") + (tip ? `\n\n${tip}` : "");
+  // A stage (coming soon, under contract, back) says what the ads are for, in Hopkins' own words.
+  const body = [(STAGE_INTRO[moment] ? introFor(moment, listing, set) : reply || introFor(moment, listing, set)), note].filter(Boolean).join(" ") + (tip ? `\n\n${tip}` : "");
   await say(ws, listing.id, body, "ads", { moment, snapshot: await snapshot(listing) }, true);
 
   // The agent's own description gets the same fair housing check as Hopkins' copy.
@@ -1814,7 +1815,10 @@ export function readRunChange(text, run) {
   else if (/\bextend\b|\blonger\b/.test(low) && !total) days = run.days + 7;
   else if (total) days = unit(word(total[1]), total[2]);
   if (budget === null && days === null) return null;
-  return { budget: budget === null ? null : Math.round(budget), days };
+  // Longer or shorter with no amount named keeps the same spend a day, the way an agent means
+  // "run it another week" (the model read it that way too, 2026-10-31).
+  if (budget === null && days !== null) budget = (run.budget / run.days) * days;
+  return { budget: Math.round(budget), days };
 }
 
 // The run a change applies to: the latest one still open, running or paused.
@@ -1829,7 +1833,8 @@ export async function changeRun(ws, listing, { budget, days }) {
   const nb = budget ? Math.max(20, Math.round(budget)) : Number(l.budget);
   const nd = days ? Math.min(60, Math.max(3, Math.round(days))) : Number(l.days);
   const perDay = (b, d) => `$${(Math.round((b / d) * 100) / 100).toLocaleString("en-US")} a day`;
-  if (nb === Number(l.budget) && nd === Number(l.days)) return say(ws, listing.id, `The ads for ${name} already have $${nb} over ${nd} days.`);
+  const usd = (n) => `$${Number(n).toLocaleString("en-US")}`;
+  if (nb === Number(l.budget) && nd === Number(l.days)) return say(ws, listing.id, `The ads for ${name} already have ${usd(nb)} over ${nd} days.`);
   try {
     if (l.meta_campaign_id) {
       const conn = metaReady() ? await metaConnection(ws.id) : null;
@@ -1863,7 +1868,7 @@ export async function changeRun(ws, listing, { budget, days }) {
   }
   const n = JSON.parse(l.ad_ids || "[]").length;
   const where = l.meta_campaign_id ? " on Facebook and Instagram" : "";
-  return say(ws, listing.id, `Done. The ads for ${name} now have $${nb} over ${nd} days${where}, ${perDay(nb, nd)}${n > 1 ? `, split evenly across the ${n} ads` : ""}.${l.status === "paused" ? " They're still paused. Say resume to start them again." : ""}`);
+  return say(ws, listing.id, `Done. The ads for ${name} now have ${usd(nb)} over ${nd} days${where}, ${perDay(nb, nd)}${n > 1 ? `, split evenly across the ${n} ads` : ""}.${l.status === "paused" ? " They're still paused. Say resume to start them again." : ""}`);
 }
 
 // What happened, said from the facts, never from the model's wording.
