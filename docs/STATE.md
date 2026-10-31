@@ -984,6 +984,8 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   starts and the `fresh-start:2026-10-31` marker isn't in `app_flags`. It pauses running ads on Meta
   first; if Meta refuses for any account, nothing is deleted, Ismael's phone hears, and it tries
   again on the next deploy. Ismael signs up again like any user afterwards (with an invite code).
+  His own email is on ADMIN_EMAILS and production blocks sign ups from admin emails, so he takes
+  it off ADMIN_EMAILS in Render, signs up, then puts it back (found 2026-10-31, after the wipe).
   Account deletion now also clears creations, the Meta login, Needs attention and Meta ad rows.
 * **Investor read (2026-10-31):** `docs/INVESTOR.md`. Short version: eight figures is possible
   only if Hopkins wins on running ads and Leads, with content as the daily habit; next is 10 real
