@@ -93,8 +93,14 @@ tested every ad against another. Instagram **@gethopkins**. Domain gethopkins.co
 not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups prove it.
 
 * **Mark, "Rise":** two hand drawn pebbles, deliberately lopsided, never perfect
-  circles. Small plum pebble lower left (the ad that lost), larger gold pebble upper
-  right (the winner). The symbol stands on its own, then the name beside it.
+  circles. Small pebble lower left (the ad that lost), larger pebble upper right (the
+  winner); the size tells the story. The symbol stands on its own, then the name beside it.
+  **Since 2026-10-31 (Ismael chose option 23):** both pebbles in the sunset gradient (top
+  `#FFC3A0`, middle `#F0708A`, bottom `#B9408F`, lit softly from the top left), no more plum
+  and gold. The app icon is the mark on black (`#26262B` to `#08080A`). Files in
+  `design/brand/` (icon at 1024, Instagram picture at 1080, SVGs); the app uses
+  `app/web/mark.svg` and the `hpk-sun` gradient. It matches the new look's warm pink and has
+  no purple, which the platform doesn't use.
 * **Colours:** Oxblood `#2A0F14` (ground), Oxblood 2 `#36151C` (surfaces), Cream
   `#F4EBDD` (text on dark, ground on light), Gold `#D7AE62` (the winner, buttons,
   the number that matters, nothing else), Plum `#5B4873` (second pebble, past or

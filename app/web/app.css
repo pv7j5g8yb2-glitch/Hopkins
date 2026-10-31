@@ -487,13 +487,13 @@ a.pl{text-decoration:none}
 .card-l .ph{aspect-ratio:4/3;background:var(--side) center/cover;position:relative}
 /* the cover a listing gets until it has a photo */
 .ph.cover{position:relative;overflow:hidden;display:flex;align-items:flex-end;color:#F4EBDD;
-  background:radial-gradient(130% 100% at 0% 100%,#3d1a22 0%,#2A0F14 55%,#240c11 100%)}
+  background:radial-gradient(130% 100% at 0% 100%,#2A2A30 0%,#141417 55%,#08080A 100%)}
 .ph.cover:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-.cv-art{position:absolute;width:95%;opacity:.2;pointer-events:none}
+.cv-art{position:absolute;width:95%;opacity:.55;pointer-events:none}
 .cv-art path{stroke:none}
-.hero .ph.cover .cv-art{width:60%;opacity:.16}
-.th.cover-mini{background:#2A0F14 url(/static/mark.svg) center/62% no-repeat!important}
+.hero .ph.cover .cv-art{width:60%;opacity:.4}
+.th.cover-mini{background:#0B0B0D url(/static/mark.svg) center/62% no-repeat!important}
 .card-l .ph .chip{position:absolute;left:10px;top:10px;background:rgba(251,248,243,.92);backdrop-filter:blur(6px)}
 .card-l .ph .dotw{position:absolute;right:12px;top:13px}
 .card-l .bd{padding:11px 13px 13px}

@@ -940,3 +940,11 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   8 figures is ARR, not MRR: 5,600 agents at $150 is $10M a year. Proposed next: Hopkins starts the
   work from what it already knows (a weekly plan to approve, moving budget from an ad with no Leads,
   a chat with no ads), then organic posts, then the brand filled in from a link.
+* **New look and new mark (2026-10-31):** Ismael wants the app to look like Pelmatech's site (his
+  reference): a blue dusk behind reeded glass with one warm smeared house shape, light Inter Tight,
+  white pill buttons, dark tinted frosted panels with tick rulers. Mockup of Today and a chat in
+  `design/new-look/` (`app.html`, background from `field.py`), every text passing WCAG AA
+  (`contrast.mjs`). Not built into the app yet. The mark is now both pebbles in the sunset gradient,
+  the icon on black (option 23 of `design/new-look/logos-40.png`), live in the app, sign in page and
+  icons. Still to change for the mark: the waitlist page (deploys from `claude/exciting-wright-8ml9uc`,
+  needs Ismael's go ahead) and @gethopkins' profile picture (`design/brand/hopkins-instagram-1080.png`).
