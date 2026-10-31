@@ -1713,7 +1713,7 @@
           ${field("license", "License line", "DRE #01234567")}
         </div></details></div>
         <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
-      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="Expand preview"></canvas><p class="small">${phone() ? "Live preview. Tap to expand." : "Sample ad"}</p></div></div></div></div>`;
+      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="Expand preview"></canvas>${phone() ? `<p class="small">Live preview. Tap to expand.</p>` : ""}</div></div></div></div>`;
     const form = $("#brandForm");
     let logoId = b.logo_id || "";
     const sample = () => {
