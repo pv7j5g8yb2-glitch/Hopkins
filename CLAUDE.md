@@ -185,6 +185,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   The server reads `app/web` files once at start, so restart it after editing them or the test
   runs the old code (2026-10-25). Stop a local server by its PID, never `pkill -f`, which also
   kills the shell running the command.
+* **Text is always readable (Ismael, 2026-10-31):** whatever sits behind it (the new reeded glass
+  background, photos, glass), every piece of text passes WCAG AA: 4.5 to 1, or 3 to 1 for large
+  text, measured against the lightest part of what's behind it, not judged by eye.
+  `design/new-look/contrast.mjs` measures a page; run it on every screen of the new look.
 * **Liquid Glass (Ismael, 2026-10-24):** Apple's iOS 26 style, on phones only, never laptop or desktop
   (same as Claude and ChatGPT). Started on the bottom tab bar only, so Ismael can judge it against
   Apple's before it spreads. It has to match Apple's, not be a cheap copy.

@@ -23,7 +23,7 @@ def vgrad(stops):
     return np.repeat(col[:, None, :], W, axis=1)
 
 # The sky: a clear evening blue, lighter through the middle.
-a = vgrad([(0, "#1C5FA6"), (0.30, "#3A8FCB"), (0.55, "#4FA3D6"), (0.80, "#2B76B4"), (1, "#163F78")])
+a = vgrad([(0, "#0F3A73"), (0.30, "#1B5694"), (0.55, "#20609F"), (0.80, "#174A86"), (1, "#0C2B5C")])
 
 def blob(points, blur):
     m = Image.new("L", (W, H), 0)
@@ -36,12 +36,12 @@ def paint(a, mask, colour, k=1.0):
 # A house, gable up, a little right of centre: warm on its lit side, deep blue on its shadow side.
 cx, top, eave, base, half = 600, 700, 1080, 2150, 330
 house = [(cx - half, eave), (cx, top), (cx + half, eave), (cx + half, base), (cx - half, base)]
-warm = vgrad([(0, "#FFD3B0"), (0.30, "#FFB08A"), (0.45, "#FF7C72"), (0.58, "#F0468C"), (0.75, "#C33C93"), (1, "#3B2F86")])
+warm = vgrad([(0, "#E9967A"), (0.30, "#E2766C"), (0.45, "#D85772"), (0.58, "#C23B7C"), (0.75, "#8F2F7E"), (1, "#2E2770")])
 a = paint(a, blob(house, 40), warm, 1.0)
 shadow_side = [(cx + 40, top + 60), (cx + half + 40, eave + 20), (cx + half + 60, base), (cx + 60, base)]
 a = paint(a, blob(shadow_side, 60), hexc("#0A1E52"), 0.85)
 glow = [(cx - half - 120, eave + 200), (cx - 40, eave + 120), (cx - 60, base - 150), (cx - half - 160, base - 260)]
-a = paint(a, blob(glow, 140), hexc("#FFD9B8"), 0.35)
+a = paint(a, blob(glow, 140), hexc("#F2B494"), 0.22)
 
 def box_x(a, r, shift=0):
     c = np.cumsum(np.pad(a, ((0, 0), (r + 1, r), (0, 0)), mode="edge"), axis=1)
@@ -82,6 +82,6 @@ g = g * shade[None, :, None]
 # Reading veil at the bottom, and grain.
 yy = np.linspace(0, 1, H)[:, None, None]
 g = g * (1 - 0.22 * np.clip((yy - 0.62) / 0.38, 0, 1) ** 1.3)
-g = g + rng.normal(0, 0.010, g.shape).astype(np.float32)
+g = g + rng.normal(0, 0.018, g.shape).astype(np.float32)
 Image.fromarray((np.clip(g, 0, 1) * 255).astype(np.uint8)).save(out, optimize=True)
 print(out)
