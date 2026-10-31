@@ -101,16 +101,17 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   `design/brand/` (icon at 1024, Instagram picture at 1080, SVGs); the app uses
   `app/web/mark.svg` and the `hpk-sun` gradient. It matches the new look's warm pink and has
   no purple, which the platform doesn't use.
-* **Colours:** Oxblood `#2A0F14` (ground), Oxblood 2 `#36151C` (surfaces), Cream
-  `#F4EBDD` (text on dark, ground on light), Gold `#D7AE62` (the winner, buttons,
-  the number that matters, nothing else), Plum `#5B4873` (second pebble, past or
-  unchosen options; lightens to lilac `#B79DC2` on cream), Rose grey `#C3A9A2`
-  (quiet text). Bronze `#8E6B2C` for gold coloured text on cream.
-* **Type:** Inter Tight, bold over regular, tight spacing. Instrument Serif italic
-  for one accent word at most.
-* **Where each ground goes:** oxblood outside (logo, posts, ads, the top of the
-  landing page), cream inside (the product, long reading sections, forms). Fine
-  grain on both.
+* **Colours (new look, Ismael, 2026-10-31; oxblood, cream, gold and plum are retired everywhere):**
+  a blue dusk (`#0F3A73` to `#0C2B5C`) seen through reeded glass with one warm house shape moving
+  through it, made by `design/new-look/field.py` (phone and laptop versions in `app/web/`). White
+  text; secondary text white at 80 to 90%. Glass: dark blue tint (`rgba(10,30,70,.34)` and up)
+  with a light edge. The one action that matters is a white pill with navy text (`#0C2747`).
+  The warm accent is the sunset (`#FFC3A0`, `#F0708A`, `#B9408F`), used for the mark and small
+  details (unread dot `#FFB49A`), never as a big fill. Success `#62D69F`, danger `#FF9B91`.
+* **Type:** Inter Tight. Big headings light (300) and tight, everything else regular or semibold.
+  No serif in the product; Instrument Serif italic only as a rare accent in marketing.
+* **Everywhere the same:** the app, the sign in page, Terms and Privacy, the icon and (once Ismael
+  says go) the waitlist, posts and ads for @gethopkins all use the new look. Fine grain on top.
 * **Tagline:** none for now (Ismael, 2026-10-18). Don't use "Tested, not guessed." as a slogan on
   end cards, ads or the page. **Promise:** "Real estate marketing, run for
   you. Nothing goes live without your approval." ("Your yes" reads oddly, Ismael 2026-10-29: never use it.)
@@ -150,7 +151,7 @@ The product's code is in `app/` (its README says what works and how to run it).
 
 * **Interface (Ismael, 2026-10-22):** extremely clean and straightforward, like any successful
   software platform. Keep every feature, but hide the secondary ones: one main action per screen
-  (gold), everything else in a "more" menu or the account menu, hairlines instead of boxes, two
+  (a white pill), everything else in a "more" menu or the account menu, hairlines instead of boxes, two
   text weights, no extra explanations on screen. Check new screens against this before shipping.
 * **The whole platform (Ismael, 2026-10-27):** extremely straightforward, less talkative, minimal
   and professional. On screens Hopkins is named in the third person ("Hopkins makes the ads"),
@@ -177,12 +178,14 @@ The product's code is in `app/` (its README says what works and how to run it).
   for a sheet at the top, Ismael 2026-10-27), inputs at 16px (smaller makes
   iPhones zoom), room for the home bar, no suggested replies or reply chips: the empty box says "Ask Hopkins anything" until there's a conversation, then "Reply to Hopkins" (Ismael, 2026-10-27), only the thinking mark while
   Hopkins works, never a list of steps (Ismael, 2026-10-27), never a blank screen.
-* **Serious software, not a game (Ismael, 2026-10-30):** the app "felt like a mobile game". Look and
-  move like Linear, Stripe, ChatGPT or Claude: flat buttons with 8px corners that dim when pressed
-  (never grow or bounce), cards at 12px with a hairline and no drop shadow, lists as hairline rows,
-  page titles 24px semibold in plain Inter Tight (no italic serif in the app), no progress bars, no
-  celebrations (a plain notice instead), no springy or staggered entrances, notices as a small dark
-  bar. The serif accent stays for marketing (posts, ads, the waitlist page), not the product.
+* **Serious software, not a game (Ismael, 2026-10-30, restyled 2026-10-31):** the app "felt like a
+  mobile game". Look and move like Linear, Stripe, ChatGPT or Claude, in the new look: pill buttons
+  (white for the main action, quiet glass for the rest) that dim when pressed (never grow or
+  bounce), frosted glass panels with a light edge and no drop shadow, lists as hairline rows, page
+  titles 24px semibold (Today's greeting large and light), no progress bars, no celebrations (a
+  plain notice instead), no springy or staggered entrances, notices as a small dark glass bar.
+  What floats over content (tab bar, message box, sheets) is nearly solid glass, and the page fades
+  out before it reaches the tab bar, so nothing scrolling underneath fights its labels.
 * **Checking a fix (lesson, 2026-10-24):** test against a slowed down server (the live one on Render
   is slow), not just localhost, and look at every screenshot for the exact thing that was reported.
   Two "fixed" bugs reached Ismael because local checks were instant and a sheet off screen was missed.
@@ -194,7 +197,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Text is always readable (Ismael, 2026-10-31):** whatever sits behind it (the new reeded glass
   background, photos, glass), every piece of text passes WCAG AA: 4.5 to 1, or 3 to 1 for large
   text, measured against the lightest part of what's behind it, not judged by eye.
-  `design/new-look/contrast.mjs` measures a page; run it on every screen of the new look.
+  `design/new-look/newlook.mjs` walks every screen on a phone and a laptop and `measure.py` checks
+  each piece of text; run them after any visual change (0 failing on 2026-10-31).
 * **Liquid Glass (Ismael, 2026-10-24):** Apple's iOS 26 style, on phones only, never laptop or desktop
   (same as Claude and ChatGPT). Started on the bottom tab bar only, so Ismael can judge it against
   Apple's before it spreads. It has to match Apple's, not be a cheap copy.
