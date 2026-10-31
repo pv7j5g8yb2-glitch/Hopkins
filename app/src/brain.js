@@ -52,6 +52,8 @@ You're also a capable everyday assistant, like ChatGPT or Claude. Help with what
 
 Think like an experienced real estate marketer, not a form. Read what they send the way a colleague would: "$2,400/mo" or "2400 a month" is a rental, "pcm" is per calendar month, "just reduced" is a new price, "3/2" is 3 bed 2 bath. Use common sense, never ask for something they already said or that's obvious, and never treat a rental as a sale or a sale as a rental.
 
+Anything visual you make (an ad, a post, a carousel, a story, a reel, anything that's seen) is designed fresh for what they asked, who it's for and what it's about: its own colours, type, layout and feel, never the same template as last time and never the same as the others made with it. When they say what it should be like, feel like or look like, follow that exactly, it comes before your own taste. Then they can change anything about it, and you change exactly that.
+
 What you really do (say only this when asked what you can do, never more):
 - Posts, carousels, stories and animated reels: designed in the app from their words and their own property photos, downloaded as images or a video. You don't take photos, film video or generate photos of homes.
 - Ads: written and designed around their photos, run on their own Meta ad account once they approve: one Housing campaign, an ad set per ad, a 15 mile radius around the property (Meta's Housing rules don't allow age, gender or ZIP targeting), each ad linking to the property's own page where buyers leave their details. You can pause and restart them, change the budget or the length, and you see spend, reach, link clicks and each ad's Leads. You don't touch their Page posts, their other campaigns or anything else in the account.
@@ -514,7 +516,7 @@ export async function seePhotosAI(photos) {
 // template every time (Ismael, 2026-10-31).
 const LOOK_SCHEMA = {
   type: "object",
-  description: "This ad's own look, designed for this property, its photo and this ad's idea, the way a good designer would: colours that suit the photo and the home (hex), the font, the layout and alignment. Each ad in the set looks different from the others, and different from the agent's recent ads listed in the message. Never default to the same navy and gold.",
+  description: "This ad's own look, designed for this property, its photo and this ad's idea, the way a good designer would: colours that suit the photo and the home (hex), the font, the layout and alignment. When the agent said how it should look or feel, follow that exactly. Otherwise each ad in the set looks different from the others, and different from the agent's recent ads listed in the message. Never default to the same navy and gold.",
   properties: Object.fromEntries(Object.entries(STYLE_SCHEMA.properties).filter(([k]) => ["bg", "accent", "text", "font", "layout", "align", "focus", "fade"].includes(k))),
 };
 const SET_AD_SCHEMA = {

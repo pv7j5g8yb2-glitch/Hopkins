@@ -296,14 +296,22 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Fair housing warns, never blocks (Ismael, 2026-10-31):** the US Fair Housing Act covers any
   housing statement or ad, paid or organic, so wording like "perfect for couples" gets one plain
   warning and a safer alternative, and the agent decides. Not legal advice.
-* **Never the same template twice (Ismael, 2026-10-31):** the old Hopkins gave every listing the same
+* **Never the same template twice, for anything visual (Ismael, 2026-10-31):** ads, posts,
+  carousels, stories, reels and anything else Hopkins makes that's seen. What the agent says it
+  should be like, feel like or look like always comes first, before Hopkins' own taste; then they
+  change whatever they want.
+  Details: the old Hopkins gave every listing the same
   ad copy in the same template, "horrid and poor work". Every new ad, post, carousel, story or reel
   is designed fresh for what was asked and who it's for: each new ad gets its own look (colours,
   font, layout) for its property and idea, different from the others in the set and from the
   agent's recent ads; each creation picks its look for the topic and avoids the agent's recent
   ones unless asked to match. From there the agent changes whatever they want.
-* **Opening moment (Ismael, 2026-10-31):** a short animated splash (the small pebble settles, the
-  larger rises past it into place, the name is revealed, about two seconds, a tap skips) only when
+* **Opening moment (Ismael, 2026-10-31; redone the same day: "why is it so thin", "remove the glow,
+  this isn't a video game", "basic and boring"):** two pebbles arrive the same size, side by side
+  like two ads in a test, one shrinks and sinks, the other grows and rises into the mark, "Hopkins"
+  rises in bold (700, never thin, wherever the name appears) from under a line, then the lockup
+  glides into the header's logo while the ground dissolves. No glow, no sheen on the pebbles, no
+  bounce; about two seconds; a tap skips. Shown only when
   Hopkins is opened fresh in a tab after sign in, never on the sign in page, never on returning to
   an open tab or a reload (`app/web/splash.js`, per tab with sessionStorage).
 * **Ads are never a fixed set (Ismael, 2026-10-25):** no set names like "The life / The standout /
