@@ -107,10 +107,11 @@ const AD_SCHEMA = {
     primary_text: { type: "string" },
     overlay: { type: "string", description: "The line on the photo. Call it that to the agent, never overlay." },
     kicker: { type: "string", description: "The small label above the line on the photo." },
+    subline: { type: "string", description: "A second line under the line on the photo, in the same font and colours (\"under the price put X\" goes here, leaving the line as it is). Copy the current one unchanged; empty means none." },
     photo_number: { type: "integer", description: "Which photo to use, counting from 1. 0 keeps the current one." },
     style: STYLE_SCHEMA,
   },
-  required: ["version", "name", "kind", "headline", "primary_text", "overlay", "kicker", "photo_number", "style"],
+  required: ["version", "name", "kind", "headline", "primary_text", "overlay", "kicker", "subline", "photo_number", "style"],
   additionalProperties: false,
 };
 
@@ -170,8 +171,16 @@ const TURN_SCHEMA = {
     listing_patch: LISTING_SCHEMA,
     budget: { type: "number", description: "Total budget in dollars if the agent named one, else 0" },
     days: { type: "integer", description: "Days to run if named, else 0" },
+    undo: { type: "boolean", description: "True when the agent wants the last change taken back (undo, put it back, I didn't ask for that, change it back). Any new change they ask for in the same message goes in action and ads as usual, applied after the undo." },
+    brand: {
+      type: "object",
+      description: "Changes to the agent's own details, only what they asked to change (\"change my name to Pierre\", \"my brokerage is Meridian Realty\"); empty strings for everything else. These show on every ad.",
+      properties: { agent_name: { type: "string" }, business: { type: "string" }, phone: { type: "string" }, license: { type: "string" }, instagram: { type: "string" }, email: { type: "string" } },
+      required: ["agent_name", "business", "phone", "license", "instagram", "email"],
+      additionalProperties: false,
+    },
   },
-  required: ["reply", "action", "version", "remove", "moment", "ads", "listing_patch", "budget", "days"],
+  required: ["reply", "action", "version", "remove", "moment", "ads", "listing_patch", "budget", "days", "undo", "brand"],
   additionalProperties: false,
 };
 
@@ -580,14 +589,14 @@ Listing: ${JSON.stringify(factsFor(listing))}
 ${listing.link ? `Link: ${listing.link}${listing.description ? "" : ` (it didn't open: the site restricts access. Hopkins does open listing links; never say you can't browse or open links. Asked about it, say the link restricts access and ask for the property photos and the details, nothing else.)`}\n` : ""}Photos: ${photoList(photos)}
 Ads: ${ads.length ? `${ads.length} (up to ${MAX_ADS} per listing)` : "none yet"}
 ${ads.map((a) => `${adLine(a, photos)}:
-  On the image: ${a.overlay}
+  On the image: ${a.overlay}${a.subline ? `\n  Second line under it: ${a.subline}` : ""}
   Look: ${describeStyle(a.style)}
   Label: ${a.kicker}
   Headline: ${a.headline}
   Text: ${a.primary_text}${leads ? `
   Leads so far: ${leads[a.id]?.n || 0}${leads[a.id]?.showings ? ` (${leads[a.id].showings} asked for a showing)` : ""}` : ""}`).join("\n")}${leads ? `
 Leads are the only result Hopkins tracks. When asked what's working, answer with these numbers; never mention engagement, clicks, reach or anything not listed here. No Leads yet means it's too early to say. When asked about one ad, start from its Leads, call it by its name, and never label ads by type ("a facts ad", "a life angle").` : ""}
-The agent is looking at ad ${selectedVersion || 1}. Call the ads by their names when you talk about them ("the porch one"), or by number when that's clearer.`;
+The ad being worked on: Ad ${selectedVersion || 1}. A change that names no ad is for this ad only; another ad changes only when the agent names it, or says all, both or them. Call the ads by their names when you talk about them ("the porch one"), or by number when that's clearer.`;
 }
 
 // The stored chat as a real back and forth: the agent's messages as the user, Hopkins' as the
@@ -628,6 +637,8 @@ function normalizeTurn(r) {
     listing_patch: r.listing_patch && typeof r.listing_patch === "object" ? r.listing_patch : null,
     budget: num(r.budget),
     days: num(r.days),
+    undo: r.undo === true,
+    brand: Object.fromEntries(["agent_name", "business", "phone", "license", "instagram", "email"].map((k) => [k, typeof r.brand?.[k] === "string" ? r.brand[k].trim() : ""]).filter(([, v]) => v)),
   };
 }
 

@@ -261,6 +261,13 @@ The product's code is in `app/` (its README says what works and how to run it).
   deleting a listing and deleting the account all stop the ads on Meta first (deleting is refused
   if Meta won't pause). Before shipping anything that changes ads or money, list every way an agent
   could phrase it and every state the listing could be in, and test them.
+* **Chat edits do what was asked, to the right ad (lesson, 2026-10-31):** "under the 10k put perfect
+  for couples" said about Ad 1 replaced Ad 2's line, then Hopkins changed Ad 2's font unasked and
+  said "I've left Ad 2 as it was"; "change my name/brokerage" got "I can't". Now: a change that
+  names no ad applies only to the ad being worked on (all, both or them means every ad); a line
+  "under" another goes in the second line (`subline`, same font and colours); "undo" or "put it
+  back" really restores the ads and says what came back; name, brokerage, phone, licence and
+  Instagram change from the chat; wording the agent asks for is kept, with one fair housing note.
 * **Report rows (Ismael, 2026-10-29):** a listing with ads running keeps its colour on Report even
   with no Leads yet; only one with nothing running and no Leads is greyed.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft

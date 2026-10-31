@@ -21,7 +21,7 @@ const RULES = [
   // who the tenant is are familial status (2026-10-29).
   { re: /\b(no (section 8|vouchers?|housing (vouchers?|assistance)|hcv)|section 8 not accepted|vouchers? not accepted)\b/i, level: "block", why: "source of income is protected in many states and cities", fix: "" },
   { re: /\b(students|professionals|working professionals) only\b/i, level: "block", why: "limits who can rent by who they are", fix: "" },
-  { re: /\b(ideal|perfect|suits?|suitable) for (a )?(single (person|professional)|one person|a couple)\b/i, level: "block", why: "names who the property suits by family status", fix: "" },
+  { re: /\b(ideal|perfect|great|suits?|suitable) for (a )?(single (person|professional)|one person|couples?)\b/i, level: "block", why: "names who the property suits by family status", fix: "" },
   { re: /\bmature tenants?\b/i, level: "block", why: "names an age group", fix: "" },
   // Sex
   { re: /\bbachelor pad\b/i, level: "block", why: "suggests a preference by sex and family status", fix: "one bedroom retreat" },

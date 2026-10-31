@@ -73,7 +73,7 @@ async function snapshot(listing, versions) {
   const ads = await currentAds(await loadListing(listing.workspace_id, listing.id));
   return ads
     .filter((a) => !versions || versions.includes(a.version))
-    .map(({ version, name, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }) => ({ version, name, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style }));
+    .map(({ version, name, pattern, headline, primary_text, overlay, subline, kicker, cta, photo_id, style }) => ({ version, name, pattern, headline, primary_text, overlay, subline: subline || "", kicker, cta, photo_id, style }));
 }
 
 const say = (ws, listingId, body, kind = "text", data = null, needsAction = false) => postMessage(ws.id, listingId, "hopkins", kind, body, data, needsAction);
@@ -558,6 +558,7 @@ function editParts(before = {}, after = {}) {
   if (Object.keys(look).length || step) parts.push({ look: true, text: sayLook(look, step) });
   if (after.photo_id && before.photo_id !== after.photo_id) parts.push({ photo: true, text: "a different photo" });
   if (after.overlay !== before.overlay) parts.push({ text: `the line on the photo reads "${after.overlay}"` });
+  if ((after.subline || "") !== (before.subline || "")) parts.push({ text: after.subline ? `the line under it reads "${after.subline}"` : "the second line is gone" });
   if (after.headline !== before.headline) parts.push({ text: `the headline reads "${after.headline}"` });
   if (after.primary_text !== before.primary_text) {
     const shorter = String(after.primary_text || "").length < String(before.primary_text || "").length * 0.9;
@@ -636,7 +637,10 @@ function lineFor(raw, current, message = "", others = []) {
 
 function normalizeAI(ad, photos, fallback, message = "", others = []) {
   const photo = ad.photo_number > 0 ? photos[ad.photo_number - 1] : null;
-  const clean = (s, max) => polish(cleanWording(String(s || ""))).slice(0, max);
+  // Wording the agent asked for is theirs: Hopkins warns about it (fairNote) instead of quietly
+  // removing it. Wording Hopkins wrote on its own is cleaned (Ismael, 2026-10-31).
+  const theirs = checkWording(message).length > 0;
+  const clean = (s, max) => polish(theirs ? String(s || "") : cleanWording(String(s || ""))).slice(0, max);
   return {
     style: mergeStyle(fallback.style || {}, modelStyle(ad.style, message)),
     name: adName(ad.name) || fallback.name || "",
@@ -646,6 +650,9 @@ function normalizeAI(ad, photos, fallback, message = "", others = []) {
     overlay: lineFor(clean(ad.overlay, 60), fallback.overlay, message, others),
     // "New ·" with nothing after it: the model left the place blank.
     kicker: clean(ad.kicker, 50).replace(/\s*[·•|,]\s*$/, "") || fallback.kicker || "",
+    // The second line goes only when the agent says to take it off; a model that left it blank
+    // otherwise just forgot to copy it.
+    subline: String(ad.subline || "").trim() ? lineFor(clean(ad.subline, 60), fallback.subline || "", message, []) : /\b(remove|delete|take (it |that )?(off|out)|get rid|drop|without|no)\b/i.test(message) ? "" : fallback.subline || "",
     photo_id: photo ? photo.id : fallback.photo_id,
   };
 }
@@ -704,16 +711,16 @@ async function saveAd(ws, listing, moment, version, ad, existing) {
   const now = nowIso();
   if (existing) {
     await run(
-      `UPDATE ads SET name = ?, pattern = ?, headline = ?, primary_text = ?, overlay = ?, kicker = ?, cta = ?, photo_id = ?, style = ?, revision = revision + 1, updated_at = ? WHERE id = ?`,
-      [ad.name || existing.name || null, ad.pattern || existing.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker || "", ad.cta || existing.cta, ad.photo_id || null, JSON.stringify(ad.style || existing.style || {}), now, existing.id]
+      `UPDATE ads SET name = ?, pattern = ?, headline = ?, primary_text = ?, overlay = ?, subline = ?, kicker = ?, cta = ?, photo_id = ?, style = ?, revision = revision + 1, updated_at = ? WHERE id = ?`,
+      [ad.name || existing.name || null, ad.pattern || existing.pattern, ad.headline, ad.primary_text, ad.overlay, ad.subline ?? existing.subline ?? "", ad.kicker || "", ad.cta || existing.cta, ad.photo_id || null, JSON.stringify(ad.style || existing.style || {}), now, existing.id]
     );
     return existing.id;
   }
   const id = randomUUID();
   await run(
-    `INSERT INTO ads (id, workspace_id, listing_id, version, moment, name, pattern, headline, primary_text, overlay, kicker, cta, photo_id, style, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [id, ws.id, listing.id, version, moment, ad.name || null, ad.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker || "", ad.cta || "Learn more", ad.photo_id || null, JSON.stringify(ad.style || {}), now, now]
+    `INSERT INTO ads (id, workspace_id, listing_id, version, moment, name, pattern, headline, primary_text, overlay, subline, kicker, cta, photo_id, style, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id, ws.id, listing.id, version, moment, ad.name || null, ad.pattern, ad.headline, ad.primary_text, ad.overlay, ad.subline || "", ad.kicker || "", ad.cta || "Learn more", ad.photo_id || null, JSON.stringify(ad.style || {}), now, now]
   );
   return id;
 }
@@ -1001,7 +1008,7 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     const c = metaReady() ? await metaConnection(ws.id) : null;
     const meta = c ? { connected: true, ready: Boolean(c.ad_account_id && c.page_id), adAccountName: c.ad_account_name, pageName: c.page_name } : null;
     const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz), meta, running: await runState(listing.id) });
-    if (r) return applyAI(ws, listing, ads, photos, r, text);
+    if (r) return applyAI(ws, listing, ads, photos, r, text, selected);
     busy = takeFailure() === "busy";
     if (busy && needsModel(text)) {
       await say(ws, listing.id, BUSY, "text", { busy: true });
@@ -1168,7 +1175,74 @@ const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|
 export const noFiller = (s) => { let t = String(s || ""), prev; do { prev = t; t = t.replace(FILLER, "").trim(); } while (t !== prev && t); return t || String(s || ""); };
 const plainWords = (s, clean = polishChat) => clean(noFiller(capLeads(asItself(s))).replace(/\b(the |an |a )?overlay( text| line)?\b/gi, (m, art) => `${art ? (/^the/i.test(art) ? "the " : "a ") : ""}line on the photo`).replace(/(^|[.!?]\s+)(the |a )?line on the photo/g, (m, start, art) => `${start}${art ? art[0].toUpperCase() + art.slice(1) : "L"}${art ? "line" : "ine"} on the photo`));
 
-async function applyAI(ws, listing, ads, photos, r, text) {
+// New wording that fair housing rules cover gets one plain note, and the agent decides (Ismael,
+// 2026-10-31: the rules cover organic posts as much as ads, so Hopkins warns, never blocks).
+function fairNote(edits) {
+  const words = (a) => [a?.overlay, a?.subline, a?.headline, a?.primary_text, a?.kicker].filter(Boolean).join(" ");
+  for (const e of edits) {
+    const had = new Set(checkWording(words(e.before)).map((x) => x.term.toLowerCase()));
+    const found = checkWording(words(e.after)).find((x) => x.level === "block" && !had.has(x.term.toLowerCase()));
+    if (found) return `Heads up: "${found.term}" ${found.why}, which fair housing rules don't allow in ads or posts. Keep it, or change it?`;
+  }
+  return "";
+}
+
+// Their own details from the chat: the name and brokerage on every ad, phone, licence, Instagram.
+const BRAND_WORDS = { agent_name: "Your name on the ads", business: "Your brokerage", phone: "Your phone number", license: "Your licence line", instagram: "Your Instagram", email: "Your email" };
+async function updateBrand(ws, patch) {
+  const brand = { ...(ws.brand || {}) };
+  const done = [];
+  for (const [k, raw] of Object.entries(patch)) {
+    if (!BRAND_WORDS[k]) continue;
+    let v = String(raw).trim().slice(0, k === "business" ? 120 : 80);
+    if (k === "agent_name") v = nameCase(v);
+    if (k === "instagram") v = v.replace(/^@/, "");
+    if (!v || brand[k] === v) continue;
+    brand[k] = v;
+    done.push(`${BRAND_WORDS[k]} is now ${k === "instagram" ? "@" : ""}${v}.`);
+  }
+  if (!done.length) return "";
+  await run(`UPDATE workspaces SET brand = ?, name = ? WHERE id = ?`, [JSON.stringify(brand), brand.business || ws.name, ws.id]);
+  if (patch.agent_name) await run(`UPDATE users SET name = ? WHERE workspace_id = ?`, [brand.agent_name, ws.id]);
+  ws.brand = brand;
+  return `Done. ${done.join(" ")}`;
+}
+
+// Puts back the ads as they were before the last message that changed them. The message being
+// answered is the newest; the change to undo came from one before it.
+async function undoLast(ws, listing) {
+  const before = await currentAds(listing);
+  const msgs = await all(`SELECT * FROM messages WHERE listing_id = ? AND role = 'agent' ORDER BY created_at DESC LIMIT 12`, [listing.id]);
+  for (const m of msgs.slice(1)) {
+    if (!m.undo) break;
+    await restoreBefore(ws, m);
+    const after = await currentAds(listing);
+    const edits = before.map((b) => ({ version: b.version, before: b, after: after.find((a) => a.version === b.version) })).filter((e) => e.after && editParts(e.before, e.after).length);
+    const gone = before.length !== after.length;
+    if (!edits.length && !gone) continue;
+    await run(`UPDATE messages SET undo = NULL WHERE id = ?`, [m.id]);
+    const versions = edits.map((e) => e.version);
+    return { text: `Undone. ${gone ? `The ads are back as they were.` : sayEdits(edits, after)}`, snapshot: await snapshot(listing, gone ? null : versions), focus: versions.length === 1 ? versions[0] : undefined };
+  }
+  return { text: (await get(`SELECT 1 FROM launches WHERE listing_id = ?`, [listing.id])) ? "There's nothing I can undo: changes from before the ads were approved can't be taken back." : "There's nothing to undo yet." };
+}
+
+async function applyAI(ws, listing, ads, photos, r, text, selected = 1) {
+  // "Change my name to Pierre", "my brokerage is Meridian Realty": their details, on every ad.
+  if (r.brand && Object.keys(r.brand).length) {
+    const said = await updateBrand(ws, r.brand);
+    if (said) await say(ws, listing.id, said);
+    if (r.action === "none" && !r.undo) return {};
+  }
+  // "Undo", "put it back", "I didn't ask for that": the last change goes back, for real, and the
+  // reply says what was put back (it once said "I've left Ad 2 as it was" with nothing undone).
+  if (r.undo) {
+    const out = await undoLast(ws, listing);
+    await say(ws, listing.id, out.text, "text", out.snapshot ? { snapshot: out.snapshot } : null);
+    if (r.action === "none") return { focus: out.focus };
+    ads = await currentAds(listing);
+    listing = await loadListing(ws.id, listing.id);
+  }
   const reply = plainWords(r.reply);
   const patch = patchFrom(listing, r.listing_patch);
   // Facts the agent typed that the model left out ("€1,250,000" once never reached the listing,
@@ -1235,7 +1309,10 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   // names, colours in the part the agent named them for, and nothing that wouldn't read.
   // When any of that overrides the model, its reply may describe the wrong thing, so Hopkins
   // says what actually changed instead.
-  const named = r.action === "revise" ? namedVersions(text, ads) : null;
+  // A change that names no ad is for the ad being worked on, never another one ("under the 10k put
+  // perfect for couples" said about Ad 1 once changed Ad 2, 2026-10-31). "All", "both" and "them"
+  // mean every ad.
+  const named = r.action === "revise" ? namedVersions(text, ads) || (/\b(all|both|every|each|them|they|ads)\b/i.test(text || "") ? null : [selected]) : null;
   let ruled = text ? readStyle(text.toLowerCase()) : null;
   // "The same for ad 1 and 3": the last look change, as if the agent had named it again.
   let askText = text;
@@ -1327,7 +1404,7 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   if (anyChange || rewroteAll) data.snapshot = await snapshot(listing, rewroteAll ? null : changed);
   const look = diffs.map((d) => lookDiff(d.before, d.after)).find((x) => Object.keys(x).length);
   if (look) data.look = look;
-  const notes = [sayChanges([], unreadable, ws.brand?.primary, ads), needPhoto ? ADD_PHOTO : ""].filter(Boolean).join(" ");
+  const notes = [sayChanges([], unreadable, ws.brand?.primary, ads), needPhoto ? ADD_PHOTO : "", fairNote(edits)].filter(Boolean).join(" ");
   let out;
   if (anyChange) out = [sayEdits(edits, ads), notes].filter(Boolean).join(" ");
   else if (rewroteAll) out = reply || "Done. The ads are updated.";

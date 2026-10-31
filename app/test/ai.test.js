@@ -57,7 +57,7 @@ test("Claude reads the listing and writes the set; Hopkins cleans what comes bac
   const req = calls.at(-1);
   assert.equal(req.messages.at(-1).role, "user");
   assert.match(req.messages.at(-1).content, /tighten the second one/);
-  assert.match(req.system, /looking at ad 2/);
+  assert.match(req.system, /The ad being worked on: Ad 2/);
   assert.match(req.system, /3 of 3 free ads used/);
 
   // Naming a version just switches to it, and the app is told which.

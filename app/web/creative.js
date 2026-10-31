@@ -94,6 +94,12 @@
   }
 
   function wrap(ctx, text, maxWidth, maxLines) {
+    // A second line the agent asked for ("under the price put...") always starts its own line.
+    const parts = String(text || "").split("\n");
+    if (parts.length > 1) {
+      const all = parts.flatMap((p) => wrap(ctx, p, maxWidth, 99));
+      return all.length > maxLines ? all.slice(0, maxLines) : all;
+    }
     const words = String(text || "").split(/\s+/).filter(Boolean);
     const lines = [];
     let line = "";
@@ -255,6 +261,9 @@
     }
 
     const kicker = (ad.kicker || "").toUpperCase();
+    // The big line, with the agent's second line under it in the same font and colours.
+    const bigText = ad.subline ? `${ad.overlay || ""}\n${ad.subline}` : ad.overlay;
+    const more = ad.subline ? 1 : 0;
     const photoAt = (x, y, w, h) => { if (img) cover(ctx, img, x, y, w, h, focus); };
     const drawLines = (lines, x, y, size, color, lh = 0.98) => {
       ctx.fillStyle = color;
@@ -290,7 +299,7 @@
       if (layout === "frame") photoAt(48, 48 + safeTop * 0.4, W - 96, split - 48 - safeTop * 0.4);
       else photoAt(0, 0, W, split);
       label(kicker, X, split + 76, true);
-      const t = fitText(ctx, ad.overlay, big, (story ? 100 : 92) * scale, W - 144, 3, 52 * scale);
+      const t = fitText(ctx, bigText, big, (story ? 100 : 92) * scale, W - 144, 3 + more, 52 * scale);
       ctx.font = big(t.size);
       drawLines(t.lines, X, split + 110 + t.size * 0.9, t.size, onPrimary);
       ctx.textAlign = "left";
@@ -307,8 +316,8 @@
       // The line stays inside the card whatever the font's width: one line if it fits at a
       // readable size, else two smaller ones a little higher, never cut off.
       ctx.font = big(52);
-      const oneLine = ctx.measureText(ad.overlay || "").width <= W - 208;
-      const t = oneLine ? fitText(ctx, ad.overlay, big, Math.max(52, 72 * F.card * scale), W - 208, 1, 52) : fitText(ctx, ad.overlay, big, 52, W - 208, 2, 34);
+      const oneLine = !more && ctx.measureText(ad.overlay || "").width <= W - 208;
+      const t = oneLine ? fitText(ctx, ad.overlay, big, Math.max(52, 72 * F.card * scale), W - 208, 1, 52) : fitText(ctx, bigText, big, 52, W - 208, 2 + more, 34);
       ctx.font = big(t.size);
       drawLines(t.lines, cx, cy + (t.lines.length > 1 ? 88 : 112), t.size, onPrimary);
       const price = opts.price || "";
@@ -334,7 +343,7 @@
       photoAt(0, 0, W, H);
       fadeTo(0, H * 0.62, 0.97, 0.7, 0);
       fadeTo(H * 0.78, H, 0, 0.35, 0.75);
-      const t = fitText(ctx, ad.overlay, big, (story ? 128 : 116) * scale, W - 144, 3, 60 * scale);
+      const t = fitText(ctx, bigText, big, (story ? 128 : 116) * scale, W - 144, 3 + more, 60 * scale);
       const top = 150 + safeTop + t.size * 0.85;
       label(kicker, X, top - t.size - 6);
       ctx.font = big(t.size);
@@ -345,7 +354,7 @@
       // Fade: photo full bleed, the line large over a fade into the colour at the bottom.
       photoAt(0, 0, W, H);
       fadeTo(H * 0.32, H, 0, 0.78, 0.97);
-      const t = fitText(ctx, ad.overlay, big, (story ? 128 : 116) * scale, W - 144, 3, 60 * scale);
+      const t = fitText(ctx, bigText, big, (story ? 128 : 116) * scale, W - 144, 3 + more, 60 * scale);
       const bottom = H - 190 - safeBottom;
       const top = bottom - (t.lines.length - 1) * t.size * 0.98;
       label(kicker, X, top - t.size - 6);

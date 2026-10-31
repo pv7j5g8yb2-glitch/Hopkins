@@ -494,6 +494,45 @@ test("running ads: \"stop the ad\" pauses them (never a new plan, never deleting
 });
 
 
+test("the ad being worked on, a second line under the big one, undo, fair housing notes and brand changes from the chat", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "focus@test.com", password: "password123", invite: "EARLY1" });
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "1100 Wilshire Blvd, West LA. 2 bed 2 bath condo for rent, $10,000/mo" });
+  const id = l.json.listing.id;
+  const ad = (v, r) => r.json.ads.find((a) => a.version === v);
+  const turn = (o) => ({ reply: "", action: "none", version: 0, remove: [], moment: "none", ads: [], listing_patch: null, budget: 0, days: 0, undo: false, brand: { agent_name: "", business: "", phone: "", license: "", instagram: "", email: "" }, ...o });
+  const start = await c("GET", `/api/listings/${id}`);
+  const one = ad(1, start), two = ad(2, start);
+
+  // Working on Ad 1, no ad named: the model reached for Ad 2, and Ad 2 stays as it was.
+  next = [turn({ action: "revise", reply: "Done.", ads: [{ ...two, kind: two.pattern, subline: "", photo_number: 0, style: {}, overlay: "Perfect for couple" }] })];
+  let r = await c("POST", `/api/listings/${id}/messages`, { text: "under 10k put perfect for couple", version: 1 });
+  assert.equal(ad(2, r).overlay, two.overlay, "Ad 2 untouched");
+
+  // The second line goes under the big one, the big line stays, and fair housing gets one note.
+  next = [turn({ action: "revise", reply: "Done.", ads: [{ ...one, kind: one.pattern, photo_number: 0, style: {}, subline: "Perfect for couples" }] })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "under 10k put perfect for couples in the same font", version: 1 });
+  assert.equal(ad(1, r).overlay, one.overlay);
+  assert.equal(ad(1, r).subline, "Perfect for couples", "the agent's wording is kept, not removed");
+  assert.match(r.json.messages.at(-1).body, /the line under it now reads "Perfect for couples"/);
+  assert.match(r.json.messages.at(-1).body, /Heads up: "Perfect for couples" .*fair housing.*Keep it, or change it\?/);
+
+  // "Put it back": really undone, and the reply says what came back.
+  next = [turn({ undo: true, reply: "My mistake, I've left it as it was." })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "no put it back", version: 1 });
+  assert.equal(ad(1, r).subline || "", "");
+  assert.match(r.json.messages.at(-1).body, /^Undone\. .*the second line is gone/i);
+
+  // Their name and brokerage, from the chat.
+  next = [turn({ brand: { agent_name: "pierre dubois", business: "Meridian Realty", phone: "", license: "", instagram: "", email: "" } })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "change my name to Pierre Dubois and my brokerage to Meridian Realty" });
+  assert.equal(r.json.messages.at(-1).body, "Done. Your name on the ads is now Pierre Dubois. Your brokerage is now Meridian Realty.");
+  const me = (await c("GET", "/api/me")).json;
+  assert.equal(me.workspace.brand.agent_name, "Pierre Dubois");
+  assert.equal(me.workspace.brand.business, "Meridian Realty");
+});
+
 test("Hopkins still answers when the connection drops mid reply, like a closed page", async () => {
   const http = await import("node:http");
   const c = client(app);
