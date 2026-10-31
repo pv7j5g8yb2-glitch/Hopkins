@@ -114,7 +114,7 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   Glass: a graphite tint with a light edge. The one action that matters is a white pill with dark
   text. Browser bar `#0B0B0D`.
   The warm accent is the sunset (`#FFC3A0`, `#F0708A`, `#B9408F`), used for the mark and small
-  details (unread dot `#FFB49A`), never as a big fill. Success `#62D69F`, danger `#FF9B91`.
+  details, never as a big fill. Dots (unread, Report) are white (Ismael, 2026-10-31). Success `#62D69F`, danger `#FF9B91`.
 * **Type:** Inter Tight. Big headings light (300) and tight, everything else regular or semibold.
   No serif in the product; Instrument Serif italic only as a rare accent in marketing.
 * **Everywhere the same:** the app, the sign in page, Terms and Privacy, the icon and (once Ismael
@@ -444,6 +444,18 @@ The product's code is in `app/` (its README says what works and how to run it).
   nothing there, and an agency does more. Update that
   list whenever a capability changes. Never hand the model lists of banned phrases Ismael didn't
   give: it judges what's suitable to say (Ismael, 2026-10-31).
+* **Greetings like Claude's (lesson, 2026-10-31: "Morning, Ismael" at 22:48):** the chat model was
+  never told the agent's time, so it guessed. Every chat now gets their local time from their own
+  timezone (`localNow`); a greeting only opens a chat, never mid thread; a time of day only when it
+  matches their clock, otherwise a plain Hi, Hey or Hello. `rightGreeting` in `say` corrects a
+  wrong one and removes any mid thread.
+* **Seamless, never loading screens (Ismael, 2026-10-31):** every tab opens at once from what the
+  app already has and takes the fresh copy quietly; each tab's data is fetched as soon as the app
+  opens; the grey placeholder appears only when the network is slow for over 450ms. Tapping the
+  logo goes to Today and the mark turns once like the thinking mark.
+* **Legal pages are plain (Ismael, 2026-10-31):** Terms and Privacy sit on plain black with no
+  background art, card kept. Sign up requires a name ("Sam Smith" as the example), on the page
+  and on the server.
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the
   system only allows". Claude never says "Anthropic doesn't let me". Hopkins says "I can't" or "I
   can only", and when something needs a step from the agent, it says the step.
@@ -465,7 +477,7 @@ The product's code is in `app/` (its README says what works and how to run it).
   (up to 5), Team Plus $549 (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), more than 20
   by quote. Free stays 3 ads. Plans show by name alone, "Duo", "Free", never "Duo plan" (Ismael,
   2026-10-30). Prices only in the plan picker ("$149/mo"); "Billed monthly. Cancel anytime." only
-  under the plan in Settings, nowhere else. Self-serve: "Upgrade to Duo" goes straight to Stripe
+  under the plan in Settings and under the plan in the account sheet (Ismael, 2026-10-31). Self-serve: "Upgrade to Duo" goes straight to Stripe
   Checkout and the plan starts when it's paid, never a request or a call; only Enterprise (over 20
   agents) is "Contact sales". Settings, Manage opens Stripe's portal to cancel. `PLANS` in
   `app/src/plans.js` is the one list; Admin can still switch a plan by hand (pilots, quotes). Setup:

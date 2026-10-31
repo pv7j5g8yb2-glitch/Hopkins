@@ -13,7 +13,7 @@
   if (calm) root.classList.add("splash-calm");
   var done = false;
   function target() {
-    var c = document.querySelectorAll(".mtop .logo img, .brand img");
+    var c = document.querySelectorAll(".mtop .logo .mk, .brand .mk");
     for (var i = 0; i < c.length; i++) { var r = c[i].getBoundingClientRect(); if (r.width && r.top >= 0) return r; }
     return null;
   }

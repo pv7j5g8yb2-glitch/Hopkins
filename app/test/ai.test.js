@@ -32,7 +32,7 @@ test("Claude reads the listing and writes the set; Hopkins cleans what comes bac
     { reply: "Three ideas, three angles.", action: "revise", moment: "none", ads: [ad(1, "Mornings on the water."), ad(2, "A pool by the bay."), ad(3, "Just listed.")], listing_patch: LISTING, budget: 0, days: 0 },
   ];
   const c = client(app);
-  await c("POST", "/api/signup", { email: "ai@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "ai@test.com", password: "password123", invite: "EARLY1" });
   const r = await c("POST", "/api/listings", { text: "9 Bay Road, waterfront with a pool, $1.25M" });
   assert.equal(r.status, 200);
   assert.equal(calls[0].model, "claude-opus-5-5");

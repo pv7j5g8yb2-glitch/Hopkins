@@ -177,6 +177,8 @@ app.post("/api/signup", async (request, reply) => {
   const coded = inviteOk(invite, typeof email === "string" ? email.trim() : "");
   if (!coded && !openSignups()) return reply.code(403).send({ error: "That invite code isn't valid. Check it, or join the waitlist." });
   const plan = coded && String(invite || "").trim() ? pilotPlan() : openSignups() ? "free" : pilotPlan();
+  // A name is required: it goes on the ads and in every greeting (Ismael, 2026-10-31).
+  if (!clean(name, 80)) return reply.code(400).send({ error: "Enter your name." });
   if (typeof email !== "string" || !EMAIL_RE.test(email.trim())) return reply.code(400).send({ error: "Enter a valid email address." });
   if (typeof password !== "string" || password.length < 8) return reply.code(400).send({ error: "Password must be at least 8 characters." });
   if (await get(`SELECT id FROM users WHERE email = ?`, [email.trim().toLowerCase()])) return reply.code(409).send({ error: "An account with this email already exists. Sign in instead." });

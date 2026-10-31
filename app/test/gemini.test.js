@@ -46,7 +46,7 @@ test("Gemini takes the chat: the same instructions, structured answers, its thin
 
 test("photos go to Gemini as images, and a schema it won't take goes in the instructions", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "gem2@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "gem2@test.com", password: "password123", invite: "EARLY1" });
   const up = await c("POST", "/api/photos", { data: TINY_JPEG, thumb: TINY_JPEG, mime: "image/jpeg", name: "kitchen.jpg" });
   const pid = up.json.id;
   next = ["schema400", { listing: { address: "9 Oak Ln", city: "Austin", price: 499000, beds: 3, baths: 2 }, photo_labels: ["kitchen"], photo_notes: ["an island"], missing: "" }];
@@ -61,7 +61,7 @@ test("photos go to Gemini as images, and a schema it won't take goes in the inst
 
 test("over Gemini's free limit, Groq answers instead", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "gem3@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "gem3@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500, 500, 500];
   const r = await c("POST", "/api/listings", { text: "4 Pine Ct, Austin, 3 bed 2 bath, $510,000" });
   next = [429, { groq: { reply: "Groq here: version 2.", action: "none", version: 2, remove: [], moment: "none", ads: [], listing_patch: null, budget: 0, days: 0 } }];
@@ -75,7 +75,7 @@ test("a link the site blocks is read through Google, and only when Google really
   globalThis.fetch = async () => ({ ok: false, status: 403, text: async () => "blocked" });
   t.after(() => { globalThis.fetch = realFetch; });
   const c = client(app);
-  await c("POST", "/api/signup", { email: "gem4@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "gem4@test.com", password: "password123", invite: "EARLY1" });
   // Google couldn't open it either: no guessed facts, the honest message.
   next = [{ raw: answer('{"opened": true, "title": "Made up flat", "description": "3 bed, €900,000"}', { urlContextMetadata: { urlMetadata: [{ retrievedUrl: "https://www.idealista.com/inmueble/1/", urlRetrievalStatus: "URL_RETRIEVAL_STATUS_ERROR" }] } }) }];
   const before = calls.length;

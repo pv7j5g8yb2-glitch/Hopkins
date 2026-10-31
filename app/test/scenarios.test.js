@@ -32,7 +32,7 @@ brain.setFetchForTests(async (url, init) => {
 let n = 0;
 async function agent() {
   const c = client(app);
-  await c("POST", "/api/signup", { email: `scenario${++n}@ellery.test`, password: "password123", invite: "EARLY1", name: "Sam Ellery" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: `scenario${++n}@ellery.test`, password: "password123", invite: "EARLY1", name: "Sam Ellery" });
   await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [(await c("GET", "/api/me")).json.workspace.id]);
   return c;
 }

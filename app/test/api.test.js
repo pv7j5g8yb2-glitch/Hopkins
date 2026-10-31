@@ -16,10 +16,10 @@ async function signup(email, extra = {}) {
 
 test("sign ups need an invite, and passwords are checked", async () => {
   const bad = client(app);
-  assert.equal((await bad("POST", "/api/signup", { email: "x@y.com", password: "password123", invite: "nope" })).status, 403);
+  assert.equal((await bad("POST", "/api/signup", { name: "Sam Ellery", email: "x@y.com", password: "password123", invite: "nope" })).status, 403);
   // No code, no account, unless it's an admin's email.
-  assert.equal((await client(app)("POST", "/api/signup", { email: "someone@else.test", password: "password123" })).status, 403);
-  assert.equal((await client(app)("POST", "/api/signup", { email: "Owner@hopkins.test", password: "password123" })).status, 200);
+  assert.equal((await client(app)("POST", "/api/signup", { name: "Sam Ellery", email: "someone@else.test", password: "password123" })).status, 403);
+  assert.equal((await client(app)("POST", "/api/signup", { name: "Sam Ellery", email: "Owner@hopkins.test", password: "password123" })).status, 200);
   const { c, r } = await signup("sam@ellery.test");
   assert.equal(r.status, 200);
   assert.equal((await c("GET", "/api/me")).json.workspace.plan, "free");
@@ -313,7 +313,7 @@ test("the look of an ad: from the chat in plain words, and from the Style sheet"
 test("forgot password: the founder makes a one time link, it signs out every other device", async () => {
   const phone = client(app);
   const laptop = client(app);
-  await phone("POST", "/api/signup", { email: "forgot@ellery.test", password: "password123", invite: "EARLY1" });
+  await phone("POST", "/api/signup", { name: "Sam Ellery", email: "forgot@ellery.test", password: "password123", invite: "EARLY1" });
   assert.equal((await laptop("POST", "/api/login", { email: "forgot@ellery.test", password: "password123" })).status, 200);
   // Asking says the same thing whether or not the email has an account.
   const stranger = client(app);
@@ -344,7 +344,7 @@ test("forgot password: the founder makes a one time link, it signs out every oth
 
 test("feedback reaches Admin; limits count each visitor on their own behind the proxy", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "fb@ellery.test", password: "password123", invite: "EARLY1", business: "FB Realty" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "fb@ellery.test", password: "password123", invite: "EARLY1", business: "FB Realty" });
   assert.equal((await c("POST", "/api/feedback", { body: "" })).status, 400);
   assert.equal((await c("POST", "/api/feedback", { body: "The style sheet is great", page: "#/l/x" })).status, 200);
   const boss = client(app);
@@ -366,7 +366,7 @@ test("feedback reaches Admin; limits count each visitor on their own behind the 
 
 test("free plan: 3 ads in all, and nothing new after that, whatever gets deleted", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "strict@ellery.test", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "strict@ellery.test", password: "password123", invite: "EARLY1" });
   const me = async () => (await c("GET", "/api/me")).json.usage.adsMade;
   // One ad, then a new set of one: that's 2 used, not 1.
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard. Just one ad" });
@@ -392,7 +392,7 @@ test("free plan: 3 ads in all, and nothing new after that, whatever gets deleted
 
 test("listings with no name or address are Untitled 1, Untitled 2, and keep their number", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "untitled@ellery.test", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "untitled@ellery.test", password: "password123", invite: "EARLY1" });
   const up = async () => (await c("POST", "/api/photos", { data: TINY_JPEG, thumb: TINY_JPEG, mime: "image/jpeg", name: "IMG_1.jpg" })).json.id;
   const a = await c("POST", "/api/listings", { text: "", photoIds: [await up()] });
   const b = await c("POST", "/api/listings", { text: "", photoIds: [await up()] });
@@ -407,7 +407,7 @@ test("listings with no name or address are Untitled 1, Untitled 2, and keep thei
 
 test("asking to run on the free plan says it once, then the app shows the plan card", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "runloop@ellery.test", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "runloop@ellery.test", password: "password123", invite: "EARLY1" });
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   const id = l.json.listing.id;
   const first = await c("POST", `/api/listings/${id}/messages`, { text: "run it", version: 1 });
@@ -423,7 +423,7 @@ test("asking to run on the free plan says it once, then the app shows the plan c
 
 test("with email set up, forgot password emails the link straight away", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "mailme@ellery.test", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "mailme@ellery.test", password: "password123", invite: "EARLY1" });
   const sent = [];
   const realFetch = globalThis.fetch;
   Object.assign(process.env, { RESEND_API_KEY: "re_test", MAIL_FROM: "Hopkins <hello@example.test>" });
@@ -448,14 +448,14 @@ test("with email set up, forgot password emails the link straight away", async (
 test("pilots who sign up with an invite code start on the paid plan", async () => {
   delete process.env.PILOT_PLAN;
   const c = client(app);
-  assert.equal((await c("POST", "/api/signup", { email: "pilot@ellery.test", password: "password123", invite: "EARLY1" })).status, 200);
+  assert.equal((await c("POST", "/api/signup", { name: "Sam Ellery", email: "pilot@ellery.test", password: "password123", invite: "EARLY1" })).status, 200);
   const me = (await c("GET", "/api/me")).json;
   process.env.PILOT_PLAN = "free";
   assert.equal(me.workspace.plan, "paid");
 });
 
 test("password guessing is counted per account, whatever address it claims", async () => {
-  await client(app)("POST", "/api/signup", { email: "guess@ellery.test", password: "password123", invite: "EARLY1" });
+  await client(app)("POST", "/api/signup", { name: "Sam Ellery", email: "guess@ellery.test", password: "password123", invite: "EARLY1" });
   // Every try from a new client, as a script faking X-Forwarded-For would look.
   for (let i = 0; i < 10; i++) assert.equal((await client(app)("POST", "/api/login", { email: "guess@ellery.test", password: `wrong${i}` })).status, 401);
   assert.equal((await client(app)("POST", "/api/login", { email: "Guess@ellery.test", password: "password123" })).status, 429);

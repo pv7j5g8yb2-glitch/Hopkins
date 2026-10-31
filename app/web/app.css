@@ -986,9 +986,9 @@ select option{color:#111;background:#fff}
 .stat.key{background:rgba(255,255,255,.14)}
 .stat.key span{color:var(--quiet)}
 .stat.key b{color:#fff}
-.dot,.dotw{background:var(--accent)}
+.dot,.dotw{background:#fff}
 .dotw{box-shadow:0 0 0 3px rgba(255,180,154,.22)}
-.rp-day.today .rp-dl:after{background:var(--accent)}
+.rp-day.today .rp-dl:after{background:#fff}
 .rb-rank.m2{color:var(--ox)}
 .rp-delta.up{color:var(--green)}
 .rp-delta.down{color:#FF9B91}
@@ -1169,3 +1169,10 @@ section.chat.drag{outline:1px dashed rgba(255,255,255,.4);outline-offset:-12px}
 .splash-out .sp-stage:not(.fly){opacity:0;transition:opacity .4s}
 @media (max-width:420px){.sp-mark{width:68px;height:68px}.sp-word{font-size:52px}.sp-stage{gap:18px}}
 .splash-calm .sp-small,.splash-calm .sp-big,.splash-calm .sp-word{animation:none;opacity:1;transform:none}
+/* The logo's mark (a live copy, so it can move): tapped, it turns once like the thinking mark. */
+.mtop .logo .mk{width:24px;height:24px;flex:none}
+.brand .mk{width:26px;height:26px;flex:none}
+.mk.once{animation:mkspin .9s cubic-bezier(.6,0,.4,1) 1}
+.mk.once path{transform-box:fill-box;transform-origin:center;animation:mkswap .9s ease-in-out 1}
+.mk.once path:last-child{animation-delay:-.45s}
+.dotw{box-shadow:0 0 0 3px rgba(255,255,255,.18)}

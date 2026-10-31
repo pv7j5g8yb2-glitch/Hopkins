@@ -118,3 +118,9 @@ test("a caption and hashtags only when asked: yes to the question, or asked in w
   const w = await c("POST", `/api/listings/${t.json.listing.id}/messages`, { text: "write me a caption with hashtags for it" });
   assert.match(w.json.creations[0].spec.caption, /Save this/);
 });
+
+test("a greeting opens a chat only, and a time of day only when it's the right one", async () => {
+  const { localNow } = hopkins;
+  assert.match(localNow("Europe/Dublin"), /^Their local time now: .* \(Europe\/Dublin\)\.$/);
+  assert.equal(localNow("UTC"), "");
+});

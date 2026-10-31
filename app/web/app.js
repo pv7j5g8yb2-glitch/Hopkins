@@ -50,7 +50,7 @@
     people: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></svg>',
     chart: '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
   };
-  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), snaps: {}, snapImg: {}, snapQueue: Promise.resolve(), segPos: {}, styleAll: false, format: "feed", pending: [], busy: false, showIssues: false, seen: {}, fresh: null };
+  const S = { me: null, listings: [], inbox: [], current: null, selected: {}, selecting: false, picked: new Set(), snaps: {}, snapImg: {}, snapQueue: Promise.resolve(), segPos: {}, styleAll: false, format: "feed", pending: [], busy: false, showIssues: false, seen: {}, fresh: null, chatCache: new Map(), leadsCache: null };
 
   // ---------- helpers ----------
 
@@ -243,7 +243,7 @@
     if (opts.back) {
       return `<div class="mtop"><a class="icon-btn mback" href="${opts.back}" aria-label="Back">${ICON.back}</a><div class="ttl">${opts.rename ? `<button class="rn" data-act="renameAsk" data-id="${opts.rename}"><b>${esc(title)}</b></button>` : `<b>${esc(title)}</b>`}${opts.sub ? `<span>${esc(opts.sub)}</span>` : ""}</div>${extra}</div>`;
     }
-    return `<div class="mtop"><a class="logo" href="#/today"><img src="/static/mark.svg" alt="">Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account" ${avatarStyle()}>${esc(initials())}</button></div>`;
+    return `<div class="mtop"><a class="logo" href="#/today" aria-label="Hopkins, Today">${MARK("lg-mark")}Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account" ${avatarStyle()}>${esc(initials())}</button></div>`;
   }
   const buzz = (ms = 8) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
   // Real moments get a plain notice, not a celebration (Ismael, 2026-10-30: it felt like a game).
@@ -451,7 +451,7 @@
   function accountMenu() {
     const u = S.me.usage;
     const plan = paid()
-      ? `<div class="note"><b>${esc(S.me.plan.name)}</b></div>`
+      ? `<div class="note"><b>${esc(S.me.plan.name)}</b>Billed monthly. Cancel anytime.</div>`
       : `<div class="note"><b>Free</b></div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
       <a href="#/settings">${ICON.gear}Settings</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
@@ -555,7 +555,7 @@
   async function viewToday() {
     const my = current();
     if (S.inboxLoaded) drawToday();
-    else main.innerHTML = `${mtop("Today")}${skeleton()}`;
+    else slowSkeleton(my, "Today");
     await loadInbox();
     if (my !== current()) return;
     drawToday();
@@ -910,6 +910,31 @@
     requestAnimationFrame(step);
   }
 
+  // Tapping the logo goes to Today, and the mark turns once, the way it does while Hopkins thinks.
+  document.addEventListener("click", (e) => {
+    const logo = e.target.closest(".mtop .logo, .brand");
+    if (!logo) return;
+    const m = logo.querySelector(".mk");
+    if (m) { m.classList.remove("once"); void m.getBoundingClientRect(); m.classList.add("once"); }
+    if (location.hash === "#/today") { e.preventDefault(); $("#main .page")?.scrollTo({ top: 0, behavior: "smooth" }); }
+  });
+
+  // The loading placeholder only appears when the network is genuinely slow (Ismael, 2026-10-31:
+  // "seamless as possible"): nothing for the first 450ms, and never once the page has drawn.
+  function slowSkeleton(my, title, opts) {
+    const before = main.innerHTML;
+    setTimeout(() => { if (my === current() && main.innerHTML === before) main.innerHTML = `${mtop(title, "", opts)}${skeleton()}`; }, 450);
+  }
+  // Every tab's data is fetched once the app has opened, so the first tap on each is instant.
+  function warmTabs() {
+    const go = () => {
+      api("/api/leads").then((r) => { S.leadsCache = r.leads; }).catch(() => {});
+      reportFor(mondayOf(new Date())).catch(() => {});
+      for (const l of (S.listings || []).slice(0, 5)) if (!S.chatCache.has(l.id)) api(`/api/listings/${l.id}`).then((p) => S.chatCache.set(l.id, p)).catch(() => {});
+    };
+    (window.requestIdleCallback || ((f) => setTimeout(f, 800)))(go);
+  }
+
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
@@ -1008,14 +1033,18 @@
     const ready = S.ready && S.ready.listing.id === id ? S.ready : null;
     S.ready = null;
     if (ready) return drawListing(ready, keepScroll);
-    if (!S.current || S.current.listing.id !== id) main.innerHTML = `${mtop("", "", { back: "#/listings" })}${skeleton()}`;
+    const cached = S.chatCache.get(id);
+    if (cached) drawListing(cached, keepScroll);
+    else if (!S.current || S.current.listing.id !== id) slowSkeleton(my, "", { back: "#/listings" });
     const p = await api(`/api/listings/${id}`);
+    if (cached && my === current() && JSON.stringify(p) === JSON.stringify(cached)) return;
     if (my !== current()) return;
     drawListing(p, keepScroll);
   }
 
   function drawListing(p, keepScroll) {
     S.current = p;
+    S.chatCache.set(p.listing.id, p);
     // On screen means read: the dot goes the moment the chat is open (like Claude's).
     const row = S.listings.find((x) => x.id === p.listing.id);
     if (p.listing.unread) { p.listing.unread = false; api(`/api/listings/${p.listing.id}/seen`, { body: {} }).catch(() => {}); }
@@ -1609,11 +1638,19 @@
   // On a rental, the offer step is the application (2026-10-29).
   const statusName = (x, k) => (k === "offer" && x.deal === "rent" ? "Application" : STATUS[k]);
 
+  // Opens at once from what's already here, then quietly takes the fresh copy (redrawn only if it
+  // changed and nobody is searching).
   async function viewLeads() {
     const my = current();
-    main.innerHTML = `${mtop("Leads")}${skeleton()}`;
-    const { leads: all } = await api("/api/leads");
+    if (S.leadsCache) await drawLeads(S.leadsCache, my);
+    else slowSkeleton(my, "Leads");
+    const { leads } = await api("/api/leads");
     if (my !== current()) return;
+    const same = JSON.stringify(leads) === JSON.stringify(S.leadsCache);
+    S.leadsCache = leads;
+    if (!same && !$("#lq")?.value) await drawLeads(leads, my);
+  }
+  async function drawLeads(all, my) {
     // From Today's "Leads this week": only this week's, the same week Today counts.
     const week = location.hash === "#/leads/week";
     if (week && !S.weekFrom) await loadInbox();
@@ -1707,7 +1744,7 @@
     // A week seen before shows at once (this week refreshes behind it); a new one shows the
     // header straight away with the numbers loading under it.
     if (cached) drawReport(cached, mon);
-    else if (!main.querySelector(".page[data-report]")) main.innerHTML = `${mtop("Report")}${skeleton()}`;
+    else if (!main.querySelector(".page[data-report]")) slowSkeleton(my, "Report");
     else reportHead(mon, true);
     let r;
     try { r = await reportFor(mon); }
@@ -2583,6 +2620,7 @@
     }
     if (!location.hash) location.hash = "#/today";
     else route();
+    warmTabs();
     setInterval(async () => { try { await loadInbox(); await loadListings(); drawSide(); } catch {} }, 60000);
   })();
 })();

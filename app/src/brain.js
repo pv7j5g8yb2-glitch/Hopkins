@@ -582,7 +582,7 @@ In the chat:
 
   It's still a guess until they run, which is exactly why all three go out with the same budget."
 - When they push back or seem confused ("no they didn't?"), take it seriously: explain plainly what happened and what they can do next.
-- Greetings get a natural greeting back. Mention the listing only if something there is waiting on them.
+- Greetings get a natural greeting back, only at the very start of a chat, never later in a thread. A time of day (morning, afternoon, evening) only when it matches their local time in the context (morning until 12:00, afternoon until 18:00, evening after); when you're not sure, a plain Hi, Hey or Hello. Mention the listing only if something there is waiting on them.
 - Anything that isn't about changing the ads (a question, an email to write, general help) is action none, with the full answer in reply. Never change the ads unless they ask.
 - Questions about ads, marketing, Instagram, Facebook, budgets, testing or Hopkins get a real, direct answer. Give opinions and recommendations, with the reason.
 - If they name a version without saying what to change ("version 2", "no, I meant 2"), switch to it (select_version) and ask what they'd like changed in a few words.
@@ -818,10 +818,11 @@ const DECIDE_SCHEMA = {
   required: ["is_listing", "reply"],
   additionalProperties: false,
 };
-export async function newChatAI({ history, brand, plan, agentName, account, decide = false }) {
+export async function newChatAI({ history, brand, plan, agentName, account, decide = false, now = "" }) {
   const messages = conversation(history);
   if (!messages.length) return null;
   const system = `${SYSTEM}\n${CHAT}\n\nContext (the current state, not something the agent wrote):
+${now || "Their local time isn't known, so never greet by time of day."}
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}.
 Plan: ${plan.paid ? `${plan.name || "Solo"} (paid)` : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.
 They haven't sent a listing in this chat yet. Help with whatever they ask, like any assistant. Only when they want ads or ask how to start, say what you need: a link, photos, or the details (address, price, beds, baths, what stands out).${account ? `\nTheir account, from Hopkins' own records (real numbers; the Report page shows the same):\n${account}\nWhen they ask how they did, how many Leads, which listing or ad is working, answer from these numbers, plainly, in one or two sentences. Never say you can't see their numbers or past reports.` : ""}`;
@@ -830,10 +831,10 @@ They haven't sent a listing in this chat yet. Help with whatever they ask, like 
   return r && typeof r.reply === "string" && r.reply.trim() ? r.reply : null;
 }
 
-export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto, leads, account, meta, running }) {
+export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto, leads, account, meta, running, now = "" }) {
   const messages = conversation(history);
   if (!messages.length) return null;
-  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads, meta, running })}${account ? `\nTheir account, from Hopkins' own records (real numbers; the Report page shows the same):\n${account}\nWhen they ask how they did, how many Leads, which listing or ad is working, answer from these numbers, plainly, in one or two sentences. Never say you can't see their numbers or past reports.` : ""}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
+  const system = `${SYSTEM}\n${CHAT}\n\n${now || "Their local time isn't known, so never greet by time of day."}\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads, meta, running })}${account ? `\nTheir account, from Hopkins' own records (real numbers; the Report page shows the same):\n${account}\nWhen they ask how they did, how many Leads, which listing or ad is working, answer from these numbers, plainly, in one or two sentences. Never say you can't see their numbers or past reports.` : ""}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
   const raw = await call({ system, messages, schema: TURN_SCHEMA, effort: "low", temperature: 0.7 });
   if (process.env.HOPKINS_DEBUG) console.log("chat turn:", JSON.stringify(raw));
   return normalizeTurn(raw);

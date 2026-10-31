@@ -17,12 +17,12 @@ test("admin can't be claimed, only granted, and only admins reach admin", async 
 
   // An admin email with no account yet can't be signed up for, even with a valid code.
   const stranger = client(app);
-  assert.equal((await stranger("POST", "/api/signup", { email: "spare@hopkins.test", password: "password123", invite: "EARLY1" })).status, 403);
-  assert.equal((await stranger("POST", "/api/signup", { email: "Spare@Hopkins.test ", password: "password123", invite: "EARLY1" })).status, 403);
+  assert.equal((await stranger("POST", "/api/signup", { name: "Sam Ellery", email: "spare@hopkins.test", password: "password123", invite: "EARLY1" })).status, 403);
+  assert.equal((await stranger("POST", "/api/signup", { name: "Sam Ellery", email: "Spare@Hopkins.test ", password: "password123", invite: "EARLY1" })).status, 403);
 
   // A normal account: no admin, and can't move its email onto an admin address.
   const user = client(app);
-  assert.equal((await user("POST", "/api/signup", { email: "agent@example.com", password: "password123", invite: "EARLY1" })).status, 200);
+  assert.equal((await user("POST", "/api/signup", { name: "Sam Ellery", email: "agent@example.com", password: "password123", invite: "EARLY1" })).status, 200);
   const me = (await user("GET", "/api/me")).json;
   assert.equal(me.admin, false);
   assert.equal((await user("GET", "/api/admin/workspaces")).status, 403);
@@ -56,7 +56,7 @@ test("plans: the founder can switch one on by hand (pilots, quotes), and the acc
 });
 
 test("open sign ups: off by default, then anyone can join on Free while an invite code still makes a pilot; Terms is public", async () => {
-  assert.equal((await client(app)("POST", "/api/signup", { email: "nocode@example.com", password: "password123" })).status, 403);
+  assert.equal((await client(app)("POST", "/api/signup", { name: "Sam Ellery", email: "nocode@example.com", password: "password123" })).status, 403);
   assert.deepEqual((await client(app)("GET", "/api/open")).json, { open: false });
   process.env.OPEN_SIGNUPS = "1";
   process.env.PILOT_PLAN = "paid";
@@ -66,7 +66,7 @@ test("open sign ups: off by default, then anyone can join on Free while an invit
     assert.equal((await stranger("POST", "/api/signup", { email: "stranger@example.com", password: "password123", name: "Ana Ruiz" })).status, 200);
     assert.equal((await stranger("GET", "/api/me")).json.workspace.plan, "free");
     const pilot = client(app);
-    assert.equal((await pilot("POST", "/api/signup", { email: "pilot2@example.com", password: "password123", invite: "early1" })).status, 200);
+    assert.equal((await pilot("POST", "/api/signup", { name: "Sam Ellery", email: "pilot2@example.com", password: "password123", invite: "early1" })).status, 200);
     assert.equal((await pilot("GET", "/api/me")).json.workspace.plan, "paid");
   } finally {
     delete process.env.OPEN_SIGNUPS;

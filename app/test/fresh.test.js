@@ -49,3 +49,11 @@ test("the fresh start waits while Meta can't pause a running ad, then deletes ev
   assert.equal((await freshStart("test")).done, false);
   assert.equal(await count("users"), 1);
 });
+
+test("sign up needs a name", async () => {
+  const c = client(app);
+  const r = await c("POST", "/api/signup", { email: "noname@ellery.test", password: "password123", invite: "EARLY1" });
+  assert.equal(r.status, 400);
+  assert.equal(r.json.error, "Enter your name.");
+  assert.equal((await c("POST", "/api/signup", { name: "   ", email: "noname@ellery.test", password: "password123", invite: "EARLY1" })).status, 400);
+});

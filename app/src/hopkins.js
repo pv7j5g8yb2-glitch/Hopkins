@@ -78,7 +78,37 @@ async function snapshot(listing, versions) {
     .map(({ version, name, pattern, headline, primary_text, overlay, subline, kicker, cta, photo_id, style }) => ({ version, name, pattern, headline, primary_text, overlay, subline: subline || "", kicker, cta, photo_id, style }));
 }
 
-export const say = (ws, listingId, body, kind = "text", data = null, needsAction = false) => postMessage(ws.id, listingId, "hopkins", kind, capLeads(body), data, needsAction);
+export const say = async (ws, listingId, body, kind = "text", data = null, needsAction = false) => postMessage(ws.id, listingId, "hopkins", kind, capLeads(await rightGreeting(listingId, body)), data, needsAction);
+
+// The agent's own time, so a greeting is right (Ismael, 2026-10-31: "Morning, Ismael" at 22:48).
+export function localNow(tz) {
+  try {
+    if (!tz || tz === "UTC") return "";
+    const d = new Date();
+    const when = d.toLocaleString("en-GB", { timeZone: tz, weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+    return `Their local time now: ${when} (${tz}).`;
+  } catch { return ""; }
+}
+let greetTz = new Map();
+export const rememberTz = (listingId, tz) => { if (tz && tz !== "UTC") greetTz.set(listingId, tz); };
+// A greeting only opens a chat, and a time of day only when it's the right one; otherwise "Hi".
+const TIME_GREETING = /^(good\s+)?(morning|afternoon|evening)\b[,!.]?\s*/i;
+async function rightGreeting(listingId, body) {
+  const text = String(body ?? "");
+  const m = text.match(TIME_GREETING);
+  if (!m) return text;
+  const earlier = await get(`SELECT 1 FROM messages WHERE listing_id = ? AND role = 'hopkins' LIMIT 1`, [listingId]).catch(() => null);
+  const rest = text.slice(m[0].length);
+  const cap = (s) => s.replace(/^\p{Ll}/u, (c) => c.toUpperCase());
+  // Later in a thread: no greeting at all.
+  if (earlier) return cap(rest.replace(/^[A-Z][a-z]+[,.!]\s*/, (n) => (/^(I|It|The|This|That|Your|You|Here|Sure|Yes|No)\b/.test(n) ? n : "")));
+  const tz = greetTz.get(listingId);
+  let hour = null;
+  try { if (tz) hour = Number(new Date().toLocaleString("en-GB", { timeZone: tz, hour: "2-digit", hourCycle: "h23" })); } catch {}
+  const right = hour == null ? null : hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  if (right && m[2].toLowerCase() === right) return text;
+  return `Hi${rest.match(/^[A-Z][a-z]+[,.!]/) ? " " : ". "}${rest}`.replace(/\s+/g, " ").replace(/^Hi\. ([A-Z][a-z]+)([,.!])/, "Hi $1$2");
+}
 
 async function clearActions(listingId) {
   await run(`UPDATE messages SET needs_action = 0 WHERE listing_id = ? AND needs_action = 1`, [listingId]);
@@ -167,7 +197,7 @@ const ASKING = /\?\s*$|^\s*(what|whats|what's|how|can|could|should|would|will|is
 const seemsListing = (text) => looksLikeListing(text) && (aiEnabled || !ASKING.test(text));
 export async function answerIfNotListing(ws, history, text, tz = "UTC") {
   if (!aiEnabled || URL_RE.test(text) || !ASKING.test(text)) return null;
-  const r = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz), decide: true });
+  const r = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz), decide: true, now: localNow(tz) });
   return r && !r.isListing && r.reply.trim() ? plainWords(r.reply) : null;
 }
 
@@ -175,7 +205,7 @@ export async function newChat(ws, history, tz = "UTC") {
   const text = history.at(-1)?.body || "";
   const lastReply = [...history].reverse().find((m) => m.role === "hopkins")?.body;
   if (aiEnabled) {
-    const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz) });
+    const reply = await newChatAI({ history, brand: ws.brand, plan: { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT }, agentName: ws.brand.agent_name, account: await accountSummary(ws, tz), now: localNow(tz) });
     if (reply) return plainWords(reply);
     if (takeFailure() === "busy" && needsModel(text)) return BUSY;
   }
@@ -350,6 +380,7 @@ async function nameThread(ws, id, text) {
 }
 
 export async function firstReply(ws, id, tz = "UTC") {
+  rememberTz(id, tz);
   const listing = await loadListing(ws.id, id);
   if (!listing) return null;
   const msg = await get(`SELECT * FROM messages WHERE listing_id = ? AND role = 'agent' AND data LIKE '%"first":true%' ORDER BY created_at LIMIT 1`, [id]);
@@ -1137,6 +1168,7 @@ function readBack(l) {
 const WHAT_NEXT = "What should I make for it: a post, a carousel, a reel, or ads to run?";
 
 export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC", photoIds = []) {
+  rememberTz(listingId, tz);
   const listing = await loadListing(ws.id, listingId);
   if (!listing) return null;
   const sent = await postMessage(ws.id, listingId, "agent", "text", text, photoIds.length ? { photos: photoIds } : null);
@@ -1209,7 +1241,7 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     }
     const c = metaReady() ? await metaConnection(ws.id) : null;
     const meta = c ? { connected: true, ready: Boolean(c.ad_account_id && c.page_id), adAccountName: c.ad_account_name, pageName: c.page_name } : null;
-    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz), meta, running: await runState(listing.id) });
+    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz), meta, running: await runState(listing.id), now: localNow(tz) });
     if (r) return applyAI(ws, listing, ads, photos, r, text, selected);
     busy = takeFailure() === "busy";
     if (busy && needsModel(text)) {

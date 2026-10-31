@@ -63,7 +63,8 @@ test("Groq runs the chat when it's the only key", async () => {
   // Over the per minute limit with a short wait: it waits and answers properly.
   next = ["429:0.2", { reply: "Morning. All three are ready.", action: "none", version: 0, ads: [] }];
   const w = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "morning", version: 1 });
-  assert.equal(w.json.messages.at(-1).body, "Morning. All three are ready.");
+  // A time of day mid thread goes (Ismael, 2026-10-31): the reply is the rest.
+  assert.equal(w.json.messages.at(-1).body, "All three are ready.");
   // A long wait: it says it's busy instead of pretending not to understand.
   next = ["429:40"];
   const busy = await c("POST", `/api/listings/${r.json.listing.id}/messages`, { text: "what do you think of the photos?", version: 1 });
@@ -126,7 +127,7 @@ test("listings sent at the same moment can't get past the 3 free ads", async () 
   // A slow model, like the live one: each request waits for an answer between counting the
   // free ads left and saving new ones.
   const c = client(app);
-  await c("POST", "/api/signup", { email: "race@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "race@test.com", password: "password123", invite: "EARLY1" });
   next = [];
   delay = 150;
   const text = (n) => ({ text: `${n} Elm St, Austin, 3 bed 2 bath, $585,000, big back yard` });
@@ -171,7 +172,7 @@ test("\"do the same for ad 1 and 3\" really does it, and a reply never claims a 
 
 test("without the model, \"the same for ad 1\" repeats the last look change", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "same2@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "same2@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   const id = l.json.listing.id;
@@ -184,7 +185,7 @@ test("without the model, \"the same for ad 1\" repeats the last look change", as
 
 test("\"no you didn't\" gets the ads' real look, not an apology for a change that happened", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "didnt@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "didnt@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   const id = l.json.listing.id;
@@ -199,7 +200,7 @@ test("\"no you didn't\" gets the ads' real look, not an apology for a change tha
 
 test("\"the same\" in a chat from before looks were remembered copies the ad that was just changed", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "oldchat@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "oldchat@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   const id = l.json.listing.id;
@@ -220,7 +221,7 @@ test("\"the same\" in a chat from before looks were remembered copies the ad tha
 
 test("exact edits: a dictated line goes in as typed, only the line changes, and the full stop comes off and stays off", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "exact@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "exact@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   const id = l.json.listing.id;
@@ -249,7 +250,7 @@ test("exact edits: a dictated line goes in as typed, only the line changes, and 
 
 test("a reply never claims an old change as new", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "claims@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "claims@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   next = [{ reply: "I set both Ad 1 and Ad 3 to a grey background and removed the period.", action: "none", version: 0, remove: [], moment: "none", ads: [], listing_patch: null, budget: 0, days: 0 }];
@@ -261,7 +262,7 @@ test("a reply never claims an old change as new", async () => {
 
 test("the agent's photo on an ad: asks for it first when there isn't one, puts it on when there is, and Hopkins never blames \"the platform\"", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "face@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "face@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   const id = l.json.listing.id;
@@ -289,7 +290,7 @@ test("the agent's photo on an ad: asks for it first when there isn't one, puts i
 
 test("a copied line keeps its own punctuation, and asking for a face in the bottom right isn't a layout change", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "copy@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "copy@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "12 Elm St, Austin, 3 bed 2 bath, $585,000, big back yard" });
   const id = l.json.listing.id;
@@ -392,7 +393,7 @@ test("Stop: the agent's message stays, the reply never comes, and the ads go bac
 
 test("Stop while a listing is being made: no listing, nothing counted", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "stopnew@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "stopnew@test.com", password: "password123", invite: "EARLY1" });
   const made = (await c("GET", "/api/me")).json.usage.adsMade;
   delay = 600;
   next = [500, 500, 500, 500];
@@ -424,7 +425,7 @@ test("a question with a price in it gets an answer like any assistant, not a new
 
 test("running ads: \"stop the ad\" pauses them (never a new plan, never deleting the ads), replies match what happened, and they start again", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "stopit@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "stopit@test.com", password: "password123", invite: "EARLY1" });
   const ws = (await c("GET", "/api/me")).json.workspace.id;
   await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [ws]);
   next = [500, 500];
@@ -496,7 +497,7 @@ test("running ads: \"stop the ad\" pauses them (never a new plan, never deleting
 
 test("the ad being worked on, a second line under the big one, undo, fair housing notes and brand changes from the chat", async () => {
   const c = client(app);
-  await c("POST", "/api/signup", { email: "focus@test.com", password: "password123", invite: "EARLY1" });
+  await c("POST", "/api/signup", { name: "Sam Ellery", email: "focus@test.com", password: "password123", invite: "EARLY1" });
   next = [500, 500];
   const l = await c("POST", "/api/listings", { text: "1100 Wilshire Blvd, West LA. 2 bed 2 bath condo for rent, $10,000/mo" });
   const id = l.json.listing.id;

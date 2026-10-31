@@ -63,7 +63,7 @@ button:disabled{opacity:.6}
   <h1 id="title">Welcome <em>back.</em></h1>
   <p class="sub" id="sub">The personal assistant for real estate agents.</p>
   <form id="f" novalidate>
-    <div class="signup-only"><label for="name">Your name</label><input id="name" autocomplete="name" placeholder="Sam Ellery"></div>
+    <div class="signup-only"><label for="name">Your name</label><input id="name" autocomplete="name" placeholder="Sam Smith" required></div>
     <div class="email-field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="you@yourbrokerage.com"></div>
     <div class="pw-field"><label for="password" id="pwlabel">Password</label><div class="pw"><input id="password" type="password" autocomplete="current-password" placeholder="At least 8 characters"><button type="button" id="show">Show</button></div>
 </div>
@@ -119,6 +119,7 @@ button:disabled{opacity:.6}
   $("f").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("err").textContent = "";
+    if (signup && !$("name").value.trim()) { $("err").textContent = "Enter your name."; $("name").focus(); return; }
     $("go").disabled = true;
     const body = mode === "reset" ? { t: params.get("t"), password: $("password").value } : mode === "forgot" ? { email: $("email").value } : { email: $("email").value, password: $("password").value };
     if (signup) Object.assign(body, { name: $("name").value, invite: $("invite").value });
