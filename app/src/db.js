@@ -233,7 +233,7 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   // chat (2026-10-29). The agent's own name (title) and the address come first.
   "ALTER TABLE listings ADD COLUMN auto_title TEXT",
   // tier: which paid plan (solo, duo, team, teamplus, max, maxplus); empty on a paid account is Solo.
-  "ALTER TABLE workspaces ADD COLUMN tier TEXT",
+  "ALTER TABLE workspaces ADD COLUMN tier TEXT", "ALTER TABLE workspaces ADD COLUMN crm TEXT",
   // subline: a second line under the big line on the photo, same font and colours (2026-10-31).
   "ALTER TABLE ads ADD COLUMN subline TEXT",
   // The Stripe customer and subscription behind a self-serve plan (2026-10-30).

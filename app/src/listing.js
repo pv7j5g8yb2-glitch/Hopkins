@@ -100,10 +100,11 @@ export function parseListingText(text = "") {
   out.deal = parseDeal(t);
   out.price = out.deal === "rent" ? parseRent(t) || parsePrice(t) : parsePrice(t);
   if (out.price) out.currency = parseCurrency(t);
-  const beds = t.match(/(\d+(?:\.\d)?)\s*-?\s*(?:bed(room)?s?|bd|br)\b/i);
-  if (beds) out.beds = Number(beds[1]);
-  const baths = t.match(/(\d+(?:\.\d)?)\s*-?\s*(?:bath(room)?s?|ba)\b/i);
-  if (baths) out.baths = Number(baths[1]);
+  // "3 bed", or "Beds: 3" the way MLS pages lay it out. Never the end of a price ("$1,249,000 Beds").
+  const beds = t.match(/\b(?:bed(?:room)?s?|bd|br)(?: total)?\s*:\s*(\d+(?:\.\d)?)\b/i) || t.match(/(?<![\d,.$])(\d+(?:\.\d)?)\s*-?\s*(?:bed(room)?s?|bd|br)\b/i);
+  if (beds && Number(beds[1]) > 0) out.beds = Number(beds[1]);
+  const baths = t.match(/\b(?:bath(?:room)?s?|ba)(?: total)?\s*:\s*(\d+(?:\.\d)?)\b/i) || t.match(/(?<![\d,.$])(\d+(?:\.\d)?)\s*-?\s*(?:bath(room)?s?|ba)\b/i);
+  if (baths && Number(baths[1]) > 0) out.baths = Number(baths[1]);
   const sqft = t.match(/(\d{1,2},?\d{3}|\d{3,4})\s*(?:sq\.?\s?ft|square feet|sqft|sf)\b/i);
   if (sqft) out.sqft = num(sqft[1]);
   // An address is a number and a street name ending in a street word.
@@ -152,9 +153,10 @@ export function factsLine(l) {
   return parts.join(", ");
 }
 
-// Opens a pasted listing link and reads what the page says about itself (its title,
-// description and main photo). Portals often block this; then Hopkins asks for the
-// details instead of guessing.
+// Opens a pasted listing link and reads what the page says about itself: every photo, the
+// description and the facts, from Zillow, MLS share pages (Flexmls, Matrix, Paragon), agent
+// sites and any portal that lets it in. Portals that block apps on purpose are left alone;
+// then Google reads it (brain.js) or Hopkins asks for the details instead of guessing.
 export async function readLink(url) {
   let u;
   try { u = new URL(url); } catch { return null; }
@@ -169,32 +171,68 @@ export async function readLink(url) {
     });
     if (!res.ok) return null;
     // Zillow pages run to about 800 KB, with the photo list near the end.
-    const html = (await res.text()).slice(0, 3_000_000);
-    const meta = (name) => {
-      const re = new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']*)["']|<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${name}["']`, "i");
-      const m = html.match(re);
-      return m ? decode(m[1] || m[2]) : null;
-    };
-    const title = meta("og:title") || (html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1];
-    const description = meta("og:description") || meta("description");
-    const image = meta("og:image");
-    if (!title && !description) return null;
-    const facts = pageFacts(html) || ldFacts(html);
-    return { title: title ? decode(title).trim() : null, description: [description, facts].filter(Boolean).join("\n") || null, image: image || null, photos: photosFrom(html) };
+    return readPage((await res.text()).slice(0, 3_000_000), res.url || String(u));
   } catch {
     return null;
   }
 }
 
-// The listing's own photos from its page (2026-10-27), at most 12, so a link alone is enough.
-// Zillow keeps them in the page's data (property.responsivePhotos, inside __NEXT_DATA__), each
-// in several sizes: the largest for the ads (1536 wide, the most Zillow gives; checked 2026-10-29) and 384 for the thumbnail. The page also holds
-// nearby homes' photos, which are left alone. Other sites usually list theirs in schema.org
-// JSON-LD; failing that, the page's og:image.
-export function photosFrom(html, max = 12) {
+// What a listing page holds. `thin` means it said nothing about the property itself (an app
+// that draws the page in the browser, like OneHome), so Google gets a look too.
+export function readPage(html, base = "") {
+  const meta = (name) => {
+    const re = new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']*)["']|<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${name}["']`, "i");
+    const m = html.match(re);
+    return m ? decode(m[1] || m[2]) : null;
+  };
+  const title = meta("og:title") || (html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1];
+  const description = meta("og:description") || meta("description");
+  const image = meta("og:image");
+  const facts = pageFacts(html) || ldFacts(html);
+  // No structured data: the page's own words, for the model to read the facts from.
+  const text = facts ? null : pageText(html);
+  if (!title && !description && !text) return null;
+  const photos = photosFrom(html, MAX_PHOTOS, base);
+  const all = [title, description, facts, text].filter(Boolean).join("\n");
+  const p = parseListingText(all);
+  const thin = !facts && !p.price && !p.beds && !p.sqft && photos.length < 2;
+  return { title: title ? decode(title).trim() : null, description: [description, facts || text].filter(Boolean).join("\n") || null, image: image || null, photos, thin };
+}
+
+// A listing usually has 20 to 40 photos. The ads use the best of them; 25 covers a whole listing
+// without filling the database with one house.
+export const MAX_PHOTOS = 25;
+
+// The visible words of a page (MLS share pages have no structured data, just tables of
+// "Beds 3", "Public Remarks ..."), starting at the remarks when there are some.
+export function pageText(html, max = 5000) {
+  const body = (html.match(/<body[\s\S]*$/i) || [html])[0]
+    .replace(/<(script|style|noscript|svg|template|head|nav|footer)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<\/(td|th|dt)>\s*<(td|dd)\b/gi, ": <$2")
+    .replace(/<br\s*\/?>|<\/(p|div|li|tr|h\d|td|th|dt|dd)>/gi, "\n")
+    .replace(/<[^>]+>/g, " ");
+  const t = decode(body).replace(/[ \t\u00a0]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/\n{2,}/g, "\n").trim();
+  if (t.length < 80) return null;
+  return t.slice(0, max);
+}
+
+// The listing's own photos from its page, so a link alone is enough. Zillow keeps them in the
+// page's data (property.responsivePhotos, inside __NEXT_DATA__), each in several sizes: the
+// largest for the ads (1536 wide, the most Zillow gives; checked 2026-10-29) and 384 for the
+// thumbnail. The page also holds nearby homes' photos, which are left alone. Other sites list
+// theirs in schema.org JSON-LD, a gallery of images on known listing photo servers (MLS share
+// pages), or the page's og:image. Always the largest size the page offers.
+export function photosFrom(html, max = MAX_PHOTOS, base = "") {
   const out = [];
   const add = (url, thumb = null) => {
-    if (typeof url === "string" && /^https:\/\//.test(url) && !out.some((p) => p.url === url)) out.push({ url: decode(url), thumb: thumb ? decode(thumb) : null });
+    if (typeof url !== "string") return;
+    let full = decode(url).trim();
+    try { full = new URL(full, base || undefined).href; } catch { return; }
+    if (!/^https:\/\//.test(full) || NOT_PHOTO.test(full)) return;
+    // The same photo in another size (a thumbnail inside a link to the full one) keeps the larger.
+    const same = out.find((p) => p.url === full || photoKey(p.url) === photoKey(full));
+    if (same) { if (photoSize(full) > photoSize(same.url)) same.url = full; return; }
+    out.push({ url: full, thumb: thumb ? decode(thumb) : null });
   };
   const nd = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
   if (nd) {
@@ -211,8 +249,40 @@ export function photosFrom(html, max = 12) {
       try { images(JSON.parse(m[1]), add); } catch {}
     }
   }
+  // A gallery on a listing photo server: MLS share pages and agent sites draw theirs as images.
+  if (out.length < 2) {
+    for (const m of html.matchAll(/<(?:img|source|a)\b[^>]*>/gi)) {
+      const tag = m[0];
+      const attr = (n) => (tag.match(new RegExp(`\\s${n}=["']([^"']+)["']`, "i")) || [])[1];
+      const set = attr("data-srcset") || attr("srcset");
+      const best = set ? biggest(set) : null;
+      for (const src of [best, attr("data-src"), attr("data-lazy"), attr("data-original"), attr("src"), attr("href")]) {
+        let abs = null;
+        try { abs = src && new URL(decode(src), base || undefined).href; } catch {}
+        if (abs && PHOTO_HOST.test(abs)) { add(abs); break; }
+      }
+    }
+  }
   if (!out.length) for (const m of html.matchAll(/<meta[^>]+(?:property|name)=["']og:image(?::url)?["'][^>]*content=["']([^"']+)["']/gi)) add(m[1]);
   return out.slice(0, max);
+}
+
+// Servers that hold listing photos and nothing else (checked 2026-10-31): Flexmls (Spark),
+// Matrix (CoreLogic), Paragon, Bright and other MLS media servers, the big portals' photo hosts.
+const PHOTO_HOST = /^https:\/\/([^/]*\.)?(sparkplatform\.com|mlsmatrix\.com|paragonrels\.com|photos\.zillowstatic\.com|cdn-redfin\.com|rdcpix\.com|brightmls\.com|mlspin\.com|harstatic\.com)\/|\/MediaServer\/GetMedia|GetMedia\.ashx|\/ParagonImages\//i;
+// Never the agent's face, a logo or a map.
+const NOT_PHOTO = /logo|icon|avatar|headshot|agent[-_]?photo|sprite|badge|favicon|staticmap|maps\.googleapis|placeholder|blank\.gif|\.svg(\?|$)/i;
+// A photo's address without its size, and the size it asks for.
+const SIZE_PARAM = /^(size|w|width|h|height|maxwidth|maxheight)$/i;
+function photoKey(url) {
+  try { const u = new URL(url); for (const k of [...u.searchParams.keys()]) if (SIZE_PARAM.test(k)) u.searchParams.delete(k); return u.href; } catch { return url; }
+}
+function photoSize(url) {
+  try { return Math.max(0, ...[...new URL(url).searchParams].filter(([k]) => SIZE_PARAM.test(k)).map(([, v]) => Number(v) || 0)); } catch { return 0; }
+}
+// The widest picture in a srcset ("a.jpg 640w, b.jpg 1280w").
+function biggest(set) {
+  return set.split(/,\s+/).map((c) => { const [u, w] = c.trim().split(/\s+/); return { u, w: parseFloat(w) || 0 }; }).sort((a, b) => b.w - a.w)[0]?.u || null;
 }
 
 // The listing's facts from Zillow's page data: price, beds, baths, size, year and the agent's own

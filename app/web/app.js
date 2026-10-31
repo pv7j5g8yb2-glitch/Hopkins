@@ -1804,6 +1804,20 @@
     $("#metaPage").addEventListener("change", (e) => e.target.value && save({ pageId: e.target.value }));
   }
 
+  // The agent's CRM: each new Lead goes there as it comes in. Follow Up Boss by its API key, any
+  // other CRM by a webhook URL (Zapier, Make).
+  function crmGroup(fld) {
+    const c = S.me.crm || {};
+    const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:10px">The last Lead didn't reach ${esc(c.last.failed.map((f) => f === "webhook" ? "the webhook" : f).join(" or "))}.</p>` : "";
+    const fub = c.fub
+      ? `<div class="crm-row"><div><b>Follow Up Boss</b><p class="small">${esc(c.fubName || "Connected")}</p></div><button class="link" data-act="crmOff" data-which="fub">Disconnect</button></div>`
+      : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmFub", "Follow Up Boss API key", "", "password", "")}<div><button class="sec-btn" data-act="crmSave" data-which="fub">Connect</button></div></div>`;
+    const hook = c.hook
+      ? `<div class="crm-row"><div><b>Webhook</b><p class="small">${esc(c.hook)}</p></div><div style="display:flex;gap:14px"><button class="link" data-act="crmTest">Send a test</button><button class="link" data-act="crmOff" data-which="hook">Remove</button></div></div>`
+      : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmHook", "Webhook URL, for any other CRM", "", "url", "https://hooks.zapier.com/…")}<div><button class="sec-btn" data-act="crmSave" data-which="hook">Save</button></div></div>`;
+    return `<div class="group" id="crm"><h4>CRM</h4><div style="display:flex;flex-direction:column;gap:18px">${fub}${hook}</div>${failed}</div>`;
+  }
+
   function viewSettings() {
     const u = S.me.user, b = S.me.workspace.brand, use = S.me.usage;
     const fld = (id, label, value, type = "text", ph = "", auto = "off") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="${auto}"></div>`;
@@ -1830,6 +1844,7 @@
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
         : `<div><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       ${metaGroup()}
+      ${crmGroup(fld)}
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
            ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="sec-btn" data-act="billing">Manage</button></div>` : ""}`
@@ -1873,6 +1888,18 @@
       await api("/api/brand", { method: "PUT", body: { alerts_topic: topic } });
       await loadMe(); buzz(6); toast(topic ? "Lead alerts on" : "Lead alerts off");
       viewSettings();
+    } else if (act === "crmSave") {
+      const which = t.dataset.which;
+      const v = val(which === "fub" ? "#crmFub" : "#crmHook").trim();
+      if (!v) return toast(which === "fub" ? "Enter your API key" : "Enter a webhook URL");
+      S.me.crm = await api("/api/crm", { method: "PUT", body: { [which]: v } });
+      viewSettings(); buzz(6); toast(which === "fub" ? "Follow Up Boss connected" : "Saved");
+    } else if (act === "crmOff") {
+      S.me.crm = await api("/api/crm", { method: "PUT", body: { [t.dataset.which]: "" } });
+      viewSettings(); toast(t.dataset.which === "fub" ? "Disconnected" : "Removed");
+    } else if (act === "crmTest") {
+      await api("/api/crm/test", { body: {} });
+      toast("Test sent");
     } else if (act === "testAlert") {
       await api("/api/alerts/test", { body: {} });
       toast("Test sent");
@@ -2143,7 +2170,7 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest"].includes(act)) await settingsAction(act, t);
       else if (act === "pauseRun" || act === "resumeRun") {
         const next = await api(`/api/listings/${l.id}/${act === "pauseRun" ? "pause" : "resume"}`, { body: {} });
         drawListing(next, true);

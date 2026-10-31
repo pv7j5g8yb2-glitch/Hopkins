@@ -18,6 +18,7 @@ import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaR
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./plans.js";
 import { stripeReady, checkout, getSession, portal, readEvent } from "./stripe.js";
 import { nameCase } from "./names.js";
+import { readCrm, crmPublic, checkFubKey, sealKey, hookOk, testHook } from "./crm.js";
 import { FONT_KEYS } from "./style.js";
 import { buildDemo, DEMO_DOMAIN } from "./demo.js";
 import { aiEnabled, provider } from "./brain.js";
@@ -273,6 +274,7 @@ app.get("/api/me", async (request) => {
     moments: MOMENTS,
     photoLabels: PHOTO_LABELS,
     meta: await metaSummary(ws),
+    crm: crmPublic(ws),
   };
 });
 
@@ -449,6 +451,43 @@ app.post("/api/alerts/test", async (request, reply) => {
   if (tooMany(`alerttest:${request.user.id}`, 5)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   if (!request.ws.brand.alerts_topic) return reply.code(400).send({ error: "Turn on Lead alerts first." });
   notifyTopic(request.ws.brand.alerts_topic, "Hopkins test alert", "Lead alerts are working. New Leads will appear like this.");
+  return { ok: true };
+});
+
+// ---------- CRM (each new Lead into the agent's own CRM) ----------
+
+// Follow Up Boss with the agent's API key (checked with Follow Up Boss before it's kept), and/or
+// a webhook URL for any other CRM. An empty value turns that one off.
+app.put("/api/crm", async (request, reply) => {
+  if (tooMany(`crm:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
+  const b = request.body || {};
+  const c = readCrm(request.ws);
+  if (b.fub !== undefined) {
+    const key = String(b.fub || "").trim();
+    if (!key) { delete c.fub; delete c.fubName; }
+    else {
+      const name = await checkFubKey(key);
+      if (!name) return reply.code(400).send({ error: "Follow Up Boss didn't accept that API key." });
+      c.fub = sealKey(key);
+      c.fubName = name;
+    }
+  }
+  if (b.hook !== undefined) {
+    const url = String(b.hook || "").trim();
+    if (!url) delete c.hook;
+    else if (!hookOk(url) || url.length > 500) return reply.code(400).send({ error: "Enter a valid https webhook URL." });
+    else c.hook = url;
+  }
+  delete c.last;
+  await run(`UPDATE workspaces SET crm = ? WHERE id = ?`, [JSON.stringify(c), request.ws.id]);
+  return crmPublic({ crm: JSON.stringify(c) });
+});
+
+app.post("/api/crm/test", async (request, reply) => {
+  if (tooMany(`crmtest:${request.user.id}`, 5)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
+  const c = readCrm(request.ws);
+  if (!c.hook) return reply.code(400).send({ error: "Add a webhook URL first." });
+  try { await testHook(c.hook); } catch (err) { return reply.code(400).send({ error: `The webhook didn't accept it (${err.message.replace(/^answered /, "")}).` }); }
   return { ok: true };
 });
 
@@ -982,7 +1021,7 @@ app.post("/api/l/:slug/lead", async (request, reply) => {
   if (!email && !phone) return reply.code(400).send({ error: "Enter a phone number or email." });
   if (email && !EMAIL_RE.test(email)) return reply.code(400).send({ error: "Enter a valid email address." });
   const wants = ["showing", "info", "offer", "apply"].includes(b.wants) ? b.wants : "info";
-  await addLead(listing, { name, email, phone, wants, note: clean(b.note, 600), adId: clean(b.v, 40), source: clean(b.src, 40) });
+  await addLead(listing, { name, email, phone, wants, note: clean(b.note, 600), adId: clean(b.v, 40), source: clean(b.src, 40), base: appUrl(request) });
   return { ok: true };
 });
 

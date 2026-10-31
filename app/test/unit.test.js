@@ -170,6 +170,36 @@ test("a listing page's own photos and facts: Zillow's page data, else JSON-LD, e
   assert.deepEqual(photosFrom(`<meta property="og:image" content="http://insecure.test/a.jpg">`), []);
 });
 
+test("MLS share pages: every photo at its largest, the remarks and the facts from the page's words", async () => {
+  const { readPage, photosFrom, MAX_PHOTOS } = await import("../src/listing.js");
+  // A Flexmls share page: a gallery on Spark's photo server, a table of facts, the remarks.
+  const gallery = Array.from({ length: 30 }, (_, i) => `<img src="https://cdn.photos.sparkplatform.com/az/2026${i}-t.jpg" srcset="https://cdn.photos.sparkplatform.com/az/2026${i}-t.jpg 300w, https://cdn.photos.sparkplatform.com/az/2026${i}-o.jpg 2048w">`).join("");
+  const flex = `<html><head><title>4821 E Sunrise Dr, Phoenix, AZ 85018</title><script>var x = "$999,999";</script></head><body><nav>Sign in</nav>
+    <img src="https://cdn.photos.sparkplatform.com/logo.png"><img src="/img/agent-headshot.jpg">${gallery}
+    <table><tr><td>List Price</td><td>$1,249,000</td></tr><tr><td>Beds</td><td>4</td></tr><tr><td>Baths</td><td>3</td></tr><tr><td>Approx SqFt</td><td>2,912 sq ft</td></tr></table>
+    <h3>Public Remarks</h3><p>Mid century ranch on a corner lot with a pool &amp; mountain views.</p></body></html>`;
+  const r = readPage(flex, "https://www.flexmls.com/share/abc/4821-E-Sunrise-Dr");
+  assert.equal(r.photos.length, MAX_PHOTOS);
+  assert.equal(r.photos[0].url, "https://cdn.photos.sparkplatform.com/az/20260-o.jpg");
+  assert.ok(!r.photos.some((p) => /logo|headshot/.test(p.url)));
+  assert.equal(r.thin, false);
+  assert.match(r.description, /List Price: \$1,249,000\nBeds: 4/);
+  assert.match(r.description, /pool & mountain views/);
+  assert.doesNotMatch(r.description, /999,999|Sign in/);
+  const p = parseListingText(r.description);
+  assert.deepEqual([p.price, p.beds, p.baths, p.sqft], [1249000, 4, 3, 2912]);
+  // Matrix's public portal: photos from its media server, linked from the page itself.
+  const matrix = `<body><a href="/MediaServer/GetMedia.ashx?Key=55&TableID=9&Type=1&Number=0&Size=4"><img src="/MediaServer/GetMedia.ashx?Key=55&amp;TableID=9&amp;Type=1&amp;Number=0&amp;Size=2"></a><img src="/MediaServer/GetMedia.ashx?Key=55&amp;TableID=9&amp;Type=1&amp;Number=1&amp;Size=4"></body>`;
+  assert.deepEqual(photosFrom(matrix, 25, "https://matrix.example-mls.com/Matrix/Public/Portal.aspx?ID=1").map((x) => x.url), [
+    "https://matrix.example-mls.com/MediaServer/GetMedia.ashx?Key=55&TableID=9&Type=1&Number=0&Size=4",
+    "https://matrix.example-mls.com/MediaServer/GetMedia.ashx?Key=55&TableID=9&Type=1&Number=1&Size=4",
+  ]);
+  // An app drawn in the browser says nothing about the property: thin, so Google reads it too.
+  assert.equal(readPage(`<html><head><title>OneHome</title><meta property="og:image" content="https://x.test/brand.png"></head><body><app-root></app-root></body></html>`).thin, true);
+  // A site that answers with an empty page gives nothing.
+  assert.equal(readPage(""), null);
+});
+
 test("listing pages on other portals give their full facts, and Canada is in Canadian dollars", async () => {
   const { ldFacts } = await import("../src/listing.js");
   const html = `<script type="application/ld+json">${JSON.stringify({ "@type": ["RealEstateListing"], description: "Short.", offers: { "@type": "Offer", price: 1995000, priceCurrency: "USD" }, mainEntity: { "@type": "SingleFamilyResidence", numberOfBedrooms: 3, numberOfBathroomsTotal: 2, floorSize: { "@type": "QuantitativeValue", value: 2656, unitCode: "FTK" }, description: "Step into a slice of 1940s heaven that's been reimagined for the way we live today, with a new kitchen and a garden.", address: { "@type": "PostalAddress", streetAddress: "30 Whitwell Ave", addressLocality: "Newport", addressRegion: "RI" } } })}</script>`;

@@ -4,6 +4,7 @@
 
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
+import { sendLead, readCrm, crmPublic } from "./crm.js";
 import { parseListingText, parseCurrency, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
@@ -104,7 +105,18 @@ export function looksLikeListing(text, photoIds = []) {
 // The account's own numbers, in a few lines, for the chat: last week, this week so far, each
 // listing, the ads that brought the most Leads. Hopkins once said "I can't see any past report or
 // lead numbers" when asked how last week went (2026-10-28); the Report had them all along.
+// Where new Leads go besides Hopkins, so the chat can answer "do my Leads go to my CRM?".
+function crmLine(ws) {
+  const c = crmPublic(ws);
+  const on = [c.fub && "Follow Up Boss", c.hook && `a webhook (${c.hook})`].filter(Boolean);
+  return on.length ? `CRM: each new Lead goes straight to ${on.join(" and ")} as it comes in.` : "CRM: not connected. New Leads can go straight to Follow Up Boss (with their API key) or to any other CRM through a webhook URL (Zapier or Make), set up in Settings, CRM.";
+}
+
 export async function accountSummary(ws, tz = "UTC") {
+  return `${await numbersSummary(ws, tz)}\n${crmLine(ws)}`;
+}
+
+async function numbersSummary(ws, tz) {
   const [last, now] = await Promise.all([weeklyReport(ws, weekRange(new Date(), tz, 1)), weeklyReport(ws, weekRange(new Date(), tz, 0))]);
   if (!now.listings.length) return "No listings yet, so no Leads or report yet.";
   const day = (iso) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: tz });
@@ -368,8 +380,15 @@ async function readAndMake(ws, listing, text, { inPlace = false } = {}) {
 
 // A listing link: Hopkins opens it itself, and when the site blocks that, Gemini reads it
 // through Google's own fetcher (only what the page says, 2026-10-28).
+// A page that said nothing about the property (an app drawn in the browser, like OneHome) gets
+// Google's read too, and keeps whichever photos and words say more.
 async function openLink(link) {
-  return (await readLink(link)) || (await readLinkAI(link));
+  const own = await readLink(link);
+  if (own && !own.thin) return own;
+  const ai = await readLinkAI(link);
+  if (!own) return ai;
+  if (!ai) return own;
+  return { title: ai.title || own.title, description: ai.description || own.description, image: own.image || ai.image, photos: ai.photos.length > own.photos.length ? ai.photos : own.photos };
 }
 
 // Photos from the listing's page, downloaded once and kept like uploaded ones, in the page's order.
@@ -1855,7 +1874,7 @@ export async function syncMeta() {
 
 // ---------- leads ----------
 
-export async function addLead(listing, { name, email, phone, wants, note, adId, source }) {
+export async function addLead(listing, { name, email, phone, wants, note, adId, source, base = "" }) {
   name = nameCase(name);
   const ws = await getWorkspace(listing.workspace_id);
   const ad = adId ? await get(`SELECT id, version, name FROM ads WHERE id = ? AND listing_id = ?`, [adId, listing.id]) : null;
@@ -1869,6 +1888,11 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
   const contact = [phone, email].filter(Boolean).join(", ");
   await say(ws, listing.id, `New Lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""}`, "lead", { leadId: id }, false);
   if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New Lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
+  // Into their CRM as it comes in, without making the person on the lead page wait.
+  const lead = { id, name, email, phone, wants, note, created_at: nowIso() };
+  sendLead(ws, { lead, listing, ad, pageUrl: base ? `${base}/l/${listing.slug}` : null })
+    .then(async (last) => { if (last) await run(`UPDATE workspaces SET crm = ? WHERE id = ?`, [JSON.stringify({ ...readCrm(await getWorkspace(ws.id)), last }), ws.id]); })
+    .catch((err) => console.error("Sending a Lead to the CRM failed:", err.message));
   return id;
 }
 

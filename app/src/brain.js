@@ -423,7 +423,7 @@ export async function readLinkAI(url) {
     if (!meta.some((m) => /SUCCESS/.test(m.urlRetrievalStatus || ""))) return null;
     const out = JSON.parse((r.text.match(/\{[\s\S]*\}/) || ["{}"])[0]);
     if (!out.opened || !(out.title || out.description)) return null;
-    const photos = (Array.isArray(out.photos) ? out.photos : []).filter((u) => typeof u === "string" && /^https:\/\//.test(u)).slice(0, 12).map((u) => ({ url: u, thumb: u }));
+    const photos = (Array.isArray(out.photos) ? out.photos : []).filter((u) => typeof u === "string" && /^https:\/\//.test(u)).slice(0, 25).map((u) => ({ url: u, thumb: u }));
     return { title: out.title || null, description: out.description || null, image: photos[0]?.url || null, photos };
   } catch (err) {
     console.error("Reading the link through Google failed:", err.message);
