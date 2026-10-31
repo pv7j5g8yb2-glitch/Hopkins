@@ -988,4 +988,20 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
 * **Investor read (2026-10-31):** `docs/INVESTOR.md`. Short version: eight figures is possible
   only if Hopkins wins on running ads and Leads, with content as the daily habit; next is 10 real
   agents with live Meta campaigns and their cost per Lead.
+* **Roadmap in four stages (ChatGPT's list, Ismael pasted it 2026-10-31), with status:**
+  1. Useful every day: Needs attention ✅, real Meta data ✅ (fake Graph API only), instant replies ✅
+     (needs Resend), follow up on Leads that haven't converted ❌, Today showing what matters ✅.
+  2. Easy to start: website onboarding (route only, its screen went with Brand), listing links and
+     photos ✅, chat edits ✅, posts in the chat ✅, minimal personal assistant ✅.
+  3. Excellent output: better property ads, carousels ✅ and animated reels ✅ (text based, no
+     property video yet), brand consistent creative, varied approaches. Bar: better than what an
+     agent makes in Canva. Not proven yet.
+  4. Connected: MLS and portal links ✅ (only pages that let Hopkins in, never promise universal
+     feeds), Follow Up Boss and webhooks ✅, account deletion with Meta stop ✅, scenario suite ✅
+     (`app/test/scenarios.test.js`, 2026-10-31), investor read ✅.
+  The advice to follow: finish one loop for one real listing with a real agent (listing, campaign,
+  approval, launch, enquiry, reply, follow up, results, recommendation) before adding more.
+* **Open question for Ismael (2026-10-31):** keep the reeded glass background inside the app, or
+  only on sign in, sign up, the waitlist and the landing page with a plain navy inside the app.
+  Comparison screenshots sent. My view: plain inside the app.
 

@@ -1,6 +1,6 @@
 # Everything an agent can ask Hopkins (2026-10-31)
 
-The source list for Hopkins' scenario tests. Status as of 2026-10-31:
+The source list for Hopkins' scenario tests (`app/test/scenarios.test.js`, started 2026-10-31). Status as of 2026-10-31:
 ✅ works today, ⚠️ partly or untested, ❌ not built. Keep it updated as things are built.
 
 ## Account and settings

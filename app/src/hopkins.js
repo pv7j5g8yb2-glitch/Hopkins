@@ -1018,8 +1018,11 @@ async function directEdit(ws, listing, ads, text, selected) {
 // educating first time buyers", "make me a post for this". A question about them ("should I post
 // a reel?") is a question, not an order.
 const ASKS_ABOUT = /^\s*(should|what|whats|what's|how|why|when|which|is|are|does|do i|do you|can reels|tell me about)\b/i;
+// "5 reel ideas", "a reel script", "a caption for a reel": they want words, not a reel.
+const WORDS_ONLY = /\b(reels?|carousels?|posts?|stor(y|ies)|videos?|tiktoks?)\s+(ideas?|scripts?|captions?|hooks?|concepts?|outlines?|topics?|hashtags?)\b|\b(ideas?|scripts?|captions?|hooks?|concepts?|outlines?|topics?|hashtags?)\s+(for|about|on)\s+(an?\s+|my\s+|the\s+|this\s+)?(\w+\s+)?(reels?|carousels?|posts?|stor(y|ies)|videos?)\b/i;
 export function creationKind(text = "") {
   const t = String(text);
+  if (WORDS_ONLY.test(t)) return null;
   if (ASKS_ABOUT.test(t) || !/\b(make|create|design|write|build|generate|give|need|want|do|turn|draft|put together|can you|could you|i'd like|id like|carousel|reel)\b/i.test(t)) return null;
   if (/\bcarousels?\b/i.test(t)) return "carousel";
   if (/\b(reels?|video|animated|animation|tiktok)\b/i.test(t)) return "reel";
@@ -1402,6 +1405,9 @@ async function applyAI(ws, listing, ads, photos, r, text, selected = 1) {
   // once read as "don't stop" and the ads were started again, 2026-10-31).
   const reached = ["run", "remove_ads", "new_moment", "pause", "resume"].includes(r.action) && r.moment !== "sold";
   const toStop = wantsStop(text), toStart = !toStop && wantsStart(text);
+  // A question ("how are the ads doing?", "should I stop them?") asks; it never pauses, starts,
+  // deletes, plans or moves money, whatever the model reached for (scenario suite, 2026-10-31).
+  if (ASKS_ABOUT.test(text) && !toStop && !toStart && ["pause", "resume", "run", "change_run", "remove_ads", "add_ads", "new_moment", "make_ads"].includes(r.action)) r = { ...r, action: "none", budget: 0, days: 0, remove: [] };
   if (state !== "none" && toStop && (reached || claims(/\b(paused|stopped|turned off|resumed)\b/i))) return stopOrStart(ws, listing, "pause");
   if (state !== "none" && toStart && (reached || claims(/\b(resumed|running again|back on|paused)\b/i))) return stopOrStart(ws, listing, "resume");
   if (r.action === "pause" && !toStart) return stopOrStart(ws, listing, "pause");
@@ -1422,8 +1428,14 @@ async function applyAI(ws, listing, ads, photos, r, text, selected = 1) {
     const open = await openRun(listing.id);
     const ch = open && readRunChange(text, open);
     const drafts = ads.some((a) => a.status === "draft");
-    if (r.action === "change_run" || (ch && !(r.action === "run" && drafts) && /\b(budget|spend|spending|extend|longer|shorter|days?|weeks?|double|halve|more|less|instead|increase|raise|lower|reduce|cut|bump|top)\b/i.test(text))) {
+    if (!ASKS_ABOUT.test(text) && (r.action === "change_run" || (ch && !(r.action === "run" && drafts) && /\b(budget|spend|spending|extend|longer|shorter|days?|weeks?|double|halve|more|less|instead|increase|raise|lower|reduce|cut|bump|top|make it|set it|change it|go to|put it)\b/i.test(text)))) {
       if (ch || r.budget || r.days) return changeRun(ws, listing, { budget: ch?.budget || r.budget || null, days: ch?.days || r.days || null });
+    }
+    // Every ad is already out: a new plan would run them twice ("make it $300" once got one).
+    if (r.action === "run" && !drafts) {
+      if (ch) return changeRun(ws, listing, ch);
+      await say(ws, listing.id, state === "running" ? `The ads for ${listingTitle(listing)} are running.` : `The ads for ${listingTitle(listing)} are paused. Say "resume" to start them again.`);
+      return {};
     }
   }
   if (r.action === "run") {

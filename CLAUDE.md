@@ -160,7 +160,9 @@ The product's code is in `app/` (its README says what works and how to run it).
   else: listing, campaign, approval, launch, enquiry, instant reply and follow up, results, the
   next recommendation. Rules for it: every recommendation comes from real data with a minimum of
   evidence (never "failing" after a few dollars), says exactly what approving does (which ads,
-  how much money, how long), changes nothing without approval, and is said once. Advertising
+  how much money, how long), changes nothing without approval, and is said once. Never generic
+  nudges ("post more this week", "review your audience"): every item names the evidence behind it,
+  or it isn't shown. Advertising
   execution is the core; creative alone is easy to copy. Don't build a CRM, every integration or
   autonomous budget moves yet. Prove it with 5 to 10 real agents.
 * **Interface (Ismael, 2026-10-22):** extremely clean and straightforward, like any successful
@@ -205,6 +207,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   Two "fixed" bugs reached Ismael because local checks were instant and a sheet off screen was missed.
   `npm test` also syntax checks `app/web/*.js`: a broken edit to app.js once gave a blank page
   that every server test passed (2026-10-31).
+  `app/test/scenarios.test.js` runs real agent phrasings against every listing state with a
+  model that answers wrong on purpose; when a new mistake reaches Ismael, add its phrasing there
+  first (2026-10-31: it caught a question pausing ads, "make it $300" making a new plan, and
+  "5 reel ideas" making a reel).
   The server reads `app/web` files once at start, so restart it after editing them or the test
   runs the old code (2026-10-25). Stop a local server by its PID, never `pkill -f`, which also
   kills the shell running the command.
