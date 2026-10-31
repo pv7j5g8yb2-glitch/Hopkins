@@ -23,8 +23,8 @@ export const findPlan = (id) => PLANS.find((p) => p.id === id) || null;
 
 export async function adsMade(workspaceId) {
   const row = await get(
-    `SELECT (SELECT COUNT(*) FROM ads WHERE workspace_id = ?) + COALESCE((SELECT ads_removed FROM workspaces WHERE id = ?), 0) AS n`,
-    [workspaceId, workspaceId]
+    `SELECT (SELECT COUNT(*) FROM ads WHERE workspace_id = ?) + (SELECT COUNT(*) FROM creations WHERE workspace_id = ?) + COALESCE((SELECT ads_removed FROM workspaces WHERE id = ?), 0) AS n`,
+    [workspaceId, workspaceId, workspaceId]
   );
   return Number(row?.n || 0);
 }
@@ -47,5 +47,5 @@ export function upgradeText(reason, { usedOn } = {}) {
   if (reason === "run") return "Running ads requires an upgrade.";
   if (reason === "plan") return `Plans start at $${PRICE_FROM}/month. No cut of your ad spend.`;
   if (reason === "saved") return `Your ${FREE_AD_LIMIT} free ads went on ${usedOn || "an earlier listing"}. This listing is saved. Upgrade, then tap Create ads.`;
-  return `You've used your ${FREE_AD_LIMIT} free ads. New ads require an upgrade.`;
+  return `You've used your ${FREE_AD_LIMIT} free creations. New ones require an upgrade.`;
 }

@@ -709,10 +709,14 @@ test("the first message makes the thread at once, named from it, then Hopkins an
   await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
   assert.equal((await c("GET", `/api/listings/${s.json.listing.id}`)).json.messages.filter((m) => m.role === "hopkins").length, 1);
 
-  // A property: its ads, and its name is the address.
+  // A property on its own: read back and asked what to make, no ads nobody asked for.
   const p = await c("POST", "/api/listings/start", { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000, big back yard" });
   const pf = await c("POST", `/api/listings/${p.json.listing.id}/first`, {});
-  assert.equal(pf.json.ads.length, 3);
+  assert.equal(pf.json.ads.length, 0);
+  assert.match(pf.json.messages.at(-1).body, /^Got it: 12 Elm St, \$585,000.*What should I make for it/);
+  // Asked for, they come.
+  const pa = await c("POST", `/api/listings/${p.json.listing.id}/messages`, { text: "make ads for it" });
+  assert.equal(pa.json.ads.length, 3);
   list = (await c("GET", "/api/listings")).json.listings;
   const prop = list.find((l) => l.id === p.json.listing.id);
   assert.equal(prop.address, "12 Elm St");
@@ -723,7 +727,7 @@ test("the first message makes the thread at once, named from it, then Hopkins an
   // Stopped right after: the thread and the message stay, the ads go and aren't counted.
   await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [(await c("GET", "/api/me")).json.workspace.id]);
   const before = (await c("GET", "/api/me")).json.usage.adsMade;
-  const q = await c("POST", "/api/listings/start", { text: "5 Oak Ave, Austin, TX. 2 bed 1 bath, $410,000" });
+  const q = await c("POST", "/api/listings/start", { text: "5 Oak Ave, Austin, TX. 2 bed 1 bath, $410,000. Make ads for it" });
   assert.equal((await c("POST", `/api/listings/${q.json.listing.id}/first`, {})).json.ads.length, 3);
   const stopped = await c("POST", `/api/listings/${q.json.listing.id}/stop`, {});
   assert.equal(stopped.json.ads.length, 0);
@@ -740,7 +744,8 @@ test("a chat that turns into a listing gets its ads: details in a later message,
   const q = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "what's 15% of $650,000?" });
   assert.equal(q.json.ads.length, 0);
   const r = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000, big back yard" });
-  assert.equal(r.json.ads.length, 3);
+  assert.equal(r.json.ads.length, 0);
+  assert.match(r.json.messages.at(-1).body, /What should I make for it/);
   assert.equal(r.json.listing.address, "12 Elm St");
   assert.ok((await c("GET", "/api/listings")).json.listings.find((l) => l.id === s.json.listing.id).property);
 
@@ -749,14 +754,14 @@ test("a chat that turns into a listing gets its ads: details in a later message,
   await c("POST", `/api/listings/${t.json.listing.id}/first`, {});
   const photo = await c("POST", "/api/photos", { data: TINY_JPEG, thumb: TINY_JPEG, mime: "image/jpeg", name: "kitchen-1.jpg", listingId: t.json.listing.id });
   const m = await c("POST", `/api/listings/${t.json.listing.id}/messages`, { text: "", photoIds: [photo.json.id, "not-mine"] });
-  assert.equal(m.json.ads.length, 3);
+  assert.equal(m.json.ads.length, 0);
   const sent = m.json.messages.find((x) => x.role === "agent" && x.data?.photos);
   assert.deepEqual(sent.data.photos, [photo.json.id]);
 });
 
 test("a new chat gets its answer even if the app never asks for it (the page was closed)", async () => {
   const { c } = await signup("closed@ellery.test");
-  const s = await c("POST", "/api/listings/start", { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000" });
+  const s = await c("POST", "/api/listings/start", { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000. Run ads for it" });
   // No call to /first: the answer was started on the server with the chat.
   // Watched from the chat list, the way the sidebar sees it: opening the chat would read it.
   let row;

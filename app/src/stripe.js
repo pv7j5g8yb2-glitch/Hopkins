@@ -69,3 +69,6 @@ export function readEvent(raw, header, secret = process.env.STRIPE_WEBHOOK_SECRE
   if (!sigs.some((s) => { const got = Buffer.from(s); return got.length === want.length && timingSafeEqual(got, want); })) return null;
   try { return JSON.parse(raw); } catch { return null; }
 }
+
+// Ends a subscription straight away (an account being deleted).
+export const cancelSubscription = (id) => stripe("DELETE", `subscriptions/${encodeURIComponent(id)}`);

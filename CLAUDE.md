@@ -85,6 +85,10 @@ copy. Second style: italic serif headings with soft highlighter marks on grid pa
 ## Hopkins brand (locked)
 
 The product: one chat that runs a real estate business's marketing like an agency would.
+**Positioning (Ismael, 2026-10-31):** "The personal assistant for real estate agents" (he said
+"Realtors Personal Assistant"; public copy says real estate agents because Realtor is NAR's
+trademark). It works like Claude: open a new chat, ask for a carousel post or an animated reel
+educating first time buyers, and get it.
 **Positioning (Ismael, 2026-10-18):** Hopkins is a chat, like ChatGPT or Claude, for running real
 estate marketing. Always lead with the chat. Never word it like a service that does the work for
 them ("made for you", "done for you"), because that reads as a digital marketing agency.
@@ -230,10 +234,16 @@ The product's code is in `app/` (its README says what works and how to run it).
   "This week ×" chip clears it); "Active listings" (listings whose ads are running now, not paused or over) opens Report on
   this week with its Active filter on, or All when there are none, never an empty board (Ismael,
   2026-10-31).
-* **First steps (Ismael, 2026-10-30, 2026-10-31):** a new account's Today shows five steps: your
-  brand, Connect Meta, Connect your CRM (skippable), your first listing, your approval. Meta comes
-  straight after the brand, the CRM straight after Meta. Keep it light: Settings has one CRM row
-  that opens the same page, not the fields.
+* **No Brand page (Ismael, 2026-10-31):** removed completely. Sign up is name, email and
+  password; the brokerage name is in Settings, Profile; anything else (phone, licence, Instagram)
+  is said in the chat. Today is the greeting, the "Ask Hopkins anything" box and two setup rows,
+  Meta and CRM, until each is done or skipped. Settings has one CRM row that opens the CRM page.
+* **Makes what's asked, nothing else (Ismael, 2026-10-31):** no automatic set of 3 ads. A property
+  on its own (facts, a link, photos) is read back in one line and Hopkins asks what to make for
+  it; ads come when asked ("make ads", "run it"). Posts, carousels, stories and animated reels are
+  made in the chat (`makeCreation` in `app/src/hopkins.js`, drawn by `app/web/studio.js`),
+  download as PNGs or a video, and "make the headings shorter" changes the one just made. The
+  API's own `POST /api/listings` still makes ads, because calling it is asking for them.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.
@@ -246,7 +256,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   listings a month, so Hopkins also makes their everyday posts: their story, their city, their
   life, market updates, carousels, captions (what @gethopkins' own reel tells agents to post). It
   replaces 2026-10-30's "ads only for now". Posting them for the agent needs Instagram's publishing
-  permission and its own App Review later; until then they download and post.
+  permission and its own App Review later; until then they download and post. Since 2026-10-31
+  they're made in the chat (see "Makes what's asked").
 * **Fair housing warns, never blocks (Ismael, 2026-10-31):** the US Fair Housing Act covers any
   housing statement or ad, paid or organic, so wording like "perfect for couples" gets one plain
   warning and a safer alternative, and the agent decides. Not legal advice.
@@ -254,8 +265,9 @@ The product's code is in `app/` (its README says what works and how to run it).
   The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
   its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the
   failure to avoid.
-* **Free plan (Ismael, 2026-10-25):** 3 ads in all, the real thing: no watermark, and they can be
-  downloaded. Changes to those 3 are included. After that, strictly nothing new without upgrading
+* **Free plan (Ismael, 2026-10-25; creations count since 2026-10-31):** 3 things in all (ads,
+  posts, carousels, stories and reels counted together), the real thing: no watermark, and they can
+  be downloaded. Changes to those 3 are included. After that, strictly nothing new without upgrading
   to a solo or team plan: no new set, no extra ad, no ads for another listing, and deleting a
   listing or an ad never gives any back. Running any ad needs the paid plan too.
 * **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
@@ -321,9 +333,9 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Instant reply to Leads (2026-10-31):** a Lead who leaves an email gets an email from the agent
   straight away ("via Hopkins", replies go to the agent), only saying the agent will be in touch.
   The chat says so only when it really went out. Settings has the switch. Needs Resend set up.
-* **Setup from the agent's website (2026-10-31):** the Brand page's "Your website" fills in the
-  business name, logo, colours, phone, email, Instagram and city from what the site says, for the
-  agent to check before saving.
+* **Setup from the agent's website (2026-10-31):** `POST /api/brand/from-link` reads the business
+  name, logo, colours, phone, email, Instagram and city from the agent's site. Its screen went with
+  the Brand page the same day; the route stays for the chat to use.
 * **Report rows (Ismael, 2026-10-29):** a listing with ads running keeps its colour on Report even
   with no Leads yet; only one with nothing running and no Leads is greyed.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft

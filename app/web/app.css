@@ -1073,3 +1073,27 @@ select option{color:#111;background:#fff}
 
 .site-row{display:flex;gap:10px;align-items:center}
 .site-row .fld{flex:1;min-width:0}
+
+/* Posts, carousels, stories and reels in the chat */
+.cr{margin-top:14px}
+.cr-strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:2px 2px 6px}
+.cr-strip::-webkit-scrollbar{display:none}
+.cr-slide{flex:none;width:220px;aspect-ratio:4/5;height:auto;border-radius:12px;scroll-snap-align:start;box-shadow:0 0 0 1px var(--line),0 10px 26px -10px rgba(0,0,0,.6)}
+.cr-slide.tall,.cr-reel{aspect-ratio:9/16}
+.cr-reel{flex:none;width:230px;height:auto;border-radius:14px;box-shadow:0 0 0 1px var(--line),0 10px 26px -10px rgba(0,0,0,.6)}
+.cr-cap{margin-top:10px;font-size:14px;color:var(--soft);white-space:pre-wrap;max-width:560px}
+@media (max-width:980px){.cr-strip{margin-right:-14px;padding-right:14px}.cr-slide{width:64%}.cr-reel{width:62%}}
+
+/* Today: the box to ask, like Claude's home */
+.askbox{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 24px;padding:8px 8px 8px 20px;height:60px;border-radius:999px;background:rgba(10,30,70,.55);box-shadow:0 0 0 1px var(--glass-edge);color:rgba(255,255,255,.72);font-size:16px;-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px)}
+.askbox span{width:44px;height:44px;border-radius:50%;background:#fff;color:var(--ox);display:grid;place-items:center;flex:none}
+.askbox span svg{width:18px;height:18px;stroke-width:2.3}
+.askbox:active{opacity:.75}
+.steps.setup{margin-top:8px}
+.steps.setup li:before{display:none}
+/* New chat: no photo panel until photos are added (2026-10-31). */
+.drop.quiet{display:none;border:0;background:none;padding:0;cursor:default}
+.drop.quiet.has{display:block}
+.drop.quiet .grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
+section.chat.drag{outline:1px dashed rgba(255,255,255,.4);outline-offset:-12px}
+.steps.setup .tx b{font-weight:500}

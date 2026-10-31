@@ -5,12 +5,13 @@
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
 import { sendLead, readCrm, crmPublic } from "./crm.js";
-import { parseListingText, parseCurrency, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES } from "./listing.js";
+import { parseListingText, parseCurrency, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES, factsLine } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
+import { creationAI } from "./brain.js";
 import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure, titleAI } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
@@ -277,6 +278,7 @@ export async function createListing(ws, { text = "", photoIds = [], photoNames =
     await say(ws, id, LINK_BLOCKED(link));
     return fresh;
   }
+  // The API's own "make a listing" call (the app starts chats with /start instead): it asks for ads.
   await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : fresh.deal === "rent" ? "What's the monthly rent?" : "What's the asking price?"), count: countFrom(rest) });
   return fresh;
 }
@@ -344,6 +346,7 @@ export async function firstReply(ws, id, tz = "UTC") {
 // question or anything else gets an answer, like any chat.
 async function answerFirst(ws, listing, text, photoIds, tz, { inPlace = false } = {}) {
   let answer = null;
+  if (!photoIds.length && !URL_RE.test(text) && creationKind(text) && !seemsListing(text)) return makeCreation(ws, listing, text, creationKind(text));
   if (!photoIds.length && !URL_RE.test(text)) {
     const history = [{ role: "agent", body: text }];
     answer = seemsListing(text) ? await answerIfNotListing(ws, history, text, tz) : await newChat(ws, history, tz);
@@ -379,6 +382,12 @@ async function readAndMake(ws, listing, text, { inPlace = false } = {}) {
   const fresh = await loadListing(ws.id, listing.id);
   if (link && !linkInfo && !fresh.price && !rest) {
     await say(ws, listing.id, LINK_BLOCKED(link));
+    return {};
+  }
+  const kind = creationKind(rest);
+  if (kind) return makeCreation(ws, fresh, rest, kind);
+  if (!WANTS_ADS.test(rest) && !inPlace) {
+    await say(ws, listing.id, `${readBack(fresh)} ${missing || WHAT_NEXT}`);
     return {};
   }
   await makeAds(ws, fresh, "new", {}, { note: missing || (fresh.price ? null : fresh.deal === "rent" ? "What's the monthly rent?" : "What's the asking price?"), count: countFrom(rest), inPlace });
@@ -1003,11 +1012,91 @@ async function directEdit(ws, listing, ads, text, selected) {
   return { focus: shown.length === 1 ? shown[0] : undefined };
 }
 
+// ---------- posts, carousels, stories and reels ----------
+
+// What they asked for, read the way a person would: "a carousel about...", "an animated reel
+// educating first time buyers", "make me a post for this". A question about them ("should I post
+// a reel?") is a question, not an order.
+const ASKS_ABOUT = /^\s*(should|what|whats|what's|how|why|when|which|is|are|does|do i|do you|can reels|tell me about)\b/i;
+export function creationKind(text = "") {
+  const t = String(text);
+  if (ASKS_ABOUT.test(t) || !/\b(make|create|design|write|build|generate|give|need|want|do|turn|draft|put together|can you|could you|i'd like|id like|carousel|reel)\b/i.test(t)) return null;
+  if (/\bcarousels?\b/i.test(t)) return "carousel";
+  if (/\b(reels?|video|animated|animation|tiktok)\b/i.test(t)) return "reel";
+  if (/\bstor(y|ies)\b/i.test(t)) return "story";
+  if (/\b(post|graphic|flyer|instagram post|ig post)\b/i.test(t) && !/\b(ads?|advert)\b/i.test(t)) return "post";
+  return null;
+}
+// They asked for ads to run, in so many words.
+const WANTS_ADS = /\b(ads?|adverts?|advertis\w*|campaign|boost|promote|run (it|them|this))\b/i;
+
+const KIND_NAME = { carousel: "carousel", reel: "reel", story: "story", post: "post" };
+let creationFake = null;
+export function setCreationForTests(f) { creationFake = f; }
+
+export async function latestCreation(listingId) {
+  const c = await get(`SELECT * FROM creations WHERE listing_id = ? ORDER BY updated_at DESC LIMIT 1`, [listingId]);
+  return c ? { ...c, spec: safeJson(c.spec, null) } : null;
+}
+
+// Makes it (or changes the latest one), keeps it, and puts it in the chat.
+export async function makeCreation(ws, listing, text, kind, previous = null) {
+  if (!previous && !isPaid(ws) && (await adsMade(ws.id)) >= FREE_AD_LIMIT) {
+    await say(ws, listing.id, upgradeText("limit"), "upgrade", { reason: "limit" });
+    return { upgrade: true };
+  }
+  const photos = await loadPhotos(listing.id);
+  const hasProperty = listing.address || listing.price || listing.beds || listing.home_type;
+  const agent = [ws.brand.agent_name, ws.brand.business].filter(Boolean).join(", ");
+  const make = creationFake || creationAI;
+  const spec = await make({ kind, request: text, listing: hasProperty ? { address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal), deal: listing.deal || "sale", beds: listing.beds, baths: listing.baths, sqft: listing.sqft, type: listing.home_type, features: listing.features, description: (listing.description || "").slice(0, 1500) } : null, photos: photos.length, agent, previous: previous?.spec || null });
+  if (!spec) {
+    await say(ws, listing.id, "Something went wrong. Please try again.");
+    return {};
+  }
+  const now = nowIso();
+  let id = previous?.id;
+  if (previous) await run(`UPDATE creations SET spec = ?, version = version + 1, updated_at = ? WHERE id = ?`, [JSON.stringify(spec), now, id]);
+  else {
+    id = randomUUID();
+    await run(`INSERT INTO creations (id, workspace_id, listing_id, kind, spec, created_at, updated_at) VALUES (?,?,?,?,?,?,?)`, [id, ws.id, listing.id, kind, JSON.stringify(spec), now, now]);
+  }
+  // Fair housing covers posts too: one plain note, the agent decides.
+  const words = [...spec.slides.map((x) => `${x.heading} ${x.body}`), spec.caption].join(" ");
+  const issues = checkWording(words);
+  const note = issues.length ? ` Heads up: "${issues[0].term}" can read as who the property suits, which fair housing rules don't allow. Keep it, or change it?` : "";
+  const line = polish(plainWords(spec.reply || `Here's your ${KIND_NAME[kind]}.`));
+  await say(ws, listing.id, `${line}${note}`, "creation", { creationId: id, version: previous ? previous.version + 1 : 1 });
+  if (!listing.title && !listing.address && !previous && spec.title) await run(`UPDATE listings SET auto_title = COALESCE(auto_title, ?) WHERE id = ?`, [spec.title, listing.id]);
+  return { creation: id };
+}
+
+// A property on its own (a link, photos, the facts) is read and kept; Hopkins says what it read and
+// asks what to make, the way Claude would, instead of making a set of ads nobody asked for.
+function readBack(l) {
+  const bits = [l.address || l.area || l.city, formatPrice(l.price, l.currency, l.deal), factsLine(l)].filter(Boolean);
+  return bits.length ? `Got it: ${bits.join(", ")}.` : "Got it.";
+}
+const WHAT_NEXT = "What should I make for it: a post, a carousel, a reel, or ads to run?";
+
 export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC", photoIds = []) {
   const listing = await loadListing(ws.id, listingId);
   if (!listing) return null;
   const sent = await postMessage(ws.id, listingId, "agent", "text", text, photoIds.length ? { photos: photoIds } : null);
   await keepUndo(listingId, sent.id);
+  // A post, carousel, story or reel asked for, or a change to the one just made.
+  const kind = creationKind(text);
+  const last = await latestCreation(listingId);
+  // "make the carousel shorter" is a change to the carousel there, not a new one.
+  if (kind && last) {
+    const same = await get(`SELECT * FROM creations WHERE listing_id = ? AND kind = ? ORDER BY updated_at DESC LIMIT 1`, [listingId, kind]);
+    if (same && /\b(the|this|that|my|your) (carousel|reel|video|story|post)\b/i.test(text) && !/\b(new|another|second|different|one more)\b/i.test(text)) return makeCreation(ws, listing, text, kind, { ...same, spec: safeJson(same.spec, null) });
+  }
+  if (kind) return makeCreation(ws, listing, text, kind);
+  if (last && !ASKS_ABOUT.test(text) && !/\?\s*$/.test(text) && !WANTS_ADS.test(text) && !JUST_THANKS.test(text)) {
+    const lastAds = await get(`SELECT created_at FROM messages WHERE listing_id = ? AND kind = 'ads' ORDER BY created_at DESC LIMIT 1`, [listingId]);
+    if (!lastAds || lastAds.created_at < last.updated_at) return makeCreation(ws, listing, text, last.kind, last);
+  }
   const direct = await directEdit(ws, listing, await currentAds(listing), text, selected);
   if (direct) return direct;
   // A plain thanks never goes to the model, so it can't touch the ads or get a reply about them.
@@ -1016,6 +1105,11 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     return {};
   }
   const ads = await currentAds(listing);
+  // Ads asked for on a property that has none yet ("make ads for it", "run ads"): made now.
+  const known = listing.address || listing.price || listing.beds || listing.sqft || listing.home_type;
+  if (!ads.length && known && WANTS_ADS.test(text) && !ASKS_ABOUT.test(text) && !/\?\s*$/.test(text) && !STOP_WORDS.test(text)) {
+    return makeAds(ws, listing, listing.moment || "new", {}, { count: countFrom(text), brief: text, note: listing.price ? null : listing.deal === "rent" ? "What's the monthly rent?" : "What's the asking price?" });
+  }
   // A chat that turns into a listing (Ismael, 2026-10-29): no property in the thread yet, then
   // photos or a property's details. It's read and gets its ads, like a first message would.
   // A question that only mentions a price is answered instead.

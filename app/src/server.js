@@ -29,6 +29,7 @@ import { PHOTO_LABELS, formatPrice, factsLine } from "./listing.js";
 import { notifyFounder, notifyTopic } from "./notify.js";
 import { mailReady, sendMail, resetEmail } from "./mail.js";
 import { checkWording } from "./fairhousing.js";
+import { wipeWorkspace, freshStart } from "./fresh.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB = join(__dirname, "..", "web");
@@ -38,7 +39,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "app.js", "glass.js", "creative.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "app.js", "glass.js", "creative.js", "studio.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -116,7 +117,7 @@ app.get("/healthz", async (request) => {
   return { ok: true, started: STARTED, ai: provider || "none", pinged: seen };
 });
 
-for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
+for (const f of ["app.css", "app.js", "glass.js", "creative.js", "studio.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
 for (const [path, v] of Object.entries(VENDOR)) {
@@ -448,8 +449,7 @@ app.post("/api/account/delete", async (request, reply) => {
   } catch (err) {
     return reply.code(409).send({ error: "Couldn't pause your ads on Meta. Pause them in Ads Manager, then delete your account." });
   }
-  for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "listings", "feedback", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [ws]);
-  await run(`DELETE FROM workspaces WHERE id = ?`, [ws]);
+  await wipeWorkspace(ws);
   clearSession(reply);
   return { ok: true };
 });
@@ -643,18 +643,20 @@ async function listingPayload(ws, id) {
   await numberUntitled(ws.id);
   const listing = await loadListing(ws.id, id);
   if (!listing) return null;
-  const [photos, ads, messages, leads] = await Promise.all([
+  const [photos, ads, messages, leads, creations] = await Promise.all([
     loadPhotos(id),
     currentAds(listing),
     all(`SELECT id, role, kind, body, data, needs_action, created_at, undo IS NOT NULL AS editable FROM messages WHERE listing_id = ? ORDER BY created_at`, [id]),
     get(`SELECT COUNT(*) AS n FROM leads WHERE listing_id = ?`, [id]),
+    all(`SELECT id, kind, spec, version, updated_at FROM creations WHERE listing_id = ? ORDER BY created_at`, [id]),
   ]);
+  for (const c of creations) c.spec = JSON.parse(c.spec);
   const unread = Boolean((await get(`SELECT ${UNREAD} AS u FROM listings l WHERE l.id = ?`, [id]))?.u);
   // Every message the agent sent can be edited, except one from before an approved run.
   const first = await firstMessageId(listing);
   for (const m of messages) { m.data = m.data ? JSON.parse(m.data) : null; m.editable = Boolean(m.editable) || m.id === first; }
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency, listing.deal), unread, run: await runState(listing.id) }, photos, ads: checked, messages, leads: Number(leads.n) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency, listing.deal), unread, run: await runState(listing.id) }, photos, ads: checked, messages, leads: Number(leads.n), creations };
 }
 
 // Opening a chat reads it.
@@ -1058,6 +1060,7 @@ if (process.env.NODE_ENV !== "test" && !process.env.NO_LISTEN) {
   process.on("unhandledRejection", (err) => console.error("Unhandled rejection:", err?.stack || err));
   await forgetGuessedCities().catch((err) => console.error("City clean up failed:", err.message));
   await capitaliseNames().catch((err) => console.error("Name clean up failed:", err.message));
+  await freshStart().catch((err) => console.error("Fresh start failed:", err.message));
   await app.listen({ port: Number(process.env.PORT || 3200), host: "0.0.0.0" });
   // Running campaigns on Meta, checked every 30 minutes: spend, and ads going live or rejected.
   if (metaReady()) setInterval(() => syncMeta().catch((err) => console.error("Meta check failed:", err.message)), 30 * 60 * 1000);

@@ -11,7 +11,7 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 - ✅ Turn on Lead alerts on my phone
 
 ## My brand
-- ✅ Set colours, logo and font (Brand page)
+- ❌ Brand page (removed 2026-10-31; the brokerage name is in Settings, the rest is said in the chat)
 - ✅ "Change my name to Pierre", "my brokerage is Meridian Realty", phone, licence, Instagram, from the chat
 - ⚠️ "Make my brand colour navy" from the chat (each ad's look changes; the brand default doesn't)
 - ❌ Several agents on one brand, each with their own name and photo
@@ -29,10 +29,10 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 - ✅ Rename, delete, mark as sold or rented, back on the market
 
 ## Making ads
-- ✅ "Make ads for this", 3 by default, up to 5
+- ✅ "Make ads for this", 3 by default, up to 5 (since 2026-10-31 only when asked: a property on its own gets "Got it" and "What should I make for it")
 - ✅ "Make one about the kitchen", "give me a new set", "add another ad", "delete ad 2"
 - ✅ Feed and story sizes, download PNG, copy the ad text, copy the ad link
-- ❌ Video ads and Reels
+- ❌ Video ads (animated reels exist as organic posts, see below)
 - ❌ Carousel ads (several photos in one ad)
 - ⚠️ Ads in Spanish or another language (untested)
 
@@ -83,9 +83,12 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 - ✅ New price, open house, sold, rented (new ads for each; sold or rented stops running ads)
 - ✅ Coming soon, under contract or pending, back on the market (their own ads; under contract says when ads are still running)
 
-## Organic posts (next to build)
-- ❌ "Make a post about my city", "a post about me", "market update", "just sold story"
-- ❌ Carousels, quote posts, neighbourhood guides, holiday posts
+## Organic posts (built 2026-10-31)
+- ✅ "Make a post about my city", "market update", "just sold story" (post or story, drawn in the chat)
+- ✅ Carousels (6 to 8 slides) and animated reels (6 to 8 scenes), download as PNGs or a video
+- ✅ "Make the headings shorter" changes the one just made; "another carousel" makes a new one
+- ⚠️ Live quality with the free model not yet checked (tests use a stand in)
+- ❌ Reels with the property's photos moving, music, or a voice
 - ✅ Captions, hashtags, Reel scripts and content ideas as text in the chat
 - ❌ Post to Instagram for me, schedule posts, a content calendar with images
 

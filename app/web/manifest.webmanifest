@@ -1,7 +1,7 @@
 {
   "name": "Hopkins",
   "short_name": "Hopkins",
-  "description": "One chat for your real estate marketing.",
+  "description": "The personal assistant for real estate agents.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

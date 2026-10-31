@@ -202,6 +202,19 @@ await client.executeMultiple(`
     UNIQUE (workspace_id, key)
   );
 
+  -- Posts, carousels, stories and reels made in a chat (src/hopkins.js makeCreation). A change
+  -- writes a new version over the same row, so a revision is never counted as a new one.
+  CREATE TABLE IF NOT EXISTS creations (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    listing_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    spec TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS meta_ads (
     ad_id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,

@@ -454,7 +454,7 @@
       ? `<div class="note"><b>${esc(S.me.plan.name)}</b></div>`
       : `<div class="note"><b>Free</b></div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
-      <a href="#/settings">${ICON.gear}Settings</a><a href="#/brand">${ICON.brush}Brand</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
+      <a href="#/settings">${ICON.gear}Settings</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
       ${S.me.demo ? `<button data-act="demoLeave">${ICON.back}Back to my account</button>` : ""}<button data-act="feedbackAsk">${ICON.msg}Send feedback</button>
       <div class="sep"></div><button data-act="logout">${ICON.out}Sign out</button>`;
   }
@@ -514,9 +514,8 @@
     const [view, id] = location.hash.slice(2).split("/");
     if (view !== "listings") { S.selecting = false; document.body.classList.remove("selecting"); }
     // Inside a listing or a new one, the phone goes full screen like a chat app.
-    document.body.classList.toggle("focus", view === "l" || view === "new" || !S.me.workspace.brand.setup_done);
+    document.body.classList.toggle("focus", view === "l" || view === "new");
     try {
-      if (!S.me.workspace.brand.setup_done && view !== "brand") { location.hash = "#/brand"; return; }
       if (view === "l" && id) await viewListing(id);
       else if (view === "new") viewNew();
       else if (view === "listings") viewListings();
@@ -531,7 +530,7 @@
         await viewReport();
         if (id === "active") $("#board")?.scrollIntoView({ block: "start" });
       }
-      else if (view === "brand") await viewBrand();
+      else if (view === "brand") { location.hash = "#/settings"; return; }
       else if (view === "admin") await viewAdmin();
       else if (view === "crm") viewCrm(id === "settings" ? "#/settings" : "#/today");
       else if (view === "settings") {
@@ -587,41 +586,30 @@
 
     const leadsWeek = S.leadsWeek ?? S.inbox.filter((m) => m.kind === "lead").length;
     let body;
+    // Like Claude's home: the greeting and the box to ask. Until Meta and the CRM are connected,
+    // a quiet row each underneath; nothing else to set up.
+    const ask = `<a class="askbox" href="#/new">Ask Hopkins anything<span>${ICON.send}</span></a>`;
+    const m = S.me.meta || {};
+    const c = S.me.crm || {};
+    const setup = [
+      !m.ready ? `<li><div class="tx"><b>Meta</b></div>${!m.available ? `<button class="link" data-act="metaSoon">Connect</button>` : m.connected ? `<a class="link" href="#/settings">Finish</a>` : `<a class="link" href="/api/meta/connect">Connect</a>`}</li>` : "",
+      !(c.fub || c.hook || c.skip) ? `<li><div class="tx"><b>CRM</b></div><a class="link" href="#/crm">Connect</a></li>` : "",
+    ].filter(Boolean).join("");
+    const setupHtml = setup ? `<ul class="steps setup">${setup}</ul>` : "";
     if (!S.listings.length) {
-      // Brand, then Meta (where the ads run), then the first listing, then the approval.
-      const brandDone = S.me.workspace.brand.setup_done;
-      const m = S.me.meta || {};
-      const metaDone = Boolean(m.ready);
-      const done = (brandDone ? 1 : 0) + (metaDone ? 1 : 0);
-      const metaNext = brandDone && !metaDone;
-      const metaBtn = metaDone ? `<a class="link" href="#/settings">Edit</a>`
-        : !m.available ? `<button class="${metaNext ? "btn" : "link"}" data-act="metaSoon">Connect</button>`
-        : m.connected ? `<a class="${metaNext ? "btn" : "link"}" href="#/settings">Finish</a>`
-        : `<a class="${metaNext ? "btn" : "link"}" href="/api/meta/connect">Connect</a>`;
-      // The CRM straight after Meta, so new Leads land where the agent already works. Skippable:
-      // not every agent has one.
-      const c = S.me.crm || {};
-      const crmDone = Boolean(c.fub || c.hook), crmSkipped = Boolean(c.skip) && !crmDone;
-      const crmNext = brandDone && metaDone && !crmDone && !crmSkipped;
-      const listingNext = brandDone && metaDone && !crmNext;
-      body = `<ol class="steps">
-        <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colours, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
-        <li class="${metaDone ? "done" : metaNext ? "next" : ""}"><div class="tx"><b>Connect Meta</b><p>Facebook and Instagram ads.</p></div>${brandDone ? metaBtn : ""}</li>
-        <li class="${crmDone ? "done" : crmNext ? "next" : ""}"><div class="tx"><b>Connect your CRM</b><p>${crmSkipped ? "Skipped." : "New Leads go straight in."}</p></div>${brandDone ? `<a class="${crmNext ? "btn" : "link"}" href="#/crm">${crmDone ? "Edit" : "Connect"}</a>` : ""}</li>
-        <li class="${listingNext ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="${listingNext ? "btn" : "link"}" href="#/new">Start</a>` : ""}</li>
-        <li><div class="tx"><b>Your approval</b><p>Nothing runs without it.</p></div></li></ol>`;
+      body = `${ask}${setupHtml}`;
     } else {
-      body = `<nav class="stats-mini" aria-label="At a glance">
+      body = `${ask}<nav class="stats-mini" aria-label="At a glance">
           <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Chat" : "Chats"}</span></a>
           <a href="#/leads/week"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
           <a href="#/report/active"><b>${active.length}</b><span>Active ${active.length === 1 ? "listing" : "listings"}</span></a></nav>
 
-        ${attentionHtml()}
+        ${attentionHtml()}${setupHtml}
         <div class="sec">Recent</div>${S.listings.slice(0, 5).map(recentCard).join("")}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     // The count lives in the row below, so the line under the greeting is just the day.
-    const lede = !S.listings.length ? "Five steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+    const lede = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
     const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, ${esc(first)}` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
     if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
   }
@@ -851,15 +839,17 @@
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
       <div class="msgs" id="msgs"><div class="intro"><h1>What are you working on?</h1>
-      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><b>Free ads used.</b> <button class="link" data-upgrade>Upgrade</button></div>` : ""}</div>
-      <label class="drop" id="drop"><span class="ic">${ICON.photo}</span><b>Add photos</b><span>Hopkins picks the best photo for each ad.</span><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
+      ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><button class="link" data-upgrade>Upgrade your plan</button></div>` : ""}</div>
+      <label class="drop quiet" id="drop"><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
     const dropEl = $("#drop");
+    // Photos come in through the + in the box, or dropped anywhere on the screen.
+    const zone = $("section.chat");
     $("#dropFiles").addEventListener("change", (e) => { S.addFiles(e.target.files); e.target.value = ""; });
-    dropEl.addEventListener("dragover", (e) => { e.preventDefault(); dropEl.classList.add("drag"); });
-    dropEl.addEventListener("dragleave", () => dropEl.classList.remove("drag"));
-    dropEl.addEventListener("drop", (e) => { e.preventDefault(); dropEl.classList.remove("drag"); S.addFiles(e.dataTransfer.files); });
+    zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("drag"); });
+    zone.addEventListener("dragleave", (e) => { if (!zone.contains(e.relatedTarget)) zone.classList.remove("drag"); });
+    zone.addEventListener("drop", (e) => { e.preventDefault(); zone.classList.remove("drag"); S.addFiles(e.dataTransfer.files); });
     $("#dropGrid").addEventListener("click", (e) => { const i = e.target.dataset.rm; if (i !== undefined) { e.preventDefault(); S.removeFile(Number(i)); } });
     bindComposer(async (text, files) => {
       // Clear the box straight away so it doesn't look like nothing happened.
@@ -1286,6 +1276,18 @@
       }
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
       if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open Leads</a></div>`);
+      if (m.kind === "creation") {
+        // The post, carousel, story or reel itself, drawn by Studio. Only its latest message shows
+        // it live; earlier versions keep their words.
+        const c = (p.creations || []).find((x) => x.id === m.data?.creationId);
+        const latest = c && [...p.messages].reverse().find((x) => x.kind === "creation" && x.data?.creationId === c.id) === m;
+        if (!c || !latest) return wrap(text);
+        const reel = c.kind === "reel";
+        const frames = reel ? `<canvas class="cr-reel" data-crr="${c.id}"></canvas>` : c.spec.slides.map((_, k) => `<canvas class="cr-slide${c.kind === "story" ? " tall" : ""}" data-crs="${c.id}:${k}"></canvas>`).join("");
+        return wrap(`${text}<div class="cr"><div class="cr-strip">${frames}</div>
+          ${c.spec.caption ? `<p class="cr-cap">${esc(c.spec.caption)}</p>` : ""}
+          <div class="acts"><button class="btn" data-act="crDownload" data-id="${c.id}">${reel ? "Download video" : c.spec.slides.length > 1 ? `Download ${c.spec.slides.length} images` : "Download"}</button>${c.spec.caption ? `<button class="link" data-act="crCopy" data-id="${c.id}">Copy caption</button>` : ""}</div></div>`);
+      }
       return wrap(text);
     }).join("");
   }
@@ -1308,7 +1310,63 @@
     };
   }
 
+  // Posts, carousels, stories and reels in the chat (web/studio.js).
+  function studioOpts(c) {
+    const b = S.me.workspace.brand;
+    return { kind: c.kind, photos: (S.current?.photos || []).map((p) => photoUrl(p.id)), agent: b.agent_name || S.me.user.name || "", footer: b.business || "" };
+  }
+  function drawCreations() {
+    (S.players || []).forEach((stop) => stop());
+    S.players = [];
+    const find = (id) => (S.current?.creations || []).find((x) => x.id === id);
+    for (const el of $$("canvas[data-crs]")) {
+      const [id, k] = el.dataset.crs.split(":");
+      const c = find(id);
+      if (c) Studio.drawSlide(el, c.spec, Number(k), studioOpts(c));
+    }
+    for (const el of $$("canvas[data-crr]")) {
+      const c = find(el.dataset.crr);
+      if (c) Studio.playReel(el, c.spec, studioOpts(c)).then((stop) => S.players.push(stop));
+    }
+  }
+  async function saveFiles(files) {
+    if (navigator.canShare && navigator.canShare({ files })) {
+      try { await navigator.share({ files }); return; } catch (err) { if (err.name === "AbortError") return; }
+    }
+    for (const f of files) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(f); a.download = f.name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      await new Promise((r) => setTimeout(r, 350));
+    }
+  }
+  async function downloadCreation(id, btn) {
+    const c = (S.current?.creations || []).find((x) => x.id === id);
+    if (!c) return;
+    const name = (c.spec.title || c.kind).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || c.kind;
+    const label = btn.textContent;
+    btn.disabled = true;
+    try {
+      if (c.kind === "reel") {
+        btn.textContent = "Preparing video";
+        const blob = await Studio.recordReel(c.spec, studioOpts(c));
+        await saveFiles([new File([blob], `${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`, { type: blob.type })]);
+      } else {
+        const files = [];
+        for (let k = 0; k < c.spec.slides.length; k++) {
+          const cv = document.createElement("canvas");
+          await Studio.drawSlide(cv, c.spec, k, studioOpts(c));
+          const blob = await new Promise((r) => cv.toBlob(r, "image/png"));
+          files.push(new File([blob], `${name}-${k + 1}.png`, { type: "image/png" }));
+        }
+        await saveFiles(files);
+      }
+    } catch (err) { toast(err.message || "Something went wrong. Please try again."); }
+    btn.disabled = false; btn.textContent = label;
+  }
+
   function drawMiniCards() {
+    drawCreations();
     $$("canvas[data-mini]").forEach((c) => {
       const ad = adFor(Number(c.dataset.mini));
       if (ad) Creative.render(c, renderOpts(ad, "feed"));
@@ -1718,94 +1776,7 @@
 
   // The fonts an ad can use, in the order they're offered (Ismael, 2026-10-27).
   const FONT_CHOICES = [["modern", "Modern"], ["classic", "Classic"], ["elegant", "Elegant"], ["editorial", "Editorial"], ["bold", "Bold"], ["minimal", "Minimal"]];
-  const COUNTRIES = ["United States", "Canada", "Australia", "United Arab Emirates", "United Kingdom", "Ireland", "Somewhere else"];
   // Quick picks that look good on real listing photos: a main color with an accent that suits it.
-  const PALETTES = [["#1F2A36", "#C8A96A"], ["#111111", "#E8E2D6"], ["#22352B", "#D9B98A"], ["#2A0F14", "#D7AE62"], ["#2C3E50", "#E07A5F"], ["#3B2F2F", "#C9A27E"], ["#0F3D5E", "#F2C14E"], ["#4A4E69", "#F2E9E4"]];
-
-  async function viewBrand() {
-    const b = S.me.workspace.brand;
-    const first = !b.setup_done;
-    const field = (k, label, ph = "", hint = "") => `<div class="fld"><label for="f_${k}">${label}</label><input id="f_${k}" name="${k}" value="${esc(b[k] || "")}" placeholder="${esc(ph)}" autocomplete="off">${hint ? `<p class="small">${hint}</p>` : ""}</div>`;
-    const radio = (k, opts) => `<div class="choice">${opts.map(([v, l]) => `<label><input type="radio" name="${k}" value="${v}" ${(b[k] || opts[0][0]) === v ? "checked" : ""}>${l}</label>`).join("")}</div>`;
-    main.innerHTML = `${first ? `<div class="mtop"><span class="logo"><img src="/static/mark.svg" alt="">Hopkins</span></div>` : mtop("Brand")}<div class="page"><div class="wrap">
-      <div class="head"><h1>Brand</h1></div>
-      <div class="brandgrid"><form class="form" id="brandForm">
-        <div class="group"><h4>Your website</h4><div class="site-row"><div class="fld"><input id="f_site" type="url" inputmode="url" placeholder="ellery-realty.com" autocomplete="url" aria-label="Your website"></div><button type="button" class="sec-btn" id="siteFill">Fill in</button></div></div>
-        <div class="group"><h4>Details</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
-        <div class="group"><h4>Branding</h4><div style="display:flex;flex-direction:column;gap:14px">
-          <div><div class="colors"><label><input type="color" name="primary" value="${esc(b.primary || "#1F2A36")}">Main colour</label><label><input type="color" name="accent" value="${esc(b.accent || "#C8A96A")}">Accent</label></div>
-          <div class="swatches">${PALETTES.map(([p1, p2]) => `<button type="button" data-pal="${p1},${p2}" style="background:${p1}" aria-label="Use ${p1} and ${p2}"><i style="background:${p2}"></i></button>`).join("")}</div></div>
-          <div class="logo-up"><i id="logoPrev" style="${b.logo_id ? `background-image:url(${photoUrl(b.logo_id)})` : ""}"></i><label class="sec-btn">Upload<input type="file" accept="image/png,image/jpeg,image/webp" hidden id="logoFile"></label>${b.logo_id ? `<button type="button" class="link" id="logoRm">Remove</button>` : ""}</div></div></div>
-        <div class="group"><h4>Font</h4><div class="fonts">${FONT_CHOICES.map(([v, l]) => { const f = Creative.FONTS[v]; return `<label class="fontc"><input type="radio" name="font" value="${v}" ${(b.font || "modern") === v ? "checked" : ""}><span style="font-family:'${f.family}';font-weight:${f.weight}">Aa</span><em>${l}</em></label>`; }).join("")}</div></div>
-        <div class="group"><details class="more"><summary>More</summary><div class="inner">
-          <div class="grid2">${field("phone", "Phone on Lead pages", "(512) 555 0100")}<div class="fld"><label for="f_country">Country</label><select id="f_country" name="country">${COUNTRIES.map((c) => `<option ${b.country === c ? "selected" : ""}>${c}</option>`).join("")}</select></div></div>
-          ${field("email", "Email for replies from Leads", "sam@ellery-realty.com")}
-          ${field("license", "License line", "DRE #01234567")}
-        </div></details></div>
-        <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
-      </form><div class="brandprev"><canvas id="brandCanvas" role="button" aria-label="Expand preview"></canvas>${phone() ? `<p class="small">Live preview. Tap to expand.</p>` : ""}</div></div></div></div>`;
-    const form = $("#brandForm");
-    let logoId = b.logo_id || "";
-    const sample = () => {
-      const brand = Object.fromEntries(new FormData(form).entries());
-      brand.logo_id = logoId;
-      const l = S.listings.find((x) => x.photo_id);
-      $("#brandCanvas").onclick = () => zoomCanvas($("#brandCanvas"));
-      Creative.render($("#brandCanvas"), {
-        ad: { pattern: "life", overlay: "Slow mornings on the porch.", kicker: `Just listed · ${brand.city || "Riverside"}` },
-        brand, format: "feed", photo: l ? photoUrl(l.photo_id) : "/static/sample-home.jpg", logo: logoId ? photoUrl(logoId) : null, watermark: false,
-      });
-    };
-    form.addEventListener("input", sample);
-    sample();
-    // From their website: fills the form for them to check; nothing is saved until they save.
-    $("#siteFill").addEventListener("click", async () => {
-      const url = $("#f_site").value.trim();
-      if (!url) return toast("Enter your website");
-      const btn = $("#siteFill"); btn.disabled = true;
-      try {
-        const { fields } = await api("/api/brand/from-link", { body: { url } });
-        for (const [k, v] of Object.entries(fields)) {
-          if (k === "logo_id") { logoId = v; $("#logoPrev").style.backgroundImage = `url(${photoUrl(v)})`; continue; }
-          if (form[k] && v) form[k].value = v;
-        }
-        if (fields.business || fields.primary) $$(".more").forEach((d) => (d.open = Boolean(fields.phone || fields.email)));
-        sample();
-        toast("Filled in. Check and save.");
-      } catch (err) { toast(err.message); }
-      btn.disabled = false;
-    });
-    $$("[data-pal]").forEach((btn) => btn.addEventListener("click", () => {
-      const [p1, p2] = btn.dataset.pal.split(",");
-      form.primary.value = p1;
-      form.accent.value = p2;
-      buzz(5);
-      sample();
-    }));
-    $("#logoFile").addEventListener("change", async (e) => {
-      const f = e.target.files[0];
-      if (!f) return;
-      const r = await uploadPhoto(f, { kind: "logo" });
-      logoId = r.id;
-      $("#logoPrev").style.backgroundImage = `url(${photoUrl(logoId)})`;
-      sample();
-    });
-    if ($("#logoRm")) $("#logoRm").addEventListener("click", () => { logoId = ""; $("#logoPrev").style.backgroundImage = ""; sample(); });
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      $("#brandErr").textContent = "";
-      const body = Object.fromEntries(new FormData(form).entries());
-      body.logo_id = logoId;
-      try {
-        await api("/api/brand", { method: "PUT", body });
-        await loadMe();
-        if (first) { celebrate("Brand saved"); setTimeout(() => (location.hash = "#/today"), 900); }
-        else toast("Saved");
-      } catch (err) {
-        $("#brandErr").textContent = err.message;
-      }
-    });
-  }
 
   // ---------- Settings ----------
 
@@ -1886,12 +1857,10 @@
           ${u.avatar_id ? `<button class="link" data-act="avRemove" style="margin-left:10px">Remove</button>` : ""}</div></div>
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${fld("sName", "Your name", u.name, "text", "Sam Ellery", "name")}
+          ${fld("sBiz", "Brokerage or team", b.business, "text", "Ellery Realty", "organization")}
           ${fld("sEmail", "Email", u.email, "email", "", "email")}
           <div class="fld hidden" id="sEmailPw">${`<label for="sEmailPass">Current password, required to change email</label><input id="sEmailPass" type="password" autocomplete="current-password">`}</div>
-          <div><button class="sec-btn" data-act="saveProfile">Save profile</button></div></div></div>
-      <div class="group"><h4>Business</h4>
-        ${fld("sBiz", "Business, team or brokerage", b.business, "text", "Ellery Realty", "organization")}
-        <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="saveBiz">Save</button><a class="link" href="#/brand">Colours, logo and font</a></div></div>
+          <div><button class="sec-btn" data-act="saveProfile">Save</button></div></div></div>
       <div class="group"><h4>Password</h4><div style="display:flex;flex-direction:column;gap:12px">
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
@@ -1933,7 +1902,8 @@
       const body = { name: val("#sName"), email: val("#sEmail") };
       if (!$("#sEmailPw").classList.contains("hidden")) body.password = val("#sEmailPass");
       await api("/api/account", { method: "PATCH", body });
-      await loadMe(); drawSide(); viewSettings(); buzz(6); toast("Profile saved");
+      if (val("#sBiz") !== (S.me.workspace.brand.business || "")) await api("/api/brand", { method: "PUT", body: { business: val("#sBiz") } });
+      await loadMe(); drawSide(); viewSettings(); buzz(6); toast("Saved");
     } else if (act === "saveBiz") {
       await api("/api/brand", { method: "PUT", body: { business: val("#sBiz") } });
       await loadMe(); drawSide(); buzz(6); toast("Saved");
@@ -2236,6 +2206,11 @@
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle"].includes(act)) await settingsAction(act, t);
+      else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
+      else if (act === "crCopy") {
+        const c = (S.current?.creations || []).find((x) => x.id === t.dataset.id);
+        if (c) { await navigator.clipboard.writeText(c.spec.caption || ""); toast("Copied"); }
+      }
       else if (act === "attAct" || act === "attDismiss") {
         t.disabled = true;
         const r = await api(`/api/attention/${t.dataset.id}`, { body: { choice: act === "attDismiss" ? "dismiss" : "act" } });

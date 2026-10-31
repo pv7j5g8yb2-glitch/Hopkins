@@ -971,3 +971,21 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   chat. 96 tests pass; Today and the Brand page checked on a phone and a laptop, all text passing.
   Next in the loop: a "new listing appeared" check once a listing source is connected (the agent's
   site or a feed), and a weekly plan message.
+* **Personal assistant, like Claude (2026-10-31, Ismael):** "remove the brand thing completely ...
+  and the 3 ads created thing ... think of it like yourself (Claude) ... a carousel post ... an
+  animated reel ... 'Realtors Personal Assistant' ... very straightforward and minimal ... delete
+  every user and even mine". Done: Brand page gone (sign up is name, email, password), no ads
+  unless asked, posts, carousels, stories and animated reels made in the chat (`makeCreation`,
+  `web/studio.js`, `test/creations.test.js`), free plan is 3 creations counted with ads, Today and
+  New chat cut down, positioning "The personal assistant for real estate agents" (not "Realtors":
+  NAR trademark). 102 tests pass; every screen passes the readability measure on phone and laptop;
+  carousel PNG and reel MP4 downloads checked in Chromium.
+* **Fresh start (2026-10-31):** `app/src/fresh.js` deletes every account once, when the server
+  starts and the `fresh-start:2026-10-31` marker isn't in `app_flags`. It pauses running ads on Meta
+  first; if Meta refuses for any account, nothing is deleted, Ismael's phone hears, and it tries
+  again on the next deploy. Ismael signs up again like any user afterwards (with an invite code).
+  Account deletion now also clears creations, the Meta login, Needs attention and Meta ad rows.
+* **Investor read (2026-10-31):** `docs/INVESTOR.md`. Short version: eight figures is possible
+  only if Hopkins wins on running ads and Leads, with content as the daily habit; next is 10 real
+  agents with live Meta campaigns and their cost per Lead.
+

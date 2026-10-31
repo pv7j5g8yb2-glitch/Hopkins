@@ -1,0 +1,99 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { boot, client } from "./helpers.js";
+
+// Hopkins makes what's asked, like Claude would: "a carousel for first time buyers" gets a
+// carousel, "an animated reel" gets a reel, and nothing is made that wasn't asked for.
+const app = await boot();
+const hopkins = await import("../src/hopkins.js");
+const asked = [];
+hopkins.setCreationForTests(async (req) => {
+  asked.push(req);
+  const n = req.kind === "post" ? 1 : req.kind === "story" ? 2 : 6;
+  const slides = Array.from({ length: n }, (_, i) => ({ heading: req.previous ? `Shorter ${i + 1}` : `Slide ${i + 1}`, body: i === 1 && /couples/.test(req.request) ? "Perfect for couples" : `Point ${i + 1}`, photo: false }));
+  return { title: "First time buyers", caption: "Save this for later.", theme: "night", slides, reply: req.previous ? "Shorter now." : `Here's your ${req.kind}.` };
+});
+
+async function signup(email) {
+  const c = client(app);
+  await c("POST", "/api/signup", { email, password: "password123", invite: "EARLY1", name: "Sam Ellery" });
+  return c;
+}
+
+test("what was asked for is what's made, read the way a person would", () => {
+  const k = hopkins.creationKind;
+  assert.equal(k("make me a carousel post for my real estate content"), "carousel");
+  assert.equal(k("an animated reel educating first time home buyers"), "reel");
+  assert.equal(k("Can you do a story for the open house"), "story");
+  assert.equal(k("write a post about the Austin market"), "post");
+  assert.equal(k("should I post a reel this week?"), null);
+  assert.equal(k("what makes a good carousel"), null);
+  assert.equal(k("make ads for it"), null);
+  assert.equal(k("hello"), null);
+});
+
+test("a carousel and a reel in a plain chat, a change to the one just made, and fair housing", async () => {
+  const c = await signup("make@ellery.test");
+  const s = await c("POST", "/api/listings/start", { text: "Make me a carousel for first time home buyers" });
+  const f = await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  assert.equal(f.json.ads.length, 0);
+  assert.equal(f.json.creations.length, 1);
+  assert.equal(f.json.creations[0].kind, "carousel");
+  assert.equal(f.json.creations[0].spec.slides.length, 6);
+  const msg = f.json.messages.at(-1);
+  assert.equal(msg.kind, "creation");
+  assert.equal(msg.body, "Here's your carousel.");
+  assert.equal(msg.data.creationId, f.json.creations[0].id);
+  assert.equal(asked.at(-1).listing, null);
+
+  // "make it shorter" changes that carousel, it doesn't make a new thing.
+  const r = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "make the headings shorter" });
+  assert.equal(r.json.creations.length, 1);
+  assert.equal(r.json.creations[0].version, 2);
+  assert.match(r.json.creations[0].spec.slides[0].heading, /^Shorter/);
+  assert.ok(asked.at(-1).previous);
+
+  // A reel in the same chat is a new thing.
+  const v = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "now an animated reel educating first time buyers, perfect for couples" });
+  assert.equal(v.json.creations.length, 2);
+  assert.equal(v.json.creations[1].kind, "reel");
+  assert.match(v.json.messages.at(-1).body, /fair housing/);
+
+  // A question about it is answered, not turned into a new version.
+  const q = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "what time should I post it?" });
+  assert.equal(q.json.creations.length, 2);
+  assert.equal(q.json.creations[1].version, 1);
+});
+
+test("a property on its own is read back and Hopkins asks what to make; a post for it uses its facts", async () => {
+  const c = await signup("prop@ellery.test");
+  const s = await c("POST", "/api/listings/start", { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000" });
+  const f = await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  assert.equal(f.json.ads.length, 0);
+  assert.equal(f.json.creations.length, 0);
+  assert.match(f.json.messages.at(-1).body, /What should I make for it/);
+  const p = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "make a post for it" });
+  assert.equal(p.json.creations[0].kind, "post");
+  assert.equal(asked.at(-1).listing.address, "12 Elm St");
+  assert.equal(asked.at(-1).listing.price, "$585,000");
+});
+
+test("the free plan is 3 things in all: creations and ads count together", async () => {
+  const c = await signup("free@ellery.test");
+  const s = await c("POST", "/api/listings/start", { text: "make a post about spring in Austin" });
+  await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "make a story about it too" });
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 2);
+  await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "and a carousel on the same" });
+  assert.equal((await c("GET", "/api/me")).json.usage.adsMade, 3);
+  const over = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "now a reel" });
+  assert.equal(over.json.creations.length, 3);
+  assert.equal(over.json.messages.at(-1).kind, "upgrade");
+  // Changes to one already made are included.
+  const change = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "make the carousel headings shorter" });
+  assert.equal(change.json.creations.at(-1).version, 2);
+  assert.equal(change.json.messages.at(-1).kind, "creation");
+  // A new one, asked for in so many words, is new: over the limit.
+  const fresh = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "make another carousel about summer" });
+  assert.equal(fresh.json.messages.at(-1).kind, "upgrade");
+});
