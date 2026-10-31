@@ -273,7 +273,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   real look (ivory and noir for quiet luxury in Instrument Serif with one italic word; modern, bold,
   night and photo in Inter Tight with one italic serif word), with a footer strip and progress dots.
   The copy is specific and usable ("pull your free credit reports before you talk to a lender"),
-  never vague. No caption or hashtags unless asked: a new one ends with "Want a caption and hashtags
+  never vague. The looks are only starting points (Ismael, 2026-10-31): like asking Claude, the
+  agent can direct everything on demand, wording, order, slide count, layouts, exact colours, any
+  Google Font by name, weight, capitals, alignment, a background per slide, the name at the top
+  and the footer line; a change changes exactly that and keeps the rest. No caption or hashtags
+  unless asked: a new one ends with "Want a caption and hashtags
   for it?", and a yes or a request in words writes them.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
@@ -425,7 +429,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **"lead" is an ordinary word (Ismael, 2026-10-31, replacing the capital L rule of 2026-10-27):**
   lowercase in the middle of a sentence ("3 new leads", "cost per lead", "no leads yet"), capital
   only where any word would be: starting a sentence, a title or a label ("Leads this week"), or
-  the Leads tab by name. `capLeads` in `app/src/hopkins.js` lowercases it in everything Hopkins
+  the Leads tab by name. Two exceptions he asked for: the big number on Report reads "12 Leads",
+  and the empty Leads page says "No Leads Yet". `capLeads` in `app/src/hopkins.js` lowercases it in everything Hopkins
   says, chat titles and Needs attention.
 * **Names start with capitals (Ismael, 2026-10-28):** every part of a person's name (first, middle,
   last, each side of a hyphen or apostrophe) starts with a capital, however it was typed: Leads,

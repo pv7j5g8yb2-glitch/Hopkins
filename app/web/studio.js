@@ -47,10 +47,33 @@
     lines.forEach((l) => { l.width = l.length ? l[l.length - 1].x + l[l.length - 1].w : 0; });
     return { lines, size, lineH: size * lineH, height: lines.length * size * lineH, fonts };
   }
-  const headFonts = (th) => th.serif
+  // The look: the theme, with whatever the agent asked for on top (colours, fonts, weight, a slide's
+  // own background). Anything not asked for stays the theme's.
+  const lum = (h) => { const n = parseInt(h.slice(1), 16); return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; };
+  const rgba = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
+  function themeFor(spec, slide) {
+    const base = THEMES[spec.theme] || THEMES.ivory;
+    const L = spec.look || {};
+    const bg0 = slide?.background || L.background || base.bg[0];
+    const bg1 = slide?.background || (L.background ? L.background2 || L.background : base.bg[1]);
+    const ink = L.text || base.ink;
+    return {
+      ...base, bg: [bg0, bg1], ink,
+      soft: L.text ? rgba(L.text, 0.7) : base.soft,
+      rule: L.text ? rgba(L.text, 0.15) : base.rule,
+      accent: L.accent || base.accent,
+      light: bg0.startsWith("#") ? lum(bg0) > 0.6 : base.serif || base.ink === "#111111",
+      headFont: L.headingFont || "", bodyFont: L.bodyFont || "", weight: L.headingWeight || 0,
+      upper: Boolean(L.uppercase), center: L.align === "center", grain: L.grain !== false,
+    };
+  }
+  const headFonts = (th) => th.headFont
+    ? { main: (s) => `${th.weight || 600} ${s}px "${th.headFont}", ${SANS}`, accent: (s) => `italic ${th.weight || 600} ${s}px "${th.headFont}", ${SERIF}`, track: (s) => -s * 0.012 }
+    : th.serif
     ? { main: (s) => `400 ${s}px ${SERIF}`, accent: (s) => `italic 400 ${s}px ${SERIF}`, track: (s) => -s * 0.012 }
-    : { main: (s) => `700 ${s}px ${SANS}`, accent: (s) => `italic 400 ${Math.round(s * 1.08)}px ${SERIF}`, track: (s) => -s * 0.035 };
-  const bodyFonts = (weight = 400) => ({ main: (s) => `${weight} ${s}px ${SANS}`, accent: (s) => `${weight} ${s}px ${SANS}`, track: () => 0 });
+    : { main: (s) => `${th.weight || 700} ${s}px ${SANS}`, accent: (s) => `italic 400 ${Math.round(s * 1.08)}px ${SERIF}`, track: (s) => -s * 0.035 };
+  let BODY = SANS;
+  const bodyFonts = (weight = 400) => ({ main: (s) => `${weight} ${s}px ${BODY}`, accent: (s) => `${weight} ${s}px ${BODY}`, track: () => 0 });
   // The biggest heading size that keeps it to a few lines.
   function fit(ctx, text, th, start, min, maxW, maxLines, accent) {
     const lh = th.serif ? 1.02 : 0.98;
@@ -76,7 +99,7 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     // A soft light from the top left, so the ground has depth without a pattern.
     const r = ctx.createRadialGradient(W * 0.15, H * 0.05, 0, W * 0.15, H * 0.05, W * 1.1);
-    r.addColorStop(0, th.serif || th.ink === "#111111" ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.07)"); r.addColorStop(1, "rgba(255,255,255,0)");
+    r.addColorStop(0, th.light ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.07)"); r.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = r; ctx.fillRect(0, 0, W, H);
   }
   // A fine grain, so flat colour looks printed rather than on a screen.
@@ -142,17 +165,21 @@
   // One slide or scene. anim: { t } seconds into a reel scene; without it, everything shows.
   function frame(ctx, spec, i, o, anim) {
     const [W, H] = SIZES[o.kind] || SIZES.post;
-    const th = THEMES[spec.theme] || THEMES.ivory;
-    const s = spec.slides[i];
+    const s0 = spec.slides[i];
+    const th = themeFor(spec, s0);
+    BODY = th.bodyFont ? `"${th.bodyFont}", ${SANS}` : SANS;
+    const s = th.upper ? { ...s0, heading: s0.heading.toUpperCase() } : s0;
     const n = spec.slides.length;
     const photo = spec.theme === "photo" ? o.photoImgs?.[(s.photo || 1) - 1] || o.photoImgs?.[0] : null;
     const kind = s.layout || (i === 0 ? "cover" : i === n - 1 && n > 1 ? "close" : "statement");
     ctx.save();
     spacing(ctx, 0);
     background(ctx, W, H, th, photo, anim ? 1 + 0.05 * clamp(anim.t / 5, 0, 1) : 1);
-    ctx.fillStyle = grainPattern(ctx); ctx.fillRect(0, 0, W, H);
+    if (th.grain) { ctx.fillStyle = grainPattern(ctx); ctx.fillRect(0, 0, W, H); }
     const tall = H > 1500;
     const M = 104, maxW = W - M * 2;
+    const C = th.center;
+    const al = C ? { align: "center", maxW } : {};
     const top = tall ? 200 : 132, footY = H - (tall ? 210 : 132);
     // Reels: the heading's words rise in one by one, everything else fades in after.
     const per = 0.06, start = anim ? 0.15 : 0;
@@ -162,7 +189,8 @@
 
     // The top line: where in the set this is, and whose it is.
     if (n > 1) label(ctx, `${String(i + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}`, M, top, th.soft, 22);
-    if (o.agent) label(ctx, o.agent, W - M, top, th.soft, 22, "right");
+    const handle = spec.handle ?? o.agent;
+    if (handle) label(ctx, handle, W - M, top, th.soft, 22, "right");
 
     let used = 0;
     if (kind === "cover" || kind === "statement") {
@@ -172,12 +200,13 @@
       const kick = s.kicker ? 64 : 0;
       const block = kick + head.height + (body ? 48 + body.height : 0);
       const y0 = photo ? footY - 90 - block : Math.round((top + footY) / 2 - block / 2 + (cover ? 30 : 0));
-      if (s.kicker) {
+      if (s.kicker && C) label(ctx, s.kicker, W / 2, y0 + 4, th.accent, 24, "center");
+      else if (s.kicker) {
         ctx.fillStyle = th.accent; ctx.fillRect(M, y0 - 6, 56, 3);
         label(ctx, s.kicker, M + 76, y0 + 4, th.accent, 24);
       }
-      used = words(ctx, head, M, y0 + kick, th.ink, th.accent, { appear: wordIn });
-      if (body) { fade(after(used)); words(ctx, body, M, y0 + kick + head.height + 48, th.soft, th.soft); fade(1); }
+      used = words(ctx, head, M, y0 + kick, th.ink, th.accent, { appear: wordIn, ...al });
+      if (body) { fade(after(used)); words(ctx, body, C ? M + maxW * 0.07 : M, y0 + kick + head.height + 48, th.soft, th.soft, C ? { align: "center", maxW: maxW * 0.86 } : {}); fade(1); }
     } else if (kind === "step" || kind === "stat") {
       const big = s.number || (kind === "step" ? String(i) : "");
       let numSize = kind === "stat" ? (tall ? 300 : 260) : (tall ? 380 : 330);
@@ -194,13 +223,13 @@
       ctx.font = `${kind === "step" ? "italic " : ""}400 ${numSize}px ${SERIF}`;
       spacing(ctx, -numSize * 0.02);
       ctx.fillStyle = kind === "step" ? th.accent : th.ink;
-      ctx.fillText(big, M - numSize * 0.04, y0 + numSize * 0.74);
+      ctx.fillText(big, C ? W / 2 - ctx.measureText(big).width / 2 : M - numSize * 0.04, y0 + numSize * 0.74);
       spacing(ctx, 0);
       fade(1);
       let y = y0 + numSize * 0.86 + 40;
-      if (s.kicker) { label(ctx, s.kicker, M, y + 4, th.accent, 24); y += kick; }
-      used = words(ctx, head, M, y, th.ink, th.accent, { appear: wordIn });
-      if (body) { fade(after(used)); words(ctx, body, M, y + head.height + 44, th.soft, th.soft); fade(1); }
+      if (s.kicker) { label(ctx, s.kicker, C ? W / 2 : M, y + 4, th.accent, 24, C ? "center" : "left"); y += kick; }
+      used = words(ctx, head, M, y, th.ink, th.accent, { appear: wordIn, ...al });
+      if (body) { fade(after(used)); words(ctx, body, C ? M + maxW * 0.05 : M, y + head.height + 44, th.soft, th.soft, C ? { align: "center", maxW: maxW * 0.9 } : {}); fade(1); }
     } else if (kind === "list") {
       const head = fit(ctx, s.heading, th, tall ? 96 : 84, 54, maxW, 3, s.accent);
       const rows = s.points.map((p) => layout(ctx, p, bodyFonts(500), tall ? 42 : 38, maxW - 96, 1.3));
@@ -235,7 +264,7 @@
 
     // The footer strip: a hairline, the series on the left, the progress on the right.
     ctx.fillStyle = th.rule; ctx.fillRect(M, footY, maxW, 2);
-    const series = spec.title || o.footer || "";
+    const series = spec.footer ?? (spec.title || o.footer || "");
     if (series) label(ctx, series, M, footY + 54, th.soft, 20);
     if (n > 1) {
       const d = 9, gap = 12, wAll = n * d + (n - 1) * gap;
@@ -251,7 +280,33 @@
     ctx.restore();
   }
 
+  // Any Google Font the agent names is fetched when it's first needed.
+  const fontsAsked = {};
+  function googleFont(name) {
+    if (!name) return Promise.resolve(false);
+    if (fontsAsked[name]) return fontsAsked[name];
+    const fam = encodeURIComponent(name).replace(/%20/g, "+");
+    return (fontsAsked[name] = new Promise((ok) => {
+      const tries = [":ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,700", ":wght@400;700", ""];
+      const next = () => {
+        if (!tries.length) return ok(false);
+        const l = document.createElement("link");
+        l.rel = "stylesheet";
+        l.href = `https://fonts.googleapis.com/css2?family=${fam}${tries.shift()}&display=swap`;
+        l.onload = () => ok(true);
+        l.onerror = () => { l.remove(); next(); };
+        document.head.appendChild(l);
+      };
+      next();
+    }));
+  }
   async function prepare(spec, o) {
+    const L = spec.look || {};
+    const custom = [L.headingFont, L.bodyFont].filter(Boolean);
+    if (custom.length) {
+      await Promise.race([Promise.all(custom.map(googleFont)), new Promise((r) => setTimeout(r, 4000))]);
+      if (document.fonts?.load) await Promise.race([Promise.all(custom.flatMap((f) => [`${L.headingWeight || 600} 100px "${f}"`, `400 40px "${f}"`, `500 40px "${f}"`, `italic ${L.headingWeight || 600} 100px "${f}"`].map((x) => document.fonts.load(x).catch(() => {})))), new Promise((r) => setTimeout(r, 4000))]);
+    }
     o.photoImgs = spec.theme === "photo" && o.photos?.length ? await Promise.all(o.photos.map(load)) : [];
     if (document.fonts?.load) await Promise.all([`700 100px ${SANS}`, `500 40px ${SANS}`, `400 40px ${SANS}`, `600 24px ${SANS}`, `400 100px ${SERIF}`, `italic 400 100px ${SERIF}`].map((f) => document.fonts.load(f))).catch(() => {});
   }

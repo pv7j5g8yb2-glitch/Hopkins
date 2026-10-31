@@ -691,11 +691,30 @@ const CREATION_SCHEMA = {
           points: { type: "array", items: { type: "string" }, description: "For list slides: 3 or 4 short items, each at most 7 words. Empty otherwise" },
           number: { type: "string", description: "For step slides, the step number (\"1\"); for stat slides, the figure (\"3%\", \"20%\"). Empty otherwise" },
           photo: { type: "integer", description: "For theme photo: which listing photo, 1 for the first; 0 for none" },
+          background: { type: "string", description: "This slide's own background colour as a hex code, only when asked for (\"make slide 3 black\") or when varying the background slide to slide; empty otherwise" },
         },
         required: ["layout", "kicker", "heading", "accent", "body", "points", "number", "photo"],
       },
     },
-    reply: { type: "string", description: "One short, natural line to the agent saying what you made, like Claude would. Don't describe the colours or the style, don't offer more help" },
+    look: {
+      type: "object",
+      description: "Anything they ask for about the look, on top of the theme. Leave a field empty to keep the theme's own. Hex colours like #1C1A17.",
+      properties: {
+        background: { type: "string", description: "Background colour (hex)" },
+        background2: { type: "string", description: "Second background colour for a gradient (hex), or empty for flat" },
+        text: { type: "string", description: "Main text colour (hex)" },
+        accent: { type: "string", description: "Accent colour for labels, numbers and the italic word (hex)" },
+        headingFont: { type: "string", description: "Any Google Fonts family by its exact name (\"Playfair Display\", \"Montserrat\", \"Cormorant Garamond\"), or empty" },
+        bodyFont: { type: "string", description: "Any Google Fonts family for the smaller text, or empty" },
+        headingWeight: { type: "integer", description: "100 to 900, or 0 for the font's usual" },
+        uppercase: { type: "boolean", description: "Headings in capitals" },
+        align: { type: "string", enum: ["", "left", "center"], description: "Text alignment" },
+        grain: { type: "boolean", description: "Fine print grain on the background (true unless they want it clean)" },
+      },
+    },
+    handle: { type: "string", description: "The small name at the top right: the agent's name unless they ask for something else (their handle, brokerage, nothing)" },
+    footer: { type: "string", description: "The small line at the bottom left: the series name unless they ask otherwise" },
+    reply: { type: "string", description: "One short, natural line to the agent saying what you made or changed, like Claude would. Don't offer more help" },
   },
   required: ["title", "theme", "slides", "reply"],
 };
@@ -708,7 +727,7 @@ const KIND_RULES = {
 export async function creationAI({ kind, request, listing, photos = 0, agent = "", previous = null }) {
   if (!aiEnabled) return null;
   const r = await call({
-    system: `You are Hopkins, making Instagram content for a real estate agent: posts, carousels, stories and reels, drawn in the app. You write like the best real estate content creator on Instagram: content people save and send because they can use it straight away. Be specific and practical, never vague: not "check your credit" but "pull your free credit reports before you talk to a lender". Every slide earns its place. Plain words, no hype, no emojis, no hashtags, no exclamation marks, US spelling. Never use dashes as punctuation. Widely known general facts are fine when stated carefully ("closing costs usually run 2% to 5% of the price"); never invent local numbers, rates, prices or property details. Never use wording about who a property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. Don't write a caption; the agent asks for one separately if they want it. ${KIND_RULES[kind] || KIND_RULES.post}`,
+    system: `You are Hopkins, making Instagram content for a real estate agent: posts, carousels, stories and reels, drawn in the app. You write like the best real estate content creator on Instagram: content people save and send because they can use it straight away. Be specific and practical, never vague: not "check your credit" but "pull your free credit reports before you talk to a lender". Every slide earns its place. Plain words, no hype, no emojis, no hashtags, no exclamation marks, US spelling. Never use dashes as punctuation. Widely known general facts are fine when stated carefully ("closing costs usually run 2% to 5% of the price"); never invent local numbers, rates, prices or property details. Never use wording about who a property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. Don't write a caption; the agent asks for one separately if they want it. Everything about it is theirs to direct, like asking Claude: wording, order, how many slides, layouts, colours (exact hex in look), any Google Font by name, weight, capitals, alignment, a different background per slide, the name at the top and the footer line. When they ask for a change, make exactly that change and keep everything else as it was. ${KIND_RULES[kind] || KIND_RULES.post}`,
     messages: [{ role: "user", content: `${previous ? `The current version:\n${JSON.stringify({ ...previous, caption: undefined })}\n\nChange it as asked, keep everything else:` : "Make this:"} ${request}\n\n${listing ? `The property (use only these facts): ${JSON.stringify(listing)}\nPhotos available: ${photos}\n` : "No property in this chat.\n"}Agent: ${agent || "unknown"}` }],
     schema: CREATION_SCHEMA,
     effort: "medium",
@@ -717,6 +736,7 @@ export async function creationAI({ kind, request, listing, photos = 0, agent = "
   return cleanCreation(r, kind, photos, previous);
 }
 // What the model sent, kept to what the drawing can show well.
+const hex = (v) => (/^#?[0-9a-f]{6}$/i.test(String(v || "").trim()) ? `#${String(v).trim().replace(/^#/, "").toUpperCase()}` : "");
 export function cleanCreation(r, kind, photos = 0, previous = null) {
   if (!r || !Array.isArray(r.slides) || !r.slides.length) return null;
   const max = { carousel: 10, reel: 10, story: 3, post: 1 }[kind] || 1;
@@ -728,11 +748,19 @@ export function cleanCreation(r, kind, photos = 0, previous = null) {
     let layout = CR_LAYOUTS.includes(x.layout) ? x.layout : i === 0 ? "cover" : i === all.length - 1 && all.length > 1 ? "close" : "statement";
     const points = Array.isArray(x.points) ? x.points.map((p) => str(p, 70)).filter(Boolean).slice(0, 5) : [];
     if (layout === "list" && points.length < 2) layout = "statement";
-    return { layout, kicker: str(x.kicker, 40), heading, accent: accent && heading.toLowerCase().includes(accent.toLowerCase()) ? accent : "", body: str(x.body, 200), points: layout === "list" ? points : [], number: layout === "step" || layout === "stat" ? str(x.number, 8) : "", photo: Math.max(0, Math.min(photos, Number(x.photo) || 0)) };
+    return { layout, kicker: str(x.kicker, 40), heading, accent: accent && heading.toLowerCase().includes(accent.toLowerCase()) ? accent : "", body: str(x.body, 200), points: layout === "list" ? points : [], number: layout === "step" || layout === "stat" ? str(x.number, 8) : "", photo: Math.max(0, Math.min(photos, Number(x.photo) || 0)), ...(hex(x.background) ? { background: hex(x.background) } : {}) };
   }).filter((x) => x.heading);
   if (!slides.length) return null;
   const theme = CR_STYLES.includes(r.theme) && (r.theme !== "photo" || photos) ? r.theme : previous?.theme || "ivory";
-  return { title: str(r.title, 60), caption: previous?.caption || "", theme, slides, reply: str(r.reply, 300) };
+  const L = r.look && typeof r.look === "object" ? r.look : previous?.look || {};
+  const font = (v) => (/^[A-Za-z0-9][A-Za-z0-9 ]{1,39}$/.test(String(v || "").trim()) ? String(v).trim() : "");
+  const look = Object.fromEntries(Object.entries({
+    background: hex(L.background), background2: hex(L.background2), text: hex(L.text), accent: hex(L.accent),
+    headingFont: font(L.headingFont), bodyFont: font(L.bodyFont),
+    headingWeight: Number(L.headingWeight) >= 100 && Number(L.headingWeight) <= 900 ? Math.round(Number(L.headingWeight) / 100) * 100 : 0,
+    uppercase: L.uppercase === true, align: ["left", "center"].includes(L.align) ? L.align : "", grain: L.grain === false ? false : undefined,
+  }).filter(([, v]) => v !== "" && v !== 0 && v !== false && v !== undefined || (v === false && L.grain === false)));
+  return { title: str(r.title, 60), caption: previous?.caption || "", theme, slides, look, handle: r.handle !== undefined ? str(r.handle, 40) : previous?.handle, footer: r.footer !== undefined ? str(r.footer, 50) : previous?.footer, reply: str(r.reply, 300) };
 }
 
 // A caption and hashtags, only when the agent asks for them.

@@ -1630,7 +1630,7 @@
       ${week ? `<a class="fchip" href="#/leads">This week ${ICON.x}</a>` : ""}
       ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
       <div class="list" id="leadList" style="border-top:0">${leads.map(item).join("")}</div><p class="lnone" id="lnone" hidden></p>`
-        : week && all.length ? `<p class="cnone">No leads this week.</p>` : `<div class="empty"><div class="ic">${ICON.people}</div><b>No leads yet</b>Each lead also shows the ad it came from.</div>`}</div></div>`;
+        : week && all.length ? `<p class="cnone">No leads this week.</p>` : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads Yet</b>Each lead also shows the ad it came from.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");
@@ -1770,7 +1770,7 @@
 
     main.innerHTML = `${mtop("Report")}<div class="page" data-report><div class="wrap">
       <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>
-      <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "lead" : "leads"}</div>${sub ? `<p class="rp-sub">${sub}</p>` : ""}
+      <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "Lead" : "Leads"}</div>${sub ? `<p class="rp-sub">${sub}</p>` : ""}
         <div class="rp-chart" role="img" aria-label="Leads each day: ${counts.join(", ")}">${bars}</div></section>
       ${winning}
       ${r.listings.length ? boardHtml(r) : ""}
