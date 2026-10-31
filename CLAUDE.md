@@ -396,6 +396,12 @@ The product's code is in `app/` (its README says what works and how to run it).
   2026-10-28), and every question on that listing gets that until they arrive.
   Never work around a site's bot protection. Prices keep the currency they were typed in (€, £,
   AED); "€1,250,000" once showed as $1,250,000.
+* **Says exactly what it can do (lesson, 2026-10-31):** asked how it compares with an agency,
+  Hopkins said it "generates the images" and is "the exact same engine without the retainer", and
+  told Ismael to connect his CRM "whenever you are ready". The chat model now has a plain list of
+  what Hopkins really does with Meta, the CRM and creative (`SYSTEM` in `app/src/brain.js`): it
+  designs around the agent's own photos, can't read the CRM, and an agency does more. Update that
+  list whenever a capability changes.
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the
   system only allows". Claude never says "Anthropic doesn't let me". Hopkins says "I can't" or "I
   can only", and when something needs a step from the agent, it says the step.

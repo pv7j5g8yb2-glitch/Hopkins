@@ -325,7 +325,8 @@ export async function startThread(ws, { text = "", photoIds = [], photoNames = {
 // The model names the thread in a few words (the first words stand in until then).
 async function nameThread(ws, id, text) {
   const title = await titleAI(text).catch(() => null);
-  if (title) await run(`UPDATE listings SET auto_title = ? WHERE id = ? AND workspace_id = ?`, [polish(title), id, ws.id]);
+  // A title is a noun phrase, so "leads" in it is always the Leads ("Patterns in recent Leads").
+  if (title) await run(`UPDATE listings SET auto_title = ? WHERE id = ? AND workspace_id = ?`, [polish(title).replace(/\blead(s?)\b/gi, (m, p) => `Lead${p}`), id, ws.id]);
 }
 
 export async function firstReply(ws, id, tz = "UTC") {
@@ -1310,7 +1311,7 @@ const asItself = (s) => String(s || "")
   .replace(/\b([Ww])e('ll| will| can| could|'d| would|'ve| have)\b/g, (m, w, rest) => `I${rest}`);
 // "Lead" is written with a capital L everywhere in Hopkins (Ismael, 2026-10-27). Only the noun,
 // after a number or a word like "no", "new" or "per", so "it leads to" stays as it is.
-export const capLeads = (s) => String(s || "").replace(/\b(\d[\d,]*|no|new|more|fewer|any|every|first|your|their|the|a|an|of|per|cheapest|cheaper|cheap|real|buyer|those|these|some|many|few|zero|one|two|three|four|five|six|seven|eight|nine|ten|qualified|good|warm|more|extra)(\s+)lead(s?)\b/gi, (m, w, sp, plural) => `${w}${sp}Lead${plural}`);
+export const capLeads = (s) => String(s || "").replace(/\b(\d[\d,]*|no|new|more|fewer|any|every|first|your|their|the|a|an|of|per|cheapest|cheaper|cheap|real|buyer|those|these|some|many|few|zero|one|two|three|four|five|six|seven|eight|nine|ten|qualified|good|warm|more|extra|recent|latest|all|my|incoming|past|old|these|top|best|cold|hot)(\s+)lead(s?)\b/gi, (m, w, sp, plural) => `${w}${sp}Lead${plural}`);
 // Offers of more help at the end of a reply ("Let me know if you'd like any tweaks.") add nothing.
 const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|happy to help|hope (?:this|that) helps|if you(?:'d| would) like(?: any)?|if you want|want me to|tell me if you(?:'d| would) like|anything (?:else )?(?:to|you'd like to|you want to) (?:adjust|change|tweak)|any (?:other |more )?(?:tweaks|changes|questions)|pick the one|tell me which|(?:would you like|do you want|shall i|should i) (?:me to )?(?:adjust|change|tweak|edit|modify|rewrite|refine|shorten|lengthen|polish)\b)[^.!?]*[.!?]?\s*$/i;
 export const noFiller = (s) => { let t = String(s || ""), prev; do { prev = t; t = t.replace(FILLER, "").trim(); } while (t !== prev && t); return t || String(s || ""); };
