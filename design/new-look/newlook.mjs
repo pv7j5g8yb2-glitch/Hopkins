@@ -12,7 +12,9 @@ async function run(ctxOpts, tag) {
   await p.goto(BASE + "/signup?invite=EARLY1");
   await shot("signup");
   await p.fill("#name", "Sam Ellery"); await p.fill("#email", `nl${tag}${Date.now()}@t.com`); await p.fill("#password", "password123");
-  await p.click("#go"); await p.waitForURL(/#\/today/); await shot("today-steps");
+  await p.click("#go"); await p.waitForURL(/#\/setup/); await shot("setup");
+  await p.check("#noCrm"); await p.waitForTimeout(600); await p.click("#suGo");
+  await p.waitForURL(/#\/today/); await shot("today-steps");
   await p.goto(BASE + "/#/crm"); await shot("crm");
   const l = await p.evaluate(async () => (await (await fetch("/api/listings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "412 Oak Street, Austin, TX. $649,000. 3 bed 2 bath craftsman, 1,850 sq ft, big front porch, renovated kitchen." }) })).json()));
   const id = l.listing.id;

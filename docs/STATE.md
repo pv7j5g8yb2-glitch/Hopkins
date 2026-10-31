@@ -1012,3 +1012,10 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   screenshots of blue, black and forest were sent. My view: black (graphite, not pure #000) over
   blue. He said yes the same evening: the whole platform (app, sign in, Terms, Privacy, splash,
   manifest) is on graphite black; every screen passes the readability check.
+* **Later, after App Review (Ismael, 2026-10-31):** autopilot posting to Instagram and Facebook,
+  if the agent wants it. With them, Hopkins maps out a whole week (a mix of carousels and reels, or
+  one format if they say so), with captions, hashtags and the day and time for each, laid out
+  clearly, and posts it. Needs Instagram's and Facebook's publishing permissions through App Review,
+  so it waits. ChatGPT's review the same night suggested a weekly plan on Today too; Ismael's call
+  on whether Hopkins prepares drafts unasked is still open.
+

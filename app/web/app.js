@@ -512,6 +512,11 @@
     closePop();
     markNav();
     const [view, id] = location.hash.slice(2).split("/");
+    // Setup comes first, once (Ismael, 2026-10-31): nothing else opens until it's done.
+    const setupDone = S.me?.workspace?.brand?.onboarded === "yes";
+    document.body.classList.toggle("onboarding", !setupDone);
+    if (!setupDone && view !== "setup") { location.hash = id === "meta-failed" ? "#/setup/meta-failed" : "#/setup"; return; }
+    if (setupDone && view === "setup") { location.hash = "#/today"; return; }
     if (view !== "listings") { S.selecting = false; document.body.classList.remove("selecting"); }
     // Inside a listing or a new one, the phone goes full screen like a chat app.
     document.body.classList.toggle("focus", view === "l" || view === "new");
@@ -531,6 +536,7 @@
         if (id === "active") $("#board")?.scrollIntoView({ block: "start" });
       }
       else if (view === "brand") { location.hash = "#/settings"; return; }
+      else if (view === "setup") viewSetup(id === "meta-failed");
       else if (view === "admin") await viewAdmin();
       else if (view === "crm") viewCrm(id === "settings" ? "#/settings" : "#/today");
       else if (view === "settings") {
@@ -1925,7 +1931,7 @@
     };
     fill("#metaAcct", m.adAccounts || [], m.adAccountId);
     fill("#metaPage", m.pages || [], m.pageId);
-    const save = async (body) => { S.me.meta = await api("/api/meta", { method: "PATCH", body }); toast("Saved"); };
+    const save = async (body) => { S.me.meta = await api("/api/meta", { method: "PATCH", body }); toast("Saved"); if (location.hash.startsWith("#/setup")) viewSetup(); };
     $("#metaAcct").addEventListener("change", (e) => e.target.value && save({ adAccountId: e.target.value }));
     $("#metaPage").addEventListener("change", (e) => e.target.value && save({ pageId: e.target.value }));
   }
@@ -1953,6 +1959,46 @@
   }
 
   // The CRM on its own, from Today's setup: the same two fields, and Skip.
+  // ---------- setup, once, after sign up ----------
+  //
+  // Meta and the CRM are how Hopkins knows the agent's business, so they come before anything else.
+  // Meta has to be connected; it only lets someone through without it when Meta's own login didn't
+  // work for them (before App Review only Meta testers can connect) or isn't set up yet. The CRM is
+  // connected, or the agent says they don't use one.
+  function viewSetup(metaFailed = false) {
+    if (metaFailed) S.metaFailed = true;
+    const m = S.me.meta || {}, c = S.me.crm || {};
+    const fld = (id, label, value, type = "text", ph = "") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
+    const metaOk = m.ready || !m.available || S.metaWaived;
+    const crmOk = c.fub || c.hook || c.skip;
+    const meta = !m.available
+      ? `<div class="su-row"><div class="tx"><b>Meta</b><p class="small">Available soon</p></div></div>`
+      : m.connected
+        ? metaGroup()
+        : `<div class="su-row"><div class="tx"><b>Meta</b>${S.metaFailed ? `<p class="small warn">Meta didn't connect.</p>` : ""}</div><a class="btn" href="/api/meta/connect">${S.metaFailed ? "Try again" : "Connect"}</a></div>
+           ${S.metaFailed && !S.metaWaived ? `<button class="link su-later" data-act="metaWaive">Continue without Meta</button>` : ""}`;
+    const crm = crmOk && !c.skip
+      ? crmGroup(fld)
+      : `${crmGroup(fld).replace("<h4>CRM</h4>", "<h4>CRM</h4>")}<label class="su-none"><input type="checkbox" id="noCrm" ${c.skip ? "checked" : ""}> I don't use a CRM</label>`;
+    main.innerHTML = `<div class="page setup-page"><div class="wrap" style="max-width:560px">
+      <div class="su-logo">${MARK("")}<b>Hopkins</b></div>
+      <div class="head"><h1>Connect Hopkins</h1></div>
+      <div class="su-step"><span class="su-n">1</span>${meta}</div>
+      <div class="su-step"><span class="su-n">2</span><div class="su-body">${crm}</div></div>
+      <div class="su-go"><button class="btn" id="suGo" ${metaOk && crmOk ? "" : "disabled"}>Continue</button></div>
+    </div></div>`;
+    fillMeta();
+    $("#noCrm")?.addEventListener("change", async (e) => {
+      S.me.crm = await api("/api/crm", { method: "PUT", body: { skip: e.target.checked } });
+      viewSetup();
+    });
+    $("#suGo").addEventListener("click", async () => {
+      await api("/api/brand", { method: "PUT", body: { onboarded: "yes" } });
+      await loadMe();
+      location.hash = "#/today";
+    });
+  }
+
   function viewCrm(back = "#/today") {
     S.crmBack = back;
     const fld = (id, label, value, type = "text", ph = "") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
@@ -1962,7 +2008,7 @@
       ${c.fub || c.hook ? `<div style="margin-top:20px"><a class="btn" href="${back}">Done</a></div>` : back === "#/today" ? `<div style="margin-top:20px"><button class="link" data-act="crmSkip">Skip</button></div>` : ""}
     </div></div>`;
   }
-  const redrawCrm = () => viewCrm(S.crmBack);
+  const redrawCrm = () => (location.hash.startsWith("#/setup") ? viewSetup() : viewCrm(S.crmBack));
 
   function viewSettings() {
     const u = S.me.user, b = S.me.workspace.brand, use = S.me.usage;
@@ -2047,6 +2093,9 @@
       const next = S.me.workspace.brand.instant_reply === "off" ? "on" : "off";
       await api("/api/brand", { method: "PUT", body: { instant_reply: next } });
       await loadMe(); viewSettings(); toast(next === "on" ? "Instant reply on" : "Instant reply off");
+    } else if (act === "metaWaive") {
+      S.metaWaived = true;
+      viewSetup();
     } else if (act === "crmSkip") {
       S.me.crm = await api("/api/crm", { method: "PUT", body: { skip: true } });
       location.hash = "#/today";
@@ -2323,7 +2372,7 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle", "metaWaive"].includes(act)) await settingsAction(act, t);
       else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
       else if (act === "crCopy") {
         const c = (S.current?.creations || []).find((x) => x.id === t.dataset.id);

@@ -1176,3 +1176,20 @@ section.chat.drag{outline:1px dashed rgba(255,255,255,.4);outline-offset:-12px}
 .mk.once path{transform-box:fill-box;transform-origin:center;animation:mkswap .9s ease-in-out 1}
 .mk.once path:last-child{animation-delay:-.45s}
 .dotw{box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+/* Setup, once after sign up: no tabs, no sidebar, two numbered steps and Continue. */
+body.onboarding .tabbar,body.onboarding .side,body.onboarding .mtop{display:none!important}
+.setup-page{padding-top:calc(28px + var(--safe-t,0px))}
+.su-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:19px;letter-spacing:-.045em;margin:8px 0 28px}
+.su-logo .mk{width:26px;height:26px}
+.su-step{display:flex;gap:14px;align-items:flex-start;padding:18px 0;border-top:1px solid var(--glass-edge)}
+.su-step>.group,.su-step>.su-row,.su-body{flex:1;min-width:0;margin:0}
+.su-n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:14px;background:rgba(255,255,255,.12)}
+.su-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.su-row .tx b{font-weight:600;font-size:17px}
+.su-later{display:block;margin:10px 0 0 42px}
+.su-none{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:15px}
+.su-none input{width:20px;height:20px;accent-color:#fff}
+.su-go{padding-top:22px;border-top:1px solid var(--glass-edge)}
+.su-go .btn{width:100%;justify-content:center}
+.su-go .btn:disabled{opacity:.35}
+.small.warn{color:#FF9B91}

@@ -373,7 +373,7 @@ app.post("/api/ads/:id/render", { bodyLimit: 12_000_000 }, async (request, reply
   return { ok: true };
 });
 
-const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, instant_reply: 3 };
+const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, instant_reply: 3, onboarded: 3 };
 // Setup from the agent's website: what the site says about them, for them to check before saving.
 app.post("/api/brand/from-link", async (request, reply) => {
   if (tooMany(`site:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });

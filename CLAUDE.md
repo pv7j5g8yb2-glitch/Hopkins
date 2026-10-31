@@ -262,8 +262,12 @@ The product's code is in `app/` (its README says what works and how to run it).
   touches like this across the platform: quiet, purposeful, never a celebration or a bounce.
 * **No Brand page (Ismael, 2026-10-31):** removed completely. Sign up is name, email and
   password; the brokerage name is in Settings, Profile; anything else (phone, licence, Instagram)
-  is said in the chat. Today is the greeting, the "Ask Hopkins anything" box and two setup rows,
-  Meta and CRM, until each is done or skipped. Settings has one CRM row that opens the CRM page.
+  is said in the chat. Settings has one CRM row that opens the CRM page.
+* **Setup is mandatory, once (Ismael, 2026-10-31):** straight after sign up, a page with no tabs:
+  "Connect Hopkins", 1 Meta, 2 CRM, Continue. Nothing else opens until it's done (`onboarded` in the
+  brand). Meta must be connected; the only ways past it are Meta's login failing for them (before
+  App Review only Meta testers can connect), shown as "Continue without Meta", or Meta not being set
+  up on the server yet. The CRM is connected or answered with "I don't use a CRM".
 * **Makes what's asked, nothing else (Ismael, 2026-10-31):** no automatic set of 3 ads. A property
   on its own (facts, a link, photos) is read back in one line and Hopkins asks what to make for
   it; ads come when asked ("make ads", "run it"). Posts, carousels, stories and animated reels are
