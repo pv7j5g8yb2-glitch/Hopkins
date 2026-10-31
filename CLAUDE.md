@@ -227,7 +227,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   light along the edge, and a glint that slides as the panel moves. Browsers can't bend what's
   behind an element on iPhone, so `app/web/lens.js` draws the background picture through a lens
   with WebGL for each panel; content scrolling under a floating bar isn't bent, only the
-  background. Inputs can't hold the lens and keep the frosted look.
+  background. Inputs can't hold the lens and keep the frosted look. Lesson (2026-10-31, Ismael's
+  account sheet came up see-through on his iPhone): a panel keeps its own look until its glass is
+  drawn, a panel that rebuilds its contents gets its glass back at once, and nothing redraws while
+  the screen is still. Test sheets opening, not only still screens.
 
 * **Best quality, always (Ismael, 2026-10-29):** ads are always given in the best quality and
   resolution. Photos are kept at 1920 pixels on the short side (4096 at most on the long side, JPEG

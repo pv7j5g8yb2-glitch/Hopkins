@@ -64,8 +64,8 @@ void main(){
   // line opposite, and a soft glow just inside where the glass curves.
   vec2 L = normalize(vec2(-.55, -.85));
   float facing = dot(n, L);
-  float line = smoothstep(1.5, 0., -d);
-  float rim = line * (.22 + .55 * max(facing, 0.) + .18 * max(-facing, 0.));
+  // (The rim's thin line is drawn crisp by .lens-rim at the screen's full sharpness.)
+  float rim = 0.;
   float inner = pow(t, 5.) * .09 * (.6 + .4 * max(facing, 0.));
   // Reflection: a soft diagonal glint lying across the glass, strongest along the edge.
   vec2 u = (lp + c) / size;
@@ -127,35 +127,53 @@ void main(){
   }
 
   // ---------- the panels ----------
+  //
+  // Speed (Ismael on his iPhone, 2026-10-31: "wtf is this lag"): a panel keeps its own look until
+  // its glass has been drawn once (never see-through while it opens), everything about it that
+  // doesn't move is read once, nothing is redrawn unless it moved, and the glass is drawn at the
+  // screen's CSS size (what's behind is soft anyway); the crisp rim is a separate layer.
 
-  const panels = new Map(); // element -> { canvas, ctx, key }
+  const panels = new Map(); // element -> panel
   function attach(el) {
     if (panels.has(el) || el.closest(SKIP) || el.matches(SKIP)) return;
     const cs = getComputedStyle(el);
     if (cs.position === "static") el.style.position = "relative";
     // Glass is never a sharp rectangle.
-    if (!parseFloat(cs.borderTopLeftRadius)) { el.style.borderRadius = "18px"; el.style.overflow = "hidden"; }
+    let radius = parseFloat(cs.borderTopLeftRadius) || 0;
+    if (!radius) { el.style.borderRadius = "18px"; el.style.overflow = "hidden"; radius = 18; }
     el.classList.add("lensed");
     const canvas = document.createElement("canvas");
     canvas.className = "lens-c";
     canvas.setAttribute("aria-hidden", "true");
-    el.prepend(canvas);
-    panels.set(el, { canvas, ctx: canvas.getContext("2d"), key: "" });
+    const rim = document.createElement("i");
+    rim.className = "lens-rim";
+    rim.setAttribute("aria-hidden", "true");
+    el.prepend(canvas, rim);
+    const isLens = el.classList.contains("lg-lens");
+    panels.set(el, {
+      canvas, rim, ctx: canvas.getContext("2d"), key: "", radius, isLens,
+      tint: isLens ? 0.08 : el.matches(".pop, .toast") ? 0.62 : 0.4,
+      mag: isLens ? 0.8 : 0.9,
+    });
   }
   function scan() {
     if (!phone.matches) return;
     for (const el of document.querySelectorAll(SELECTORS)) attach(el);
-    for (const [el, p] of panels) if (!el.isConnected) panels.delete(el);
+    for (const [el, p] of panels) {
+      if (!el.isConnected) { panels.delete(el); continue; }
+      // A panel that rebuilds its contents (the account sheet does, each time it opens) loses its
+      // glass layers: they go straight back, and it shows its own look until they're drawn.
+      if (p.canvas.parentNode !== el) { el.classList.remove("lens-on"); el.prepend(p.canvas, p.rim); p.key = ""; }
+    }
   }
   function detachAll() {
-    for (const [el, p] of panels) { p.canvas.remove(); el.classList.remove("lensed"); }
+    for (const [el, p] of panels) { p.canvas.remove(); el.querySelector(":scope>.lens-rim")?.remove(); el.classList.remove("lensed", "lens-on"); }
     panels.clear();
     document.documentElement.classList.remove("lensing");
   }
 
   // ---------- drawing ----------
 
-  const dpr = () => Math.min(2, window.devicePixelRatio || 1);
   function bgMap() {
     // body:before: cover, centred across, from the top.
     const W = window.innerWidth, H = window.innerHeight;
@@ -163,72 +181,77 @@ void main(){
     const w = img.naturalWidth * s, h = img.naturalHeight * s;
     return [(W - w) / 2, 0, w, h];
   }
-  function radiusOf(el, w, h) {
-    const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
-    return Math.min(r, Math.min(w, h) / 2);
-  }
-  function drawPanel(el, p, map) {
+  // Draws one panel if it moved; says whether it did.
+  function drawPanel(el, p, map, mapKey) {
+    if (p.canvas.parentNode !== el) { el.classList.remove("lens-on"); el.prepend(p.canvas, p.rim); p.key = ""; }
     const r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.bottom < -40 || r.top > window.innerHeight + 40) return false;
     // The drop in the tab bar is scaled while it moves: draw at its own size, place by its centre.
     const w = el.offsetWidth, h = el.offsetHeight;
-    if (!w || !h || r.bottom < -40 || r.top > window.innerHeight + 40 || getComputedStyle(el).display === "none") return;
     const x = r.left + r.width / 2 - w / 2, y = r.top + r.height / 2 - h / 2;
-    const isLens = el.classList.contains("lg-lens");
-    const press = el.classList.contains("press") ? 1 : 0;
-    const key = `${x.toFixed(1)}|${y.toFixed(1)}|${w}|${h}|${press}|${map.join(",")}`;
-    if (key === p.key) return;
+    const press = p.isLens && el.classList.contains("press") ? 1 : 0;
+    const key = `${Math.round(x)}|${Math.round(y)}|${w}|${h}|${press}|${mapKey}`;
+    if (key === p.key) return false;
     p.key = key;
-    const k = dpr();
-    const pw = Math.ceil(w * k), ph = Math.ceil(h * k);
+    const pw = Math.ceil(w), ph = Math.ceil(h);
     if (pw > gl_canvas.width || ph > gl_canvas.height) {
-      gl_canvas.width = Math.max(gl_canvas.width, pw);
-      gl_canvas.height = Math.max(gl_canvas.height, ph);
+      gl_canvas.width = Math.max(gl_canvas.width, pw, 512);
+      gl_canvas.height = Math.max(gl_canvas.height, ph, 512);
     }
     if (p.canvas.width !== pw || p.canvas.height !== ph) { p.canvas.width = pw; p.canvas.height = ph; }
     // Scrolling panels keep their canvas where the panel is.
     if (el.scrollTop) p.canvas.style.transform = `translateY(${el.scrollTop}px)`;
     gl.viewport(0, gl_canvas.height - ph, pw, ph);
-    gl.clearColor(0, 0, 0, 0);
-    gl.enable(gl.SCISSOR_TEST);
     gl.scissor(0, gl_canvas.height - ph, pw, ph);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniform1i(U.bg, 0);
     gl.uniform2f(U.size, w, h);
     gl.uniform2f(U.origin, x, y);
     gl.uniform4f(U.map, ...map);
-    gl.uniform1f(U.radius, radiusOf(el, w, h));
+    gl.uniform1f(U.radius, Math.min(p.radius, Math.min(w, h) / 2));
     // The glint's place follows the panel's place on screen, so it slides as the panel moves.
     gl.uniform1f(U.glint, ((x * 0.7 + y * 0.45) / Math.max(window.innerHeight, 1)) % 1.3 - 0.1);
-    gl.uniform1f(U.mag, isLens ? 0.8 : 0.9);
-    gl.uniform1f(U.tint, isLens ? 0.08 : el.matches(".pop, .toast, .mtop") ? 0.62 : 0.4);
+    gl.uniform1f(U.mag, p.mag);
+    gl.uniform1f(U.tint, p.tint);
     gl.uniform1f(U.press, press);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     p.ctx.clearRect(0, 0, pw, ph);
     p.ctx.drawImage(gl_canvas, 0, 0, pw, ph, 0, 0, pw, ph);
+    // Only now does the panel give up its own look for the glass.
+    if (!el.classList.contains("lens-on")) el.classList.add("lens-on");
+    return true;
   }
 
   let dirty = true, running = false, idle = 0;
+  gl.clearColor(0, 0, 0, 0);
+  gl.enable(gl.SCISSOR_TEST);
+  gl.uniform1i(U.bg, 0);
   function frame() {
     if (!phone.matches || !ready) { running = false; return; }
     if (dirty) { scan(); dirty = false; }
     const map = bgMap();
-    const before = [...panels.values()].map((p) => p.key).join();
-    for (const [el, p] of panels) drawPanel(el, p, map);
-    const after = [...panels.values()].map((p) => p.key).join();
-    // Keep drawing while anything moves; stop a second after everything is still.
-    idle = before === after ? idle + 1 : 0;
-    if (idle > 60 || document.hidden) { running = false; return; }
+    const mapKey = map.map(Math.round).join(",");
+    let moved = false;
+    for (const [el, p] of panels) if (drawPanel(el, p, map, mapKey)) moved = true;
+    // Keep drawing while anything moves; stop half a second after everything is still.
+    idle = moved ? 0 : idle + 1;
+    if (idle > 30 || document.hidden) { running = false; return; }
     requestAnimationFrame(frame);
   }
   function wake() {
     idle = 0;
-    if (!running && phone.matches) { running = true; requestAnimationFrame(frame); }
+    if (!running && phone.matches && ready) { running = true; requestAnimationFrame(frame); }
   }
 
-  new MutationObserver(() => { dirty = true; wake(); }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
-  for (const ev of ["scroll", "resize", "pointerdown", "pointermove", "touchmove", "transitionrun", "animationstart"]) window.addEventListener(ev, wake, { passive: true, capture: true });
+  // New elements are looked for only when elements are added; a class change (a sheet opening,
+  // a tab pressed) just wakes the drawing. The lens's own canvases never count.
+  new MutationObserver((list) => {
+    for (const m of list) {
+      if (m.type === "childList" && [...m.addedNodes, ...m.removedNodes].some((n) => n.nodeType === 1 && !n.classList.contains("lens-c") && !n.classList.contains("lens-rim"))) dirty = true;
+    }
+    wake();
+  }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  for (const ev of ["scroll", "resize", "pointerdown", "pointerup", "pointermove", "transitionrun", "transitionend", "animationstart", "animationend"]) window.addEventListener(ev, wake, { passive: true, capture: true });
   document.addEventListener("visibilitychange", wake);
   phone.addEventListener("change", () => { if (phone.matches) { loadPicture(); wake(); } else detachAll(); });
   if (phone.matches) loadPicture();
-  wake();
 })();
