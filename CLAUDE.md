@@ -201,7 +201,7 @@ The product's code is in `app/` (its README says what works and how to run it).
   Today shows its three numbers, then "Recent" and the 5 listings used most recently (Ismael,
   2026-10-29). The three numbers match the three tabs and each opens its own (Ismael,
   2026-10-29): Chats opens Chats; "Leads this week" opens Leads filtered to this week (a dark
-  "This week ×" chip clears it); "Active listings" (listings with approved ads) opens Report on
+  "This week ×" chip clears it); "Active listings" (listings whose ads are running now, not paused or over) opens Report on
   this week with its Active filter on, or All when there are none, never an empty board (Ismael,
   2026-10-31).
 * **First steps (Ismael, 2026-10-30):** a new account's Today shows four steps: your brand, Connect
@@ -242,6 +242,17 @@ The product's code is in `app/` (its README says what works and how to run it).
   campaign, one ad set per ad with an equal share of the budget, a 15 mile radius, no age, gender
   or ZIP targeting, each ad linking to the property's page with its own ad. The chat hears once when
   ads go live or are rejected, and spend comes back every 30 minutes. Setup steps: `docs/META.md`.
+* **Stopping running ads (lesson, 2026-10-31):** Ismael typed "Stop the ad" and got a new run plan,
+  "No stop them!" deleted all three ads, and "stop this active ad" got "paused" while nothing had
+  changed. He was furious: Hopkins has to be ready for every situation an agent can be in. Now:
+  pause and resume are real actions (chat, and Pause ads / Resume ads in the listing's ••• menu);
+  pausing reaches Meta's campaign before Hopkins says so, and if Meta refuses, the reply says
+  nothing changed. Stop words never make a plan or delete ads; ads are only deleted when the agent
+  says remove or delete, and a running ad can't be deleted until it's paused; a reply that claims
+  a pause, restart or deletion that didn't happen is replaced with the truth. Sold or rented,
+  deleting a listing and deleting the account all stop the ads on Meta first (deleting is refused
+  if Meta won't pause). Before shipping anything that changes ads or money, list every way an agent
+  could phrase it and every state the listing could be in, and test them.
 * **Report rows (Ismael, 2026-10-29):** a listing with ads running keeps its colour on Report even
   with no Leads yet; only one with nothing running and no Leads is greyed.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft

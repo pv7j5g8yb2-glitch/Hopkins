@@ -182,6 +182,11 @@ export async function launch({ token, adAccountId, pageId, country = "US", name,
   return { campaignId: campaign.id, ads: out };
 }
 
+// Pausing (PAUSED) or restarting (ACTIVE) a whole campaign: every ad set and ad under it follows.
+export async function setCampaignStatus(token, campaignId, status) {
+  return graph("POST", campaignId, { status }, token);
+}
+
 // What Meta says about a running campaign: what it has spent, and where each ad stands.
 export async function campaignState(token, campaignId, metaAdIds) {
   const insights = await graph("GET", `${campaignId}/insights`, { fields: "spend", date_preset: "maximum" }, token);

@@ -19,7 +19,7 @@ const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].inclu
 import { canMake, isPaid, planOf, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
-import { metaReady, unseal, launch as metaLaunch, campaignState, MetaError } from "./meta.js";
+import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStatus, MetaError } from "./meta.js";
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency", "deal"];
 export const DEFAULT_BUDGET = 200;
@@ -207,6 +207,8 @@ export async function restyle(ws, listing, versions, changes, sizeStep = 0, { re
 export async function deleteListing(ws, id) {
   const listing = await loadListing(ws.id, id);
   if (!listing) return false;
+  // Its ads stop spending on Meta first (throws if Meta won't, so nothing keeps spending unseen).
+  await pauseRuns(ws, id);
   const { n } = await get(`SELECT COUNT(*) AS n FROM ads WHERE listing_id = ?`, [id]);
   await run(`UPDATE workspaces SET ads_removed = ads_removed + ? WHERE id = ?`, [Number(n) || 0, ws.id]);
   for (const t of ["leads", "tests", "launches", "ads", "messages", "photos"]) await run(`DELETE FROM ${t} WHERE listing_id = ? AND workspace_id = ?`, [id, ws.id]);
@@ -863,11 +865,16 @@ async function changeSetNow(ws, listing, ads, photos, r, text) {
   if (r.action === "remove_ads") {
     const gone = ads.filter((a) => r.remove.includes(a.version) || (!r.remove.length && a.version === r.version));
     if (!gone.length) { await say(ws, listing.id, reply || "Which one should go?"); return {}; }
+    // An ad that's running can't just vanish from Hopkins while it keeps spending on Meta.
+    if (gone.some((a) => a.status === "approved") && (await runState(listing.id)) === "running") {
+      await say(ws, listing.id, `${VERSION_WORD(gone.map((a) => a.version), gone)} ${gone.length > 1 ? "are" : "is"} running. Pause the ads first, then remove ${gone.length > 1 ? "them" : "it"}.`);
+      return {};
+    }
     const moved = await removeAds(ws, listing, gone);
     const left = ads.filter((a) => !gone.includes(a));
     const renumbered = moved.length ? ` ${moved.map(([from, to]) => `What was Ad ${from} is now Ad ${to}`).join(", ")}.` : "";
     // The model's reply was written before the numbers moved, so Hopkins says it plainly.
-    await say(ws, listing.id, `Removed ${VERSION_WORD(gone.map((a) => a.version), gone)}.${renumbered}${left.length ? "" : " Tell me what to make instead."}`);
+    await say(ws, listing.id, `Removed ${VERSION_WORD(gone.map((a) => a.version), gone).replace(/^(All|Both)/, (w) => w.toLowerCase())}.${renumbered}${left.length ? "" : " Tell me what to make instead."}`);
     return { focus: left.length ? 1 : undefined };
   }
   // add_ads
@@ -993,7 +1000,7 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     const leads = Object.fromEntries(leadRows.map((x) => [x.ad_id, { n: Number(x.n), showings: Number(x.showings) }]));
     const c = metaReady() ? await metaConnection(ws.id) : null;
     const meta = c ? { connected: true, ready: Boolean(c.ad_account_id && c.page_id), adAccountName: c.ad_account_name, pageName: c.page_name } : null;
-    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz), meta });
+    const r = await chatTurnAI({ listing, photos, brand: ws.brand, ads, history, selectedVersion: selected, plan, agentName: ws.brand.agent_name, agentPhoto, leads, account: await accountSummary(ws, tz), meta, running: await runState(listing.id) });
     if (r) return applyAI(ws, listing, ads, photos, r, text);
     busy = takeFailure() === "busy";
     if (busy && needsModel(text)) {
@@ -1174,6 +1181,25 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   if (r.action === "update_listing" && text) patch.description = [listing.description, text].filter(Boolean).join("\n");
   const focus = r.version || undefined;
 
+  // Running ads: stopping and starting them again. The model can call it, and so can the agent's
+  // own words when the model reached for something else (a new plan, deleting the ads) or said it
+  // had paused something it hadn't.
+  const state = await runState(listing.id);
+  const claims = (re) => re.test(reply || "");
+  const reached = ["run", "remove_ads", "new_moment"].includes(r.action) && r.moment !== "sold";
+  if (r.action === "pause" || (state !== "none" && wantsStop(text) && (reached || claims(/\b(paused|stopped|turned off)\b/i)))) return stopOrStart(ws, listing, "pause");
+  if (r.action === "resume" || (state === "paused" && wantsStart(text) && (r.action === "run" || claims(/\b(resumed|running again|back on)\b/i)))) return stopOrStart(ws, listing, "resume");
+  // Never says something changed that didn't.
+  if (r.action === "none" && claims(/\b(paused|resumed|stopped (the|your|all|both)|turned (it |them |the ads? )?(off|back on)|deleted (the |all |both |your )?(\w+ )?ads?)\b/i)) {
+    await say(ws, listing.id, state === "running" ? `The ads for ${listingTitle(listing)} are running. Say "pause" to stop them.` : state === "paused" ? `The ads for ${listingTitle(listing)} are paused.` : "Nothing has changed.");
+    return {};
+  }
+  // Ads only ever go when the agent says to remove or delete them.
+  if (r.action === "remove_ads" && !DELETE_WORDS.test(text)) {
+    await say(ws, listing.id, "Which ad should go? Nothing has been removed.");
+    return {};
+  }
+
   if (r.action === "run") {
     // The plan says it all: the model's own line before it once said "Running all three ads"
     // before anything ran, then the plan asked for a yes again (2026-10-28).
@@ -1181,7 +1207,11 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   }
   if (r.action === "new_moment" && r.moment !== "none") {
     const oldPrice = listing.price;
-    if (r.moment === "sold") patch.status = "sold";
+    if (r.moment === "sold") {
+      patch.status = "sold";
+      // A sold or rented property's ads stop spending.
+      try { await pauseRuns(ws, listing.id); } catch (err) { console.error("Pausing on sold failed:", err.message); }
+    }
     await patchListing(ws.id, listing.id, patch);
     const out = await makeAds(ws, await loadListing(ws.id, listing.id), r.moment, { oldPrice }, { count: ads.length || 3 });
     return { ...out, focus };
@@ -1328,6 +1358,9 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
   const ad = ads.find((a) => a.version === v);
   const first = (ws.brand.agent_name || "").split(" ")[0];
 
+  const state = await runState(listing.id);
+  if (state !== "none" && wantsStop(text)) return stopOrStart(ws, listing, "pause");
+  if (state === "paused" && wantsStart(text)) return stopOrStart(ws, listing, "resume");
   if (intent.kind === "run") return proposeRun(ws, listing, { versions: intent.versions, budget: intent.budget, days: intent.days });
 
   if (intent.kind !== "style" && refersBack(text) && ads.length) {
@@ -1581,6 +1614,88 @@ export async function confirmRun(ws, listingId, messageId, { base = "" } = {}) {
   return { ok: true };
 }
 
+// ---------- pausing and resuming running ads ----------
+
+// Stopping ads is the thing an agent must always be able to do (Ismael, 2026-10-31: "Stop the ad"
+// made a new plan, "No stop them!" deleted all three ads, and "stop this active ad" got "paused"
+// while nothing had changed). A run is live while it waits on Meta or runs on it, until its days
+// are over. Pausing reaches Meta first, so Hopkins never says paused while the campaign spends.
+const runEnd = (l) => new Date(new Date(l.created_at).getTime() + (Number(l.days) + 1) * 86400000);
+export async function liveRuns(listingId) {
+  return (await all(`SELECT * FROM launches WHERE listing_id = ? AND status IN ('waiting_on_meta', 'sent')`, [listingId])).filter((l) => runEnd(l) > new Date());
+}
+// "running", "paused" or "none", for the chat, the menu and the Active filters.
+export async function runState(listingId) {
+  if ((await liveRuns(listingId)).length) return "running";
+  const paused = (await all(`SELECT * FROM launches WHERE listing_id = ? AND status = 'paused'`, [listingId])).filter((l) => runEnd(l) > new Date());
+  return paused.length ? "paused" : "none";
+}
+export async function pauseRuns(ws, listingId) {
+  const live = await liveRuns(listingId);
+  if (!live.length) return { none: true, state: await runState(listingId) };
+  const conn = metaReady() ? await metaConnection(ws.id) : null;
+  for (const l of live) {
+    if (l.meta_campaign_id) {
+      if (!conn) throw new MetaError("Meta isn't connected, so its campaign couldn't be paused. Pause it in Ads Manager, or reconnect Meta in Settings");
+      await setCampaignStatus(unseal(conn.token), l.meta_campaign_id, "PAUSED");
+    }
+    await run(`UPDATE launches SET status = 'paused' WHERE id = ?`, [l.id]);
+  }
+  return { paused: live.length, onMeta: live.some((l) => l.meta_campaign_id) };
+}
+export async function resumeRuns(ws, listingId) {
+  const paused = await all(`SELECT * FROM launches WHERE listing_id = ? AND status = 'paused'`, [listingId]);
+  const open = paused.filter((l) => runEnd(l) > new Date());
+  if (!open.length) return paused.length ? { ended: true } : { none: true, state: await runState(listingId) };
+  const conn = metaReady() ? await metaConnection(ws.id) : null;
+  for (const l of open) {
+    if (l.meta_campaign_id) {
+      if (!conn) throw new MetaError("Meta isn't connected, so its campaign couldn't be restarted. Reconnect Meta in Settings");
+      await setCampaignStatus(unseal(conn.token), l.meta_campaign_id, "ACTIVE");
+    }
+    await run(`UPDATE launches SET status = ? WHERE id = ?`, [l.meta_campaign_id ? "sent" : "waiting_on_meta", l.id]);
+  }
+  return { resumed: open.length, onMeta: open.some((l) => l.meta_campaign_id) };
+}
+// What happened, said from the facts, never from the model's wording.
+async function stopOrStart(ws, listing, which) {
+  const name = listingTitle(listing);
+  try {
+    if (which === "pause") {
+      const r = await pauseRuns(ws, listing.id);
+      if (r.none) return say(ws, listing.id, r.state === "paused" ? `The ads for ${name} are already paused.` : `No ads are running for ${name}.`);
+      return say(ws, listing.id, `Paused. The ads for ${name} ${r.onMeta ? "are no longer running on Facebook and Instagram" : "won't run"}.`);
+    }
+    const r = await resumeRuns(ws, listing.id);
+    if (r.ended) return say(ws, listing.id, `That run has ended. Approve a new plan to run the ads for ${name} again.`);
+    if (r.none) return say(ws, listing.id, r.state === "running" ? `The ads for ${name} are already running.` : `No ads are paused for ${name}.`);
+    return say(ws, listing.id, `Resumed. The ads for ${name} are running again${r.onMeta ? " on Facebook and Instagram" : ""}.`);
+  } catch (err) {
+    const why = err.code === 190 ? "the Meta connection has expired. Reconnect Meta in Settings, then try again" : polish(String(err.message)).replace(/\.$/, "");
+    return say(ws, listing.id, `Nothing changed: ${why}.`);
+  }
+}
+export async function pauseOrResume(ws, listingId, which) {
+  const listing = await loadListing(ws.id, listingId);
+  if (!listing) return null;
+  await stopOrStart(ws, listing, which);
+  return { ok: true };
+}
+// Before a listing or an account is deleted, or a property is sold: its ads stop spending.
+export async function stopAllRuns(ws, listingIds) {
+  for (const id of listingIds) await pauseRuns(ws, id);
+}
+
+// What the agent asked, read the way a person would: "stop", "pause", "turn them off", "kill the
+// ads" mean stop them; "start them again", "resume", "turn them back on" mean the opposite.
+const STOP_WORDS = /\b(stop|pause|halt|kill|cancel|turn(ed)? (it |them |the ads? )?off|switch(ed)? (it |them |the ads? )?off|shut (it |them )?(down|off)|take (it |them )?(down|offline)|no longer run)\b/i;
+const START_WORDS = /\b(resume|unpause|restart|start (it |them |the ads? )?(again|back)|turn (it |them |the ads? )?back on|switch (it |them |the ads? )?back on|run (it |them )?again|back on)\b/i;
+// Deleting ads needs the agent to say so: only these words ever remove one.
+const DELETE_WORDS = /\b(remove|delete|get rid|bin|trash|erase|scrap|ditch|drop|lose|take out|throw (it |them )?(out|away))\b/i;
+// A question ("when do they stop?") asks, it doesn't tell.
+export const wantsStop = (text) => STOP_WORDS.test(text) && !START_WORDS.test(text) && !/\?\s*$/.test(text) && !/\bstop (using|saying|showing|writing|putting|making|adding|calling)\b/i.test(text);
+export const wantsStart = (text) => START_WORDS.test(text) && !/\?\s*$/.test(text);
+
 // ---------- Meta ----------
 
 export const metaConnection = (workspaceId) => get(`SELECT * FROM meta_connections WHERE workspace_id = ?`, [workspaceId]);
@@ -1699,7 +1814,8 @@ export async function weeklyReport(ws, range = weekRange()) {
   // a last week of 9 read as nonsense). A week in progress shows this number, not a percentage.
   const beforeAll = soFar ? await get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [ws.id, prevFrom.toISOString(), since]) : before;
   const allTime = Object.fromEntries((await all(`SELECT listing_id, COUNT(*) AS n FROM leads WHERE workspace_id = ? GROUP BY listing_id`, [ws.id])).map((r) => [r.listing_id, Number(r.n)]));
-  const launched = await all(`SELECT DISTINCT listing_id FROM launches WHERE workspace_id = ?`, [ws.id]);
+  // Running: ads live now (not paused, not ended).
+  const launched = (await all(`SELECT * FROM launches WHERE workspace_id = ? AND status IN ('waiting_on_meta', 'sent')`, [ws.id])).filter((l) => runEnd(l) > new Date());
   const launchedIds = new Set(launched.map((r) => r.listing_id));
   const drafts = await all(`SELECT DISTINCT listing_id FROM ads WHERE workspace_id = ? AND status = 'draft'`, [ws.id]);
   const draftIds = new Set(drafts.map((r) => r.listing_id));

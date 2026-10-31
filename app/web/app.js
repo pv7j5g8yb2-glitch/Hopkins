@@ -14,6 +14,8 @@
     menu: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
     send: '<svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>',
     stop: '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2.6" fill="currentColor" stroke="none"/></svg>',
+    pause: '<svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg>',
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg>',
     photo: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
     link: '<svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
@@ -464,7 +466,9 @@
       ? `<div class="sep"></div><button data-dl="feed">${ICON.down}Download feed image</button><button data-dl="story">${ICON.down}Download story image</button>
          <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>`
       : "";
-    return `<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open Lead page</a>
+    // Running ads can always be stopped in one tap, and started again (Ismael, 2026-10-31).
+    const runBtn = l.run === "running" ? `<button data-act="pauseRun">${ICON.pause}Pause ads</button>` : l.run === "paused" ? `<button data-act="resumeRun">${ICON.play}Resume ads</button>` : "";
+    return `${runBtn}<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open Lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
       <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Create new ads" : "Create ads"}</button>
       <button class="danger" data-act="delListingAsk">${ICON.trash}Delete chat</button>`;
@@ -521,7 +525,7 @@
         // From Today's "Active listings": the Active filter, or All when nothing is active, so it's
         // never an empty board (Ismael, 2026-10-31). Active counts the same way as on Today.
         if (id === "active") {
-          S.repFilter = S.listings.some((l) => l.approved > 0 && l.status !== "sold") ? "active" : "all";
+          S.repFilter = S.listings.some((l) => l.run === "running") ? "active" : "all";
           S.repMonday = mondayOf(new Date()); S.repFollow = true;
         }
         await viewReport();
@@ -563,7 +567,8 @@
     const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
     // Each number opens its own tab, showing exactly what it counts (Ismael, 2026-10-29): Chats,
     // Leads (this week's) and Report (the listings with ads running, its Active filter).
-    const active = S.listings.filter((l) => l.approved > 0 && l.status !== "sold");
+    // Active: its ads are running now (not paused, not over).
+    const active = S.listings.filter((l) => l.run === "running");
     // The Monday report lives on Report, not here (Ismael, 2026-10-27).
     const recent = S.inbox.filter((m) => !m.needs_action && m.kind !== "report");
     const where = (m) => listingName(m);
@@ -2139,6 +2144,12 @@
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes"].includes(act)) await settingsAction(act, t);
+      else if (act === "pauseRun" || act === "resumeRun") {
+        const next = await api(`/api/listings/${l.id}/${act === "pauseRun" ? "pause" : "resume"}`, { body: {} });
+        drawListing(next, true);
+        refreshSide();
+        toast(next.listing.run === "paused" ? "Ads paused" : next.listing.run === "running" ? "Ads resumed" : next.messages.at(-1)?.body || "Done");
+      }
       else if (act === "billing") { const { url } = await api("/api/billing/portal", { body: {} }); location.href = url; }
       else if (act === "metaOff") { await api("/api/meta", { method: "DELETE" }); await loadMe(); viewSettings(); toast("Meta disconnected"); }
       else if (act === "account") openPop(t, accountMenu());

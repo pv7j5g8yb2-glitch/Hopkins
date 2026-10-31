@@ -6,6 +6,7 @@ import { boot, client, TINY_JPEG } from "./helpers.js";
 // for the API so this checks the request and what Hopkins does with the answer.
 const app = await boot({ ANTHROPIC_API_KEY: "", GROQ_API_KEY: "test-groq", GROQ_BACKUP_MODELS: "" });
 const brain = await import("../src/brain.js");
+const { run } = await import("../src/db.js");
 
 const calls = [];
 let next = [];
@@ -420,6 +421,68 @@ test("a question with a price in it gets an answer like any assistant, not a new
   const l = await c("POST", "/api/listings", { text: "can you make ads for 12 Elm St, Austin, 3 bed 2 bath, $585,000?" });
   assert.equal(l.json.ads.length, 3);
 });
+
+test("running ads: \"stop the ad\" pauses them (never a new plan, never deleting the ads), replies match what happened, and they start again", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "stopit@test.com", password: "password123", invite: "EARLY1" });
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [ws]);
+  next = [500, 500];
+  const l = await c("POST", "/api/listings", { text: "412 Oak Street, Austin, TX. 3 bed 2 bath, $649,000, big back yard" });
+  const id = l.json.listing.id;
+  const plan = await c("POST", `/api/listings/${id}/run`, { versions: [1, 2, 3], budget: 200, days: 10 });
+  await c("POST", `/api/listings/${id}/run`, { confirm: plan.json.messages.at(-1).id });
+  assert.equal((await c("GET", `/api/listings/${id}`)).json.listing.run, "running");
+  const turn = (o) => ({ reply: "", action: "none", version: 0, remove: [], moment: "none", ads: [], listing_patch: null, budget: 0, days: 0, ...o });
+
+  // The model reached for a new plan: Hopkins pauses instead.
+  next = [turn({ reply: "Here's the plan.", action: "run" })];
+  let r = await c("POST", `/api/listings/${id}/messages`, { text: "Stop the ad" });
+  assert.match(r.json.messages.at(-1).body, /^Paused\. The ads for 412 Oak Street won't run\./);
+  assert.equal(r.json.messages.filter((m) => m.kind === "plan").length, 1, "no new plan");
+  assert.equal(r.json.listing.run, "paused");
+
+  // The model wanted to delete all three: nothing is deleted.
+  next = [turn({ reply: "Removed all three.", action: "remove_ads", remove: [1, 2, 3] })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "No stop them!" });
+  assert.equal(r.json.ads.length, 3, "the ads are all still there");
+  assert.match(r.json.messages.at(-1).body, /already paused/);
+
+  // The model claims a change it didn't make: the reply says what's true.
+  next = [turn({ reply: "The active ad has been paused, so it will no longer run.", action: "none" })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "is it off now" });
+  assert.match(r.json.messages.at(-1).body, /are paused/);
+
+  // Removing needs the agent to say so.
+  next = [turn({ reply: "Done.", action: "remove_ads", remove: [2] })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "ad 2 is weak" });
+  assert.equal(r.json.ads.length, 3);
+  assert.match(r.json.messages.at(-1).body, /Nothing has been removed/);
+
+  // Deleting an ad that's running: pause first.
+  await c("POST", `/api/listings/${id}/resume`, {});
+  next = [turn({ reply: "Removed.", action: "remove_ads", remove: [2] })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "delete ad 2" });
+  assert.equal(r.json.ads.length, 3);
+  assert.match(r.json.messages.at(-1).body, /^\*\*Ad 2\*\* is running\. Pause the ads first, then remove it\.$/);
+  await c("POST", `/api/listings/${id}/pause`, {});
+
+  // Started again, from the chat and from the menu.
+  next = [turn({ reply: "Resumed.", action: "resume" })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "turn them back on" });
+  assert.match(r.json.messages.at(-1).body, /^Resumed\./);
+  assert.equal(r.json.listing.run, "running");
+  r = await c("POST", `/api/listings/${id}/pause`, {});
+  assert.equal(r.json.listing.run, "paused");
+  assert.equal((await c("GET", "/api/listings")).json.listings.find((x) => x.id === id).run, "paused", "not counted as Active on Today");
+  r = await c("POST", `/api/listings/${id}/resume`, {});
+  assert.equal(r.json.listing.run, "running");
+
+  // Sold: its ads stop.
+  await c("PATCH", `/api/listings/${id}`, { status: "sold" });
+  assert.equal((await c("GET", `/api/listings/${id}`)).json.listing.run, "paused");
+});
+
 
 test("Hopkins still answers when the connection drops mid reply, like a closed page", async () => {
   const http = await import("node:http");

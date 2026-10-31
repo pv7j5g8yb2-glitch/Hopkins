@@ -159,9 +159,9 @@ const TURN_SCHEMA = {
     reply: { type: "string", description: "Your message back to the agent, as you'd say it in a chat. Markdown: **bold**, lists, a small table when comparing." },
     action: {
       type: "string",
-      enum: ["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "new_moment"],
+      enum: ["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "pause", "resume", "new_moment"],
       description:
-        "none: just talking. select_version: they want to look at or work on a different ad. revise: change ads, including turning one into a different idea (put them in ads). add_ads: they want another ad or more (write the new ones in ads, numbered after the last one). remove_ads: they want ads gone (put their numbers in remove). update_listing: facts about the home changed. make_ads: make the ads (when there are none, or they want a whole fresh set). run: they want the ads to run. new_moment: a new reason to advertise (price change, open house, sold, or rented for a rental: that's moment sold too).",
+        "none: just talking. select_version: they want to look at or work on a different ad. revise: change ads, including turning one into a different idea (put them in ads). add_ads: they want another ad or more (write the new ones in ads, numbered after the last one). remove_ads: they asked to delete or remove ads from the listing (put their numbers in remove); never for stopping ads that run. update_listing: facts about the home changed. make_ads: make the ads (when there are none, or they want a whole fresh set). run: they want ads to start running (a new plan). pause: they want running ads to stop (stop, pause, turn off, kill, take down), even when they say stop the ad or stop them. resume: they want paused ads to run again. new_moment: a new reason to advertise (price change, open house, sold, or rented for a rental: that's moment sold too).",
     },
     version: { type: "integer", description: "The ad this turn is about, or 0 if none" },
     remove: { type: "array", items: { type: "integer" }, description: "For remove_ads: the numbers of the ads to remove. Empty otherwise." },
@@ -569,8 +569,9 @@ In the chat:
 - What's real today, say it exactly when asked: Hopkins makes and edits the ads (words and look) here, checks the wording, makes the run plan, gives each version a lead page and link, and collects the leads. Whether ads run on Facebook and Instagram from here depends on the Meta line in the context; never claim more than it says. Hopkins doesn't track clicks, reach or engagement.
 - The free plan: 3 ads in all, made in the chat, full quality with no watermark, and they can be downloaded. Changes to those 3 are included. Any new ad after that (a new set, another ad, ads for another listing, even after deleting a listing) and running ads need a paid plan. The plans are priced by the agents whose names go on the ads, with unlimited listings: Solo $99 a month (1 agent), Duo $149 (2 agents), Team $299 (up to 5), Team Plus $549 (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), and more than 20 agents by quote. Billed every month from the day they sign up, cancel anytime, no cut of ad spend; the waitlist gets 30% off the first year. Say this plainly when it matters, once, and only the plan that fits them unless they ask for the list. What running ads costs: the budget they pick is the ad spend itself, paid to Meta, never on top of it (the test defaults to $200 over 10 days, and they can change it); the plan is separate. Never say ad spend is added to the budget.`;
 
-function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads, meta }) {
+function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads, meta, running }) {
   return `Context (the current state, not something the agent wrote):
+Ads running now: ${running === "running" ? "yes, this listing's approved ads are running. To stop them the action is pause; deleting ads (remove_ads) never stops a run." : running === "paused" ? "no, they're paused. To start them again the action is resume." : "no."} Never say ads were paused, stopped, started or deleted unless your action does it.
 Meta: ${meta?.ready ? `connected (ad account ${meta.adAccountName || ""}, Page ${meta.pageName || ""}). An approved plan is sent to Meta and each ad goes live on Facebook and Instagram once Meta reviews it; Hopkins brings back what's been spent and when each ad goes live or is rejected.` : meta?.connected ? "connected, but the ad account or Facebook Page isn't picked yet: they choose both in Settings." : "not connected. Approved ads go live once they connect Meta in Settings (one connection covers Facebook and Instagram); until then, on a paid plan, they can download the ads and post or boost them themselves."}
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. Brand voice: ${brand.voice || "plain"}. Their own photo: ${agentPhoto ? "added, so it can go on the ads (face: on)" : "not added yet (they add it in Settings, then it can go on the ads)"}.
 Plan: ${plan.paid ? `${plan.name || "Solo"} (paid)` : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.${!plan.paid && plan.adsMade >= plan.limit ? `
@@ -612,7 +613,7 @@ function conversation(history) {
   return out;
 }
 
-const ACTIONS = new Set(["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "new_moment"]);
+const ACTIONS = new Set(["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "pause", "resume", "new_moment"]);
 // Models don't always fill every field; this makes the answer safe to act on.
 function normalizeTurn(r) {
   if (!r || typeof r !== "object" || typeof r.reply !== "string") return null;
@@ -677,10 +678,10 @@ They haven't sent a listing in this chat yet. Help with whatever they ask, like 
   return r && typeof r.reply === "string" && r.reply.trim() ? r.reply : null;
 }
 
-export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto, leads, account, meta }) {
+export async function chatTurnAI({ listing, photos, brand, ads, history, selectedVersion, plan, agentName, agentPhoto, leads, account, meta, running }) {
   const messages = conversation(history);
   if (!messages.length) return null;
-  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads, meta })}${account ? `\nTheir account, from Hopkins' own records (real numbers; the Report page shows the same):\n${account}\nWhen they ask how they did, how many Leads, which listing or ad is working, answer from these numbers, plainly, in one or two sentences. Never say you can't see their numbers or past reports.` : ""}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
+  const system = `${SYSTEM}\n${CHAT}\n\n${contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads, meta, running })}${account ? `\nTheir account, from Hopkins' own records (real numbers; the Report page shows the same):\n${account}\nWhen they ask how they did, how many Leads, which listing or ad is working, answer from these numbers, plainly, in one or two sentences. Never say you can't see their numbers or past reports.` : ""}\n\nFor listing_patch, return the listing facts as they should now be (copy the current values for anything unchanged, empty or 0 if unknown).`;
   const raw = await call({ system, messages, schema: TURN_SCHEMA, effort: "low", temperature: 0.7 });
   if (process.env.HOPKINS_DEBUG) console.log("chat turn:", JSON.stringify(raw));
   return normalizeTurn(raw);

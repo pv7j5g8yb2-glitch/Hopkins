@@ -32,6 +32,7 @@ meta.setMetaFetchForTests(async (url, init = {}) => {
   if (path.endsWith("/insights")) return ok({ data: [{ spend: "12.34" }] });
   if (path.startsWith("metaad-")) return ok(path === "metaad-2" && state.feedback ? { effective_status: "DISAPPROVED", ad_review_feedback: { global: { "Housing ads": state.feedback } } } : { effective_status: state.status });
   if (path === "me/permissions") return ok({ success: true });
+  if (path.startsWith("camp-") && (init.method || "GET") === "POST") return state.pauseFails ? { ok: false, status: 400, json: async () => ({ error: { message: "Campaign is locked", code: 100 } }) } : ok({ success: true });
   return { ok: false, status: 400, json: async () => ({ error: { message: `unexpected ${path}` } }) };
 });
 
@@ -111,6 +112,42 @@ test("connect Meta, approve, and the ads go to the agent's own ad account in the
   state.feedback = "This ad mentions who the home suits.";
   await syncMeta();
   assert.match(await waitFor(c, id, /Meta rejected/), /Meta rejected Ad 2: This ad mentions who the home suits\./);
+});
+
+test("pausing reaches Meta's campaign before Hopkins says paused, resuming turns it back on, and deleting a listing stops its ads first", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "pause@ellery.test", password: "password123", invite: "EARLY1", name: "Pat Lee" });
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [ws]);
+  await run(`INSERT INTO meta_connections (workspace_id, fb_user_id, fb_name, token, ad_account_id, page_id, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)`,
+    [ws, "fb-3", "Pat Lee", meta.seal("token-3"), "act_9", "page-9", new Date().toISOString(), new Date().toISOString()]);
+  const l = await c("POST", "/api/listings", { text: "7 Pine Rd, Austin, TX. 4 bed 3 bath, $720,000" });
+  const id = l.json.listing.id;
+  const plan = await c("POST", `/api/listings/${id}/run`, { versions: [1, 2, 3], budget: 200, days: 10 });
+  for (const ad of plan.json.ads) await c("POST", `/api/ads/${ad.id}/render`, { format: "feed", data: PNG });
+  await c("POST", `/api/listings/${id}/run`, { confirm: plan.json.messages.at(-1).id });
+  await waitFor(c, id, /Sent to Meta/);
+  const camp = (await get(`SELECT meta_campaign_id FROM launches WHERE listing_id = ?`, [id])).meta_campaign_id;
+
+  // Meta refuses: nothing is said to be paused, and the ads still count as running.
+  state.pauseFails = true;
+  let r = await c("POST", `/api/listings/${id}/pause`, {});
+  assert.equal(r.json.listing.run, "running");
+  assert.match(r.json.messages.at(-1).body, /^Nothing changed: Campaign is locked\.$/);
+  // Deleting the listing is refused too, so its campaign can't keep spending out of sight.
+  assert.equal((await c("DELETE", `/api/listings/${id}`)).status, 409);
+  state.pauseFails = false;
+
+  r = await c("POST", `/api/listings/${id}/pause`, {});
+  assert.equal(r.json.listing.run, "paused");
+  assert.match(r.json.messages.at(-1).body, /no longer running on Facebook and Instagram/);
+  assert.equal(calls.filter((x) => x.path === camp && x.method === "POST").at(-1).params.status, "PAUSED");
+  r = await c("POST", `/api/listings/${id}/resume`, {});
+  assert.equal(r.json.listing.run, "running");
+  assert.equal(calls.filter((x) => x.path === camp && x.method === "POST").at(-1).params.status, "ACTIVE");
+
+  assert.equal((await c("DELETE", `/api/listings/${id}`)).status, 200);
+  assert.equal(calls.filter((x) => x.path === camp && x.method === "POST").at(-1).params.status, "PAUSED", "paused on Meta before it was deleted");
 });
 
 test("approving without the drawn images says so in the chat, and Meta's data deletion callback removes the connection", async () => {

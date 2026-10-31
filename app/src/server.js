@@ -12,6 +12,7 @@ import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
   metaConnection, syncMeta,
+  runState, pauseOrResume, stopAllRuns,
 } from "./hopkins.js";
 import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaRevoke, readSignedRequest, checkState, seal, unseal, MetaError } from "./meta.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./plans.js";
@@ -422,6 +423,12 @@ app.post("/api/account/delete", async (request, reply) => {
   const user = await get(`SELECT * FROM users WHERE id = ?`, [request.user.id]);
   if (typeof request.body?.password !== "string" || !(await verifyPassword(request.body.password, user.pass_hash))) return reply.code(401).send({ error: "Incorrect password." });
   const ws = request.ws.id;
+  // Every running ad stops on Meta first, so nothing keeps spending after the account is gone.
+  try {
+    await stopAllRuns(request.ws, (await all(`SELECT id FROM listings WHERE workspace_id = ?`, [ws])).map((r) => r.id));
+  } catch (err) {
+    return reply.code(409).send({ error: "Couldn't pause your ads on Meta. Pause them in Ads Manager, then delete your account." });
+  }
   for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "listings", "feedback", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [ws]);
   await run(`DELETE FROM workspaces WHERE id = ?`, [ws]);
   clearSession(reply);
@@ -565,6 +572,8 @@ app.get("/api/listings", async (request) => {
      FROM listings l WHERE l.workspace_id = ? ORDER BY l.updated_at DESC`,
     [request.ws.id]
   );
+  // Running: its ads are live now (not paused, not over). Today's "Active listings" counts these.
+  for (const r of rows) r.run = await runState(r.id);
   return { listings: rows };
 });
 
@@ -588,7 +597,7 @@ async function listingPayload(ws, id) {
   const first = await firstMessageId(listing);
   for (const m of messages) { m.data = m.data ? JSON.parse(m.data) : null; m.editable = Boolean(m.editable) || m.id === first; }
   const checked = ads.map((a) => ({ ...a, issues: checkWording(`${a.headline} ${a.overlay} ${a.kicker || ""} ${a.primary_text}`) }));
-  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency, listing.deal), unread }, photos, ads: checked, messages, leads: Number(leads.n) };
+  return { listing: { ...listing, facts: factsLine(listing), priceText: formatPrice(listing.price, listing.currency, listing.deal), unread, run: await runState(listing.id) }, photos, ads: checked, messages, leads: Number(leads.n) };
 }
 
 // Opening a chat reads it.
@@ -681,6 +690,10 @@ app.patch("/api/listings/:id", async (request, reply) => {
   if (b.title !== undefined) patch.title = clean(b.title, 80) || null;
   for (const k of ["price", "beds", "baths", "sqft", "spend"]) if (b[k] !== undefined) patch[k] = Number(b[k]) >= 0 ? Number(b[k]) : null;
   if (b.status && ["active", "sold", "archived"].includes(b.status)) patch.status = b.status;
+  // Sold or rented: its ads stop spending.
+  if (patch.status === "sold" && listing.status !== "sold") {
+    try { await stopAllRuns(request.ws, [listing.id]); } catch (err) { console.error("Pausing on sold failed:", err.message); }
+  }
   await patchListing(request.ws.id, listing.id, patch);
   // A new price or a new open house is a reason to advertise: Hopkins brings the ads.
   const fresh = await loadListing(request.ws.id, listing.id);
@@ -768,8 +781,22 @@ app.post("/api/listings/delete", async (request, reply) => {
 });
 
 app.delete("/api/listings/:id", async (request, reply) => {
-  if (!(await deleteListing(request.ws, request.params.id))) return reply.code(404).send({ error: "Listing not found." });
+  try {
+    if (!(await deleteListing(request.ws, request.params.id))) return reply.code(404).send({ error: "Listing not found." });
+  } catch (err) {
+    // Meta wouldn't pause its ads: the listing stays, so nothing keeps spending out of sight.
+    return reply.code(409).send({ error: "Couldn't pause this listing's ads on Meta. Pause them in Ads Manager, then delete." });
+  }
   return { ok: true };
+});
+// Pause and Resume from the listing's menu; the chat says what happened, as it would if asked.
+app.post("/api/listings/:id/pause", async (request, reply) => {
+  if (!(await pauseOrResume(request.ws, request.params.id, "pause"))) return reply.code(404).send({ error: "Listing not found." });
+  return listingPayload(request.ws, request.params.id);
+});
+app.post("/api/listings/:id/resume", async (request, reply) => {
+  if (!(await pauseOrResume(request.ws, request.params.id, "resume"))) return reply.code(404).send({ error: "Listing not found." });
+  return listingPayload(request.ws, request.params.id);
 });
 
 // The Style sheet: change how one version (or all of them) looks, straight away.

@@ -29,7 +29,7 @@ const LISTINGS = [
     key: "westover", address: "2814 Westover Hills Dr", area: "Westover Hills", price: 1295000, beds: 4, baths: 3, sqft: 3120, home_type: "house", age: 40,
     features: ["heated pool", "open plan kitchen", "floor to ceiling windows", "two car garage"],
     text: "2814 Westover Hills Dr, Austin. 4 bed, 3 bath, 3,120 sq ft. Heated pool off the kitchen, floor to ceiling windows, two car garage. $1,295,000",
-    photos: ["westover-1", "westover-2", "westover-3"], run: { ago: 37, budget: 600, days: 30 }, spend: 620, weeks: [2, 3, 4, 3, 5, 3],
+    photos: ["westover-1", "westover-2", "westover-3"], run: { ago: 37, budget: 1200, days: 60 }, spend: 620, weeks: [2, 3, 4, 3, 5, 3],
     ads: [
       { name: "The pool at golden hour", pattern: "life", photo: 0, overlay: "Swim before dinner, every night.", headline: "A pool you'll use every day", kicker: "Just listed · Westover Hills", text: "2814 Westover Hills Dr. A heated pool right off the kitchen, so a swim fits into any evening. 4 bed, 3 bath, 3,120 sq ft. $1,295,000. Tap to see the photos and book a showing." },
       { name: "The kitchen", pattern: "feature", photo: 2, overlay: "The kitchen opens onto the pool.", headline: "Cook with the doors open", kicker: "Just listed · Westover Hills", text: "Floor to ceiling glass opens the kitchen straight onto the pool deck. 4 bed, 3 bath in Westover Hills. $1,295,000. Tap to see the photos." },
@@ -40,7 +40,7 @@ const LISTINGS = [
     key: "travis", address: "1107 Travis Heights Blvd", area: "Travis Heights", price: 849000, beds: 3, baths: 2, sqft: 1980, home_type: "house", age: 33,
     features: ["wraparound porch", "original hardwood floors", "renovated kitchen"],
     text: "1107 Travis Heights Blvd, Austin. 3 bed, 2 bath, 1,980 sq ft craftsman. Wraparound porch, original hardwood floors, renovated kitchen. $849,000",
-    photos: ["travis-1", "travis-2", "travis-3"], run: { ago: 30, budget: 450, days: 30 }, spend: 380, weeks: [0, 2, 2, 3, 2, 2],
+    photos: ["travis-1", "travis-2", "travis-3"], run: { ago: 30, budget: 900, days: 60 }, spend: 380, weeks: [0, 2, 2, 3, 2, 2],
     ads: [
       { name: "The porch", pattern: "life", photo: 0, overlay: "Coffee on the wraparound porch.", headline: "Mornings start on the porch", kicker: "Just listed · Travis Heights", text: "1107 Travis Heights Blvd. A craftsman with a wraparound porch, original hardwood floors and a renovated kitchen. 3 bed, 2 bath. $849,000. Tap to book a showing." },
       { name: "The light", pattern: "feature", photo: 2, overlay: "Light in every room.", headline: "Big windows, original floors", kicker: "Just listed · Travis Heights", text: "Tall windows and original hardwood floors throughout. 3 bed, 2 bath, 1,980 sq ft in Travis Heights. $849,000." },
