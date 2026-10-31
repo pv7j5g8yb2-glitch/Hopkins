@@ -14,7 +14,9 @@ import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, 
 
 const VERSION = () => process.env.META_GRAPH_VERSION || "v24.0";
 const GRAPH = () => `https://graph.facebook.com/${VERSION()}`;
-export const SCOPES = ["ads_management", "ads_read", "business_management", "pages_show_list", "pages_manage_ads"];
+// Extra read permissions (Page and Instagram insights) go in META_EXTRA_SCOPES once Meta's App Review
+// approves them; asking for unapproved ones would break Connect Meta for everyone else.
+export const SCOPES = ["ads_management", "ads_read", "business_management", "pages_show_list", "pages_manage_ads", ...String(process.env.META_EXTRA_SCOPES || "").split(",").map((x) => x.trim()).filter(Boolean)];
 export const metaReady = () => Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET);
 
 let fetchImpl = (...a) => fetch(...a);
@@ -234,4 +236,60 @@ export function insightsSummary(rows) {
     `Their Meta ad account, last 30 days, every campaign (read only): $${spend.toLocaleString("en-US", { maximumFractionDigits: 2 })} spent, ${sum("reach").toLocaleString("en-US")} people reached, ${sum("clicks").toLocaleString("en-US")} clicks, ${leads} leads counted by Meta${leads ? `, $${(spend / leads).toFixed(2)} a lead` : ""}.`,
     ...rows.sort((a, b) => b.spend - a.spend).slice(0, 10).map((r) => `- ${r.name}: $${r.spend}, ${r.reach.toLocaleString("en-US")} reached, ${r.clicks} clicks, ${r.leads} leads${r.leads ? `, $${(r.spend / r.leads).toFixed(2)} a lead` : ""}.`),
   ].join("\n");
+}
+
+// Everything the ad account shares with the permissions the agent granted, read only. Each part is
+// on its own, so one that's refused (an older login without Instagram access) leaves the rest.
+export async function accountOverview(token, adAccountId, pageId = null) {
+  const act = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
+  const part = (p) => p.catch(() => null);
+  const leadsOf = (actions = []) => actions.filter((a) => /lead/i.test(a.action_type)).reduce((m, a) => Math.max(m, Number(a.value) || 0), 0);
+  const row = (x) => ({ spend: Math.round((Number(x.spend) || 0) * 100) / 100, reach: Number(x.reach) || 0, impressions: Number(x.impressions) || 0, clicks: Number(x.clicks) || 0, ctr: Number(x.ctr) || 0, cpc: Number(x.cpc) || 0, leads: leadsOf(x.actions) });
+  const ins = (params) => graph("GET", `${act}/insights`, { fields: "spend,reach,impressions,clicks,ctr,cpc,actions", ...params }, token).then((r) => r.data || []);
+  const [account, campaigns, byCampaign, byAd, byPlatform, daily, ig] = await Promise.all([
+    part(graph("GET", act, { fields: "name,currency,account_status,amount_spent,spend_cap,timezone_name" }, token)),
+    part(graph("GET", `${act}/campaigns`, { fields: "name,effective_status,objective,daily_budget,lifetime_budget,start_time,stop_time", limit: 50 }, token).then((r) => r.data || [])),
+    part(ins({ level: "campaign", date_preset: "last_30d", fields: "campaign_name,spend,reach,impressions,clicks,ctr,cpc,actions", limit: 50 })),
+    part(ins({ level: "ad", date_preset: "last_30d", fields: "ad_name,campaign_name,spend,reach,impressions,clicks,ctr,cpc,actions", sort: "spend_descending", limit: 10 })),
+    part(ins({ date_preset: "last_30d", breakdowns: "publisher_platform" })),
+    part(ins({ date_preset: "last_14d", time_increment: 1 })),
+    pageId ? part(graph("GET", pageId, { fields: "fan_count,followers_count,instagram_business_account{username,followers_count,media_count,media.limit(12){media_type,timestamp,like_count,comments_count,caption}}" }, token)) : null,
+  ]);
+  return {
+    account: account ? { name: account.name, currency: account.currency, status: account.account_status, spentAllTime: Number(account.amount_spent || 0) / 100 } : null,
+    campaigns: campaigns ? campaigns.map((c) => ({ name: c.name, status: c.effective_status, objective: c.objective, budget: Number(c.daily_budget || 0) / 100 || null, lifetime: Number(c.lifetime_budget || 0) / 100 || null })) : null,
+    byCampaign: byCampaign ? byCampaign.map((x) => ({ name: x.campaign_name, ...row(x) })) : null,
+    byAd: byAd ? byAd.map((x) => ({ name: x.ad_name, campaign: x.campaign_name, ...row(x) })) : null,
+    byPlatform: byPlatform ? byPlatform.map((x) => ({ platform: x.publisher_platform, ...row(x) })) : null,
+    daily: daily ? daily.map((x) => ({ day: x.date_start, ...row(x) })) : null,
+    page: ig ? { fans: Number(ig.fan_count) || Number(ig.followers_count) || null } : null,
+    instagram: ig?.instagram_business_account ? { username: ig.instagram_business_account.username, followers: Number(ig.instagram_business_account.followers_count) || 0, posts: Number(ig.instagram_business_account.media_count) || 0, recent: (ig.instagram_business_account.media?.data || []).map((m) => ({ type: m.media_type, at: m.timestamp, likes: Number(m.like_count) || 0, comments: Number(m.comments_count) || 0, caption: String(m.caption || "").slice(0, 60) })) } : null,
+  };
+}
+export function overviewSummaryMeta(o) {
+  if (!o) return null;
+  const usd = (n) => `$${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  const sum = (rows, k) => (rows || []).reduce((a, r) => a + r[k], 0);
+  const out = [];
+  if (o.account) out.push(`Their Meta ad account "${o.account.name}" (${o.account.currency}${o.account.status === 1 ? ", active" : `, status ${o.account.status}`}), ${usd(o.account.spentAllTime)} spent all time.`);
+  if (o.campaigns) {
+    const live = o.campaigns.filter((c) => c.status === "ACTIVE");
+    out.push(`Campaigns: ${o.campaigns.length}, running now: ${live.length}${live.length ? ` (${live.slice(0, 6).map((c) => `${c.name}${c.budget ? ` at ${usd(c.budget)} a day` : c.lifetime ? `, ${usd(c.lifetime)} in all` : ""}`).join("; ")})` : ""}.`);
+  }
+  if (o.byCampaign) {
+    const sp = sum(o.byCampaign, "spend"), ld = sum(o.byCampaign, "leads");
+    out.push(o.byCampaign.length ? `Last 30 days, every campaign: ${usd(sp)} spent, ${sum(o.byCampaign, "reach").toLocaleString("en-US")} reached, ${sum(o.byCampaign, "clicks")} clicks, ${ld} leads counted by Meta${ld ? `, ${usd(sp / ld)} a lead` : ""}.` : "Last 30 days: no spend.");
+    out.push(...o.byCampaign.sort((a, b) => b.spend - a.spend).slice(0, 8).map((r) => `- ${r.name}: ${usd(r.spend)}, ${r.clicks} clicks (${r.ctr.toFixed(2)}% click rate), ${r.leads} leads${r.leads ? `, ${usd(r.spend / r.leads)} a lead` : ""}.`));
+  }
+  if (o.byAd?.length) out.push(`Top ads by spend: ${o.byAd.slice(0, 6).map((r) => `${r.name} (${r.campaign}): ${usd(r.spend)}, ${r.ctr.toFixed(2)}% click rate, ${r.leads} leads`).join("; ")}.`);
+  if (o.byPlatform?.length) out.push(`By platform: ${o.byPlatform.map((r) => `${r.platform} ${usd(r.spend)}, ${r.clicks} clicks, ${r.leads} leads`).join("; ")}.`);
+  if (o.daily?.length) {
+    const a = o.daily.slice(-7), b = o.daily.slice(-14, -7);
+    out.push(`Last 7 days: ${usd(sum(a, "spend"))}, ${sum(a, "clicks")} clicks, ${sum(a, "leads")} leads; the 7 days before: ${usd(sum(b, "spend"))}, ${sum(b, "clicks")} clicks, ${sum(b, "leads")} leads.`);
+  }
+  if (o.instagram) {
+    const r = o.instagram.recent;
+    out.push(`Their Instagram @${o.instagram.username}: ${o.instagram.followers.toLocaleString("en-US")} followers, ${o.instagram.posts} posts.${r.length ? ` Last ${r.length} posts average ${Math.round(sum(r, "likes") / r.length)} likes and ${Math.round(sum(r, "comments") / r.length)} comments; best: "${[...r].sort((x, y) => y.likes - x.likes)[0].caption}" (${[...r].sort((x, y) => y.likes - x.likes)[0].likes} likes).` : ""}`);
+  } else if (o.page?.fans) out.push(`Their Facebook Page: ${o.page.fans.toLocaleString("en-US")} followers.`);
+  return out.join("\n");
 }

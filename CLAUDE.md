@@ -349,10 +349,13 @@ The product's code is in `app/` (its README says what works and how to run it).
   encrypted), any other CRM through a webhook URL (Zapier, Make). Set up in the first steps or Settings, never
   by pasting a key in the chat. A failed send never loses the Lead; Settings says it didn't arrive.
   kvCORE, Lofty and BoomTown need partnerships, so they go through the webhook for now.
-  Hopkins also reads (never writes) the agent's 100 most recent Follow Up Boss contacts with the
-  same key, and the last 30 days of every campaign in their Meta ad account, so the chat knows how
-  they're getting on (Ismael, 2026-10-31: "Hopkins should know exactly how the agent is getting
-  on"). Kept ten minutes, a source that doesn't answer says so. A webhook CRM can't be read.
+  **Every connector gives Hopkins the most data it safely can (Ismael, 2026-10-31), read only:**
+  Follow Up Boss gives contacts, enquiries and the properties asked about, deals by stage,
+  appointments, tasks, calls and the team (`fubOverview`); Meta gives the account, every
+  campaign's status and budget, 30 days by campaign and by ad, Facebook against Instagram, this
+  week against last, and Instagram followers and posts once App Review allows (`accountOverview`,
+  `docs/META.md`). Each part stands alone, kept ten minutes, a source that doesn't answer says so.
+  Any future connector follows the same rule. A webhook CRM can't be read.
 * **Listing links:** Hopkins reads every listing page that lets it in (Zillow, MLS share pages
   from Flexmls, Matrix and Paragon, agent sites): up to 25 photos at the largest size, the remarks
   and the facts. Pages drawn in the browser (OneHome) get Google's read too. Sites that block apps

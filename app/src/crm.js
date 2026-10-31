@@ -138,27 +138,50 @@ export async function testHook(url) {
 // answer "what do my recent leads have in common?" from every source, not only its own ads. Read
 // only, never written back, kept in memory for ten minutes. A webhook can't be read.
 const cache = new Map();
+const fubGet = async (key, path) => {
+  const res = await fetchImpl(`${FUB}/${path}`, { headers: fubHeaders(key), signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error(`Follow Up Boss answered ${res.status}`);
+  return res.json();
+};
+const person = (p) => ({
+  name: p.name || [p.firstName, p.lastName].filter(Boolean).join(" ") || "No name",
+  created: p.created || null,
+  stage: p.stage || null,
+  source: p.source || null,
+  price: Number(p.price) || null,
+  tags: Array.isArray(p.tags) ? p.tags.slice(0, 6) : [],
+  lastActivity: p.lastActivity || p.updated || null,
+  hasEmail: Boolean(p.emails?.length),
+  hasPhone: Boolean(p.phones?.length),
+  assignedTo: p.assignedTo || null,
+});
 export async function fubPeople(ws, { limit = 100 } = {}) {
   const c = readCrm(ws);
   if (!c.fub) return null;
+  const data = await fubGet(unseal(c.fub), `people?sort=-created&limit=${limit}`);
+  return (data.people || []).map(person);
+}
+// Everything else Follow Up Boss shares with the same key, read only. Each part is on its own: one
+// that fails (a plan without deals, a key without access) leaves the rest.
+export async function fubOverview(ws) {
+  const c = readCrm(ws);
+  if (!c.fub) return null;
   const hit = cache.get(ws.id);
-  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.people;
-  const res = await fetchImpl(`${FUB}/people?sort=-created&limit=${limit}`, { headers: fubHeaders(unseal(c.fub)), signal: AbortSignal.timeout(12000) });
-  if (!res.ok) throw new Error(`Follow Up Boss answered ${res.status}`);
-  const data = await res.json();
-  const people = (data.people || []).map((p) => ({
-    name: p.name || [p.firstName, p.lastName].filter(Boolean).join(" ") || "No name",
-    created: p.created || null,
-    stage: p.stage || null,
-    source: p.source || null,
-    price: Number(p.price) || null,
-    tags: Array.isArray(p.tags) ? p.tags.slice(0, 6) : [],
-    lastActivity: p.lastActivity || p.updated || null,
-    hasEmail: Boolean(p.emails?.length),
-    hasPhone: Boolean(p.phones?.length),
-  }));
-  cache.set(ws.id, { at: Date.now(), people });
-  return people;
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.data;
+  const key = unseal(c.fub);
+  const part = (path, pick) => fubGet(key, path).then(pick).catch(() => null);
+  const [people, events, deals, appointments, tasks, calls, users] = await Promise.all([
+    part("people?sort=-created&limit=100", (d) => (d.people || []).map(person)),
+    part("events?sort=-created&limit=50", (d) => (d.events || []).map((e) => ({ type: e.type || null, source: e.source || null, created: e.created || null, property: e.property ? [e.property.street, e.property.city].filter(Boolean).join(", ") || null : null, price: Number(e.property?.price) || null, person: e.person?.name || null }))),
+    part("deals?limit=50", (d) => (d.deals || []).map((x) => ({ name: x.name || null, stage: x.stageName || x.stage?.name || null, status: x.status || null, price: Number(x.price) || null, close: x.projectedCloseDate || null }))),
+    part("appointments?limit=25&sort=-start", (d) => (d.appointments || []).map((a) => ({ title: a.title || null, start: a.start || null }))),
+    part("tasks?limit=100", (d) => (d.tasks || []).map((t) => ({ name: t.name || null, due: t.dueDate || t.dueDateTime || null, done: Boolean(t.isCompleted) }))),
+    part("calls?limit=100&sort=-created", (d) => (d.calls || []).map((x) => ({ created: x.created || null, outgoing: Boolean(x.isIncoming === false || x.direction === "outgoing"), duration: Number(x.duration) || 0 }))),
+    part("users?limit=50", (d) => (d.users || []).map((u) => ({ name: u.name || null, role: u.role || null }))),
+  ]);
+  const data = { people, events, deals, appointments, tasks, calls, users };
+  cache.set(ws.id, { at: Date.now(), data });
+  return data;
 }
 export const forgetCrmCache = (wsId) => cache.delete(wsId);
 
@@ -186,4 +209,32 @@ export function peopleSummary(people, now = new Date()) {
     ...people.slice(0, 25).map((p) => `- ${p.name}: added ${p.created ? p.created.slice(0, 10) : "?"}${p.source ? `, from ${p.source}` : ""}${p.stage ? `, stage ${p.stage}` : ""}${p.price ? `, ${money(p.price)}` : ""}${p.tags.length ? `, tags ${p.tags.join("/")}` : ""}${p.lastActivity ? `, last activity ${p.lastActivity.slice(0, 10)}` : ""}.`),
   ];
   return lines.filter(Boolean).join("\n");
+}
+
+// The rest of Follow Up Boss, in plain lines for the chat model.
+export function overviewSummary(o, now = new Date()) {
+  if (!o) return null;
+  const days = (iso) => (iso ? (now - new Date(iso)) / 86400000 : Infinity);
+  const money = (n) => `$${Math.round(n).toLocaleString("en-US")}`;
+  const out = [peopleSummary(o.people || [], now) || "Their Follow Up Boss contacts couldn't be read."];
+  if (o.events?.length) {
+    const recent = o.events.filter((e) => days(e.created) <= 30);
+    const props = new Map();
+    for (const e of recent) if (e.property) props.set(e.property, (props.get(e.property) || 0) + 1);
+    out.push(`Enquiries and events in the last 30 days: ${recent.length}${props.size ? `; properties asked about most: ${[...props].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, n]) => `${k} (${n})`).join(", ")}` : ""}.`);
+  }
+  if (o.deals?.length) {
+    const open = o.deals.filter((d) => !/closed|lost|won/i.test(`${d.status} ${d.stage}`));
+    const byStage = new Map();
+    for (const d of o.deals) byStage.set(d.stage || "No stage", (byStage.get(d.stage || "No stage") || 0) + 1);
+    out.push(`Deals: ${o.deals.length} (${open.length} open, ${money(open.reduce((a, d) => a + (d.price || 0), 0))} in open deals). By stage: ${[...byStage].map(([k, n]) => `${k} ${n}`).join(", ")}.`);
+  }
+  if (o.appointments) out.push(`Appointments coming up in the next 14 days: ${o.appointments.filter((a) => a.start && days(a.start) < 0 && days(a.start) > -14).length}.`);
+  if (o.tasks) {
+    const open = o.tasks.filter((t) => !t.done);
+    out.push(`Open tasks: ${open.length}, overdue: ${open.filter((t) => t.due && days(t.due) > 0).length}.`);
+  }
+  if (o.calls) out.push(`Calls logged in the last 7 days: ${o.calls.filter((x) => days(x.created) <= 7).length}; last 30 days: ${o.calls.filter((x) => days(x.created) <= 30).length}.`);
+  if (o.users?.length > 1) out.push(`Their team in Follow Up Boss: ${o.users.length} people.`);
+  return out.join("\n");
 }

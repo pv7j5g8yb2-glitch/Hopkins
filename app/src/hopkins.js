@@ -4,7 +4,7 @@
 
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
-import { sendLead, readCrm, crmPublic, fubPeople, peopleSummary } from "./crm.js";
+import { sendLead, readCrm, crmPublic, fubOverview, overviewSummary } from "./crm.js";
 import { parseListingText, parseCurrency, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES, factsLine } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
@@ -21,7 +21,7 @@ const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].inclu
 import { canMake, isPaid, planOf, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
-import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStatus, adSetEnd, updateAdSet, MetaError, accountInsights, insightsSummary } from "./meta.js";
+import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStatus, adSetEnd, updateAdSet, MetaError, accountOverview, overviewSummaryMeta } from "./meta.js";
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency", "deal"];
 export const DEFAULT_BUDGET = 200;
@@ -116,17 +116,17 @@ function crmLine(ws) {
 // What's outside Hopkins' own records: the agent's Follow Up Boss contacts and their whole Meta ad
 // account, read in parallel, briefly, and kept ten minutes. A source that doesn't answer says so.
 const outsideCache = new Map();
-let outsideReaders = { people: fubPeople, insights: accountInsights };
+let outsideReaders = { crm: fubOverview, meta: accountOverview };
 export const forgetOutside = (wsId) => outsideCache.delete(wsId);
 export function setOutsideForTests(r) { outsideReaders = { ...outsideReaders, ...r }; outsideCache.clear(); }
 async function outsideData(ws) {
   const hit = outsideCache.get(ws.id);
   if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.text;
   const soon = (p) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("slow")), 8000))]);
-  const conn = metaReady() || outsideReaders.insights !== accountInsights ? await metaConnection(ws.id) : null;
+  const conn = metaReady() || outsideReaders.meta !== accountOverview ? await metaConnection(ws.id) : null;
   const [crm, meta] = await Promise.all([
-    crmPublic(ws).fub ? soon(outsideReaders.people(ws)).then(peopleSummary).catch(() => "Their Follow Up Boss couldn't be read just now.") : null,
-    conn?.ad_account_id ? soon(outsideReaders.insights(unseal(conn.token), conn.ad_account_id)).then(insightsSummary).catch(() => "Their Meta ad account couldn't be read just now.") : null,
+    crmPublic(ws).fub ? soon(outsideReaders.crm(ws)).then((o) => overviewSummary(o) || "Their Follow Up Boss couldn't be read just now.").catch(() => "Their Follow Up Boss couldn't be read just now.") : null,
+    conn?.ad_account_id ? soon(outsideReaders.meta(unseal(conn.token), conn.ad_account_id, conn.page_id)).then((o) => overviewSummaryMeta(o) || "Their Meta ad account couldn't be read just now.").catch(() => "Their Meta ad account couldn't be read just now.") : null,
   ]);
   const text = [crm, meta].filter(Boolean).join("\n");
   outsideCache.set(ws.id, { at: Date.now(), text });

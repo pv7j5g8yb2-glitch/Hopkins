@@ -62,3 +62,12 @@ did. Meta only allows testers who have agreed to test the app: that's in Ismael'
   appearing in Ads Manager.
 * The Marketing API's standard access tier: Meta looks for a record of successful API calls
   first (500 in 15 days with under 15% errors, as of the last check).
+
+## Reading Page and Instagram numbers (optional, needs App Review)
+
+Hopkins reads the whole ad account with the permissions Connect Meta already asks for. To also read
+the agent's Facebook Page followers and their Instagram followers and recent posts, Meta's App
+Review has to approve `pages_read_engagement`, `instagram_basic` and `instagram_manage_insights`.
+Once approved, add them in Render as `META_EXTRA_SCOPES=pages_read_engagement,instagram_basic,instagram_manage_insights`
+and agents reconnect Meta. Don't add them before approval: asking for unapproved permissions can
+stop Connect Meta working for everyone else. App admins and testers get them straight away.
