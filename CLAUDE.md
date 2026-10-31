@@ -149,6 +149,16 @@ badge after the handle.
 
 The product's code is in `app/` (its README says what works and how to run it).
 
+* **Direction (Ismael, 2026-10-31, after a long review he pasted):** Hopkins stays a self-serve
+  marketing agency for real estate that you run from one chat, but it stops waiting to be asked.
+  It watches the agent's listings, ads and Leads, notices what needs doing, prepares it and asks
+  for approval; the agent can still ask it anything. The loop to make excellent before anything
+  else: listing, campaign, approval, launch, enquiry, instant reply and follow up, results, the
+  next recommendation. Rules for it: every recommendation comes from real data with a minimum of
+  evidence (never "failing" after a few dollars), says exactly what approving does (which ads,
+  how much money, how long), changes nothing without approval, and is said once. Advertising
+  execution is the core; creative alone is easy to copy. Don't build a CRM, every integration or
+  autonomous budget moves yet. Prove it with 5 to 10 real agents.
 * **Interface (Ismael, 2026-10-22):** extremely clean and straightforward, like any successful
   software platform. Keep every feature, but hide the secondary ones: one main action per screen
   (a white pill), everything else in a "more" menu or the account menu, hairlines instead of boxes, two

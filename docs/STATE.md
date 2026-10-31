@@ -956,3 +956,11 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   `measure.py`). Not changed: the lead page buyers see (it's the agent's brand), the ads (the
   agent's brand), the waitlist (other branch, needs his go), the @gethopkins posts and the creative
   skill's brand notes (still oxblood; to update next).
+* **Direction set (2026-10-31):** Ismael pasted a long review (ChatGPT's, after Gemini's). Agreed
+  conclusion: keep the self-serve agency in one chat, make Hopkins proactive (it notices, prepares,
+  asks for approval), finish the loop listing, campaign, approval, launch, enquiry, instant reply,
+  follow up, results, next step. Building now, in order: (1) "Needs attention" from real data with
+  evidence thresholds and exact approvals, (2) instant replies to Leads and follow up reminders,
+  (3) setup from the agent's website link, plus reach, clicks and spend per ad from Meta. Not now:
+  a CRM, MLS feeds, SMS or WhatsApp (cost money), autonomous budget moves. Pricing for teams
+  ($299 to $499) is a hypothesis to test, plans unchanged.
