@@ -302,7 +302,7 @@ $("#caps").innerHTML+=`<div class="bigc" id="bigc"><div class="ta" id="bta"></di
  <div class="br"><img src="${IMG("oak-front")}"><div>A · Daytime<small>Cost per lead</small></div><div class="tr"><i id="g1"></i></div><div class="v">$41</div></div>
  <div class="br w"><img src="${IMG("oak-dusk")}"><div>B · Dusk<small>Cost per lead</small></div><div class="tr"><i id="g2"></i></div><div class="v">$22</div></div>
  <div class="br"><img src="${IMG("oak-side")}"><div>C · Side view<small>Cost per lead</small></div><div class="tr"><i id="g3"></i></div><div class="v">$34</div></div></div></div></div>
-<div class="res" id="r3"><div class="rh"><span class="m">${mk(28)}</span>Autopilot</div><h3>Monthly budget</h3><div class="pad"><div class="amt" id="amt">$600</div><div class="sl"><div class="tr"></div><div class="fi" id="sfi"></div><div class="kn" id="skn"></div></div><div class="s" style="padding:6px 0 0">Hopkins makes, tests and runs ads inside it. Pause any time.</div></div></div>
+<div class="res" id="r3"><div class="rh"><span class="m">${mk(28)}</span>Autopilot</div><h3>Monthly budget</h3><div class="pad"><div class="amt" id="amt">$600</div><div class="sl"><div class="tr"></div><div class="fi" id="sfi"></div><div class="kn" id="skn"></div></div><div class="s" style="padding:6px 0 0">Hopkins makes, tests and runs ads inside it. Pause anytime.</div></div></div>
 <div class="res" id="r4"><div class="rh"><span class="m">${mk(28)}</span>Ads</div><h3>14 Oak Street</h3><div class="pad">
  <div class="rowx"><img src="${IMG("oak-dusk")}"><div><b>3 versions</b><div style="font-size:16px;color:var(--quiet)" id="pst">Running on Instagram and Facebook</div></div><div style="margin-left:auto" class="tgl" id="tgl"><i></i></div></div></div></div>
 <div class="res" id="r5"><div class="rh"><span class="m">${mk(28)}</span>Brand kit</div><h3>Ellery Realty</h3><div class="pad"><div class="sw"><i style="background:#1f3a4d"></i><i style="background:#c9a46b"></i><i style="background:#efe7da;box-shadow:inset 0 0 0 1px var(--line)"></i><i style="background:#6d7f68"></i></div>
@@ -437,7 +437,7 @@ window.render=(T)=>{let t=T;
    if(on){const k=spring(P(t,a0,a0+.7)),o=SM(P(t,a1,a1+.35));r.style.opacity=cl(k*1.6)*(1-o);r.style.top=(560+(1-k)*90-o*60)+"px";r.style.transform=`scale(${(.95+.05*k)*(1-.04*o)})`;r.style.zIndex=q}}
   [["#g1",.92],["#g2",.48],["#g3",.74]].forEach(([g,w],i)=>$(g).style.width=w*100*OUT(P(t,25.3+i*.1,25.9+i*.1))+"%");
   const sk=SM(P(t,26.75,27.35));const pct=lerp(.2,.62,sk);$("#skn").style.left=pct*100+"%";$("#sfi").style.width=pct*100+"%";$("#amt").textContent="$"+Math.round(lerp(600,1500,sk)/10)*10;$("#amt").textContent=$("#amt").textContent.replace(/\B(?=(\d{3})+(?!\d))/g,",");
-  const tg=SM(P(t,28.15,28.35));$("#tgl").style.background=tg>.5?"#d4c7b4":"var(--green)";$("#tgl i").style.left=lerp(36,4,tg)+"px";$("#pst").textContent=tg>.5?"Paused. Turn back on any time.":"Running on Instagram and Facebook";
+  const tg=SM(P(t,28.15,28.35));$("#tgl").style.background=tg>.5?"#d4c7b4":"var(--green)";$("#tgl i").style.left=lerp(36,4,tg)+"px";$("#pst").textContent=tg>.5?"Paused. Turn back on anytime.":"Running on Instagram and Facebook";
  }
  // ---------------- REPORT (30.4 to 34.8) ----------------
  if(show(rp,t>=30.4&&t<34.9)){

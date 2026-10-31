@@ -228,6 +228,11 @@ wording or layout). What to look for:
   other (agent video, just sold carousel, local market data), not small tweaks of one.
 - Nothing goes live without the owner's yes.
 
+## Mockups of Instagram
+
+Any recreated Instagram account, post, ad or story (in reels, carousels, the landing page, the
+app's previews) shows the blue verified badge after the handle (Ismael, 2026-10-25).
+
 ## Never
 
 - Invent results, testimonials, follower counts or numbers. Proof only once it's real
@@ -239,6 +244,30 @@ wording or layout). What to look for:
 - Copy another account's post or template word for word. Learn the pattern, make our own.
 
 ## Log
+
+- 2026-10-29 (reels, results of the jug reel, r7): 836 views in 13 hours, 480% more than any of
+  the last 5 reels, 98.8% non-followers, 82% from the Reels tab, skip rate 21.6% (Instagram: lower
+  than typical). The found clip won the first second. But the average watch was 5s: about three
+  quarters were still watching at 4s, then it fell to roughly 15% by 6s, right after the cut from
+  the clip into the explainer (the cut is at 4.3s). Likes came during the clip. 6 likes, 3 saves,
+  0 shares, 0 follows. Audience 18 to 34 (88%), US 19%, India 17%, Australia 12%: a broad crowd
+  drawn by the clip, not team leaders. Still the best reel yet: about 10 times the others, the
+  first over 500 views and over 3 likes (Ismael). Most viewers left at the cut into the explainer.
+  Ismael's rule: his hook clips are never changed, no text and no voice on them, ever. Any fix for
+  the cut belongs in the explainer that follows, never on the clip.
+
+- 2026-10-28 (reels, format): a found hook clip first, untouched (Ismael's: a jug given one push,
+  rolling away on its own), then a hard cut into the explainer with "Here's how you're gonna...".
+  The clip earns the first second, the first spoken line ties it to the lesson ("a listing ad that
+  keeps rolling without you", "one good push, then hands off"), so the cut doesn't feel random.
+
+- 2026-10-26 (reels, format): "X things to know before your next ad, and they get more niche as I
+  go" (Ismael's pick). The hook isn't a sound or a slap, it's a promise of depth: seven numbered
+  cards slam in as a stack, fan out on "niche" to show card 7, "Nobody tells you this one", and a
+  depth meter on the right plunges to the bottom. The meter stays on screen and drops one level per
+  point, so the open question (how niche does 7 get?) carries people to the end. The points must
+  really get more niche: account setup first, the 90 day lead download limit last. Every claim
+  checked against Meta's own rules before writing.
 
 - 2026-10-19 (reels, voice): Reels 2, 3 and 5 rewritten from narrator voice into talking to a friend
   ("Be honest, does your listing ad say this?", "This department store guy, John Wanamaker",
