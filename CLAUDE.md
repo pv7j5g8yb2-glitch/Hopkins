@@ -267,6 +267,14 @@ The product's code is in `app/` (its README says what works and how to run it).
   made in the chat (`makeCreation` in `app/src/hopkins.js`, drawn by `app/web/studio.js`),
   download as PNGs or a video, and "make the headings shorter" changes the one just made. The
   API's own `POST /api/listings` still makes ads, because calling it is asking for them.
+* **Posts and carousels look designed, not generated (Ismael, 2026-10-31: "genuinely horrible",
+  "Claude would make it 10x better"):** the model picks a layout per slide (cover with an audience
+  line, numbered step, checklist, one true stat, statement, a closing slide with one symbol) and a
+  real look (ivory and noir for quiet luxury in Instrument Serif with one italic word; modern, bold,
+  night and photo in Inter Tight with one italic serif word), with a footer strip and progress dots.
+  The copy is specific and usable ("pull your free credit reports before you talk to a lender"),
+  never vague. No caption or hashtags unless asked: a new one ends with "Want a caption and hashtags
+  for it?", and a yes or a request in words writes them.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.
@@ -397,21 +405,23 @@ The product's code is in `app/` (its README says what works and how to run it).
   Never work around a site's bot protection. Prices keep the currency they were typed in (€, £,
   AED); "€1,250,000" once showed as $1,250,000.
 * **Says exactly what it can do (lesson, 2026-10-31):** asked how it compares with an agency,
-  Hopkins said it "generates the images" and is "the exact same engine without the retainer", and
-  told Ismael to connect his CRM "whenever you are ready". The chat model now has a plain list of
+  Hopkins said it "generates the images" and is "the exact same engine without the retainer".
+  The chat model now has a plain list of
   what Hopkins really does with Meta, the CRM and creative (`SYSTEM` in `app/src/brain.js`): it
   designs around the agent's own photos, can't read the CRM, and an agency does more. Update that
-  list whenever a capability changes.
+  list whenever a capability changes. Never hand the model lists of banned phrases Ismael didn't
+  give: it judges what's suitable to say (Ismael, 2026-10-31).
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the
   system only allows". Claude never says "Anthropic doesn't let me". Hopkins says "I can't" or "I
   can only", and when something needs a step from the agent, it says the step.
 * **Property, not home (Ismael, 2026-10-29):** wherever the app or Hopkins' chat talks about the
   place itself it's "property" ("describe the property"), singular for one. Only ad copy, written
   for buyers and renters, may say "home". The threads themselves are chats.
-* **Lead with a capital L (Ismael, 2026-10-27):** "Lead" and "Leads" are always capitalised in the
-  app and in Hopkins' replies ("3 Leads", "cost per Lead", "New Lead"). Ad copy and buyer pages
-  are not the app. One exception he asked for (2026-10-29): the empty Leads screen says "Each lead
-  also shows the ad it came from."
+* **"lead" is an ordinary word (Ismael, 2026-10-31, replacing the capital L rule of 2026-10-27):**
+  lowercase in the middle of a sentence ("3 new leads", "cost per lead", "no leads yet"), capital
+  only where any word would be: starting a sentence, a title or a label ("Leads this week"), or
+  the Leads tab by name. `capLeads` in `app/src/hopkins.js` lowercases it in everything Hopkins
+  says, chat titles and Needs attention.
 * **Names start with capitals (Ismael, 2026-10-28):** every part of a person's name (first, middle,
   last, each side of a hyphen or apostrophe) starts with a capital, however it was typed: Leads,
   the account name and the agent name on the brand. Only first letters change, so "McDonald"

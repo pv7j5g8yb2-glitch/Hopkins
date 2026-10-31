@@ -11,7 +11,7 @@ import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
-import { creationAI } from "./brain.js";
+import { creationAI, cleanCreation, captionAI } from "./brain.js";
 import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure, titleAI } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
@@ -78,7 +78,7 @@ async function snapshot(listing, versions) {
     .map(({ version, name, pattern, headline, primary_text, overlay, subline, kicker, cta, photo_id, style }) => ({ version, name, pattern, headline, primary_text, overlay, subline: subline || "", kicker, cta, photo_id, style }));
 }
 
-export const say = (ws, listingId, body, kind = "text", data = null, needsAction = false) => postMessage(ws.id, listingId, "hopkins", kind, body, data, needsAction);
+export const say = (ws, listingId, body, kind = "text", data = null, needsAction = false) => postMessage(ws.id, listingId, "hopkins", kind, capLeads(body), data, needsAction);
 
 async function clearActions(listingId) {
   await run(`UPDATE messages SET needs_action = 0 WHERE listing_id = ? AND needs_action = 1`, [listingId]);
@@ -325,8 +325,7 @@ export async function startThread(ws, { text = "", photoIds = [], photoNames = {
 // The model names the thread in a few words (the first words stand in until then).
 async function nameThread(ws, id, text) {
   const title = await titleAI(text).catch(() => null);
-  // A title is a noun phrase, so "leads" in it is always the Leads ("Patterns in recent Leads").
-  if (title) await run(`UPDATE listings SET auto_title = ? WHERE id = ? AND workspace_id = ?`, [polish(title).replace(/\blead(s?)\b/gi, (m, p) => `Lead${p}`), id, ws.id]);
+  if (title) await run(`UPDATE listings SET auto_title = ? WHERE id = ? AND workspace_id = ?`, [capLeads(polish(title)), id, ws.id]);
 }
 
 export async function firstReply(ws, id, tz = "UTC") {
@@ -1052,7 +1051,7 @@ export async function makeCreation(ws, listing, text, kind, previous = null) {
   const photos = await loadPhotos(listing.id);
   const hasProperty = listing.address || listing.price || listing.beds || listing.home_type;
   const agent = [ws.brand.agent_name, ws.brand.business].filter(Boolean).join(", ");
-  const make = creationFake || creationAI;
+  const make = creationFake ? async (a) => cleanCreation(await creationFake(a), a.kind, a.photos, a.previous) : creationAI;
   const spec = await make({ kind, request: text, listing: hasProperty ? { address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal), deal: listing.deal || "sale", beds: listing.beds, baths: listing.baths, sqft: listing.sqft, type: listing.home_type, features: listing.features, description: (listing.description || "").slice(0, 1500) } : null, photos: photos.length, agent, previous: previous?.spec || null });
   if (!spec) {
     await say(ws, listing.id, "Something went wrong. Please try again.");
@@ -1066,13 +1065,34 @@ export async function makeCreation(ws, listing, text, kind, previous = null) {
     await run(`INSERT INTO creations (id, workspace_id, listing_id, kind, spec, created_at, updated_at) VALUES (?,?,?,?,?,?,?)`, [id, ws.id, listing.id, kind, JSON.stringify(spec), now, now]);
   }
   // Fair housing covers posts too: one plain note, the agent decides.
-  const words = [...spec.slides.map((x) => `${x.heading} ${x.body}`), spec.caption].join(" ");
+  const words = spec.slides.map((x) => [x.kicker, x.heading, x.body, ...(x.points || [])].join(" ")).join(" ");
   const issues = checkWording(words);
   const note = issues.length ? ` Heads up: "${issues[0].term}" can read as who the property suits, which fair housing rules don't allow. Keep it, or change it?` : "";
   const line = polish(plainWords(spec.reply || `Here's your ${KIND_NAME[kind]}.`));
-  await say(ws, listing.id, `${line}${note}`, "creation", { creationId: id, version: previous ? previous.version + 1 : 1 });
+  // Captions and hashtags only when asked (Ismael, 2026-10-31): a new one ends with the question.
+  const ask = !previous && !spec.caption ? ` ${CAPTION_ASK}` : "";
+  await say(ws, listing.id, `${line}${note}${ask}`, "creation", { creationId: id, version: previous ? previous.version + 1 : 1 });
   if (!listing.title && !listing.address && !previous && spec.title) await run(`UPDATE listings SET auto_title = COALESCE(auto_title, ?) WHERE id = ?`, [spec.title, listing.id]);
   return { creation: id };
+}
+
+// Asked once, at the end of a new post, carousel, story or reel.
+const CAPTION_ASK = "Want a caption and hashtags for it?";
+const YES = /^\s*(yes|yeah|yep|yup|sure|ok|okay|please|go on|go for it|do it|go ahead|why not|definitely|absolutely)\b/i;
+let captionFake = null;
+export function setCaptionForTests(f) { captionFake = f; }
+// The caption for the latest creation, written when asked, kept with it for Copy caption.
+async function writeCaption(ws, listing, creation, text) {
+  const hasProperty = listing.address || listing.price || listing.beds;
+  const make = captionFake || captionAI;
+  const caption = await make({ spec: creation.spec, request: text, listing: hasProperty ? { address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal) } : null, agent: [ws.brand.agent_name, ws.brand.business].filter(Boolean).join(", ") });
+  if (!caption) {
+    await say(ws, listing.id, "Something went wrong. Please try again.");
+    return {};
+  }
+  await run(`UPDATE creations SET spec = ?, updated_at = ? WHERE id = ?`, [JSON.stringify({ ...creation.spec, caption }), nowIso(), creation.id]);
+  await say(ws, listing.id, caption, "text", { caption: creation.id });
+  return {};
 }
 
 // A property on its own (a link, photos, the facts) is read and kept; Hopkins says what it read and
@@ -1091,6 +1111,13 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
   // A post, carousel, story or reel asked for, or a change to the one just made.
   const kind = creationKind(text);
   const last = await latestCreation(listingId);
+  // "Yes" to the caption question, or a caption or hashtags asked for: written for the latest one.
+  if (last && !kind) {
+    const prev = await get(`SELECT body FROM messages WHERE listing_id = ? AND role = 'hopkins' AND id != ? ORDER BY created_at DESC LIMIT 1`, [listingId, sent.id]);
+    const askedCaption = /\b(caption|hashtags?)\b/i.test(text) && !ASKS_ABOUT.test(text);
+    const saidYes = YES.test(text) && prev?.body?.endsWith(CAPTION_ASK);
+    if (askedCaption || saidYes) return writeCaption(ws, listing, last, text);
+  }
   // "make the carousel shorter" is a change to the carousel there, not a new one.
   if (kind && last) {
     const same = await get(`SELECT * FROM creations WHERE listing_id = ? AND kind = ? ORDER BY updated_at DESC LIMIT 1`, [listingId, kind]);
@@ -1311,7 +1338,9 @@ const asItself = (s) => String(s || "")
   .replace(/\b([Ww])e('ll| will| can| could|'d| would|'ve| have)\b/g, (m, w, rest) => `I${rest}`);
 // "Lead" is written with a capital L everywhere in Hopkins (Ismael, 2026-10-27). Only the noun,
 // after a number or a word like "no", "new" or "per", so "it leads to" stays as it is.
-export const capLeads = (s) => String(s || "").replace(/\b(\d[\d,]*|no|new|more|fewer|any|every|first|your|their|the|a|an|of|per|cheapest|cheaper|cheap|real|buyer|those|these|some|many|few|zero|one|two|three|four|five|six|seven|eight|nine|ten|qualified|good|warm|more|extra|recent|latest|all|my|incoming|past|old|these|top|best|cold|hot)(\s+)lead(s?)\b/gi, (m, w, sp, plural) => `${w}${sp}Lead${plural}`);
+// "lead" is lowercase in the middle of a sentence and capital only where any word would be (Ismael,
+// 2026-10-31, replacing the capital L rule of 2026-10-27): "3 new leads", "Leads this week".
+export const capLeads = (s) => String(s ?? "").replace(/(?<=[a-z0-9,;)%$] )Lead(s?)\b/g, (m, p) => `lead${p}`);
 // Offers of more help at the end of a reply ("Let me know if you'd like any tweaks.") add nothing.
 const FILLER = /\s*(?:^|(?<=[.!?]))\s*(?:let me know|just let me know|feel free|happy to help|hope (?:this|that) helps|if you(?:'d| would) like(?: any)?|if you want|want me to|tell me if you(?:'d| would) like|anything (?:else )?(?:to|you'd like to|you want to) (?:adjust|change|tweak)|any (?:other |more )?(?:tweaks|changes|questions)|pick the one|tell me which|(?:would you like|do you want|shall i|should i) (?:me to )?(?:adjust|change|tweak|edit|modify|rewrite|refine|shorten|lengthen|polish)\b)[^.!?]*[.!?]?\s*$/i;
 export const noFiller = (s) => { let t = String(s || ""), prev; do { prev = t; t = t.replace(FILLER, "").trim(); } while (t !== prev && t); return t || String(s || ""); };

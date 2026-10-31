@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
 import { notifyTopic } from "./notify.js";
 import { metaReady, unseal, updateAdSet } from "./meta.js";
-import { getWorkspace, loadListing, listingTitle, proposeRun, changeRun, pauseOrResume, PROPERTY } from "./hopkins.js";
+import { getWorkspace, loadListing, listingTitle, proposeRun, changeRun, pauseOrResume, PROPERTY, capLeads } from "./hopkins.js";
 
 const DAY = 86400000;
 const money = (n) => `$${Math.round(n).toLocaleString("en-US")}`;
@@ -129,7 +129,7 @@ export async function refreshAttention(ws, now = Date.now()) {
     }
     const id = randomUUID();
     await run(`INSERT INTO attention (id, workspace_id, listing_id, key, kind, title, body, action, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [id, ws.id, f.listing_id || null, f.key, f.kind, f.title, f.body, JSON.stringify(f.action), "open", nowIso()]);
+      [id, ws.id, f.listing_id || null, f.key, f.kind, capLeads(f.title), capLeads(f.body), JSON.stringify(f.action), "open", nowIso()]);
     fresh.push(f);
   }
   for (const s of stored) if (s.status === "open" && !found.some((f) => f.key === s.key)) await run(`UPDATE attention SET status = 'gone', resolved_at = ? WHERE id = ?`, [nowIso(), s.id]);

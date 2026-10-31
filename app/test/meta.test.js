@@ -288,7 +288,7 @@ test("Needs attention on Meta: no Leads after real spend, moving budget to the a
   await run(`UPDATE launches SET meta_spend = 60 WHERE listing_id = ?`, [a.id]);
   att = (await c("GET", "/api/inbox")).json.attention;
   const nl = att.find((x) => x.kind === "noleads");
-  assert.equal(nl.title, "11 Fir St: $60 spent, no Leads yet");
+  assert.equal(nl.title, "11 Fir St: $60 spent, no leads yet");
   assert.equal(nl.action.label, "Pause the ads");
 
   // B: Ad 1 has 3 Leads, Ads 2 and 3 none, $40 spent each, 9.5 days in.
@@ -302,7 +302,7 @@ test("Needs attention on Meta: no Leads after real spend, moving budget to the a
   const shifts = att.filter((x) => x.kind === "shift");
   assert.equal(shifts.length, 2);
   const s2 = shifts.find((x) => x.action.lose === v2);
-  assert.equal(s2.title, "Ad 2 on 15 Elm St has no Leads, Ad 1 has 3");
+  assert.equal(s2.title, "Ad 2 on 15 Elm St has no leads, Ad 1 has 3");
   assert.equal(s2.action.label, "Pause Ad 2, move $26 to Ad 1");
   const ending = att.find((x) => x.kind === "ending");
   assert.match(ending.title, /^15 Elm St's ads end /);

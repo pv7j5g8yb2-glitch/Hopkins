@@ -468,7 +468,7 @@
       : "";
     // Running ads can always be stopped in one tap, and started again (Ismael, 2026-10-31).
     const runBtn = l.run === "running" ? `<button data-act="pauseRun">${ICON.pause}Pause ads</button>` : l.run === "paused" ? `<button data-act="resumeRun">${ICON.play}Resume ads</button>` : "";
-    return `${runBtn}<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open Lead page</a>
+    return `${runBtn}<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
       ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
       <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Create new ads" : "Create ads"}</button>
       <button class="danger" data-act="delListingAsk">${ICON.trash}Delete chat</button>`;
@@ -580,7 +580,7 @@
         <div class="bd"><div class="tx"><b>${esc(listingName(l))}</b></div>${l.unread ? `<span class="dot" aria-label="New reply"></span>` : ""}</div></a>`;
     };
     const icon = (m) => (m.kind === "lead" ? ICON.people : m.kind === "report" ? ICON.chart : ICON.spark);
-    const titleFor = (m) => (m.kind === "lead" ? `New Lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
+    const titleFor = (m) => (m.kind === "lead" ? `New lead on ${where(m)}` : m.kind === "report" ? "Your Monday report" : where(m));
     const row = (m) => `<a class="row" href="${m.kind === "report" ? "#/report" : `#/l/${m.listing_id}`}"><span class="ic">${icon(m)}</span>
       <div class="tx"><b>${esc(titleFor(m))}</b><p>${esc(plainText(m.body))}</p></div><span class="when">${ago(m.created_at)}</span></a>`;
 
@@ -1367,7 +1367,6 @@
         const reel = c.kind === "reel";
         const frames = reel ? `<canvas class="cr-reel" data-crr="${c.id}"></canvas>` : c.spec.slides.map((_, k) => `<canvas class="cr-slide${c.kind === "story" ? " tall" : ""}" data-crs="${c.id}:${k}"></canvas>`).join("");
         return wrap(`${text}<div class="cr"><div class="cr-strip">${frames}</div>
-          ${c.spec.caption ? `<p class="cr-cap">${esc(c.spec.caption)}</p>` : ""}
           <div class="acts"><button class="btn" data-act="crDownload" data-id="${c.id}">${reel ? "Download video" : c.spec.slides.length > 1 ? `Download ${c.spec.slides.length} images` : "Download"}</button>${c.spec.caption ? `<button class="link" data-act="crCopy" data-id="${c.id}">Copy caption</button>` : ""}</div></div>`);
       }
       return wrap(text);
@@ -1627,11 +1626,11 @@
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
       <select data-lead="${x.id}" aria-label="Status">${Object.keys(STATUS).map((k) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${statusName(x, k)}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Leads</h1>${leads.length && !week ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
-      ${leads.length ? `<button class="sel-btn round" data-act="leadSearch" aria-label="Search Leads">${ICON.search}</button>` : ""}</div>
+      ${leads.length ? `<button class="sel-btn round" data-act="leadSearch" aria-label="Search leads">${ICON.search}</button>` : ""}</div>
       ${week ? `<a class="fchip" href="#/leads">This week ${ICON.x}</a>` : ""}
-      ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search Leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
+      ${leads.length ? `<div class="lsearch" id="lsearch" hidden>${ICON.search}<input type="search" id="lq" placeholder="Search leads" autocomplete="off" enterkeyhint="search"><button data-act="leadSearchClose">Cancel</button></div>
       <div class="list" id="leadList" style="border-top:0">${leads.map(item).join("")}</div><p class="lnone" id="lnone" hidden></p>`
-        : week && all.length ? `<p class="cnone">No Leads this week.</p>` : `<div class="empty"><div class="ic">${ICON.people}</div><b>No Leads yet</b>Each lead also shows the ad it came from.</div>`}</div></div>`;
+        : week && all.length ? `<p class="cnone">No leads this week.</p>` : `<div class="empty"><div class="ic">${ICON.people}</div><b>No leads yet</b>Each lead also shows the ad it came from.</div>`}</div></div>`;
     $$("[data-lead]").forEach((s) => s.addEventListener("change", async () => {
       await api(`/api/leads/${s.dataset.lead}`, { method: "PATCH", body: { status: s.value } });
       s.closest(".lead").classList.toggle("new", s.value === "new");
@@ -1647,7 +1646,7 @@
       let shown = 0;
       rows.forEach((r, i) => { const hit = parts.every((p) => words[i].includes(p) || (/\d/.test(p) && words[i].includes(p.replace(/[^\d+]/g, "")))); r.hidden = !hit; if (hit) shown++; });
       $("#lnone").hidden = Boolean(shown);
-      $("#lnone").textContent = shown ? "" : `No Leads match "${e.target.value.trim()}".`;
+      $("#lnone").textContent = shown ? "" : `No leads match "${e.target.value.trim()}".`;
     });
   }
 
@@ -1765,13 +1764,13 @@
       const l = S.listings.find((x) => x.id === a.listing_id);
       return `<a class="ta-card" href="#/l/${a.listing_id}" data-act="openAd" data-id="${a.listing_id}" data-v="${a.version}">
         <div class="ta-ph" style="${a.photo_id ? `background-image:url(${photoUrl(a.photo_id, true)})` : ""}"><span class="rb-rank m${i + 1}">${i + 1}</span><b>${esc(a.overlay)}</b></div>
-        <div class="ta-bd"><span class="ta-nm">${esc(a.name)}</span><span class="ta-n"><b>${a.leads}</b> ${a.leads === 1 ? "Lead" : "Leads"}</span></div>
+        <div class="ta-bd"><span class="ta-nm">${esc(a.name)}</span><span class="ta-n"><b>${a.leads}</b> ${a.leads === 1 ? "lead" : "leads"}</span></div>
         <span class="ta-where">${esc(l ? listingName(l) : "")} · Ad ${a.version}</span></a>`;
     }).join("")}</div></section>` : "";
 
     main.innerHTML = `${mtop("Report")}<div class="page" data-report><div class="wrap">
       <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>
-      <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "Lead" : "Leads"}</div>${sub ? `<p class="rp-sub">${sub}</p>` : ""}
+      <section class="rp-sum"><div class="rp-big"><b>${r.total}</b> ${r.total === 1 ? "lead" : "leads"}</div>${sub ? `<p class="rp-sub">${sub}</p>` : ""}
         <div class="rp-chart" role="img" aria-label="Leads each day: ${counts.join(", ")}">${bars}</div></section>
       ${winning}
       ${r.listings.length ? boardHtml(r) : ""}
@@ -1780,7 +1779,7 @@
 
   // The listings, ranked: best first by what's picked (leads, showings, cost per lead, or newest),
   // filtered to all, running or with leads. The pick is remembered on this device.
-  const SORTS = [["leads", "Most Leads"], ["showings", "Most showings"], ["cpl", "Lowest cost per Lead"], ["newest", "Most recent"]];
+  const SORTS = [["leads", "Most leads"], ["showings", "Most showings"], ["cpl", "Lowest cost per lead"], ["newest", "Most recent"]];
   const FILTERS = [["all", "All"], ["active", "Active"], ["inactive", "Inactive"]];
   try { S.repSort = localStorage.getItem("hk.repSort") || "leads"; S.repFilter = localStorage.getItem("hk.repFilter") || "all"; } catch { S.repSort = "leads"; S.repFilter = "all"; }
   if (!SORTS.some(([k]) => k === S.repSort)) S.repSort = "leads";
@@ -1803,7 +1802,7 @@
     const row = (x, i) => {
       const v = value(x), lead = ranked && i === 0 && v;
       const medal = ranked && v && i < 3 ? ` m${i + 1}` : "";
-      const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a Lead" : "") : v === 1 ? "Lead" : "Leads";
+      const unit = by === "showings" ? (v === 1 ? "showing" : "showings") : by === "cpl" ? (v != null ? "a lead" : "") : v === 1 ? "lead" : "leads";
       // Greyed only when nothing's happening: no Leads and no ads running. An active listing keeps
       // its colour even before its first Lead (Ismael, 2026-10-29).
       return `<button class="rb-row${v || pass.active(x) ? "" : " zero"}" data-act="reportListing" data-id="${x.id}">
@@ -1848,7 +1847,7 @@
     const x = S.report && S.report.listings.find((l) => l.id === t.dataset.id);
     if (!x) return;
     openPop(t, `<div class="note"><b>${esc(x.name)}</b>${esc(weekLabel(S.repMonday))}</div>
-      <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per Lead</div></div>
+      <div class="rp-mini"><div><b>${x.leads}</b>${x.leads === 1 ? "Lead" : "Leads"}</div><div><b>${x.showings}</b>${x.showings === 1 ? "Showing" : "Showings"}</div><div><b>${x.cpl != null ? money(x.cpl) : "Not set"}</b>Per lead</div></div>
       <form class="spendf" data-id="${x.id}"><label for="spendIn">Ad spend to date</label><div class="row-s"><input id="spendIn" type="number" inputmode="decimal" min="0" step="1" value="${x.spend || ""}" placeholder="$0"><button class="btn" type="submit">Save</button></div>
       <p class="small">Available once Meta is connected.</p></form>
       <div class="sep"></div><a href="#/l/${x.id}">${ICON.eye}Open chat</a>`, { top: true });
@@ -1898,7 +1897,7 @@
   // other CRM by a webhook URL (Zapier, Make).
   function crmGroup(fld) {
     const c = S.me.crm || {};
-    const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:10px">The last Lead didn't reach ${esc(c.last.failed.map((f) => f === "webhook" ? "the webhook" : f).join(" or "))}.</p>` : "";
+    const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:10px">The last lead didn't reach ${esc(c.last.failed.map((f) => f === "webhook" ? "the webhook" : f).join(" or "))}.</p>` : "";
     const fub = c.fub
       ? `<div class="crm-row"><div><b>Follow Up Boss</b><p class="small">${esc(c.fubName || "Connected")}</p></div><button class="link" data-act="crmOff" data-which="fub">Disconnect</button></div>`
       : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmFub", "Follow Up Boss API key", "", "password", "")}<div><button class="sec-btn" data-act="crmSave" data-which="fub">Connect</button></div></div>`;
@@ -1912,7 +1911,7 @@
   function crmRow() {
     const c = S.me.crm || {};
     const on = [c.fub && "Follow Up Boss", c.hook && "Webhook"].filter(Boolean).join(" and ");
-    const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:6px">The last Lead didn't arrive.</p>` : "";
+    const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:6px">The last lead didn't arrive.</p>` : "";
     return `<div class="group"><h4>CRM</h4><div class="crm-row"><p>${on ? esc(on) : "Not connected"}</p><a class="link" href="#/crm/settings">${on ? "Edit" : "Connect"}</a></div>${failed}</div>`;
   }
 
@@ -1950,10 +1949,10 @@
         ? `<p>On</p>
            <ol class="steps-small"><li>Install ntfy from the App Store or Google Play.</li><li>Tap +, then subscribe to <b>${esc(b.alerts_topic)}</b> <button class="link" data-copy="${esc(b.alerts_topic)}" data-copied="Name copied">Copy</button></li><li>Send a test to check it arrives.</li></ol>
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
-        : `<div><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
+        : `<div><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
       ${metaGroup()}
       ${crmRow()}
-      <div class="group"><h4>Instant reply to Leads</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
+      <div class="group"><h4>Instant reply to leads</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
            ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="sec-btn" data-act="billing">Manage</button></div>` : ""}`
@@ -2024,7 +2023,7 @@
       await api("/api/account", { method: "PATCH", body: { avatar_id: "" } });
       await loadMe(); drawSide(); viewSettings(); toast("Photo removed");
     } else if (act === "deleteAsk") {
-      openPop(t, `<div class="note"><b>Delete your account?</b>Your chats, ads, Leads and photos will be permanently deleted.</div>
+      openPop(t, `<div class="note"><b>Delete your account?</b>Your chats, ads, leads and photos will be permanently deleted.</div>
         <div style="padding:6px 10px 4px"><div class="fld"><label for="delPw">Your password</label><input id="delPw" type="password" autocomplete="current-password"></div></div>
         <button class="danger" data-act="deleteYes">${ICON.alert}Delete everything</button>`);
       setTimeout(() => $("#delPw") && $("#delPw").focus(), 50);
@@ -2395,11 +2394,11 @@
       } else if (act === "delOne" || act === "delPicked") {
         const ids = act === "delOne" ? [t.dataset.id] : [...S.picked];
         const name = ids.length === 1 ? listingName(S.listings.find((x) => x.id === ids[0]) || {}) : `${ids.length} chats`;
-        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, photos and Leads will also be deleted. This can't be undone.</div>
+        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, photos and leads will also be deleted. This can't be undone.</div>
           <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "chat" : `${ids.length} chats`}</button>`);
       } else if (act === "delYes") await deleteListings(t.dataset.ids.split(","));
       else if (act === "delListingAsk") {
-        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, photos and Leads will also be deleted. This can't be undone.</div>
+        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, photos and leads will also be deleted. This can't be undone.</div>
           <button class="danger" data-act="delListingYes">${ICON.trash}Delete chat</button>`);
       } else if (act === "delListingYes") {
         await api(`/api/listings/${l.id}`, { method: "DELETE" });
@@ -2413,7 +2412,7 @@
         openPop(t, `<button data-dl="feed">${ICON.down}Feed image</button><button data-dl="story">${ICON.down}Story image</button>
           <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>
           <button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>
-          <div class="sep"></div><div class="note">Use the ad link so Leads are tracked.</div>`);
+          <div class="sep"></div><div class="note">Use the ad link so leads are tracked.</div>`);
       }
       else if (act === "logout") { await api("/api/logout", { body: {} }); location.href = "/login"; }
       else if (act === "chat" || act === "ads") showAds(act === "ads");

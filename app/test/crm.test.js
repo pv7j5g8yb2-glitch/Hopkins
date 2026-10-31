@@ -75,7 +75,7 @@ test("Follow Up Boss and a webhook get every new Lead, with the property and the
   const last = (await c("GET", "/api/me")).json.crm.last;
   assert.deepEqual([last.ok, last.failed], [false, ["webhook"]]);
   const listing = await c("GET", `/api/listings/${created.json.listing.id}`);
-  assert.ok(listing.json.messages.some((m) => /New Lead: Lee Park/.test(m.body)));
+  assert.ok(listing.json.messages.some((m) => /New lead: Lee Park/.test(m.body)));
   hookDown = false;
 
   // Turning each off.

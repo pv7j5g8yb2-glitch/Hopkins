@@ -59,11 +59,10 @@ What you really do (say only this when asked what you can do, never more):
 - Compared with an agency, be honest and plain: an agency does more (strategy, shoots and video, custom creative, more channels, a person on call). You do the listing ads, posts and the Lead handling quickly, with the agent approving each step, for a flat monthly price. Never say you're the same as an agency or "the exact same engine".
 
 How you write to the agent:
-- Never casual stock phrases: no "whenever you're ready", "no worries", "happy to help", "spot on".
 - A quiet expert with a real personality: warm, direct, a bit of dry humour when it fits. Plain words. No hype, no sales talk.
 - Say "I" for yourself. Never "we", "us", "our" or "let's" (say "so you can see", not "lets us see").
 - Never use dashes of any kind as punctuation. Use commas or full stops.
-- Never claim a result you can't know. No invented numbers, no promised Leads. Write Lead and Leads with a capital L, always.
+- Never claim a result you can't know. No invented numbers, no promised leads. Write lead and leads in lowercase in the middle of a sentence, like any other word.
 - At most one question per reply, and make it answerable in one line.
 
 How you write ads (the copy appears on the agent's ads, in their name):
@@ -671,54 +670,97 @@ const TITLE_SCHEMA = { type: "object", properties: { title: { type: "string" } }
 // Posts, carousels, stories and reels (Ismael, 2026-11-01: ask Hopkins for "a carousel for my
 // real estate content" or "an animated reel for first time buyers" the way you'd ask Claude). The
 // model writes the words and picks the look; the app draws it (web/studio.js).
+const CR_STYLES = ["ivory", "noir", "modern", "bold", "night", "photo"];
+const CR_LAYOUTS = ["cover", "step", "list", "stat", "statement", "close"];
 const CREATION_SCHEMA = {
   type: "object",
   properties: {
     title: { type: "string", description: "A short name for it, 2 to 5 words" },
-    caption: { type: "string", description: "The Instagram caption to post with it: a hook line, 1 to 3 short paragraphs, then 3 to 5 relevant hashtags on their own line" },
-    theme: { type: "string", enum: ["paper", "night", "bold", "photo"], description: "paper: warm off white, black type (educational, calm). night: deep blue, white type (premium). bold: a strong colour block (attention, numbers). photo: the property's own photos behind the words (only when there are photos)" },
+    theme: { type: "string", enum: CR_STYLES, description: "The look. ivory: quiet luxury, warm ivory with an elegant serif, lots of space (calm, premium, editorial). noir: near black with a light serif, quiet and expensive. modern: clean off white, bold grotesk type with one italic serif word (crisp, contemporary). bold: a deep green colour block with cream type (confident, punchy). night: deep blue, white type. photo: the property's own photos behind the words (only when there are photos). Follow the style they asked for: \"quiet luxury\" is ivory or noir." },
     slides: {
       type: "array",
       items: {
         type: "object",
         properties: {
-          heading: { type: "string", description: "The big line: short and strong, at most 9 words" },
-          body: { type: "string", description: "One or two short sentences, at most 26 words, or empty" },
-          photo: { type: "integer", description: "For theme photo: which listing photo to use, 1 for the first; 0 for none" },
+          layout: { type: "string", enum: CR_LAYOUTS, description: "cover: the first slide, the hook. step: one numbered step or tip. list: a short checklist. stat: one number that matters (only a true, widely known figure). statement: one strong line. close: the last slide, what to do now." },
+          kicker: { type: "string", description: "A tiny label above the heading, 1 to 4 words. On the cover it names who it's for (\"First time buyers\"); elsewhere a section or step label (\"Step 1\", \"Before you tour\"). Can be empty" },
+          heading: { type: "string", description: "The big line: short, specific and strong, at most 8 words. No full stop at the end" },
+          accent: { type: "string", description: "One word copied exactly from the heading to set in italic for emphasis (the word that lands the line), or empty" },
+          body: { type: "string", description: "One or two short sentences that make the heading useful: concrete, at most 24 words, or empty" },
+          points: { type: "array", items: { type: "string" }, description: "For list slides: 3 or 4 short items, each at most 7 words. Empty otherwise" },
+          number: { type: "string", description: "For step slides, the step number (\"1\"); for stat slides, the figure (\"3%\", \"20%\"). Empty otherwise" },
+          photo: { type: "integer", description: "For theme photo: which listing photo, 1 for the first; 0 for none" },
         },
-        required: ["heading", "body", "photo"],
+        required: ["layout", "kicker", "heading", "accent", "body", "points", "number", "photo"],
       },
     },
-    reply: { type: "string", description: "One short line to the agent saying what this is, like Claude would. No offers of more help" },
+    reply: { type: "string", description: "One short, natural line to the agent saying what you made, like Claude would. Don't describe the colours or the style, don't offer more help" },
   },
-  required: ["title", "caption", "theme", "slides", "reply"],
+  required: ["title", "theme", "slides", "reply"],
 };
 const KIND_RULES = {
-  carousel: "A carousel: 6 to 8 slides. Slide 1 is the hook that makes someone stop and swipe. The middle slides each give one clear, useful point. The last slide tells them what to do (save it, share it, message the agent).",
-  reel: "An animated reel: 6 to 8 scenes, each read in about 3 seconds. Scene 1 is the hook. One idea per scene, very few words. The last scene tells them what to do.",
+  carousel: "A carousel: 6 to 8 slides. Slide 1 (cover) is only the hook: a kicker naming who it's for and a big, specific headline that makes that person stop and swipe (a numbered promise, a mistake to avoid, a contrarian line). The middle slides give one genuinely useful point each, mixing layouts (steps, a short checklist, one true stat or a strong statement), so it reads as a designed set, not the same slide repeated. The last slide (close) tells them what to do: save it, send it to someone who needs it, or message the agent.",
+  reel: "An animated reel: 6 to 8 scenes, each read in about 3 seconds. Scene 1 (cover) is the hook. One idea per scene, very few words. The last scene (close) tells them what to do.",
   story: "An Instagram story: 1 to 3 frames, few words, one clear action.",
-  post: "A single post: exactly 1 slide, one strong idea.",
+  post: "A single post: exactly 1 slide (cover or statement), one strong idea.",
 };
 export async function creationAI({ kind, request, listing, photos = 0, agent = "", previous = null }) {
   if (!aiEnabled) return null;
   const r = await call({
-    system: `You are Hopkins, a real estate marketing assistant. You make Instagram content for a real estate agent: posts, carousels, stories and reels. Write like a sharp, experienced real estate marketer: plain, specific, useful, never hype, no emojis in the slides, US spelling. Only state facts you are sure of; never invent numbers, rates, prices or property details. Never use wording about who the property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. ${KIND_RULES[kind] || KIND_RULES.post}`,
-    messages: [{ role: "user", content: `${previous ? `The current version:\n${JSON.stringify(previous)}\n\nChange it as asked, keep everything else:` : "Make this:"} ${request}\n\n${listing ? `The property (use only these facts): ${JSON.stringify(listing)}\nPhotos available: ${photos}\n` : "No property in this chat.\n"}Agent: ${agent || "unknown"}` }],
+    system: `You are Hopkins, making Instagram content for a real estate agent: posts, carousels, stories and reels, drawn in the app. You write like the best real estate content creator on Instagram: content people save and send because they can use it straight away. Be specific and practical, never vague: not "check your credit" but "pull your free credit reports before you talk to a lender". Every slide earns its place. Plain words, no hype, no emojis, no hashtags, no exclamation marks, US spelling. Never use dashes as punctuation. Widely known general facts are fine when stated carefully ("closing costs usually run 2% to 5% of the price"); never invent local numbers, rates, prices or property details. Never use wording about who a property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. Don't write a caption; the agent asks for one separately if they want it. ${KIND_RULES[kind] || KIND_RULES.post}`,
+    messages: [{ role: "user", content: `${previous ? `The current version:\n${JSON.stringify({ ...previous, caption: undefined })}\n\nChange it as asked, keep everything else:` : "Make this:"} ${request}\n\n${listing ? `The property (use only these facts): ${JSON.stringify(listing)}\nPhotos available: ${photos}\n` : "No property in this chat.\n"}Agent: ${agent || "unknown"}` }],
     schema: CREATION_SCHEMA,
     effort: "medium",
-    temperature: 0.6,
+    temperature: 0.7,
   });
+  return cleanCreation(r, kind, photos, previous);
+}
+// What the model sent, kept to what the drawing can show well.
+export function cleanCreation(r, kind, photos = 0, previous = null) {
   if (!r || !Array.isArray(r.slides) || !r.slides.length) return null;
   const max = { carousel: 10, reel: 10, story: 3, post: 1 }[kind] || 1;
-  const slides = r.slides.slice(0, max).map((x) => ({ heading: String(x.heading || "").slice(0, 90), body: String(x.body || "").slice(0, 220), photo: Math.max(0, Math.min(photos, Number(x.photo) || 0)) })).filter((x) => x.heading);
+  // Ranges read "2 to 5%"; any other dash becomes a comma (no dashes in anything Hopkins writes).
+  const str = (v, n) => String(v ?? "").replace(/(\d)\s*[-\u2013\u2014]\s*(\d)/g, "$1 to $2").replace(/\s*[\u2013\u2014]\s*/g, ", ").trim().slice(0, n);
+  const slides = r.slides.slice(0, max).map((x, i, all) => {
+    const heading = str(x.heading, 90).replace(/[.]$/, "");
+    const accent = str(x.accent, 30);
+    let layout = CR_LAYOUTS.includes(x.layout) ? x.layout : i === 0 ? "cover" : i === all.length - 1 && all.length > 1 ? "close" : "statement";
+    const points = Array.isArray(x.points) ? x.points.map((p) => str(p, 70)).filter(Boolean).slice(0, 5) : [];
+    if (layout === "list" && points.length < 2) layout = "statement";
+    return { layout, kicker: str(x.kicker, 40), heading, accent: accent && heading.toLowerCase().includes(accent.toLowerCase()) ? accent : "", body: str(x.body, 200), points: layout === "list" ? points : [], number: layout === "step" || layout === "stat" ? str(x.number, 8) : "", photo: Math.max(0, Math.min(photos, Number(x.photo) || 0)) };
+  }).filter((x) => x.heading);
   if (!slides.length) return null;
-  return { title: String(r.title || "").slice(0, 60), caption: String(r.caption || "").slice(0, 2200), theme: ["paper", "night", "bold", "photo"].includes(r.theme) && (r.theme !== "photo" || photos) ? r.theme : "paper", slides, reply: String(r.reply || "").slice(0, 300) };
+  const theme = CR_STYLES.includes(r.theme) && (r.theme !== "photo" || photos) ? r.theme : previous?.theme || "ivory";
+  return { title: str(r.title, 60), caption: previous?.caption || "", theme, slides, reply: str(r.reply, 300) };
+}
+
+// A caption and hashtags, only when the agent asks for them.
+const CAPTION_SCHEMA = {
+  type: "object",
+  properties: {
+    caption: { type: "string", description: "The Instagram caption: a first line that hooks, then 1 to 3 short paragraphs that add to the post, then one line telling people what to do (save, share, message). Plain, no hype, no emojis unless they asked" },
+    hashtags: { type: "array", items: { type: "string" }, description: "4 to 6 relevant hashtags, local where the city is known, each starting with #" },
+  },
+  required: ["caption", "hashtags"],
+};
+export async function captionAI({ spec, request, listing, agent = "" }) {
+  if (!aiEnabled) return null;
+  const r = await call({
+    system: "You write Instagram captions for a real estate agent's posts, like the best real estate content creator would: specific, useful, natural, with keywords people search for (the city, the neighborhood, what the post covers). Never use dashes as punctuation. Never use wording about who a property suits: fair housing rules cover posts too.",
+    messages: [{ role: "user", content: `The post:\n${JSON.stringify(spec.slides.map((x) => [x.kicker, x.heading, x.body, ...(x.points || [])].filter(Boolean).join(". ")))}\n\nWhat they asked: ${request}\n${listing ? `The property: ${JSON.stringify(listing)}\n` : ""}Agent: ${agent || "unknown"}` }],
+    schema: CAPTION_SCHEMA,
+    effort: "low",
+    temperature: 0.7,
+  });
+  if (!r || !r.caption) return null;
+  const tags = (Array.isArray(r.hashtags) ? r.hashtags : []).map((t) => `#${String(t).replace(/^#+/, "").replace(/[^\p{L}\p{N}_]/gu, "")}`).filter((t) => t.length > 1).slice(0, 8);
+  return `${String(r.caption).replace(/\s*[\u2013\u2014]\s*/g, ", ").trim().slice(0, 2000)}${tags.length ? `\n\n${tags.join(" ")}` : ""}`;
 }
 
 export async function titleAI(text) {
   if (!aiEnabled || !String(text || "").trim()) return null;
   const r = await call({
-    system: `You name chats in Hopkins, a real estate marketing app, the way Claude or ChatGPT name a conversation from its first message: 2 to 5 words, sentence case, no quotes, no full stop, no dashes, no emoji. Say what it's about, plainly: "Email to a quiet buyer", "Instagram posting times", "3 bed condo in Midtown". For a property with a street address, use the address ("412 Oak Street"). Lead and Leads always start with a capital L ("Patterns in recent Leads").`,
+    system: `You name chats in Hopkins, a real estate marketing app, the way Claude or ChatGPT name a conversation from its first message: 2 to 5 words, sentence case, no quotes, no full stop, no dashes, no emoji. Say what it's about, plainly: "Email to a quiet buyer", "Instagram posting times", "3 bed condo in Midtown". For a property with a street address, use the address ("412 Oak Street").`,
     messages: [{ role: "user", content: `First message:\n${String(text).slice(0, 1500)}` }],
     schema: TITLE_SCHEMA,
     effort: "low",

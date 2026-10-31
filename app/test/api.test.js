@@ -587,9 +587,10 @@ test("this week is compared with the same stretch of last week, never a whole we
   assert.equal(past.json.soFar, false);
 });
 
-test("Lead has a capital L in Hopkins' replies, the verb doesn't", async () => {
+test("lead is lowercase in the middle of a sentence, capital only where any word would be", async () => {
   const { capLeads } = await import("../src/hopkins.js");
-  assert.equal(capLeads("3 leads this week, no leads on Elm, cost per lead $20"), "3 Leads this week, no Leads on Elm, cost per Lead $20");
+  assert.equal(capLeads("3 Leads this week, no Leads on Elm, cost per Lead $20"), "3 leads this week, no leads on Elm, cost per lead $20");
+  assert.equal(capLeads("Leads this week: 3. New lead: Dana."), "Leads this week: 3. New lead: Dana.");
   assert.equal(capLeads("This leads to more showings."), "This leads to more showings.");
 });
 

@@ -42,7 +42,8 @@ test("a carousel and a reel in a plain chat, a change to the one just made, and 
   assert.equal(f.json.creations[0].spec.slides.length, 6);
   const msg = f.json.messages.at(-1);
   assert.equal(msg.kind, "creation");
-  assert.equal(msg.body, "Here's your carousel.");
+  assert.equal(msg.body, "Here's your carousel. Want a caption and hashtags for it?");
+  assert.equal(f.json.creations[0].spec.caption, "", "no caption until asked");
   assert.equal(msg.data.creationId, f.json.creations[0].id);
   assert.equal(asked.at(-1).listing, null);
 
@@ -96,4 +97,24 @@ test("the free plan is 3 things in all: creations and ads count together", async
   // A new one, asked for in so many words, is new: over the limit.
   const fresh = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "make another carousel about summer" });
   assert.equal(fresh.json.messages.at(-1).kind, "upgrade");
+});
+
+test("a caption and hashtags only when asked: yes to the question, or asked in words", async () => {
+  hopkins.setCaptionForTests(async ({ spec }) => `Save this before you start.\n\n#FirstTimeBuyer #AustinHomes`);
+  const c = await signup("caption@ellery.test");
+  const s = await c("POST", "/api/listings/start", { text: "make me a carousel for first time buyers" });
+  await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  const y = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "yes please" });
+  assert.match(y.json.messages.at(-1).body, /#FirstTimeBuyer/);
+  assert.equal(y.json.creations[0].version, 1, "the carousel itself didn't change");
+  assert.match(y.json.creations[0].spec.caption, /Save this/);
+  // A yes to anything else isn't a caption request.
+  const t = await c("POST", "/api/listings/start", { text: "make a post about spring in Austin" });
+  await c("POST", `/api/listings/${t.json.listing.id}/first`, {});
+  await c("POST", `/api/listings/${t.json.listing.id}/messages`, { text: "make the heading shorter" });
+  const no = await c("POST", `/api/listings/${t.json.listing.id}/messages`, { text: "yes" });
+  assert.equal(no.json.creations[0].spec.caption, "");
+  // Asked for in words, any time.
+  const w = await c("POST", `/api/listings/${t.json.listing.id}/messages`, { text: "write me a caption with hashtags for it" });
+  assert.match(w.json.creations[0].spec.caption, /Save this/);
 });

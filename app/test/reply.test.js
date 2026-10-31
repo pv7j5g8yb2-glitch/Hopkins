@@ -48,7 +48,7 @@ test("a Lead with an email gets an instant reply from the agent; off means off; 
   await settle();
   down = false;
   msgs = (await c("GET", `/api/listings/${id}`)).json.messages;
-  assert.ok(msgs.some((x) => /New Lead: Kai Moss/.test(x.body)));
+  assert.ok(msgs.some((x) => /New lead: Kai Moss/.test(x.body)));
   assert.ok(!msgs.some((x) => /emailed Kai/.test(x.body)));
 
   // Off in Settings: nothing goes out.
