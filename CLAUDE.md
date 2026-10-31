@@ -345,6 +345,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   encrypted), any other CRM through a webhook URL (Zapier, Make). Set up in the first steps or Settings, never
   by pasting a key in the chat. A failed send never loses the Lead; Settings says it didn't arrive.
   kvCORE, Lofty and BoomTown need partnerships, so they go through the webhook for now.
+  Hopkins also reads (never writes) the agent's 100 most recent Follow Up Boss contacts with the
+  same key, and the last 30 days of every campaign in their Meta ad account, so the chat knows how
+  they're getting on (Ismael, 2026-10-31: "Hopkins should know exactly how the agent is getting
+  on"). Kept ten minutes, a source that doesn't answer says so. A webhook CRM can't be read.
 * **Listing links:** Hopkins reads every listing page that lets it in (Zillow, MLS share pages
   from Flexmls, Matrix and Paragon, agent sites): up to 25 photos at the largest size, the remarks
   and the facts. Pages drawn in the browser (OneHome) get Google's read too. Sites that block apps
@@ -408,7 +412,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   Hopkins said it "generates the images" and is "the exact same engine without the retainer".
   The chat model now has a plain list of
   what Hopkins really does with Meta, the CRM and creative (`SYSTEM` in `app/src/brain.js`): it
-  designs around the agent's own photos, can't read the CRM, and an agency does more. Update that
+  designs around the agent's own photos, reads Follow Up Boss and the Meta account but changes
+  nothing there, and an agency does more. Update that
   list whenever a capability changes. Never hand the model lists of banned phrases Ismael didn't
   give: it judges what's suitable to say (Ismael, 2026-10-31).
 * **Hopkins speaks as itself (Ismael, 2026-10-27):** never "the platform doesn't let me" or "the

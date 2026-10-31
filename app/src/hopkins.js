@@ -4,7 +4,7 @@
 
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
-import { sendLead, readCrm, crmPublic } from "./crm.js";
+import { sendLead, readCrm, crmPublic, fubPeople, peopleSummary } from "./crm.js";
 import { parseListingText, parseCurrency, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES, factsLine } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
@@ -21,7 +21,7 @@ const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].inclu
 import { canMake, isPaid, planOf, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
-import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStatus, adSetEnd, updateAdSet, MetaError } from "./meta.js";
+import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStatus, adSetEnd, updateAdSet, MetaError, accountInsights, insightsSummary } from "./meta.js";
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency", "deal"];
 export const DEFAULT_BUDGET = 200;
@@ -110,11 +110,32 @@ export function looksLikeListing(text, photoIds = []) {
 function crmLine(ws) {
   const c = crmPublic(ws);
   const on = [c.fub && "Follow Up Boss", c.hook && `a webhook (${c.hook})`].filter(Boolean);
-  return on.length ? `CRM: each new Lead goes straight to ${on.join(" and ")} as it comes in.` : "CRM: not connected. New Leads can go straight to Follow Up Boss (with their API key) or to any other CRM through a webhook URL (Zapier or Make), set up in Settings, CRM.";
+  return on.length ? `CRM: each new lead from Hopkins goes straight to ${on.join(" and ")} as it comes in.${c.fub ? " Their Follow Up Boss contacts are below, read with the same key." : " A webhook can't be read back, so their CRM's own contacts aren't visible."}` : "CRM: not connected. With Follow Up Boss connected (their API key, Settings, CRM), Hopkins reads their recent contacts and sends new leads there; any other CRM gets new leads through a webhook (Zapier or Make) but can't be read.";
+}
+
+// What's outside Hopkins' own records: the agent's Follow Up Boss contacts and their whole Meta ad
+// account, read in parallel, briefly, and kept ten minutes. A source that doesn't answer says so.
+const outsideCache = new Map();
+let outsideReaders = { people: fubPeople, insights: accountInsights };
+export const forgetOutside = (wsId) => outsideCache.delete(wsId);
+export function setOutsideForTests(r) { outsideReaders = { ...outsideReaders, ...r }; outsideCache.clear(); }
+async function outsideData(ws) {
+  const hit = outsideCache.get(ws.id);
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.text;
+  const soon = (p) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("slow")), 8000))]);
+  const conn = metaReady() || outsideReaders.insights !== accountInsights ? await metaConnection(ws.id) : null;
+  const [crm, meta] = await Promise.all([
+    crmPublic(ws).fub ? soon(outsideReaders.people(ws)).then(peopleSummary).catch(() => "Their Follow Up Boss couldn't be read just now.") : null,
+    conn?.ad_account_id ? soon(outsideReaders.insights(unseal(conn.token), conn.ad_account_id)).then(insightsSummary).catch(() => "Their Meta ad account couldn't be read just now.") : null,
+  ]);
+  const text = [crm, meta].filter(Boolean).join("\n");
+  outsideCache.set(ws.id, { at: Date.now(), text });
+  return text;
 }
 
 export async function accountSummary(ws, tz = "UTC") {
-  return `${await numbersSummary(ws, tz)}\n${crmLine(ws)}\n${await attentionLine(ws)}`;
+  const [numbers, attention, outside] = await Promise.all([numbersSummary(ws, tz), attentionLine(ws), outsideData(ws).catch(() => "")]);
+  return [numbers, crmLine(ws), outside, attention].filter(Boolean).join("\n");
 }
 
 // What Hopkins has flagged on Today, so "what should I do this week?" gets a real answer.

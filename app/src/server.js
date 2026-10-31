@@ -12,7 +12,7 @@ import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
   metaConnection, syncMeta,
-  runState, pauseOrResume, stopAllRuns,
+  runState, pauseOrResume, stopAllRuns, forgetOutside,
 } from "./hopkins.js";
 import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaRevoke, readSignedRequest, checkState, seal, unseal, MetaError } from "./meta.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./plans.js";
@@ -339,6 +339,7 @@ app.patch("/api/meta", async (request, reply) => {
   if (pageId !== undefined && !page) return reply.code(400).send({ error: "Page not found." });
   if (account) await run(`UPDATE meta_connections SET ad_account_id = ?, ad_account_name = ?, currency = ?, updated_at = ? WHERE workspace_id = ?`, [account.id, account.name, account.currency, nowIso(), request.ws.id]);
   if (page) await run(`UPDATE meta_connections SET page_id = ?, page_name = ?, updated_at = ? WHERE workspace_id = ?`, [page.id, page.name, nowIso(), request.ws.id]);
+  forgetOutside(request.ws.id);
   return metaSummary(request.ws);
 });
 app.delete("/api/meta", async (request) => {
@@ -476,6 +477,7 @@ app.post("/api/alerts/test", async (request, reply) => {
 // Follow Up Boss with the agent's API key (checked with Follow Up Boss before it's kept), and/or
 // a webhook URL for any other CRM. An empty value turns that one off.
 app.put("/api/crm", async (request, reply) => {
+  forgetOutside(request.ws.id);
   if (tooMany(`crm:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const b = request.body || {};
   const c = readCrm(request.ws);

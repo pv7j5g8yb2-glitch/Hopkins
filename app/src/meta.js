@@ -216,3 +216,22 @@ export async function campaignState(token, campaignId, metaAdIds) {
   }
   return { spend: Math.round(spend * 100) / 100, ads };
 }
+
+// The agent's whole ad account over the last 30 days, every campaign (not only Hopkins' own), so
+// the chat knows how their advertising is going. Read only.
+export async function accountInsights(token, adAccountId) {
+  const act = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
+  const r = await graph("GET", `${act}/insights`, { level: "campaign", date_preset: "last_30d", fields: "campaign_name,spend,reach,impressions,clicks,actions", limit: 25 }, token);
+  const leadsOf = (actions = []) => actions.filter((a) => /lead/i.test(a.action_type)).reduce((m, a) => Math.max(m, Number(a.value) || 0), 0);
+  return (r.data || []).map((x) => ({ name: x.campaign_name, spend: Math.round((Number(x.spend) || 0) * 100) / 100, reach: Number(x.reach) || 0, clicks: Number(x.clicks) || 0, leads: leadsOf(x.actions) }));
+}
+export function insightsSummary(rows) {
+  if (!rows) return null;
+  if (!rows.length) return "Their Meta ad account: no spend in the last 30 days.";
+  const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
+  const spend = sum("spend"), leads = sum("leads");
+  return [
+    `Their Meta ad account, last 30 days, every campaign (read only): $${spend.toLocaleString("en-US", { maximumFractionDigits: 2 })} spent, ${sum("reach").toLocaleString("en-US")} people reached, ${sum("clicks").toLocaleString("en-US")} clicks, ${leads} leads counted by Meta${leads ? `, $${(spend / leads).toFixed(2)} a lead` : ""}.`,
+    ...rows.sort((a, b) => b.spend - a.spend).slice(0, 10).map((r) => `- ${r.name}: $${r.spend}, ${r.reach.toLocaleString("en-US")} reached, ${r.clicks} clicks, ${r.leads} leads${r.leads ? `, $${(r.spend / r.leads).toFixed(2)} a lead` : ""}.`),
+  ].join("\n");
+}

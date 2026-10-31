@@ -131,3 +131,59 @@ export async function testHook(url) {
   const listing = { id: "test", address: "12 Elm St", city: "Austin", price: 585000, currency: "USD", deal: "sale", beds: 3, baths: 2, sqft: 1840 };
   await post(url, { "Content-Type": "application/json", "User-Agent": "Hopkins" }, hookBody({ lead, listing, ad: { version: 1, name: "The porch" }, pageUrl: null }));
 }
+
+// ---------- reading the CRM (Ismael, 2026-10-31: Hopkins should know how the agent is getting on) ----------
+//
+// With the same Follow Up Boss key, Hopkins reads the agent's most recent contacts so the chat can
+// answer "what do my recent leads have in common?" from every source, not only its own ads. Read
+// only, never written back, kept in memory for ten minutes. A webhook can't be read.
+const cache = new Map();
+export async function fubPeople(ws, { limit = 100 } = {}) {
+  const c = readCrm(ws);
+  if (!c.fub) return null;
+  const hit = cache.get(ws.id);
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.people;
+  const res = await fetchImpl(`${FUB}/people?sort=-created&limit=${limit}`, { headers: fubHeaders(unseal(c.fub)), signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error(`Follow Up Boss answered ${res.status}`);
+  const data = await res.json();
+  const people = (data.people || []).map((p) => ({
+    name: p.name || [p.firstName, p.lastName].filter(Boolean).join(" ") || "No name",
+    created: p.created || null,
+    stage: p.stage || null,
+    source: p.source || null,
+    price: Number(p.price) || null,
+    tags: Array.isArray(p.tags) ? p.tags.slice(0, 6) : [],
+    lastActivity: p.lastActivity || p.updated || null,
+    hasEmail: Boolean(p.emails?.length),
+    hasPhone: Boolean(p.phones?.length),
+  }));
+  cache.set(ws.id, { at: Date.now(), people });
+  return people;
+}
+export const forgetCrmCache = (wsId) => cache.delete(wsId);
+
+// What the chat model gets: the counts that matter, then the latest contacts one per line.
+export function peopleSummary(people, now = new Date()) {
+  if (!people) return null;
+  if (!people.length) return "Their Follow Up Boss has no contacts yet.";
+  const days = (iso) => (iso ? (now - new Date(iso)) / 86400000 : Infinity);
+  const top = (key) => {
+    const m = new Map();
+    for (const p of people) for (const v of [].concat(p[key] || [])) m.set(v, (m.get(v) || 0) + 1);
+    return [...m].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `${k} ${n}`).join(", ") || "none";
+  };
+  const prices = people.map((p) => p.price).filter(Boolean).sort((a, b) => a - b);
+  const money = (n) => `$${Math.round(n).toLocaleString("en-US")}`;
+  const lines = [
+    `From their Follow Up Boss (read only, the ${people.length} most recent contacts):`,
+    `New in the last 7 days: ${people.filter((p) => days(p.created) <= 7).length}; last 30 days: ${people.filter((p) => days(p.created) <= 30).length}.`,
+    `By source: ${top("source")}.`,
+    `By stage: ${top("stage")}.`,
+    `Tags: ${top("tags")}.`,
+    prices.length ? `Price they're looking at (${prices.length} with one): ${money(prices[0])} to ${money(prices[prices.length - 1])}, middle ${money(prices[Math.floor(prices.length / 2)])}.` : "",
+    `No activity for over 14 days: ${people.filter((p) => days(p.lastActivity) > 14).length}. With a phone: ${people.filter((p) => p.hasPhone).length}; with an email: ${people.filter((p) => p.hasEmail).length}.`,
+    "Latest contacts:",
+    ...people.slice(0, 25).map((p) => `- ${p.name}: added ${p.created ? p.created.slice(0, 10) : "?"}${p.source ? `, from ${p.source}` : ""}${p.stage ? `, stage ${p.stage}` : ""}${p.price ? `, ${money(p.price)}` : ""}${p.tags.length ? `, tags ${p.tags.join("/")}` : ""}${p.lastActivity ? `, last activity ${p.lastActivity.slice(0, 10)}` : ""}.`),
+  ];
+  return lines.filter(Boolean).join("\n");
+}
