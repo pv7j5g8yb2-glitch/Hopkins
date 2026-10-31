@@ -913,3 +913,20 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   sole trader is taxed on profit whether or not the money is taken out; real business costs
   (AI, hosting, domain, Hopkins' own Meta ads) come off the profit first; spending only to avoid
   tax costs more than it saves. An accountant once revenue starts.
+* **CRM, MLS links, running ad changes, stages (2026-10-31, Ismael asked):**
+  - CRM: `app/src/crm.js`. Follow Up Boss through its Events API with the agent's own API key
+    (checked against /v1/identity, sealed like the Meta token) and a webhook URL for any other
+    CRM (one JSON shape, `lead.created`). Settings has a CRM group; the chat knows where Leads go.
+    No app review for either. Optional: register Hopkins as a Follow Up Boss system (free) and set
+    `FUB_SYSTEM_KEY` on Render. Tested with fakes only; no real Follow Up Boss account yet.
+  - Links: `readPage` in `app/src/listing.js` reads JSON-LD, Zillow's data, galleries on MLS photo
+    servers (Spark/Flexmls, Matrix GetMedia, Paragon) at the largest size, and the page's words when
+    there's no structured data. Up to 25 photos. OneHome (drawn in the browser) also gets Gemini's
+    read. Redfin answers bots with an empty page and Realtor.com and Homes.com refuse them: left
+    alone on purpose. Tested on sample pages built from how those MLS pages are laid out, not a real
+    share link yet: ask Ismael for one.
+  - Running ads: "spend $500 instead", "double it", "add $100", "run it another week" change each
+    ad set on Meta (all or nothing, reverted if one fails), then the launch. Live check passed on
+    the free model (Meta not connected on the test account, so the Meta part is tested with fakes).
+  - Moments: coming_soon, under_contract, back, each with its own ads and line.
+  - Still open from the list: organic posts (the biggest), changing the button, a PDF flyer.

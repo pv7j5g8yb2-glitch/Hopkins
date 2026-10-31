@@ -20,6 +20,7 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 - ✅ Type or paste the details ("3 bed 2 bath, $649,000, big yard")
 - ✅ Send photos, any size, iPhone HEIC included
 - ✅ Paste a Zillow link
+- ✅ An MLS share link (Flexmls, Matrix, Paragon) or an agent's site: up to 25 photos at full size, the remarks and the facts (built 2026-10-31 against sample pages; check with a real one)
 - ⚠️ A link the site blocks (Hopkins asks for photos and details instead)
 - ✅ Rentals ("$2,400/mo"), and other currencies (€, £, AED)
 - ⚠️ Land, commercial, new builds, multi unit (written as a normal listing, untested)
@@ -57,8 +58,9 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 - ✅ "Run it", pick the budget and days, approve (Meta testers until App Review)
 - ✅ Run only some of the ads
 - ✅ "Stop the ad", "pause", "turn them back on", also in the listing's ••• menu
-- ⚠️ "Spend $500 instead" on ads already running (makes a new plan, not a change to the running one)
-- ❌ Extend a run, start on a set date, only Instagram, change the radius beyond 15 miles
+- ✅ "Spend $500 instead", "double it", "add $100" on ads already running (changes them on Meta, all or nothing)
+- ✅ "Run it another week" (same spend a day, for longer)
+- ❌ Start on a set date, only Instagram, change the radius beyond 15 miles
 - ❌ Keep the winning ad and stop the losers automatically (Autopilot)
 - ✅ "Target first time buyers / people over 50" gets a plain no (Housing rules forbid it)
 - ❌ Retargeting, lead form ads, Google, TikTok
@@ -72,11 +74,12 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 ## Leads
 - ✅ Every Lead with the ad it came from, this week filter, statuses
 - ✅ "Write a reply to this buyer" (as text to copy)
-- ❌ Text or email the Lead from Hopkins, sync to a CRM (Follow Up Boss and others)
+- ✅ Every new Lead into their CRM: Follow Up Boss with their API key, any other CRM through a webhook (Zapier, Make), in Settings, CRM
+- ❌ Text or email the Lead from Hopkins
 
 ## Moments
 - ✅ New price, open house, sold, rented (new ads for each; sold or rented stops running ads)
-- ⚠️ Coming soon, under contract, back on the market (not their own moments yet)
+- ✅ Coming soon, under contract or pending, back on the market (their own ads; under contract says when ads are still running)
 
 ## Organic posts (next to build)
 - ❌ "Make a post about my city", "a post about me", "market update", "just sold story"
@@ -109,7 +112,8 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 
 ## Connections
 - ✅ Meta (Facebook and Instagram ads)
-- ❌ Instagram posting, Google Ads, TikTok, CRMs, email marketing, Zapier, their website, Claude or ChatGPT
+- ✅ Follow Up Boss, and any CRM through a webhook (Zapier, Make)
+- ❌ Instagram posting, Google Ads, TikTok, email marketing, their website, Claude or ChatGPT
 
 ## When something goes wrong
 - ✅ "Undo", "put it back", "I didn't ask for that", edit or stop a message

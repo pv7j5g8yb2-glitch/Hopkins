@@ -268,6 +268,20 @@ The product's code is in `app/` (its README says what works and how to run it).
   "under" another goes in the second line (`subline`, same font and colours); "undo" or "put it
   back" really restores the ads and says what came back; name, brokerage, phone, licence and
   Instagram change from the chat; wording the agent asks for is kept, with one fair housing note.
+* **CRM (Ismael, 2026-10-31):** every new Lead goes straight into the agent's CRM as it comes in:
+  Follow Up Boss with their own API key (no app review, checked with Follow Up Boss, kept
+  encrypted), any other CRM through a webhook URL (Zapier, Make). Set up in Settings, CRM, never
+  by pasting a key in the chat. A failed send never loses the Lead; Settings says it didn't arrive.
+  kvCORE, Lofty and BoomTown need partnerships, so they go through the webhook for now.
+* **Listing links:** Hopkins reads every listing page that lets it in (Zillow, MLS share pages
+  from Flexmls, Matrix and Paragon, agent sites): up to 25 photos at the largest size, the remarks
+  and the facts. Pages drawn in the browser (OneHome) get Google's read too. Sites that block apps
+  (Redfin, Realtor.com, Homes.com, idealista) are left alone: never a browser disguise or any way
+  round their bot checks.
+* **Changing running ads (2026-10-31):** "spend $500 instead", "double it", "run it another week"
+  change the ads already out, never a new plan: Meta first, all or nothing, and "longer" keeps the
+  same spend a day. Coming soon, under contract and back on the market are moments with their own
+  ads.
 * **Report rows (Ismael, 2026-10-29):** a listing with ads running keeps its colour on Report even
   with no Leads yet; only one with nothing running and no Leads is greyed.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft
