@@ -30,7 +30,7 @@ export function crmPublic(ws) {
   const c = readCrm(ws);
   let host = null;
   try { host = c.hook ? new URL(c.hook).host : null; } catch {}
-  return { fub: Boolean(c.fub), fubName: c.fubName || null, hook: host, last: c.last || null };
+  return { fub: Boolean(c.fub), fubName: c.fubName || null, hook: host, last: c.last || null, skip: Boolean(c.skip) };
 }
 
 // A webhook only to a public https address, never the server's own network.

@@ -478,6 +478,7 @@ app.put("/api/crm", async (request, reply) => {
     else if (!hookOk(url) || url.length > 500) return reply.code(400).send({ error: "Enter a valid https webhook URL." });
     else c.hook = url;
   }
+  if (b.skip !== undefined) c.skip = Boolean(b.skip);
   delete c.last;
   await run(`UPDATE workspaces SET crm = ? WHERE id = ?`, [JSON.stringify(c), request.ws.id]);
   return crmPublic({ crm: JSON.stringify(c) });

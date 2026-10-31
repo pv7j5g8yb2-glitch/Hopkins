@@ -180,6 +180,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Checking a fix (lesson, 2026-10-24):** test against a slowed down server (the live one on Render
   is slow), not just localhost, and look at every screenshot for the exact thing that was reported.
   Two "fixed" bugs reached Ismael because local checks were instant and a sheet off screen was missed.
+  `npm test` also syntax checks `app/web/*.js`: a broken edit to app.js once gave a blank page
+  that every server test passed (2026-10-31).
   The server reads `app/web` files once at start, so restart it after editing them or the test
   runs the old code (2026-10-25). Stop a local server by its PID, never `pkill -f`, which also
   kills the shell running the command.
@@ -204,8 +206,10 @@ The product's code is in `app/` (its README says what works and how to run it).
   "This week ×" chip clears it); "Active listings" (listings whose ads are running now, not paused or over) opens Report on
   this week with its Active filter on, or All when there are none, never an empty board (Ismael,
   2026-10-31).
-* **First steps (Ismael, 2026-10-30):** a new account's Today shows four steps: your brand, Connect
-  Meta, your first listing, your approval. Meta comes straight after the brand, never last.
+* **First steps (Ismael, 2026-10-30, 2026-10-31):** a new account's Today shows five steps: your
+  brand, Connect Meta, Connect your CRM (skippable), your first listing, your approval. Meta comes
+  straight after the brand, the CRM straight after Meta. Keep it light: Settings has one CRM row
+  that opens the same page, not the fields.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same
   purpose. A rental shows its rent per month ("$2,400/mo"), its ads are written for renters ("For
   rent", book a showing or apply), its page offers Apply, and it's rented, not sold.
@@ -270,7 +274,7 @@ The product's code is in `app/` (its README says what works and how to run it).
   Instagram change from the chat; wording the agent asks for is kept, with one fair housing note.
 * **CRM (Ismael, 2026-10-31):** every new Lead goes straight into the agent's CRM as it comes in:
   Follow Up Boss with their own API key (no app review, checked with Follow Up Boss, kept
-  encrypted), any other CRM through a webhook URL (Zapier, Make). Set up in Settings, CRM, never
+  encrypted), any other CRM through a webhook URL (Zapier, Make). Set up in the first steps or Settings, never
   by pasting a key in the chat. A failed send never loses the Lead; Settings says it didn't arrive.
   kvCORE, Lofty and BoomTown need partnerships, so they go through the webhook for now.
 * **Listing links:** Hopkins reads every listing page that lets it in (Zillow, MLS share pages

@@ -25,14 +25,15 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
 test("Follow Up Boss and a webhook get every new Lead, with the property and the ad it came from", async () => {
   const c = client(app);
   await c("POST", "/api/signup", { email: "crm@agent.test", password: "password123", invite: "EARLY1", name: "Sam Ellery" });
-  assert.deepEqual((await c("GET", "/api/me")).json.crm, { fub: false, fubName: null, hook: null, last: null });
+  assert.deepEqual((await c("GET", "/api/me")).json.crm, { fub: false, fubName: null, hook: null, last: null, skip: false });
+  assert.equal((await c("PUT", "/api/crm", { skip: true })).json.skip, true, "skipped from the setup");
 
   // A wrong key is refused, a right one is checked with Follow Up Boss and never shown again.
   const bad = await c("PUT", "/api/crm", { fub: "fub_wrong" });
   assert.equal(bad.status, 400);
   assert.equal(bad.json.error, "Follow Up Boss didn't accept that API key.");
   const on = await c("PUT", "/api/crm", { fub: "fub_good" });
-  assert.deepEqual(on.json, { fub: true, fubName: "Ellery Realty", hook: null, last: null });
+  assert.deepEqual(on.json, { fub: true, fubName: "Ellery Realty", hook: null, last: null, skip: true });
   const ws = await get(`SELECT crm FROM workspaces WHERE name IS NOT NULL AND crm IS NOT NULL`);
   assert.doesNotMatch(ws.crm, /fub_good/, "the key is kept encrypted");
 
@@ -78,7 +79,7 @@ test("Follow Up Boss and a webhook get every new Lead, with the property and the
   hookDown = false;
 
   // Turning each off.
-  assert.deepEqual((await c("PUT", "/api/crm", { fub: "", hook: "" })).json, { fub: false, fubName: null, hook: null, last: null });
+  assert.deepEqual((await c("PUT", "/api/crm", { fub: "", hook: "" })).json, { fub: false, fubName: null, hook: null, last: null, skip: true });
   calls.length = 0;
   await client(app)("POST", `/api/l/${slug}/lead`, { name: "Kai Moss", phone: "512 555 0111" });
   await settle();

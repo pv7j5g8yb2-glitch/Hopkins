@@ -533,6 +533,7 @@
       }
       else if (view === "brand") await viewBrand();
       else if (view === "admin") await viewAdmin();
+      else if (view === "crm") viewCrm(id === "settings" ? "#/settings" : "#/today");
       else if (view === "settings") {
         viewSettings();
         if (id === "meta-failed") { toast("Couldn't connect to Meta. Please try again."); history.replaceState(null, "", "#/settings"); }
@@ -597,10 +598,16 @@
         : !m.available ? `<button class="${metaNext ? "btn" : "link"}" data-act="metaSoon">Connect</button>`
         : m.connected ? `<a class="${metaNext ? "btn" : "link"}" href="#/settings">Finish</a>`
         : `<a class="${metaNext ? "btn" : "link"}" href="/api/meta/connect">Connect</a>`;
-      const listingNext = brandDone && metaDone;
+      // The CRM straight after Meta, so new Leads land where the agent already works. Skippable:
+      // not every agent has one.
+      const c = S.me.crm || {};
+      const crmDone = Boolean(c.fub || c.hook), crmSkipped = Boolean(c.skip) && !crmDone;
+      const crmNext = brandDone && metaDone && !crmDone && !crmSkipped;
+      const listingNext = brandDone && metaDone && !crmNext;
       body = `<ol class="steps">
         <li class="${brandDone ? "done" : "next"}"><div class="tx"><b>Your brand</b><p>Colours, logo and font.</p></div><a class="link" href="#/brand">${brandDone ? "Edit" : "Start"}</a></li>
         <li class="${metaDone ? "done" : metaNext ? "next" : ""}"><div class="tx"><b>Connect Meta</b><p>Facebook and Instagram ads.</p></div>${brandDone ? metaBtn : ""}</li>
+        <li class="${crmDone ? "done" : crmNext ? "next" : ""}"><div class="tx"><b>Connect your CRM</b><p>${crmSkipped ? "Skipped." : "New Leads go straight in."}</p></div>${brandDone ? `<a class="${crmNext ? "btn" : "link"}" href="#/crm">${crmDone ? "Edit" : "Connect"}</a>` : ""}</li>
         <li class="${listingNext ? "next" : ""}"><div class="tx"><b>Your first listing</b><p>Photos and a description.</p></div>${brandDone ? `<a class="${listingNext ? "btn" : "link"}" href="#/new">Start</a>` : ""}</li>
         <li><div class="tx"><b>Your approval</b><p>Nothing runs without it.</p></div></li></ol>`;
     } else {
@@ -613,7 +620,7 @@
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
     // The count lives in the row below, so the line under the greeting is just the day.
-    const lede = !S.listings.length ? "Four steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+    const lede = !S.listings.length ? "Five steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
     const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, ${esc(first)}` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
     if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
   }
@@ -1818,6 +1825,26 @@
     return `<div class="group" id="crm"><h4>CRM</h4><div style="display:flex;flex-direction:column;gap:18px">${fub}${hook}</div>${failed}</div>`;
   }
 
+  // In Settings, one row: where Leads go, and the way in to change it.
+  function crmRow() {
+    const c = S.me.crm || {};
+    const on = [c.fub && "Follow Up Boss", c.hook && "Webhook"].filter(Boolean).join(" and ");
+    const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:6px">The last Lead didn't arrive.</p>` : "";
+    return `<div class="group"><h4>CRM</h4><div class="crm-row"><p>${on ? esc(on) : "Not connected"}</p><a class="link" href="#/crm/settings">${on ? "Edit" : "Connect"}</a></div>${failed}</div>`;
+  }
+
+  // The CRM on its own, from Today's setup: the same two fields, and Skip.
+  function viewCrm(back = "#/today") {
+    S.crmBack = back;
+    const fld = (id, label, value, type = "text", ph = "") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
+    const c = S.me.crm || {};
+    main.innerHTML = `${mtop("CRM", "", { back })}<div class="page"><div class="wrap" style="max-width:600px">
+      <div class="head"><h1>Connect your CRM</h1></div>${crmGroup(fld).replace('<h4>CRM</h4>', "")}
+      ${c.fub || c.hook ? `<div style="margin-top:20px"><a class="btn" href="${back}">Done</a></div>` : back === "#/today" ? `<div style="margin-top:20px"><button class="link" data-act="crmSkip">Skip</button></div>` : ""}
+    </div></div>`;
+  }
+  const redrawCrm = () => viewCrm(S.crmBack);
+
   function viewSettings() {
     const u = S.me.user, b = S.me.workspace.brand, use = S.me.usage;
     const fld = (id, label, value, type = "text", ph = "", auto = "off") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="${auto}"></div>`;
@@ -1844,7 +1871,7 @@
            <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
         : `<div><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       ${metaGroup()}
-      ${crmGroup(fld)}
+      ${crmRow()}
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
            ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="sec-btn" data-act="billing">Manage</button></div>` : ""}`
@@ -1893,10 +1920,13 @@
       const v = val(which === "fub" ? "#crmFub" : "#crmHook").trim();
       if (!v) return toast(which === "fub" ? "Enter your API key" : "Enter a webhook URL");
       S.me.crm = await api("/api/crm", { method: "PUT", body: { [which]: v } });
-      viewSettings(); buzz(6); toast(which === "fub" ? "Follow Up Boss connected" : "Saved");
+      redrawCrm(); buzz(6); toast(which === "fub" ? "Follow Up Boss connected" : "Saved");
     } else if (act === "crmOff") {
       S.me.crm = await api("/api/crm", { method: "PUT", body: { [t.dataset.which]: "" } });
-      viewSettings(); toast(t.dataset.which === "fub" ? "Disconnected" : "Removed");
+      redrawCrm(); toast(t.dataset.which === "fub" ? "Disconnected" : "Removed");
+    } else if (act === "crmSkip") {
+      S.me.crm = await api("/api/crm", { method: "PUT", body: { skip: true } });
+      location.hash = "#/today";
     } else if (act === "crmTest") {
       await api("/api/crm/test", { body: {} });
       toast("Test sent");
@@ -2170,7 +2200,7 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip"].includes(act)) await settingsAction(act, t);
       else if (act === "pauseRun" || act === "resumeRun") {
         const next = await api(`/api/listings/${l.id}/${act === "pauseRun" ? "pause" : "resume"}`, { body: {} });
         drawListing(next, true);

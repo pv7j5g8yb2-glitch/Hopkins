@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test test/*.test.js"
+    "test": "for f in web/*.js; do node --check $f || exit 1; done && node --test test/*.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",
