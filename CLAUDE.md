@@ -311,6 +311,19 @@ The product's code is in `app/` (its README says what works and how to run it).
   change the ads already out, never a new plan: Meta first, all or nothing, and "longer" keeps the
   same spend a day. Coming soon, under contract and back on the market are moments with their own
   ads.
+* **Needs attention (2026-10-31):** Today shows what Hopkins noticed, from its own records
+  (`app/src/attention.js`, checked on every Today load and every 30 minutes, each new item sent
+  to the phone once): ads made and nothing run for 2 days, a Lead still New after 24 hours, a run
+  with $50 and a quarter of its budget spent and no Leads after 3 days, one ad with 3 Leads while
+  another has none after 4 days and $20, a run with Leads ending within 2 days. Each has one button
+  that does exactly what its label says ("Pause Ad 2, move $26 to Ad 1", "Run another week
+  (+$140)") and Dismiss, which is final. Money moves go to Meta first, all or nothing.
+* **Instant reply to Leads (2026-10-31):** a Lead who leaves an email gets an email from the agent
+  straight away ("via Hopkins", replies go to the agent), only saying the agent will be in touch.
+  The chat says so only when it really went out. Settings has the switch. Needs Resend set up.
+* **Setup from the agent's website (2026-10-31):** the Brand page's "Your website" fills in the
+  business name, logo, colours, phone, email, Instagram and city from what the site says, for the
+  agent to check before saving.
 * **Report rows (Ismael, 2026-10-29):** a listing with ads running keeps its colour on Report even
   with no Leads yet; only one with nothing running and no Leads is greyed.
 * **Stop (Ismael, 2026-10-28):** while Hopkins works, Send turns into Stop (a square with soft

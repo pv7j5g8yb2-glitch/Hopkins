@@ -6,13 +6,14 @@
 export const mailReady = () => Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM);
 
 // True when Resend took the email. Never throws: a failed email is logged and the caller decides.
-export async function sendMail({ to, subject, text, html }) {
+export async function sendMail({ to, subject, text, html, replyTo, fromName }) {
   if (!mailReady()) return false;
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
-      body: JSON.stringify({ from: process.env.MAIL_FROM, to: [to], subject, text, html }),
+      // Sent for an agent: their name on it, and replies go straight to them.
+      body: JSON.stringify({ from: fromName ? `${fromName.replace(/[<>"]/g, "")} via Hopkins <${(process.env.MAIL_FROM.match(/<([^>]+)>/) || [0, process.env.MAIL_FROM])[1]}>` : process.env.MAIL_FROM, to: [to], subject, text, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) {

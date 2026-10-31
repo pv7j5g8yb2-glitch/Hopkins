@@ -196,7 +196,9 @@ export async function updateAdSet(token, adsetId, fields) {
   return graph("POST", adsetId, fields, token);
 }
 
-// What Meta says about a running campaign: what it has spent, and where each ad stands.
+// What Meta says about a running campaign: what it has spent, and for each ad where it stands and
+// its own numbers (spend, people reached, impressions, link clicks), so Hopkins can compare ads on
+// real numbers.
 export async function campaignState(token, campaignId, metaAdIds) {
   const insights = await graph("GET", `${campaignId}/insights`, { fields: "spend", date_preset: "maximum" }, token);
   const spend = (insights.data || []).reduce((s, r) => s + (Number(r.spend) || 0), 0);
@@ -204,7 +206,13 @@ export async function campaignState(token, campaignId, metaAdIds) {
   for (const id of metaAdIds) {
     const a = await graph("GET", id, { fields: "effective_status,ad_review_feedback" }, token);
     const why = a.ad_review_feedback?.global ? Object.values(a.ad_review_feedback.global).join(" ") : "";
-    ads.push({ id, status: a.effective_status || null, why });
+    let n = {};
+    try {
+      const r = await graph("GET", `${id}/insights`, { fields: "spend,impressions,reach,clicks", date_preset: "maximum" }, token);
+      const row = (r.data || [])[0] || {};
+      n = { spend: Math.round((Number(row.spend) || 0) * 100) / 100, impressions: Number(row.impressions) || 0, reach: Number(row.reach) || 0, clicks: Number(row.clicks) || 0 };
+    } catch {}
+    ads.push({ id, status: a.effective_status || null, why, ...n });
   }
   return { spend: Math.round(spend * 100) / 100, ads };
 }

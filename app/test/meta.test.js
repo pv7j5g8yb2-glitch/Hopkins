@@ -261,3 +261,74 @@ test("Meta dropping the login in the background is said once in the chat, and Se
   state.tokenDead = false;
 });
 
+
+test("Needs attention on Meta: no Leads after real spend, moving budget to the ad that works, and a working run about to end", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "attn@ellery.test", password: "password123", invite: "EARLY1", name: "Ivy Shaw" });
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [ws]);
+  await run(`INSERT INTO meta_connections (workspace_id, fb_user_id, fb_name, token, ad_account_id, page_id, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)`,
+    [ws, "fb-6", "Ivy Shaw", meta.seal("token-6"), "act_9", "page-9", new Date().toISOString(), new Date().toISOString()]);
+  const launchOn = async (text) => {
+    const l = await c("POST", "/api/listings", { text });
+    const id = l.json.listing.id;
+    const plan = await c("POST", `/api/listings/${id}/run`, { versions: [1, 2, 3], budget: 200, days: 10 });
+    for (const ad of plan.json.ads) await c("POST", `/api/ads/${ad.id}/render`, { format: "feed", data: PNG });
+    await c("POST", `/api/listings/${id}/run`, { confirm: plan.json.messages.at(-1).id });
+    await waitFor(c, id, /Sent to Meta/);
+    return { id, slug: l.json.listing.slug, ads: plan.json.ads };
+  };
+  const ago = (d) => new Date(Date.now() - d * 86400000).toISOString();
+
+  // A: three days, $60 spent, nothing in: flagged, with a pause button. At $30 it isn't.
+  const a = await launchOn("11 Fir St, Austin, TX. 2 bed 1 bath, $380,000");
+  await run(`UPDATE launches SET created_at = ?, meta_spend = 30 WHERE listing_id = ?`, [ago(3.2), a.id]);
+  let att = (await c("GET", "/api/inbox")).json.attention;
+  assert.ok(!att.some((x) => x.kind === "noleads"), "not on $30");
+  await run(`UPDATE launches SET meta_spend = 60 WHERE listing_id = ?`, [a.id]);
+  att = (await c("GET", "/api/inbox")).json.attention;
+  const nl = att.find((x) => x.kind === "noleads");
+  assert.equal(nl.title, "11 Fir St: $60 spent, no Leads yet");
+  assert.equal(nl.action.label, "Pause the ads");
+
+  // B: Ad 1 has 3 Leads, Ads 2 and 3 none, $40 spent each, 9.5 days in.
+  const b = await launchOn("15 Elm St, Austin, TX. 4 bed 3 bath, $720,000");
+  const v1 = b.ads.find((x) => x.version === 1).id, v2 = b.ads.find((x) => x.version === 2).id;
+  await run(`UPDATE launches SET created_at = ?, meta_spend = 120 WHERE listing_id = ?`, [ago(9.5), b.id]);
+  await run(`UPDATE meta_ads SET spend = 40 WHERE listing_id = ?`, [b.id]);
+  for (const name of ["Ann Lee", "Bo Ray", "Cy Dee"]) await client(app)("POST", `/api/l/${b.slug}/lead`, { name, phone: "512 555 0101", v: v1 });
+  await run(`UPDATE leads SET created_at = ? WHERE listing_id = ?`, [ago(5), b.id]);
+  att = (await c("GET", "/api/inbox")).json.attention;
+  const shifts = att.filter((x) => x.kind === "shift");
+  assert.equal(shifts.length, 2);
+  const s2 = shifts.find((x) => x.action.lose === v2);
+  assert.equal(s2.title, "Ad 2 on 15 Elm St has no Leads, Ad 1 has 3");
+  assert.equal(s2.action.label, "Pause Ad 2, move $26 to Ad 1");
+  const ending = att.find((x) => x.kind === "ending");
+  assert.match(ending.title, /^15 Elm St's ads end /);
+  assert.equal(ending.action.label, "Run another week (+$140)");
+
+  // Its button: Ad 2's ad set paused, Ad 1's gets its own $66.66 plus the $26 left.
+  const sets = Object.fromEntries((await all(`SELECT ad_id, adset_id FROM meta_ads WHERE listing_id = ?`, [b.id])).map((r) => [r.ad_id, r.adset_id]));
+  calls.length = 0;
+  const done = await c("POST", `/api/attention/${s2.id}`, { choice: "act" });
+  assert.equal(done.status, 200);
+  const posts = calls.filter((x) => x.method === "POST" && x.path.startsWith("adset-"));
+  assert.deepEqual(posts.map((x) => [x.path, x.params.status || x.params.lifetime_budget]), [[sets[v2], "PAUSED"], [sets[v1], String(6666 + 2600)]]);
+  const said = (await c("GET", `/api/listings/${b.id}`)).json.messages.at(-1).body;
+  assert.equal(said, "Done. **Ad 2** is paused on Facebook and Instagram, and **Ad 1** has its $26 on top of its own budget. The total stays $200.");
+  assert.ok(!done.json.attention.some((x) => x.id === s2.id));
+
+  // Meta refusing: nothing moved, Ad 3's item stays open.
+  const s3 = done.json.attention.find((x) => x.kind === "shift");
+  state.adsetFails = sets[s3.action.win];
+  const bad = await c("POST", `/api/attention/${s3.id}`, { choice: "act" });
+  assert.equal(bad.status, 409);
+  assert.equal(bad.json.error, "Meta didn't accept the change. Nothing was moved.");
+  state.adsetFails = null;
+  assert.ok((await c("GET", "/api/inbox")).json.attention.some((x) => x.id === s3.id));
+
+  // The run about to end: another week at the same spend a day.
+  await c("POST", `/api/attention/${ending.id}`, { choice: "act" });
+  assert.equal((await get(`SELECT budget, days FROM launches WHERE listing_id = ?`, [b.id])).days, 17);
+});

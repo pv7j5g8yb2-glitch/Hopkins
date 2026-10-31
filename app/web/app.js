@@ -481,7 +481,7 @@
   }
 
   async function loadListings() { S.listings = (await api("/api/listings")).listings; numberNames(); }
-  async function loadInbox() { const r = await api("/api/inbox"); S.inbox = r.items; S.leadsWeek = r.leadsWeek; S.weekFrom = r.weekFrom; S.inboxLoaded = true; }
+  async function loadInbox() { const r = await api("/api/inbox"); S.inbox = r.items; S.leadsWeek = r.leadsWeek; S.weekFrom = r.weekFrom; S.attention = r.attention || []; S.inboxLoaded = true; }
 
   // The tab you tapped lights up straight away, before its screen has loaded.
   function markNav() {
@@ -616,6 +616,7 @@
           <a href="#/leads/week"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
           <a href="#/report/active"><b>${active.length}</b><span>Active ${active.length === 1 ? "listing" : "listings"}</span></a></nav>
 
+        ${attentionHtml()}
         <div class="sec">Recent</div>${S.listings.slice(0, 5).map(recentCard).join("")}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
     }
@@ -623,6 +624,16 @@
     const lede = !S.listings.length ? "Five steps to your first ads." : new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
     const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, ${esc(first)}` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
     if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
+  }
+
+  // What Hopkins noticed (src/attention.js): each item says what it is and has one button that does
+  // exactly what its label says, and Dismiss. Nothing changes until it's tapped.
+  function attentionHtml() {
+    const items = S.attention || [];
+    if (!items.length) return "";
+    return `<div class="sec">Needs attention</div><div class="attn">${items.map((a) => `<div class="attn-i">
+      <div class="tx"><b>${esc(a.title)}</b><p>${esc(a.body)}</p></div>
+      <div class="attn-a"><button class="btn" data-act="attAct" data-id="${esc(a.id)}">${esc(a.action?.label || "Open")}</button><button class="link" data-act="attDismiss" data-id="${esc(a.id)}">Dismiss</button></div></div>`).join("")}</div>`;
   }
 
   // ---------- Listings ----------
@@ -1719,6 +1730,7 @@
     main.innerHTML = `${first ? `<div class="mtop"><span class="logo"><img src="/static/mark.svg" alt="">Hopkins</span></div>` : mtop("Brand")}<div class="page"><div class="wrap">
       <div class="head"><h1>Brand</h1></div>
       <div class="brandgrid"><form class="form" id="brandForm">
+        <div class="group"><h4>Your website</h4><div class="site-row"><div class="fld"><input id="f_site" type="url" inputmode="url" placeholder="ellery-realty.com" autocomplete="url" aria-label="Your website"></div><button type="button" class="sec-btn" id="siteFill">Fill in</button></div></div>
         <div class="group"><h4>Details</h4><div class="grid2">${field("business", "Business name", "Ellery Realty")}${field("agent_name", "Your name", "Sam Ellery")}${field("city", "Main city", "Austin")}${field("instagram", "Instagram", "@elleryrealty")}</div></div>
         <div class="group"><h4>Branding</h4><div style="display:flex;flex-direction:column;gap:14px">
           <div><div class="colors"><label><input type="color" name="primary" value="${esc(b.primary || "#1F2A36")}">Main colour</label><label><input type="color" name="accent" value="${esc(b.accent || "#C8A96A")}">Accent</label></div>
@@ -1727,6 +1739,7 @@
         <div class="group"><h4>Font</h4><div class="fonts">${FONT_CHOICES.map(([v, l]) => { const f = Creative.FONTS[v]; return `<label class="fontc"><input type="radio" name="font" value="${v}" ${(b.font || "modern") === v ? "checked" : ""}><span style="font-family:'${f.family}';font-weight:${f.weight}">Aa</span><em>${l}</em></label>`; }).join("")}</div></div>
         <div class="group"><details class="more"><summary>More</summary><div class="inner">
           <div class="grid2">${field("phone", "Phone on Lead pages", "(512) 555 0100")}<div class="fld"><label for="f_country">Country</label><select id="f_country" name="country">${COUNTRIES.map((c) => `<option ${b.country === c ? "selected" : ""}>${c}</option>`).join("")}</select></div></div>
+          ${field("email", "Email for replies from Leads", "sam@ellery-realty.com")}
           ${field("license", "License line", "DRE #01234567")}
         </div></details></div>
         <div class="save"><button class="btn" type="submit">${first ? "Continue" : "Save"}</button><span class="err" id="brandErr"></span></div>
@@ -1745,6 +1758,23 @@
     };
     form.addEventListener("input", sample);
     sample();
+    // From their website: fills the form for them to check; nothing is saved until they save.
+    $("#siteFill").addEventListener("click", async () => {
+      const url = $("#f_site").value.trim();
+      if (!url) return toast("Enter your website");
+      const btn = $("#siteFill"); btn.disabled = true;
+      try {
+        const { fields } = await api("/api/brand/from-link", { body: { url } });
+        for (const [k, v] of Object.entries(fields)) {
+          if (k === "logo_id") { logoId = v; $("#logoPrev").style.backgroundImage = `url(${photoUrl(v)})`; continue; }
+          if (form[k] && v) form[k].value = v;
+        }
+        if (fields.business || fields.primary) $$(".more").forEach((d) => (d.open = Boolean(fields.phone || fields.email)));
+        sample();
+        toast("Filled in. Check and save.");
+      } catch (err) { toast(err.message); }
+      btn.disabled = false;
+    });
     $$("[data-pal]").forEach((btn) => btn.addEventListener("click", () => {
       const [p1, p2] = btn.dataset.pal.split(",");
       form.primary.value = p1;
@@ -1872,6 +1902,7 @@
         : `<div><button class="sec-btn" data-act="alertsOn">Turn on Lead alerts</button></div>`}</div>
       ${metaGroup()}
       ${crmRow()}
+      <div class="group"><h4>Instant reply to Leads</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
            ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="sec-btn" data-act="billing">Manage</button></div>` : ""}`
@@ -1924,6 +1955,10 @@
     } else if (act === "crmOff") {
       S.me.crm = await api("/api/crm", { method: "PUT", body: { [t.dataset.which]: "" } });
       redrawCrm(); toast(t.dataset.which === "fub" ? "Disconnected" : "Removed");
+    } else if (act === "replyToggle") {
+      const next = S.me.workspace.brand.instant_reply === "off" ? "on" : "off";
+      await api("/api/brand", { method: "PUT", body: { instant_reply: next } });
+      await loadMe(); viewSettings(); toast(next === "on" ? "Instant reply on" : "Instant reply off");
     } else if (act === "crmSkip") {
       S.me.crm = await api("/api/crm", { method: "PUT", body: { skip: true } });
       location.hash = "#/today";
@@ -2200,7 +2235,15 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle"].includes(act)) await settingsAction(act, t);
+      else if (act === "attAct" || act === "attDismiss") {
+        t.disabled = true;
+        const r = await api(`/api/attention/${t.dataset.id}`, { body: { choice: act === "attDismiss" ? "dismiss" : "act" } });
+        S.attention = r.attention || [];
+        if (r.notice) toast(r.notice);
+        await refreshSide();
+        if (r.go) location.hash = r.go; else viewToday();
+      }
       else if (act === "pauseRun" || act === "resumeRun") {
         const next = await api(`/api/listings/${l.id}/${act === "pauseRun" ? "pause" : "resume"}`, { body: {} });
         drawListing(next, true);

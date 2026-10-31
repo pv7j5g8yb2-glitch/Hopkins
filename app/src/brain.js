@@ -602,8 +602,8 @@ ${ads.map((a) => `${adLine(a, photos)}:
   Label: ${a.kicker}
   Headline: ${a.headline}
   Text: ${a.primary_text}${leads ? `
-  Leads so far: ${leads[a.id]?.n || 0}${leads[a.id]?.showings ? ` (${leads[a.id].showings} asked for a showing)` : ""}` : ""}`).join("\n")}${leads ? `
-Leads are the only result Hopkins tracks. When asked what's working, answer with these numbers; never mention engagement, clicks, reach or anything not listed here. No Leads yet means it's too early to say. When asked about one ad, start from its Leads, call it by its name, and never label ads by type ("a facts ad", "a life angle").` : ""}
+  Leads so far: ${leads[a.id]?.n || 0}${leads[a.id]?.showings ? ` (${leads[a.id].showings} asked for a showing)` : ""}${leads[a.id]?.spend !== undefined ? `\n  On Meta so far: $${leads[a.id].spend} spent, ${leads[a.id].reach} people reached, ${leads[a.id].clicks} link clicks` : ""}` : ""}`).join("\n")}${leads ? `
+Leads are the result that matters; for ads that ran on Meta, their spend, people reached and link clicks are listed too. When asked what's working, answer with these numbers only; never mention engagement, likes or anything not listed here, and never give a number an ad doesn't have. No Leads yet means it's too early to say. When asked about one ad, start from its Leads, call it by its name, and never label ads by type ("a facts ad", "a life angle").` : ""}
 The ad being worked on: Ad ${selectedVersion || 1}. A change that names no ad is for this ad only; another ad changes only when the agent names it, or says all, both or them. Call the ads by their names when you talk about them ("the porch one"), or by number when that's clearer.`;
 }
 

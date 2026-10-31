@@ -185,6 +185,23 @@ await client.executeMultiple(`
     PRIMARY KEY (ad_id, format)
   );
   -- An approved ad on Meta: its own ad set, creative and ad, and where Meta's review stands.
+  -- What needs the agent's attention (src/attention.js): one row per thing, by a stable key, so a
+  -- dismissed one never comes back and each is sent to the phone once.
+  CREATE TABLE IF NOT EXISTS attention (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    listing_id TEXT,
+    key TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT,
+    action TEXT,
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TEXT NOT NULL,
+    resolved_at TEXT,
+    UNIQUE (workspace_id, key)
+  );
+
   CREATE TABLE IF NOT EXISTS meta_ads (
     ad_id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,
@@ -241,7 +258,7 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   "ALTER TABLE workspaces ADD COLUMN stripe_subscription TEXT",
   // The launch on Meta: its campaign, why it failed if it did, and when it was last checked.
   "ALTER TABLE launches ADD COLUMN meta_campaign_id TEXT", "ALTER TABLE launches ADD COLUMN meta_error TEXT",
-  "ALTER TABLE launches ADD COLUMN synced_at TEXT", "ALTER TABLE launches ADD COLUMN meta_spend REAL"]) {
+  "ALTER TABLE launches ADD COLUMN synced_at TEXT", "ALTER TABLE meta_ads ADD COLUMN spend REAL", "ALTER TABLE leads ADD COLUMN replied_at TEXT", "ALTER TABLE meta_ads ADD COLUMN impressions INTEGER", "ALTER TABLE meta_ads ADD COLUMN reach INTEGER", "ALTER TABLE meta_ads ADD COLUMN clicks INTEGER", "ALTER TABLE launches ADD COLUMN meta_spend REAL"]) {
   // Only "already there" is expected; anything else is logged, not hidden.
   try { await client.execute(sql); } catch (err) { if (!/duplicate column/i.test(err.message)) console.error(`Migration failed (${sql}):`, err.message); }
 }

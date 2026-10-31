@@ -61,7 +61,8 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 - ✅ "Spend $500 instead", "double it", "add $100" on ads already running (changes them on Meta, all or nothing)
 - ✅ "Run it another week" (same spend a day, for longer)
 - ❌ Start on a set date, only Instagram, change the radius beyond 15 miles
-- ❌ Keep the winning ad and stop the losers automatically (Autopilot)
+- ✅ Hopkins notices an ad with no Leads next to one with Leads and offers to pause it and move its budget (one tap, Meta first)
+- ❌ Doing that automatically without asking (Autopilot)
 - ✅ "Target first time buyers / people over 50" gets a plain no (Housing rules forbid it)
 - ❌ Retargeting, lead form ads, Google, TikTok
 
@@ -75,7 +76,8 @@ The source list for Hopkins' scenario tests. Status as of 2026-10-31:
 - ✅ Every Lead with the ad it came from, this week filter, statuses
 - ✅ "Write a reply to this buyer" (as text to copy)
 - ✅ Every new Lead into their CRM: Follow Up Boss with their API key, any other CRM through a webhook (Zapier, Make), in Settings, CRM
-- ❌ Text or email the Lead from Hopkins
+- ✅ An instant email reply to every Lead who leaves an email (once Resend is set up)
+- ❌ Text the Lead from Hopkins (SMS costs money)
 
 ## Moments
 - ✅ New price, open house, sold, rented (new ads for each; sold or rented stops running ads)

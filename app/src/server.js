@@ -19,6 +19,8 @@ import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./p
 import { stripeReady, checkout, getSession, portal, readEvent } from "./stripe.js";
 import { nameCase } from "./names.js";
 import { readCrm, crmPublic, checkFubKey, sealKey, hookOk, testHook } from "./crm.js";
+import { refreshAttention, openAttention, actOnAttention, watchAll } from "./attention.js";
+import { readSite } from "./site.js";
 import { FONT_KEYS } from "./style.js";
 import { buildDemo, DEMO_DOMAIN } from "./demo.js";
 import { aiEnabled, provider } from "./brain.js";
@@ -367,7 +369,21 @@ app.post("/api/ads/:id/render", { bodyLimit: 12_000_000 }, async (request, reply
   return { ok: true };
 });
 
-const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60 };
+const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, instant_reply: 3 };
+// Setup from the agent's website: what the site says about them, for them to check before saving.
+app.post("/api/brand/from-link", async (request, reply) => {
+  if (tooMany(`site:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
+  const r = await readSite(String(request.body?.url || "").trim().slice(0, 500));
+  if (!r) return reply.code(400).send({ error: "That site restricts access, so the details need filling in by hand." });
+  const { logo, ...fields } = r;
+  if (logo) {
+    const id = randomUUID();
+    await run(`INSERT INTO photos (id, workspace_id, listing_id, kind, label, position, mime, data, thumb, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`, [id, request.ws.id, null, "logo", null, 0, logo.mime, logo.buf, null, nowIso()]);
+    fields.logo_id = id;
+  }
+  return { fields };
+});
+
 app.put("/api/brand", async (request, reply) => {
   const body = request.body || {};
   const brand = { ...request.ws.brand };
@@ -378,6 +394,7 @@ app.put("/api/brand", async (request, reply) => {
     if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Enter colours as hex, like #1F2A36." });
     if (k === "voice" && !["plain", "warm", "premium"].includes(v)) continue;
     if (k === "font" && !FONT_KEYS.includes(v)) continue;
+    if (k === "instant_reply" && !["on", "off"].includes(v)) continue;
     if (k === "alerts_topic" && v && !/^[A-Za-z0-9_-]{6,64}$/.test(v)) return reply.code(400).send({ error: "Alerts topic: 6 to 64 letters, numbers, hyphens or underscores." });
     brand[k] = v;
   }
@@ -882,8 +899,16 @@ function timeZone(request) {
 // newest 30 items, so counting lead messages in it could come up short).
 app.get("/api/inbox", async (request) => {
   const week0 = weekRange(new Date(), timeZone(request));
-  const [items, week] = await Promise.all([inbox(request.ws, timeZone(request)), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [request.ws.id, week0.from, week0.to])]);
-  return { items, leadsWeek: Number(week?.n || 0), weekFrom: week0.from };
+  const [items, week, attention] = await Promise.all([inbox(request.ws, timeZone(request)), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [request.ws.id, week0.from, week0.to]), refreshAttention(request.ws)]);
+  return { items, leadsWeek: Number(week?.n || 0), weekFrom: week0.from, attention };
+});
+
+// What needs attention: the agent taps its button (it does exactly what the button says) or Dismiss.
+app.post("/api/attention/:id", async (request, reply) => {
+  const choice = request.body?.choice === "dismiss" ? "dismiss" : "act";
+  const r = await actOnAttention(request.ws, request.params.id, choice);
+  if (r.error) return reply.code(409).send(r);
+  return { ...r, attention: await openAttention(request.ws) };
 });
 
 // ---------- leads and the report ----------
@@ -1036,4 +1061,6 @@ if (process.env.NODE_ENV !== "test" && !process.env.NO_LISTEN) {
   await app.listen({ port: Number(process.env.PORT || 3200), host: "0.0.0.0" });
   // Running campaigns on Meta, checked every 30 minutes: spend, and ads going live or rejected.
   if (metaReady()) setInterval(() => syncMeta().catch((err) => console.error("Meta check failed:", err.message)), 30 * 60 * 1000);
+  // What needs each agent's attention, every half hour, so their phone hears without the app open.
+  setInterval(() => watchAll().catch((err) => console.error("Attention check failed:", err.message)), 30 * 60 * 1000);
 }

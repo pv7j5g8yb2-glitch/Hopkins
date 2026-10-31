@@ -964,3 +964,10 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   (3) setup from the agent's website link, plus reach, clicks and spend per ad from Meta. Not now:
   a CRM, MLS feeds, SMS or WhatsApp (cost money), autonomous budget moves. Pricing for teams
   ($299 to $499) is a hypothesis to test, plans unchanged.
+* **Built the same day:** Needs attention on Today (`app/src/attention.js`, `test/attention.test.js`,
+  Meta cases in `test/meta.test.js`), instant email reply to Leads (`instantReply` in hopkins.js,
+  `test/reply.test.js`, off until Resend is set up on Render), setup from the agent's website
+  (`app/src/site.js`, `test/site.test.js`), reach, clicks and spend per ad from Meta, used by the
+  chat. 96 tests pass; Today and the Brand page checked on a phone and a laptop, all text passing.
+  Next in the loop: a "new listing appeared" check once a listing source is connected (the agent's
+  site or a feed), and a weekly plan message.
