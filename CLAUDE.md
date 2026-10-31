@@ -202,7 +202,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   2026-10-29). The three numbers match the three tabs and each opens its own (Ismael,
   2026-10-29): Chats opens Chats; "Leads this week" opens Leads filtered to this week (a dark
   "This week ×" chip clears it); "Active listings" (listings with approved ads) opens Report on
-  this week with its Active filter on.
+  this week with its Active filter on, or All when there are none, never an empty board (Ismael,
+  2026-10-31).
 * **First steps (Ismael, 2026-10-30):** a new account's Today shows four steps: your brand, Connect
   Meta, your first listing, your approval. Meta comes straight after the brand, never last.
 * **Rentals too (Ismael, 2026-10-29):** Hopkins is for homes for sale and homes for rent, same

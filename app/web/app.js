@@ -518,7 +518,12 @@
       else if (view === "listings") viewListings();
       else if (view === "leads") await viewLeads();
       else if (view === "report") {
-        if (id === "active") { S.repFilter = "active"; S.repMonday = mondayOf(new Date()); S.repFollow = true; }
+        // From Today's "Active listings": the Active filter, or All when nothing is active, so it's
+        // never an empty board (Ismael, 2026-10-31). Active counts the same way as on Today.
+        if (id === "active") {
+          S.repFilter = S.listings.some((l) => l.approved > 0 && l.status !== "sold") ? "active" : "all";
+          S.repMonday = mondayOf(new Date()); S.repFollow = true;
+        }
         await viewReport();
         if (id === "active") $("#board")?.scrollIntoView({ block: "start" });
       }
