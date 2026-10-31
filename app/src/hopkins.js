@@ -652,7 +652,7 @@ function normalizeAI(ad, photos, fallback, message = "", others = []) {
     kicker: clean(ad.kicker, 50).replace(/\s*[·•|,]\s*$/, "") || fallback.kicker || "",
     // The second line goes only when the agent says to take it off; a model that left it blank
     // otherwise just forgot to copy it.
-    subline: String(ad.subline || "").trim() ? lineFor(clean(ad.subline, 60), fallback.subline || "", message, []) : /\b(remove|delete|take (it |that )?(off|out)|get rid|drop|without|no)\b/i.test(message) ? "" : fallback.subline || "",
+    subline: String(ad.subline || "").trim() ? lineFor(clean(ad.subline, 60), fallback.subline || "", message, []).replace(/^\p{Ll}/u, (c) => c.toUpperCase()) : /\b(remove|delete|take (it |that )?(off|out)|get rid|drop|without|no)\b/i.test(message) ? "" : fallback.subline || "",
     photo_id: photo ? photo.id : fallback.photo_id,
   };
 }
