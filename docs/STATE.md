@@ -1007,3 +1007,9 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   only on sign in, sign up, the waitlist and the landing page with a plain navy inside the app.
   Comparison screenshots sent. My view: plain inside the app.
 
+* **Black instead of blue? (2026-10-31):** Ismael asked to see the app on black. `field.py` takes
+  `FIELD_SKY=black` or `forest` (same reeded glass and house shape, another ground); comparison
+  screenshots of blue, black and forest were sent. My view: black (graphite, not pure #000) over
+  blue. Waiting on his call before switching; switching means new `field-phone.jpg` and
+  `field-desk.jpg`, the navy tints in `app.css` and the lens tint in `lens.js` moved to graphite,
+  then the readability check on every screen.

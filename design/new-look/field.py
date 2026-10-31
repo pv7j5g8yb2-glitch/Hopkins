@@ -29,7 +29,16 @@ def vgrad(stops):
     return np.repeat(col[:, None, :], W, axis=1)
 
 # The sky: a clear evening blue, lighter through the middle.
-a = vgrad([(0, "#0F3A73"), (0.30, "#1B5694"), (0.55, "#20609F"), (0.80, "#174A86"), (1, "#0C2B5C")])
+# FIELD_SKY picks another ground for trying looks: black (graphite night) or forest.
+import os
+SKY = os.environ.get("FIELD_SKY", "blue")
+SKIES = {
+    "blue": [(0, "#0F3A73"), (0.30, "#1B5694"), (0.55, "#20609F"), (0.80, "#174A86"), (1, "#0C2B5C")],
+    "black": [(0, "#0B0B0D"), (0.30, "#141416"), (0.55, "#18181B"), (0.80, "#111113"), (1, "#070708")],
+    "forest": [(0, "#0C2A22"), (0.30, "#14382D"), (0.55, "#17402F"), (0.80, "#103226"), (1, "#081C16")],
+}
+SHADOW = {"blue": "#0A1E52", "black": "#09090B", "forest": "#0A231B"}[SKY]
+a = vgrad(SKIES[SKY])
 
 def blob(points, blur):
     m = Image.new("L", (W, H), 0)
@@ -46,7 +55,7 @@ warm = vgrad([(0, "#E9967A"), (0.30, "#E2766C"), (0.45, "#D85772"), (0.58, "#C23
 a = paint(a, blob(house, int(40 * K) + 1), warm, WARM)
 d = lambda v: int(v * K)
 shadow_side = [(cx + d(40), top + d(60)), (cx + half + d(40), eave + d(20)), (cx + half + d(60), base), (cx + d(60), base)]
-a = paint(a, blob(shadow_side, d(60) + 1), hexc("#0A1E52"), 0.85)
+a = paint(a, blob(shadow_side, d(60) + 1), hexc(SHADOW), 0.85)
 glow = [(cx - half - d(120), eave + d(200)), (cx - d(40), eave + d(120)), (cx - d(60), base - d(150)), (cx - half - d(160), base - d(260))]
 a = paint(a, blob(glow, d(140) + 1), hexc("#F2B494"), 0.22 * WARM)
 
