@@ -20,7 +20,7 @@ const needsModel = (text) => ["unknown", "question", "greeting", "thanks"].inclu
 import { canMake, isPaid, planOf, upgradeText, adsMade, FREE_AD_LIMIT } from "./plans.js";
 import { nameCase } from "./names.js";
 import { notifyTopic, notifyFounder } from "./notify.js";
-import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStatus, MetaError } from "./meta.js";
+import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStatus, adSetEnd, updateAdSet, MetaError } from "./meta.js";
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency", "deal"];
 export const DEFAULT_BUDGET = 200;
@@ -465,6 +465,17 @@ const NAMES = (ads) => {
   return n.length > 1 ? `${n.slice(0, -1).join(", ")} and ${n.at(-1)}` : n[0] || "";
 };
 const IDEAS = (ads) => ads.map((a) => `- **Ad ${a.version}**${a.name ? `: ${a.name}` : ""}`).join("\n");
+// Under contract, the buyer ads already out keep spending unless the agent stops them: said once.
+async function stillRunning(ws, listing, moment) {
+  if (moment === "under_contract" && (await runState(listing.id)) === "running") await say(ws, listing.id, `The earlier ads for ${listingTitle(listing)} are still running. Say pause to stop them.`);
+}
+
+// The listing's stage, said once, with what the ads are for.
+const STAGE_INTRO = {
+  coming_soon: (where) => `Coming soon at ${where}: these build a list of buyers before it's on the market.`,
+  under_contract: (where) => `Under contract at ${where}: these reach people who want one like it, and anyone nearby thinking of selling.`,
+  back: (where) => `Back on the market at ${where}: these give the people who missed it a second chance.`,
+};
 function introFor(moment, listing, ads = []) {
   const where = listing.address || listing.area || "this listing";
   if (ads.length === 1) {
@@ -472,11 +483,13 @@ function introFor(moment, listing, ads = []) {
     if (moment === "price") return `The price changed on ${where}, so here's ${one}, for the new price. A new price gives people who scrolled past a reason to look again.`;
     if (moment === "open_house") return `Here's ${one}, for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}. Run it in the days before.`;
     if (moment === "sold") return listing.deal === "rent" ? `Rented. Here's ${one}, for owners nearby who might rent out next.` : `Sold. Here's ${one}, for people nearby who might sell next.`;
+    if (STAGE_INTRO[moment]) return `${STAGE_INTRO[moment](where)} Here's ${one}.`;
     return `Here's ${one}, for ${where}. Tell me what to change, or tap Run ad.`;
   }
   const list = `\n\n${IDEAS(ads)}\n\n`;
   if (moment === "price") return `The price changed on ${where}, so here are ${ads.length} ads for the new price:${list}A new price gives people who scrolled past a reason to look again.`;
   if (moment === "open_house") return `Here are ${ads.length} ads for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}:${list}Run them in the days before it.`;
+  if (STAGE_INTRO[moment]) return `${STAGE_INTRO[moment](where)} Here are ${ads.length} ads:${list}`.trim();
   if (moment === "sold") return (listing.deal === "rent" ? `Rented. Here are ${ads.length} ads for owners nearby who might rent out next:${list}` : `Sold. Here are ${ads.length} ads for people nearby who might sell next:${list}`).trim();
   return `Here are ${ads.length} ads for ${where}, each testing a different idea:${list}Tell me what to change, or tap Run ad.`;
 }
@@ -1298,6 +1311,15 @@ async function applyAI(ws, listing, ads, photos, r, text, selected = 1) {
     return {};
   }
 
+  // Ads already out get the new budget or length, not a whole new plan (only new drafts make one).
+  if (state !== "none" && ["run", "change_run", "none"].includes(r.action)) {
+    const open = await openRun(listing.id);
+    const ch = open && readRunChange(text, open);
+    const drafts = ads.some((a) => a.status === "draft");
+    if (r.action === "change_run" || (ch && !(r.action === "run" && drafts) && /\b(budget|spend|spending|extend|longer|shorter|days?|weeks?|double|halve|more|less|instead|increase|raise|lower|reduce|cut|bump|top)\b/i.test(text))) {
+      if (ch || r.budget || r.days) return changeRun(ws, listing, { budget: ch?.budget || r.budget || null, days: ch?.days || r.days || null });
+    }
+  }
   if (r.action === "run") {
     // The plan says it all: the model's own line before it once said "Running all three ads"
     // before anything ran, then the plan asked for a yes again (2026-10-28).
@@ -1312,6 +1334,7 @@ async function applyAI(ws, listing, ads, photos, r, text, selected = 1) {
     }
     await patchListing(ws.id, listing.id, patch);
     const out = await makeAds(ws, await loadListing(ws.id, listing.id), r.moment, { oldPrice }, { count: ads.length || 3 });
+    await stillRunning(ws, listing, r.moment);
     return { ...out, focus };
   }
   if (r.action === "make_ads") {
@@ -1462,6 +1485,11 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
   const state = await runState(listing.id);
   if (state !== "none" && wantsStop(text)) return stopOrStart(ws, listing, "pause");
   if (state === "paused" && wantsStart(text)) return stopOrStart(ws, listing, "resume");
+  if (state !== "none" && !ads.some((a) => a.status === "draft") && /\b(budget|spend|spending|extend|longer|double|halve|instead|increase|raise|lower|reduce|bump|top up|more days|another (week|\d+ days?))\b/i.test(text)) {
+    const open = await openRun(listing.id);
+    const ch = open && readRunChange(text, open);
+    if (ch) return changeRun(ws, listing, ch);
+  }
   if (intent.kind === "run") return proposeRun(ws, listing, { versions: intent.versions, budget: intent.budget, days: intent.days });
 
   if (intent.kind !== "style" && refersBack(text) && ads.length) {
@@ -1523,7 +1551,9 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
     const patch = { ...intent.listingPatch };
     if (intent.moment === "sold") patch.status = "sold";
     await patchListing(ws.id, listing.id, patch);
-    return makeAds(ws, await loadListing(ws.id, listing.id), intent.moment, { oldPrice });
+    const out = await makeAds(ws, await loadListing(ws.id, listing.id), intent.moment, { oldPrice });
+    await stillRunning(ws, listing, intent.moment);
+    return out;
   }
 
   if (!ads.length) {
@@ -1758,6 +1788,84 @@ export async function resumeRuns(ws, listingId) {
   }
   return { resumed: open.length, onMeta: open.some((l) => l.meta_campaign_id) };
 }
+// ---------- changing a run's budget or length ----------
+
+// "Spend $500 instead", "double it", "add $100", "run it another week", "make it 3 weeks": the
+// ads already out get the new total, on Meta first (each ad set keeps an equal share), then in
+// Hopkins. Before this, it made a whole new plan (2026-10-31). Returns null when nothing in the
+// words changes the money or the days.
+export function readRunChange(text, run) {
+  const low = String(text || "").toLowerCase().replace(/,(?=\d{3})/g, "");
+  const money = (m) => Number(m.replace(/[$\s]/g, "")) * (/k$/.test(m) ? 1000 : 1);
+  let budget = null, days = null;
+  const plus = low.match(/\b(?:add|another|extra|plus|top (?:it |them )?up (?:by|with)?|increase (?:it |the budget )?by|up (?:it |the budget )?by|raise (?:it |the budget )?by)\s*\$\s?(\d+k?)\b|\$\s?(\d+k?)\s*(?:more|extra)\b/);
+  const minus = low.match(/\b(?:cut|lower|reduce|drop|take)\s*(?:it |the budget )?(?:by|off)?\s*\$\s?(\d+k?)\b/);
+  const abs = low.match(/\$\s?(\d+k?)\b/);
+  if (/\bdouble\b/.test(low)) budget = run.budget * 2;
+  else if (/\b(halve|half)\b/.test(low)) budget = run.budget / 2;
+  else if (plus) budget = run.budget + money(plus[1] || plus[2]);
+  else if (minus && /\bby\b|\boff\b/.test(low)) budget = run.budget - money(minus[1]);
+  else if (abs) budget = money(abs[1]);
+  const unit = (n, w) => Number(n) * (/^week/.test(w) ? 7 : 1);
+  const more = low.match(/\b(?:extend (?:it |them |the run )?(?:by|for)?|another|(\d+) more|add|keep (?:it |them )?(?:going|running) (?:for )?(?:another)?)\s*(\d+|a|one|two)?\s*(?:more\s*)?(days?|weeks?)\b/);
+  const total = low.match(/\b(?:for|to|make it|over|run (?:it |them )?for)\s*(\d+|a|one|two|three|four)\s*(days?|weeks?)\b/);
+  const word = (n) => ({ a: 1, one: 1, two: 2, three: 3, four: 4 })[n] ?? Number(n);
+  if (more && (more[1] || more[2] || /\bextend|another|keep\b/.test(more[0]))) days = run.days + unit(word(more[1] || more[2] || 1), more[3]);
+  else if (/\bextend\b|\blonger\b/.test(low) && !total) days = run.days + 7;
+  else if (total) days = unit(word(total[1]), total[2]);
+  if (budget === null && days === null) return null;
+  return { budget: budget === null ? null : Math.round(budget), days };
+}
+
+// The run a change applies to: the latest one still open, running or paused.
+async function openRun(listingId) {
+  return (await all(`SELECT * FROM launches WHERE listing_id = ? AND status IN ('waiting_on_meta', 'sent', 'paused') ORDER BY created_at DESC`, [listingId])).find((l) => runEnd(l) > new Date()) || null;
+}
+
+export async function changeRun(ws, listing, { budget, days }) {
+  const name = listingTitle(listing);
+  const l = await openRun(listing.id);
+  if (!l) return say(ws, listing.id, `No ads are running for ${name}. Approve a plan to run them.`);
+  const nb = budget ? Math.max(20, Math.round(budget)) : Number(l.budget);
+  const nd = days ? Math.min(60, Math.max(3, Math.round(days))) : Number(l.days);
+  const perDay = (b, d) => `$${(Math.round((b / d) * 100) / 100).toLocaleString("en-US")} a day`;
+  if (nb === Number(l.budget) && nd === Number(l.days)) return say(ws, listing.id, `The ads for ${name} already have $${nb} over ${nd} days.`);
+  try {
+    if (l.meta_campaign_id) {
+      const conn = metaReady() ? await metaConnection(ws.id) : null;
+      if (!conn) throw new MetaError("Meta isn't connected. Reconnect Meta in Settings, then try again");
+      const token = unseal(conn.token);
+      const rows = await all(`SELECT * FROM meta_ads WHERE launch_id = ? AND adset_id IS NOT NULL`, [l.id]);
+      const each = Math.max(100, Math.floor((nb * 100) / Math.max(1, rows.length)));
+      const old = Math.max(100, Math.floor((Number(l.budget) * 100) / Math.max(1, rows.length)));
+      const done = [];
+      try {
+        for (const r of rows) {
+          const fields = { lifetime_budget: each };
+          let oldEnd = null;
+          if (nd !== Number(l.days)) {
+            oldEnd = await adSetEnd(token, r.adset_id);
+            if (oldEnd) fields.end_time = new Date(oldEnd.getTime() + (nd - Number(l.days)) * 86400000).toISOString();
+          }
+          await updateAdSet(token, r.adset_id, fields);
+          done.push({ id: r.adset_id, oldEnd });
+        }
+      } catch (err) {
+        // All or nothing: the ad sets already changed go back, so the test stays fair.
+        for (const d of done) await updateAdSet(token, d.id, { lifetime_budget: old, ...(d.oldEnd ? { end_time: d.oldEnd.toISOString() } : {}) }).catch(() => {});
+        throw err;
+      }
+    }
+    await run(`UPDATE launches SET budget = ?, days = ? WHERE id = ?`, [nb, nd, l.id]);
+  } catch (err) {
+    const why = err.code === 190 ? "the Meta connection has expired. Reconnect Meta in Settings, then try again" : polish(String(err.message)).replace(/\.$/, "");
+    return say(ws, listing.id, `Nothing changed: ${why}.`);
+  }
+  const n = JSON.parse(l.ad_ids || "[]").length;
+  const where = l.meta_campaign_id ? " on Facebook and Instagram" : "";
+  return say(ws, listing.id, `Done. The ads for ${name} now have $${nb} over ${nd} days${where}, ${perDay(nb, nd)}${n > 1 ? `, split evenly across the ${n} ads` : ""}.${l.status === "paused" ? " They're still paused. Say resume to start them again." : ""}`);
+}
+
 // What happened, said from the facts, never from the model's wording.
 async function stopOrStart(ws, listing, which) {
   const name = listingTitle(listing);

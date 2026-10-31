@@ -60,7 +60,7 @@ How you write to the agent:
 - At most one question per reply, and make it answerable in one line.
 
 How you write ads (the copy appears on the agent's ads, in their name):
-- Think like the best agency creative given this one home. Before writing, work out what would make the right buyer (or renter) stop scrolling for THIS place: the one or two things that are genuinely different about it (from the facts, the agent's own words and what the photos show), who is most likely to buy or rent it, and the moment (just listed, new price, open house, sold or rented).
+- Think like the best agency creative given this one home. Before writing, work out what would make the right buyer (or renter) stop scrolling for THIS place: the one or two things that are genuinely different about it (from the facts, the agent's own words and what the photos show), who is most likely to buy or rent it, and the moment (just listed, coming soon, new price, open house, under contract, back on the market, sold or rented). Coming soon builds a list before it's on the market; under contract and sold speak to people who want one like it or have one to sell; back on the market is a second chance.
 - A home for rent (its "for" fact is rent) is written for renters: the rent always per month with /mo ("$2,400/mo"), never as a purchase price, never "own", "buy", "invest" or "your forever home"; the kicker says "For rent", not "Just listed"; the next step is to book a showing or apply. Ideas that work for rentals: the space or the location for the money ("2 beds in Midtown, $2,400/mo"), the move in date, what's included, pets welcome when the agent says so, the walk or the commute, the one standout detail.
 - No formula. A craftsman with a porch, a downtown condo, a fixer upper and a $4M view home need different ideas. Never fall back on the same three every time, and never make an ad that would fit any listing.
 - Prices are in the listing's own currency (its currency fact: EUR is €, GBP is £, AED is AED; none means US dollars). Write a listing in euros as €1.25M, never with $.
@@ -160,13 +160,13 @@ const TURN_SCHEMA = {
     reply: { type: "string", description: "Your message back to the agent, as you'd say it in a chat. Markdown: **bold**, lists, a small table when comparing." },
     action: {
       type: "string",
-      enum: ["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "pause", "resume", "new_moment"],
+      enum: ["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "pause", "resume", "change_run", "new_moment"],
       description:
-        "none: just talking. select_version: they want to look at or work on a different ad. revise: change ads, including turning one into a different idea (put them in ads). add_ads: they want another ad or more (write the new ones in ads, numbered after the last one). remove_ads: they asked to delete or remove ads from the listing (put their numbers in remove); never for stopping ads that run. update_listing: facts about the home changed. make_ads: make the ads (when there are none, or they want a whole fresh set). run: they want ads to start running (a new plan). pause: they want running ads to stop (stop, pause, turn off, kill, take down), even when they say stop the ad or stop them. resume: they want paused ads to run again. new_moment: a new reason to advertise (price change, open house, sold, or rented for a rental: that's moment sold too).",
+        "none: just talking. select_version: they want to look at or work on a different ad. revise: change ads, including turning one into a different idea (put them in ads). add_ads: they want another ad or more (write the new ones in ads, numbered after the last one). remove_ads: they asked to delete or remove ads from the listing (put their numbers in remove); never for stopping ads that run. update_listing: facts about the home changed. make_ads: make the ads (when there are none, or they want a whole fresh set). run: they want ads to start running (a new plan). pause: they want running ads to stop (stop, pause, turn off, kill, take down), even when they say stop the ad or stop them. resume: they want paused ads to run again. change_run: they want the ads already running (or paused) to spend more or less, or run longer or shorter (put the new total in budget and the new total length in days, 0 for the one that stays). new_moment: a new reason to advertise (price change, open house, coming soon, under contract or pending, back on the market, sold, or rented for a rental: that's moment sold too).",
     },
     version: { type: "integer", description: "The ad this turn is about, or 0 if none" },
     remove: { type: "array", items: { type: "integer" }, description: "For remove_ads: the numbers of the ads to remove. Empty otherwise." },
-    moment: { type: "string", enum: ["none", "price", "open_house", "sold"] },
+    moment: { type: "string", enum: ["none", "price", "open_house", "coming_soon", "under_contract", "back", "sold"] },
     ads: { type: "array", items: AD_SCHEMA, description: "Only the ads you changed or added, in full. Empty otherwise." },
     listing_patch: LISTING_SCHEMA,
     budget: { type: "number", description: "Total budget in dollars if the agent named one, else 0" },
@@ -580,7 +580,7 @@ In the chat:
 
 function contextText({ listing, photos, brand, ads, selectedVersion, plan, agentName, agentPhoto, leads, meta, running }) {
   return `Context (the current state, not something the agent wrote):
-Ads running now: ${running === "running" ? "yes, this listing's approved ads are running. To stop them the action is pause; deleting ads (remove_ads) never stops a run." : running === "paused" ? "no, they're paused. To start them again the action is resume." : "no."} Never say ads were paused, stopped, started or deleted unless your action does it.
+Ads running now: ${running === "running" ? "yes, this listing's approved ads are running. To stop them the action is pause; deleting ads (remove_ads) never stops a run. To change their budget or length the action is change_run, never a new plan." : running === "paused" ? "no, they're paused. To start them again the action is resume. To change their budget or length the action is change_run." : "no."} Never say ads were paused, stopped, started or deleted unless your action does it.
 Meta: ${meta?.ready ? `connected (ad account ${meta.adAccountName || ""}, Page ${meta.pageName || ""}). An approved plan is sent to Meta and each ad goes live on Facebook and Instagram once Meta reviews it; Hopkins brings back what's been spent and when each ad goes live or is rejected.` : meta?.connected ? "connected, but the ad account or Facebook Page isn't picked yet: they choose both in Settings." : "not connected. Approved ads go live once they connect Meta in Settings (one connection covers Facebook and Instagram); until then, on a paid plan, they can download the ads and post or boost them themselves."}
 Agent: ${agentName || "unknown"}${brand.business ? `, ${brand.business}` : ""}. Brand voice: ${brand.voice || "plain"}. Their own photo: ${agentPhoto ? "added, so it can go on the ads (face: on)" : "not added yet (they add it in Settings, then it can go on the ads)"}.
 Plan: ${plan.paid ? `${plan.name || "Solo"} (paid)` : `free, ${plan.adsMade} of ${plan.limit} free ads used`}.${!plan.paid && plan.adsMade >= plan.limit ? `
@@ -622,7 +622,7 @@ function conversation(history) {
   return out;
 }
 
-const ACTIONS = new Set(["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "pause", "resume", "new_moment"]);
+const ACTIONS = new Set(["none", "select_version", "revise", "add_ads", "remove_ads", "update_listing", "make_ads", "run", "pause", "resume", "change_run", "new_moment"]);
 // Models don't always fill every field; this makes the answer safe to act on.
 function normalizeTurn(r) {
   if (!r || typeof r !== "object" || typeof r.reply !== "string") return null;
@@ -632,7 +632,7 @@ function normalizeTurn(r) {
     action: ACTIONS.has(r.action) ? r.action : "none",
     version: num(r.version) >= 1 && num(r.version) <= MAX_ADS ? num(r.version) : 0,
     remove: Array.isArray(r.remove) ? [...new Set(r.remove.map(num).filter((v) => v >= 1 && v <= MAX_ADS))] : [],
-    moment: ["price", "open_house", "sold"].includes(r.moment) ? r.moment : "none",
+    moment: ["price", "open_house", "coming_soon", "under_contract", "back", "sold"].includes(r.moment) ? r.moment : "none",
     ads: Array.isArray(r.ads) ? r.ads.filter((a) => a && num(a.version) >= 1 && num(a.version) <= MAX_ADS).map((a) => ({ ...a, version: num(a.version), photo_number: num(a.photo_number) })) : [],
     listing_patch: r.listing_patch && typeof r.listing_patch === "object" ? r.listing_patch : null,
     budget: num(r.budget),

@@ -32,6 +32,8 @@ meta.setMetaFetchForTests(async (url, init = {}) => {
   if (path.endsWith("/insights")) return ok({ data: [{ spend: "12.34" }] });
   if (path.startsWith("metaad-")) return ok(path === "metaad-2" && state.feedback ? { effective_status: "DISAPPROVED", ad_review_feedback: { global: { "Housing ads": state.feedback } } } : { effective_status: state.status });
   if (path === "me/permissions") return ok({ success: true });
+  if (path.startsWith("adset-") && (init.method || "GET") === "GET") return ok({ end_time: "2026-11-10T12:00:00+0000" });
+  if (path.startsWith("adset-") && init.method === "POST") return state.adsetFails === path ? { ok: false, status: 400, json: async () => ({ error: { message: "The budget is too low for what has already been spent", code: 100 } }) } : ok({ success: true });
   if (path.startsWith("camp-") && (init.method || "GET") === "POST") return state.pauseFails ? { ok: false, status: 400, json: async () => ({ error: { message: "Campaign is locked", code: 100 } }) } : ok({ success: true });
   return { ok: false, status: 400, json: async () => ({ error: { message: `unexpected ${path}` } }) };
 });
@@ -189,3 +191,48 @@ async function cookieOf(c) {
     return [].concat(r.headers["set-cookie"]).map((x) => x.split(";")[0]).join("; ");
   })());
 }
+
+test("spend more, spend less or run longer changes the ads already on Meta, all or nothing, never a new plan", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "budget@ellery.test", password: "password123", invite: "EARLY1", name: "Bo Reyes" });
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  await run(`UPDATE workspaces SET plan = 'paid' WHERE id = ?`, [ws]);
+  await run(`INSERT INTO meta_connections (workspace_id, fb_user_id, fb_name, token, ad_account_id, page_id, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)`,
+    [ws, "fb-4", "Bo Reyes", meta.seal("token-4"), "act_9", "page-9", new Date().toISOString(), new Date().toISOString()]);
+  const l = await c("POST", "/api/listings", { text: "9 Birch Ln, Austin, TX. 3 bed 2 bath, $540,000" });
+  const id = l.json.listing.id;
+  const plan = await c("POST", `/api/listings/${id}/run`, { versions: [1, 2, 3], budget: 200, days: 10 });
+  for (const ad of plan.json.ads) await c("POST", `/api/ads/${ad.id}/render`, { format: "feed", data: PNG });
+  await c("POST", `/api/listings/${id}/run`, { confirm: plan.json.messages.at(-1).id });
+  await waitFor(c, id, /Sent to Meta/);
+  const sets = (await all(`SELECT adset_id FROM meta_ads WHERE listing_id = ?`, [id])).map((r) => r.adset_id);
+  const say = async (text) => (await c("POST", `/api/listings/${id}/messages`, { text })).json.messages.at(-1);
+  const posts = () => calls.filter((x) => sets.includes(x.path) && x.method === "POST");
+
+  calls.length = 0;
+  let m = await say("Spend $500 instead");
+  assert.equal(m.kind, "text", "no new plan");
+  assert.match(m.body, /^Done\. The ads for 9 Birch Ln now have \$500 over 10 days on Facebook and Instagram, \$50 a day, split evenly across the 3 ads\.$/);
+  assert.deepEqual(posts().map((x) => x.params.lifetime_budget), ["16666", "16666", "16666"]);
+  assert.deepEqual([(await get(`SELECT budget FROM launches WHERE listing_id = ?`, [id])).budget], [500]);
+
+  calls.length = 0;
+  m = await say("run them another week");
+  assert.match(m.body, /\$500 over 17 days/);
+  assert.ok(posts().every((x) => x.params.end_time === "2026-11-17T12:00:00.000Z"), "each ad set ends 7 days later");
+
+  // Meta refuses the second ad set: the first goes back, and the reply says nothing changed.
+  state.adsetFails = sets[1];
+  calls.length = 0;
+  m = await say("lower the budget to $100");
+  assert.equal(m.body, "Nothing changed: The budget is too low for what has already been spent.");
+  assert.deepEqual(posts().map((x) => [x.path, x.params.lifetime_budget]), [[sets[0], "3333"], [sets[1], "3333"], [sets[0], "16666"]]);
+  assert.equal((await get(`SELECT budget FROM launches WHERE listing_id = ?`, [id])).budget, 500);
+  state.adsetFails = null;
+
+  // Paused ads keep their pause.
+  await c("POST", `/api/listings/${id}/pause`, {});
+  m = await say("double the budget");
+  assert.match(m.body, /\$1000 over 17 days.*They're still paused\. Say resume to start them again\.$/);
+});
+

@@ -236,3 +236,26 @@ test("rental wording that excludes people is caught", () => {
   assert.deepEqual(checkWording("No Section 8. Students only.").map((f) => f.term), ["No Section 8", "Students only"]);
   assert.equal(checkWording("Mature tenants preferred")[0].level, "block");
 });
+
+test("budget and length changes to a running ad, read the way an agent says them", async () => {
+  const { readRunChange } = await import("../src/hopkins.js");
+  const run = { budget: 200, days: 10 };
+  const cases = {
+    "Spend $500 instead": { budget: 500, days: null },
+    "make the budget $1,000": { budget: 1000, days: null },
+    "double it": { budget: 400, days: null },
+    "halve the budget": { budget: 100, days: null },
+    "add $100": { budget: 300, days: null },
+    "$50 more": { budget: 250, days: null },
+    "cut it by $50": { budget: 150, days: null },
+    "run it another week": { budget: null, days: 17 },
+    "extend by 5 days": { budget: null, days: 15 },
+    "3 more days please": { budget: null, days: 13 },
+    "make it 3 weeks": { budget: null, days: 21 },
+    "extend it": { budget: null, days: 17 },
+    "$300 over 14 days": { budget: 300, days: 14 },
+  };
+  for (const [text, want] of Object.entries(cases)) assert.deepEqual(readRunChange(text, run), want, text);
+  assert.equal(readRunChange("how is it doing?", run), null);
+});
+

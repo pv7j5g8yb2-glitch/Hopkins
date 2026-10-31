@@ -187,6 +187,15 @@ export async function setCampaignStatus(token, campaignId, status) {
   return graph("POST", campaignId, { status }, token);
 }
 
+// A running ad set's end, and changing its budget or end (in cents and ISO time, as Meta takes them).
+export async function adSetEnd(token, adsetId) {
+  const a = await graph("GET", adsetId, { fields: "end_time" }, token);
+  return a.end_time ? new Date(a.end_time) : null;
+}
+export async function updateAdSet(token, adsetId, fields) {
+  return graph("POST", adsetId, fields, token);
+}
+
 // What Meta says about a running campaign: what it has spent, and where each ad stands.
 export async function campaignState(token, campaignId, metaAdIds) {
   const insights = await graph("GET", `${campaignId}/insights`, { fields: "spend", date_preset: "maximum" }, token);

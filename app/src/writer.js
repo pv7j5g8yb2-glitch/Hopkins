@@ -23,6 +23,9 @@ export const MOMENTS = {
   new: "Just listed",
   price: "New price",
   open_house: "Open house",
+  coming_soon: "Coming soon",
+  under_contract: "Under contract",
+  back: "Back on the market",
   sold: "Just sold",
 };
 
@@ -68,6 +71,9 @@ function momentLead(l, moment, extra = {}) {
   }
   if (moment === "open_house") return l.open_house ? `Open house ${l.open_house}. Come by, no appointment needed.` : "Open house this weekend.";
   if (moment === "sold") return `${doneWord(l)} in ${place(l) || "the area"}.`;
+  if (moment === "coming_soon") return `Coming soon${place(l) ? ` in ${place(l)}` : ""}. See it before it's on the market.`;
+  if (moment === "under_contract") return `Under contract${place(l) ? ` in ${place(l)}` : ""}.`;
+  if (moment === "back") return `Back on the market${place(l) ? ` in ${place(l)}` : ""}. A second chance at this one.`;
   return "";
 }
 
@@ -75,6 +81,7 @@ function kickerFor(l, moment, fallback) {
   if (moment === "price") return "New price";
   if (moment === "open_house") return l.open_house ? `Open house · ${l.open_house}` : "Open house";
   if (moment === "sold") return doneWord(l);
+  if (MOMENTS[moment] && moment !== "new") return MOMENTS[moment];
   return fallback;
 }
 
@@ -105,6 +112,8 @@ export function writeVersion(pattern, ctx, opts = {}) {
   const rent = l.deal === "rent";
   const listed = listedWord(l);
   const ctaLine = moment === "sold" ? (rent ? "Have a place to rent out nearby? Send me a message." : "Thinking about selling nearby? Send me a message.")
+    : moment === "under_contract" ? "Looking for one like it? Send me a message."
+    : moment === "coming_soon" ? "Tap to get the details first."
     : moment === "open_house" ? "Tap for the photos and the details."
     : rent ? RENT_CTA
     : CTA_LINES[voice] || CTA_LINES.plain;
@@ -143,10 +152,10 @@ export function writeVersion(pattern, ctx, opts = {}) {
       photoWant: f ? f.photo : "living",
     };
   } else {
-    const momentOverlay = moment === "price" ? `Now ${shortPrice(l.price, l.currency, l.deal)}.` : moment === "sold" ? `${doneWord(l)}.` : moment === "open_house" ? "Open house." : `${listed}.`;
+    const momentOverlay = moment === "price" ? `Now ${shortPrice(l.price, l.currency, l.deal)}.` : moment === "sold" ? `${doneWord(l)}.` : moment === "open_house" ? "Open house." : MOMENTS[moment] && moment !== "new" ? `${MOMENTS[moment]}.` : `${listed}.`;
     ad = {
       pattern: "facts",
-      name: moment === "price" ? "New price" : moment === "open_house" ? "Open house" : moment === "sold" ? doneWord(l) : l.price ? `${shortPrice(l.price, l.currency, l.deal)}${where && where.length < 16 ? ` in ${where}` : ""}` : "The numbers",
+      name: moment === "price" ? "New price" : moment === "open_house" ? "Open house" : moment === "sold" ? doneWord(l) : MOMENTS[moment] && moment !== "new" ? MOMENTS[moment] : l.price ? `${shortPrice(l.price, l.currency, l.deal)}${where && where.length < 16 ? ` in ${where}` : ""}` : "The numbers",
       overlay: momentOverlay,
       kicker: facts || cap(type),
       headline: fit([shortPrice(l.price, l.currency, l.deal), where].filter(Boolean).join(" in ") || `New ${type}`, 40),

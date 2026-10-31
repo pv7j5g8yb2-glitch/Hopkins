@@ -144,8 +144,18 @@ export function readIntent(text, { selected = 1, photos = [], ads = [] } = {}) {
     return intent;
   }
 
-  // Sold, under contract.
-  if (/\b(it'?s |it has |just |got )?(sold|under contract|went pending|is pending|rented|leased|been let|is let)\b/.test(low) && !/\b(not|isn'?t|hasn'?t) (sold|under|rented|leased)/.test(low)) {
+  // Sold or rented.
+  // Coming soon, under contract (pending), back on the market.
+  const stage = /\b(back on (the )?market|fell through|deal fell|relisted|re-?listed)\b/.test(low) ? "back"
+    : /\b(under contract|went pending|is pending|now pending|got an offer accepted|accepted an offer|offer accepted|under offer|sale agreed)\b/.test(low) ? "under_contract"
+    : /\b(coming soon|not listed yet|pre-?market|before it hits the market|hits the market)\b/.test(low) ? "coming_soon" : null;
+  if (stage && !/\?\s*$/.test(t)) {
+    intent.kind = "moment";
+    intent.moment = stage;
+    return intent;
+  }
+
+  if (/\b(it'?s |it has |just |got )?(sold|rented|leased|been let|is let)\b/.test(low) && !/\b(not|isn'?t|hasn'?t) (sold|under|rented|leased)/.test(low)) {
     intent.kind = "moment";
     intent.moment = "sold";
     return intent;
