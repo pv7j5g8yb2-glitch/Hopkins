@@ -588,7 +588,8 @@
     let body;
     // Like Claude's home: the greeting and the box to ask. Until Meta and the CRM are connected,
     // a quiet row each underneath; nothing else to set up.
-    const ask = `<a class="askbox" href="#/new">Ask Hopkins anything<span>${ICON.send}</span></a>`;
+    // A real box (Ismael, 2026-10-31): type straight in, send, and the chat starts with it.
+    const ask = `<form class="askbox" id="askbox" autocomplete="off"><i class="ask-sheen" aria-hidden="true"></i><textarea id="askTa" rows="1" placeholder="Ask Hopkins anything" enterkeyhint="send" aria-label="Ask Hopkins anything"></textarea><button type="submit" aria-label="Send" disabled>${ICON.send}</button></form>`;
     const m = S.me.meta || {};
     const c = S.me.crm || {};
     const setup = [
@@ -611,6 +612,9 @@
     // The count lives in the row below, so the line under the greeting is just the day.
     const lede = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
     const html = `${mtop("Today")}<div class="page" data-today><div class="wrap"><div class="head"><h1>${greet}${first ? `, ${esc(first)}` : ""}</h1><p class="lede">${lede}</p></div>${body}</div></div>`;
+    // Never redrawn under someone typing in the box.
+    const typing = $("#askTa") && (document.activeElement === $("#askTa") || $("#askTa").value);
+    if (typing && main.querySelector(".page[data-today]")) return;
     if (html !== S.todayHtml || !main.querySelector(".page[data-today]")) { main.innerHTML = html; S.todayHtml = html; }
   }
 
@@ -835,6 +839,77 @@
 
   // ---------- a new listing ----------
 
+  // ---------- the box on Today ----------
+  //
+  // Small things done properly (Ismael, 2026-10-31: "an intentional work of art"): the glass wakes
+  // when you tap in (its rim brightens and a glint crosses it once), the rest of Today steps back
+  // while you write, the box grows with what you type, Send lights up only when there's something
+  // to send, and the words you sent rise from the box into the new chat as your first message.
+  function askGrow(ta) {
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 132) + "px";
+    const f = ta.closest("form");
+    f.classList.toggle("has", Boolean(ta.value.trim()));
+    f.querySelector("button").disabled = !ta.value.trim();
+    f.classList.toggle("tall", ta.scrollHeight > 40);
+  }
+  document.addEventListener("input", (e) => { if (e.target.id === "askTa") askGrow(e.target); });
+  document.addEventListener("focusin", (e) => {
+    if (e.target.id !== "askTa") return;
+    const f = e.target.closest("form");
+    f.classList.remove("lit"); void f.offsetWidth; f.classList.add("lit");
+    $(".page[data-today]")?.classList.add("asking");
+  });
+  document.addEventListener("focusout", (e) => {
+    if (e.target.id !== "askTa") return;
+    if (!e.target.value.trim()) $(".page[data-today]")?.classList.remove("asking");
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.id === "askTa" && e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); e.target.form.requestSubmit(); }
+  });
+  document.addEventListener("submit", (e) => {
+    if (e.target.id !== "askbox") return;
+    e.preventDefault();
+    const ta = $("#askTa");
+    const text = ta.value.trim();
+    if (!text) return ta.focus();
+    // Where the words are now, so they can travel to where the chat puts them.
+    const r = ta.getBoundingClientRect();
+    const cs = getComputedStyle(ta);
+    S.askFly = { text, x: r.left + parseFloat(cs.paddingLeft), y: r.top + parseFloat(cs.paddingTop), w: r.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) };
+    S.askSend = text;
+    ta.value = "";
+    ta.blur();
+    location.hash = "#/new";
+  });
+  function flyAsk() {
+    const fly = S.askFly;
+    S.askFly = null;
+    if (!fly || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const ghost = document.createElement("div");
+    ghost.className = "ask-fly";
+    ghost.textContent = fly.text;
+    document.body.appendChild(ghost);
+    document.body.classList.add("flying");
+    // The chat redraws itself while this runs (the thread is made, then opened), so each frame
+    // aims at wherever the first message is now.
+    const t0 = performance.now(), D = 460;
+    const ease = (t) => 1 - Math.pow(1 - t, 3);
+    function step(now) {
+      const t = Math.min(1, (now - t0) / D);
+      const target = $("#main .me .tx");
+      const to = target ? target.getBoundingClientRect() : { left: fly.x, top: fly.y, width: fly.w };
+      const k = ease(t);
+      ghost.style.width = `${fly.w + (to.width + 1 - fly.w) * k}px`;
+      ghost.style.transform = `translate(${fly.x + (to.left - fly.x) * k}px,${fly.y + (to.top - fly.y) * k}px)`;
+      if (t < 1) return requestAnimationFrame(step);
+      document.body.classList.remove("flying");
+      ghost.classList.add("gone");
+      setTimeout(() => ghost.remove(), 200);
+    }
+    requestAnimationFrame(step);
+  }
+
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
@@ -865,6 +940,12 @@
         $("#dropGrid").innerHTML = pending.length ? pending.map((p, i) => `<i class="${p.url ? "" : "wait"}" style="${p.url ? `background-image:url(${p.url});` : ""}position:relative"><button type="button" data-rm="${i}" aria-label="Remove" style="position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:rgba(5,15,40,.7);color:#fff;font-size:13px;line-height:22px">×</button></i>`).join("") + `<span class="more">${ICON.plus}</span>` : "";
       },
     });
+    // Sent from the box on Today: it goes straight in, as if typed here, and its words fly into place.
+    if (S.askSend) {
+      const text = S.askSend;
+      S.askSend = null;
+      requestAnimationFrame(() => { $("#ta").value = text; $("#comp").requestSubmit(); });
+    }
     // Like ChatGPT and Claude (Ismael, 2026-10-29): sending the first message makes the thread
     // at once. It's in the sidebar, named from the message, and opens with the thinking mark
     // while Hopkins answers there. Photos upload first, so they're part of that first message.
@@ -872,6 +953,7 @@
       $("#drop").style.display = "none";
       $(".intro").style.display = "none";
       $("#thread").insertAdjacentHTML("beforeend", sentPhotos(files.map((f) => URL.createObjectURL(f)), " in") + (text ? `<div class="me in"><span class="tx">${esc(text)}</span></div>` : ""));
+      flyAsk();
       const ctrl = new AbortController();
       // Stopped while the photos upload: no thread is made, and the photos go back in the box.
       S.stop = () => {

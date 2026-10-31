@@ -251,6 +251,12 @@ The product's code is in `app/` (its README says what works and how to run it).
   "This week ×" chip clears it); "Active listings" (listings whose ads are running now, not paused or over) opens Report on
   this week with its Active filter on, or All when there are none, never an empty board (Ismael,
   2026-10-31).
+* **Small details, done properly (Ismael, 2026-10-31: "an intentional work of art touch by a
+  serious software company", "without doing too much"):** the box on Today is a real box: tap in
+  and the glass wakes (rim brightens, one glint crosses it), the rest of Today steps back while you
+  write, the box grows with the text, Send lights up only when there's something to send, and
+  sending opens the new chat with the words rising from the box into the first message. Look for
+  touches like this across the platform: quiet, purposeful, never a celebration or a bounce.
 * **No Brand page (Ismael, 2026-10-31):** removed completely. Sign up is name, email and
   password; the brokerage name is in Settings, Profile; anything else (phone, licence, Instagram)
   is said in the chat. Today is the greeting, the "Ask Hopkins anything" box and two setup rows,

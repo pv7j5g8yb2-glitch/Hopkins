@@ -1085,10 +1085,30 @@ select option{color:#111;background:#fff}
 @media (max-width:980px){.cr-strip{margin-right:-14px;padding-right:14px}.cr-slide{width:64%}.cr-reel{width:62%}}
 
 /* Today: the box to ask, like Claude's home */
-.askbox{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 24px;padding:8px 8px 8px 20px;height:60px;border-radius:999px;background:rgba(10,30,70,.55);box-shadow:0 0 0 1px var(--glass-edge);color:rgba(255,255,255,.72);font-size:16px;-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px)}
-.askbox span{width:44px;height:44px;border-radius:50%;background:#fff;color:var(--ox);display:grid;place-items:center;flex:none}
-.askbox span svg{width:18px;height:18px;stroke-width:2.3}
-.askbox:active{opacity:.75}
+.askbox{position:relative;display:flex;align-items:flex-end;gap:10px;margin:4px 0 24px;padding:8px 8px 8px 20px;min-height:60px;border-radius:30px;background:rgba(10,30,70,.55);box-shadow:0 0 0 1px var(--glass-edge);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);overflow:hidden;transition:box-shadow .3s var(--ease)}
+.askbox textarea{flex:1;min-width:0;align-self:center;background:none;border:0;outline:0;resize:none;color:#fff;font:inherit;font-size:16px;line-height:24px;padding:10px 0;max-height:132px;caret-color:#FFB49A}
+.askbox textarea::placeholder{color:rgba(255,255,255,.74)}
+.askbox button{width:44px;height:44px;border-radius:50%;background:#fff;color:#0C2747;display:grid;place-items:center;flex:none;opacity:.42;transition:opacity .25s var(--ease)}
+.askbox.has button{opacity:1}
+.askbox button:active{opacity:.7}
+.askbox button svg{width:18px;height:18px;stroke-width:2.3}
+/* Tapping in wakes the glass: the rim brightens and a glint crosses it once. */
+.askbox .lens-rim{transition:box-shadow .35s var(--ease)}
+.askbox:focus-within .lens-rim{box-shadow:inset 1.2px 1.4px 0 -.4px rgba(255,255,255,.95),inset -1px -1.2px 0 -.4px rgba(255,255,255,.38),inset 0 0 0 .5px rgba(255,255,255,.38)}
+.askbox:focus-within{box-shadow:0 0 0 1px rgba(255,255,255,.34),0 14px 34px -12px rgba(0,0,0,.45)}
+.ask-sheen{position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;overflow:hidden}
+.ask-sheen:before{content:"";position:absolute;top:-20%;bottom:-20%;left:-40%;width:28%;transform:translateX(0) skewX(-18deg);background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.22),rgba(255,255,255,0));opacity:0}
+.askbox.lit .ask-sheen:before{animation:askSheen 1s cubic-bezier(.3,.6,.2,1) .05s 1}
+@keyframes askSheen{0%{opacity:0;transform:translateX(0) skewX(-18deg)}15%{opacity:1}100%{opacity:0;transform:translateX(560%) skewX(-18deg)}}
+/* While writing, the rest of Today steps back. */
+.page[data-today] .wrap>*{transition:opacity .35s var(--ease)}
+.page[data-today].asking .wrap>:not(.askbox):not(.head){opacity:.32}
+/* The sent words rise from the box into the chat. */
+.ask-fly{position:fixed;left:0;top:0;z-index:300;color:#fff;font-size:15px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word;pointer-events:none;will-change:transform;transition:opacity .18s var(--ease)}
+.ask-fly.gone{opacity:0}
+body.flying #main .me{opacity:0;transition:none;animation:none}
+#main .me{transition:opacity .18s var(--ease)}
+@media (prefers-reduced-motion:reduce){.askbox.lit .ask-sheen:before{animation:none}}
 .steps.setup{margin-top:8px}
 .steps.setup li:before{display:none}
 /* New chat: no photo panel until photos are added (2026-10-31). */
