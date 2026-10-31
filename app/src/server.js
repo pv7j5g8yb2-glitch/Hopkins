@@ -40,7 +40,7 @@ for (const f of ["app.html", "app.css", "app.js", "glass.js", "creative.js", "lo
 const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
-for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg"]) files[f] = readFileSync(join(WEB, f));
+for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg"]) files[f] = readFileSync(join(WEB, f));
 files["manifest.webmanifest"] = readFileSync(join(WEB, "manifest.webmanifest"), "utf8");
 // The HEIC decoder (iPhone photos, for browsers that can't open them): libheif in WebAssembly, run
 // in a worker. 1.5 MB, so the app only loads it when such a photo is picked, and browsers keep it
@@ -114,7 +114,7 @@ app.get("/healthz", async (request) => {
   return { ok: true, started: STARTED, ai: provider || "none", pinged: seen };
 });
 
-for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "manifest.webmanifest", "heic-worker.js"]) {
+for (const f of ["app.css", "app.js", "glass.js", "creative.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
 for (const [path, v] of Object.entries(VENDOR)) {

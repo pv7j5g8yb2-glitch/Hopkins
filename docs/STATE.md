@@ -948,3 +948,11 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   the icon on black (option 23 of `design/new-look/logos-40.png`), live in the app, sign in page and
   icons. Still to change for the mark: the waitlist page (deploys from `claude/exciting-wright-8ml9uc`,
   needs Ismael's go ahead) and @gethopkins' profile picture (`design/brand/hopkins-instagram-1080.png`).
+* **New look built into the app (2026-10-31):** Ismael: "why are you still keeping the oxblood/gold
+  Hopkins?" The whole app (every screen, phone and laptop), the sign in page, Terms and Privacy now
+  use the new look: the reeded glass background (`app/web/field-phone.jpg`, `field-desk.jpg`), dark
+  frosted glass, white text, white pill buttons, the sunset mark. All 29 screens walked on an iPhone
+  and a 1440 laptop, every piece of text passing WCAG AA (`design/new-look/newlook.mjs` and
+  `measure.py`). Not changed: the lead page buyers see (it's the agent's brand), the ads (the
+  agent's brand), the waitlist (other branch, needs his go), the @gethopkins posts and the creative
+  skill's brand notes (still oxblood; to update next).

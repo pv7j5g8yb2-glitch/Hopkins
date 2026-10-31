@@ -4,10 +4,16 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
+# python3 field.py out [rib] [seed] [W H cx warm dark]: the app uses a phone (1179x2556) and a
+# laptop (2400x1500) version, the house placed right of the content and quieter than the mockup.
 out = sys.argv[1]
 RIB = int(sys.argv[2]) if len(sys.argv) > 2 else 26
 SEED = int(sys.argv[3]) if len(sys.argv) > 3 else 3
-W, H = 1179, 2556
+W, H = (int(sys.argv[4]), int(sys.argv[5])) if len(sys.argv) > 5 else (1179, 2556)
+CX = float(sys.argv[6]) if len(sys.argv) > 6 else 600 / 1179
+WARM = float(sys.argv[7]) if len(sys.argv) > 7 else 1.0
+DARK = float(sys.argv[8]) if len(sys.argv) > 8 else 1.0
+K = H / 2556
 rng = np.random.default_rng(SEED)
 
 def hexc(h):
@@ -34,14 +40,15 @@ def paint(a, mask, colour, k=1.0):
     return a * (1 - mask * k) + colour * mask * k
 
 # A house, gable up, a little right of centre: warm on its lit side, deep blue on its shadow side.
-cx, top, eave, base, half = 600, 700, 1080, 2150, 330
+cx, top, eave, base, half = int(CX * W), int(700 * K), int(1080 * K), int(2150 * K), int(330 * max(K, W / 1179 * .55))
 house = [(cx - half, eave), (cx, top), (cx + half, eave), (cx + half, base), (cx - half, base)]
 warm = vgrad([(0, "#E9967A"), (0.30, "#E2766C"), (0.45, "#D85772"), (0.58, "#C23B7C"), (0.75, "#8F2F7E"), (1, "#2E2770")])
-a = paint(a, blob(house, 40), warm, 1.0)
-shadow_side = [(cx + 40, top + 60), (cx + half + 40, eave + 20), (cx + half + 60, base), (cx + 60, base)]
-a = paint(a, blob(shadow_side, 60), hexc("#0A1E52"), 0.85)
-glow = [(cx - half - 120, eave + 200), (cx - 40, eave + 120), (cx - 60, base - 150), (cx - half - 160, base - 260)]
-a = paint(a, blob(glow, 140), hexc("#F2B494"), 0.22)
+a = paint(a, blob(house, int(40 * K) + 1), warm, WARM)
+d = lambda v: int(v * K)
+shadow_side = [(cx + d(40), top + d(60)), (cx + half + d(40), eave + d(20)), (cx + half + d(60), base), (cx + d(60), base)]
+a = paint(a, blob(shadow_side, d(60) + 1), hexc("#0A1E52"), 0.85)
+glow = [(cx - half - d(120), eave + d(200)), (cx - d(40), eave + d(120)), (cx - d(60), base - d(150)), (cx - half - d(160), base - d(260))]
+a = paint(a, blob(glow, d(140) + 1), hexc("#F2B494"), 0.22 * WARM)
 
 def box_x(a, r, shift=0):
     c = np.cumsum(np.pad(a, ((0, 0), (r + 1, r), (0, 0)), mode="edge"), axis=1)
@@ -57,18 +64,19 @@ n = np.cumsum(rng.normal(0, 1, H // 8 + 2))
 n = np.interp(np.arange(H), np.arange(len(n)) * 8, n)
 n = (n - n.mean()) / (n.std() + 1e-6)
 fine = np.repeat(rng.normal(0, 1, H // 3 + 1), 3)[:H]
-shift = (n * 80 + fine * 7).astype(int)
+shift = (n * 80 * K + fine * 7 * K).astype(int)
 for y in range(H):
     a[y] = np.roll(a[y], shift[y], axis=0)
 
 # Movement: smeared to the left with a soft trail, uneven from row to row like a long exposure.
-trail = box_x(a, 190, -120)
+trail = box_x(a, d(190) + 1, -d(120))
 for _ in range(2):
-    trail = box_x(trail, 60)
+    trail = box_x(trail, d(60) + 1)
 rows = np.clip(np.cumsum(rng.normal(0, 0.02, H)) * 0.6 + 0.55, 0.35, 0.8)[:, None, None]
 a = a * (1 - rows) + trail * rows
-a = box_x(a, 26)
-a = box_y(a, 9)
+a = box_x(a, d(26) + 1)
+a = box_y(a, d(9) + 1)
+a = a * DARK
 
 # Reeded glass: each rib a small cylinder lens, mirrored and magnified, lit from the left.
 xs = np.arange(W)

@@ -861,7 +861,7 @@
         // The thread may already have opened in its place.
         if (!dropEl.isConnected) return;
         dropEl.classList.toggle("has", pending.length > 0);
-        $("#dropGrid").innerHTML = pending.length ? pending.map((p, i) => `<i class="${p.url ? "" : "wait"}" style="${p.url ? `background-image:url(${p.url});` : ""}position:relative"><button type="button" data-rm="${i}" aria-label="Remove" style="position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:rgba(42,15,20,.75);color:#fff;font-size:13px;line-height:22px">×</button></i>`).join("") + `<span class="more">${ICON.plus}</span>` : "";
+        $("#dropGrid").innerHTML = pending.length ? pending.map((p, i) => `<i class="${p.url ? "" : "wait"}" style="${p.url ? `background-image:url(${p.url});` : ""}position:relative"><button type="button" data-rm="${i}" aria-label="Remove" style="position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:rgba(5,15,40,.7);color:#fff;font-size:13px;line-height:22px">×</button></i>`).join("") + `<span class="more">${ICON.plus}</span>` : "";
       },
     });
     // Like ChatGPT and Claude (Ismael, 2026-10-29): sending the first message makes the thread
