@@ -510,11 +510,17 @@ export async function seePhotosAI(photos) {
 }
 
 // One ad in a new set: like AD_SCHEMA, without the look (a new ad starts in the brand's).
+// A new ad comes with its own look, designed for this property and this ad's idea, never the same
+// template every time (Ismael, 2026-10-31).
+const LOOK_SCHEMA = {
+  type: "object",
+  description: "This ad's own look, designed for this property, its photo and this ad's idea, the way a good designer would: colours that suit the photo and the home (hex), the font, the layout and alignment. Each ad in the set looks different from the others, and different from the agent's recent ads listed in the message. Never default to the same navy and gold.",
+  properties: Object.fromEntries(Object.entries(STYLE_SCHEMA.properties).filter(([k]) => ["bg", "accent", "text", "font", "layout", "align", "focus", "fade"].includes(k))),
+};
 const SET_AD_SCHEMA = {
   type: "object",
-  properties: Object.fromEntries(Object.entries(AD_SCHEMA.properties).filter(([k]) => k !== "style")),
-  required: AD_SCHEMA.required.filter((k) => k !== "style"),
-  additionalProperties: false,
+  properties: { ...Object.fromEntries(Object.entries(AD_SCHEMA.properties).filter(([k]) => k !== "style")), look: LOOK_SCHEMA },
+  required: [...AD_SCHEMA.required.filter((k) => k !== "style"), "look"],
 };
 const SET_SCHEMA = {
   type: "object",
@@ -538,7 +544,7 @@ const STAGE_BRIEF = {
   sold: "Every ad says it's sold (or rented). They speak to owners nearby thinking of selling (or renting out).",
 };
 
-export async function writeSetAI({ listing, photos, brand, moment, extra, count = 3, brief = "", keep = [], fix = "" }) {
+export async function writeSetAI({ listing, photos, brand, moment, extra, count = 3, brief = "", keep = [], fix = "", recent = "" }) {
   const from = keep.length ? Math.max(...keep.map((a) => a.version)) + 1 : 1;
   const content = [
     ...photoBlocks(photos),
@@ -548,7 +554,7 @@ export async function writeSetAI({ listing, photos, brand, moment, extra, count 
 Photos: ${photoList(photos)}
 Brand voice: ${brand.voice || "plain"}. Agent: ${brand.agent_name || ""}${brand.business ? `, ${brand.business}` : ""}.
 Moment: ${moment}${extra?.oldPrice ? ` (the price was ${extra.oldPrice})` : ""}.${STAGE_BRIEF[moment] ? ` ${STAGE_BRIEF[moment]}` : ""}
-${keep.length ? `Ads that stay, so make yours different from them:\n${keep.map((a) => `${adLine(a, photos)}: ${a.overlay} / ${a.headline}`).join("\n")}\n` : ""}${brief ? `What the agent asked for: ${brief}\n` : ""}
+${recent ? `Looks on the agent's recent ads, so make these look different: ${recent}\n` : ""}${keep.length ? `Ads that stay, so make yours different from them:\n${keep.map((a) => `${adLine(a, photos)}: ${a.overlay} / ${a.headline}`).join("\n")}\n` : ""}${brief ? `What the agent asked for: ${brief}\n` : ""}
 Write ${count === 1 ? "one ad" : `${count} ads`}, numbered from ${from}.${fix ? `\n\nYour last try had problems, fix them: ${fix}` : ""}`,
     },
   ];
@@ -724,11 +730,11 @@ const KIND_RULES = {
   story: "An Instagram story: 1 to 3 frames, few words, one clear action.",
   post: "A single post: exactly 1 slide (cover or statement), one strong idea.",
 };
-export async function creationAI({ kind, request, listing, photos = 0, agent = "", previous = null }) {
+export async function creationAI({ kind, request, listing, photos = 0, agent = "", previous = null, recent = "" }) {
   if (!aiEnabled) return null;
   const r = await call({
-    system: `You are Hopkins, making Instagram content for a real estate agent: posts, carousels, stories and reels, drawn in the app. You write like the best real estate content creator on Instagram: content people save and send because they can use it straight away. Be specific and practical, never vague: not "check your credit" but "pull your free credit reports before you talk to a lender". Every slide earns its place. Plain words, no hype, no emojis, no hashtags, no exclamation marks, US spelling. Never use dashes as punctuation. Widely known general facts are fine when stated carefully ("closing costs usually run 2% to 5% of the price"); never invent local numbers, rates, prices or property details. Never use wording about who a property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. Don't write a caption; the agent asks for one separately if they want it. Everything about it is theirs to direct, like asking Claude: wording, order, how many slides, layouts, colours (exact hex in look), any Google Font by name, weight, capitals, alignment, a different background per slide, the name at the top and the footer line. When they ask for a change, make exactly that change and keep everything else as it was. ${KIND_RULES[kind] || KIND_RULES.post}`,
-    messages: [{ role: "user", content: `${previous ? `The current version:\n${JSON.stringify({ ...previous, caption: undefined })}\n\nChange it as asked, keep everything else:` : "Make this:"} ${request}\n\n${listing ? `The property (use only these facts): ${JSON.stringify(listing)}\nPhotos available: ${photos}\n` : "No property in this chat.\n"}Agent: ${agent || "unknown"}` }],
+    system: `You are Hopkins, making Instagram content for a real estate agent: posts, carousels, stories and reels, drawn in the app. You write like the best real estate content creator on Instagram: content people save and send because they can use it straight away. Be specific and practical, never vague: not "check your credit" but "pull your free credit reports before you talk to a lender". Every slide earns its place. Plain words, no hype, no emojis, no hashtags, no exclamation marks, US spelling. Never use dashes as punctuation. Widely known general facts are fine when stated carefully ("closing costs usually run 2% to 5% of the price"); never invent local numbers, rates, prices or property details. Never use wording about who a property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. Don't write a caption; the agent asks for one separately if they want it. Everything about it is theirs to direct, like asking Claude: wording, order, how many slides, layouts, colours (exact hex in look), any Google Font by name, weight, capitals, alignment, a different background per slide, the name at the top and the footer line. When they ask for a change, make exactly that change and keep everything else as it was. A new one is always designed fresh for what they asked and who it's for: choose the theme and fill in look (colours, fonts, weight, alignment) to suit this topic and audience, so it never comes out as the same template as last time; only match an earlier one when they ask. ${KIND_RULES[kind] || KIND_RULES.post}`,
+    messages: [{ role: "user", content: `${previous ? `The current version:\n${JSON.stringify({ ...previous, caption: undefined })}\n\nChange it as asked, keep everything else:` : "Make this:"} ${request}\n\n${listing ? `The property (use only these facts): ${JSON.stringify(listing)}\nPhotos available: ${photos}\n` : "No property in this chat.\n"}Agent: ${agent || "unknown"}${!previous && recent ? `\nTheir recent ones looked like this, so make this one look different unless they asked to match: ${recent}` : ""}` }],
     schema: CREATION_SCHEMA,
     effort: "medium",
     temperature: 0.7,

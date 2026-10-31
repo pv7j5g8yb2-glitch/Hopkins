@@ -751,7 +751,13 @@ export const adNumbers = (text) => text.replace(/\bAd \*\*([1-5])\*\*/g, "**Ad $
 
 // A set written by the model, checked, fixed once if needed, and laid over the built-in
 // writer's set (used for anything the model left out or got wrong). Returns { ads, reply }.
-async function writtenSet(ctx, built, { count, brief = "", keep = [], extra = "" } = {}) {
+// The looks on the agent's latest ads elsewhere, so a new set doesn't repeat them.
+async function recentLooks(ws, listingId) {
+  const rows = await all(`SELECT style FROM ads WHERE workspace_id = ? AND listing_id != ? ORDER BY created_at DESC LIMIT 6`, [ws.id, listingId]).catch(() => []);
+  return rows.map((r) => safeJson(r.style, {})).filter((x) => x.bg || x.font || x.layout).map((x) => [x.bg, x.font, x.layout].filter(Boolean).join(" ")).join("; ");
+}
+
+async function writtenSet(ctx, built, { count, brief = "", keep = [], extra = "", design = false } = {}) {
   const guardCtx = { listing: ctx.listing, photos: ctx.photos, extra, oldPrice: ctx.extra?.oldPrice };
   let r = await writeSetAI({ ...ctx, count, brief, keep });
   if (r && r.ads.length) {
@@ -764,7 +770,11 @@ async function writtenSet(ctx, built, { count, brief = "", keep = [], extra = ""
   if (!r || !r.ads.length) return { ads: built, reply: null };
   const ads = built.map((b, i) => {
     const a = r.ads.find((x) => x.version === b.version) || r.ads[i];
-    return a ? { ...b, ...guarded({ ...b, ...normalizeAI(a, ctx.photos, b) }, b, guardCtx), version: b.version } : b;
+    if (!a) return b;
+    const out = { ...b, ...guarded({ ...b, ...normalizeAI(a, ctx.photos, b) }, b, guardCtx), version: b.version };
+    // A new ad's own look, kept readable; anything it leaves out stays as the built one has it.
+    if (design && a.look && typeof a.look === "object") out.style = mergeStyle(out.style || {}, keepReadable(cleanStyle(a.look), out.style || {}, ctx.brand?.primary).changes);
+    return out;
   });
   return { ads, reply: r.reply ? adNumbers(plainWords(r.reply)) : null };
 }
@@ -872,7 +882,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
       return a ? { ...b, ...guarded({ ...b, ...normalizeAI(a, photos, b) }, b, guardCtx), version: b.version } : b;
     });
   } else if (aiEnabled) {
-    ({ ads: set, reply } = await writtenSet(ctx, built, { count: room, brief, extra: brief }));
+    ({ ads: set, reply } = await writtenSet({ ...ctx, recent: await recentLooks(ws, listing.id) }, built, { count: room, brief, extra: brief, design: true }));
   }
   // Paid: a new set replaces the old ads in place, so their links (and the leads they bring)
   // carry on. Free: the old ones go and still count, so a new set uses up free ads like any.
@@ -977,9 +987,9 @@ async function changeSetNow(ws, listing, ads, photos, r, text) {
     const guardCtx = { listing, photos, extra: text };
     set = built.map((b, i) => ({ ...b, ...guarded({ ...b, ...normalizeAI(fresh[i], photos, b) }, b, guardCtx), version: b.version }));
   } else {
-    ({ ads: set, reply: note } = await writtenSet(ctx, built, { count: n, brief: text, keep: ads, extra: text }));
+    ({ ads: set, reply: note } = await writtenSet(ctx, built, { count: n, brief: text, keep: ads, extra: text, design: true }));
   }
-  for (const ad of set) await saveAd(ws, listing, listing.moment || "new", ad.version, { ...ad, style: {} }, null);
+  for (const ad of set) await saveAd(ws, listing, listing.moment || "new", ad.version, { ...ad, style: ad.style || {} }, null);
   const added = set.map((a) => a.version);
   await say(ws, listing.id, (fresh.length === n && reply) || note || `Added ${VERSION_WORD(added, set)}.`, "text", { snapshot: await snapshot(listing, added) });
   return { focus: added[0] };
@@ -1073,7 +1083,9 @@ export async function makeCreation(ws, listing, text, kind, previous = null) {
   const hasProperty = listing.address || listing.price || listing.beds || listing.home_type;
   const agent = [ws.brand.agent_name, ws.brand.business].filter(Boolean).join(", ");
   const make = creationFake ? async (a) => cleanCreation(await creationFake(a), a.kind, a.photos, a.previous) : creationAI;
-  const spec = await make({ kind, request: text, listing: hasProperty ? { address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal), deal: listing.deal || "sale", beds: listing.beds, baths: listing.baths, sqft: listing.sqft, type: listing.home_type, features: listing.features, description: (listing.description || "").slice(0, 1500) } : null, photos: photos.length, agent, previous: previous?.spec || null });
+  const recentRows = previous ? [] : await all(`SELECT spec FROM creations WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 5`, [ws.id]).catch(() => []);
+  const recent = recentRows.map((r) => safeJson(r.spec, {})).map((x) => [x.theme, x.look?.background, x.look?.headingFont, x.look?.align].filter(Boolean).join(" ")).filter(Boolean).join("; ");
+  const spec = await make({ recent, kind, request: text, listing: hasProperty ? { address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal), deal: listing.deal || "sale", beds: listing.beds, baths: listing.baths, sqft: listing.sqft, type: listing.home_type, features: listing.features, description: (listing.description || "").slice(0, 1500) } : null, photos: photos.length, agent, previous: previous?.spec || null });
   if (!spec) {
     await say(ws, listing.id, "Something went wrong. Please try again.");
     return {};

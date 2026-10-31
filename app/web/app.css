@@ -1138,3 +1138,29 @@ section.chat.drag{outline:1px dashed rgba(255,255,255,.4);outline-offset:-12px}
   box-shadow:0 6px 16px -6px rgba(0,0,0,.45),inset 0 -1px 0 rgba(12,39,71,.08);transition:opacity .15s}
 .lg-cap a.lg-plus svg{width:24px;height:24px;stroke-width:2.6}
 .lg-cap a.lg-plus:active{opacity:.75}
+/* The opening moment (web/splash.js): the small pebble settles, the larger one rises past it into
+   its place (the ad that won), a soft sunset light blooms behind, the name is revealed beside the
+   mark, and the whole thing lifts away into the app. About two seconds, no bounce; a tap skips. */
+#splash{display:none}
+.splashing #splash{display:flex;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;
+  background:#0B1F47 url(/static/field-phone.jpg) center top/cover no-repeat;transition:opacity .5s cubic-bezier(.4,0,.2,1)}
+@media (min-width:981px){.splashing #splash{background-image:url(/static/field-desk.jpg)}}
+.splashing #splash:before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,rgba(8,20,48,.35),rgba(5,12,30,.82));transition:opacity .5s}
+.sp-stage{position:relative;display:flex;align-items:center;gap:14px;transition:transform .5s cubic-bezier(.4,0,.2,1),filter .5s}
+.sp-mark{width:76px;height:76px;overflow:visible;position:relative;z-index:1}
+.sp-small,.sp-big{transform-box:fill-box;transform-origin:50% 60%;opacity:0}
+.sp-small{animation:spSmall .55s cubic-bezier(.2,.8,.2,1) .15s forwards}
+.sp-big{animation:spBig .75s cubic-bezier(.16,.84,.24,1) .42s forwards}
+.sp-glow{position:absolute;left:-22px;top:50%;width:150px;height:150px;margin-top:-75px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(240,112,138,.42),rgba(185,64,143,.12) 45%,rgba(185,64,143,0) 70%);opacity:0;transform:scale(.5);
+  animation:spGlow 1.3s cubic-bezier(.2,.8,.2,1) .5s forwards}
+.sp-word{position:relative;z-index:1;font-weight:300;font-size:46px;letter-spacing:-.03em;color:#fff;clip-path:inset(0 100% 0 0);opacity:.2;
+  animation:spWord .6s cubic-bezier(.3,.7,.2,1) 1.02s forwards}
+@keyframes spSmall{from{opacity:0;transform:translateY(10px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes spBig{from{opacity:0;transform:translate(-30%,46%) scale(.5)}35%{opacity:1}to{opacity:1;transform:none}}
+@keyframes spGlow{40%{opacity:1;transform:scale(1)}to{opacity:.55;transform:scale(1.15)}}
+@keyframes spWord{to{clip-path:inset(0 0 0 0);opacity:1}}
+.splash-out #splash{opacity:0;pointer-events:none}
+.splash-out .sp-stage{transform:scale(1.05);filter:blur(4px)}
+.splash-calm .sp-small,.splash-calm .sp-big,.splash-calm .sp-glow,.splash-calm .sp-word{animation:none;opacity:1;transform:none;clip-path:none}
+.sp-mark,.sp-mark path{stroke:none!important}

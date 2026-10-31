@@ -296,6 +296,16 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Fair housing warns, never blocks (Ismael, 2026-10-31):** the US Fair Housing Act covers any
   housing statement or ad, paid or organic, so wording like "perfect for couples" gets one plain
   warning and a safer alternative, and the agent decides. Not legal advice.
+* **Never the same template twice (Ismael, 2026-10-31):** the old Hopkins gave every listing the same
+  ad copy in the same template, "horrid and poor work". Every new ad, post, carousel, story or reel
+  is designed fresh for what was asked and who it's for: each new ad gets its own look (colours,
+  font, layout) for its property and idea, different from the others in the set and from the
+  agent's recent ads; each creation picks its look for the topic and avoids the agent's recent
+  ones unless asked to match. From there the agent changes whatever they want.
+* **Opening moment (Ismael, 2026-10-31):** a short animated splash (the small pebble settles, the
+  larger rises past it into place, the name is revealed, about two seconds, a tap skips) only when
+  Hopkins is opened fresh in a tab after sign in, never on the sign in page, never on returning to
+  an open tab or a reload (`app/web/splash.js`, per tab with sessionStorage).
 * **Ads are never a fixed set (Ismael, 2026-10-25):** no set names like "The life / The standout /
   The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
   its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the
