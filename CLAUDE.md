@@ -214,6 +214,14 @@ The product's code is in `app/` (its README says what works and how to run it).
   The model judges what things mean, the way an experienced marketer would ("$2,400/mo" is rent,
   "3/2" is 3 bed 2 bath); code rules are only the backup for when there's no model, and never
   override an obvious reading. Before adding a rule, ask what a person would understand.
+* **Organic posts too (Ismael, 2026-10-31):** Hopkins isn't only listing ads. Agents don't have 30
+  listings a month, so Hopkins also makes their everyday posts: their story, their city, their
+  life, market updates, carousels, captions (what @gethopkins' own reel tells agents to post). It
+  replaces 2026-10-30's "ads only for now". Posting them for the agent needs Instagram's publishing
+  permission and its own App Review later; until then they download and post.
+* **Fair housing warns, never blocks (Ismael, 2026-10-31):** the US Fair Housing Act covers any
+  housing statement or ad, paid or organic, so wording like "perfect for couples" gets one plain
+  warning and a safer alternative, and the agent decides. Not legal advice.
 * **Ads are never a fixed set (Ismael, 2026-10-25):** no set names like "The life / The standout /
   The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
   its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the
