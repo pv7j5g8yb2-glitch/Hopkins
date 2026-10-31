@@ -12,7 +12,8 @@
   const cap = document.getElementById("lgCap");
   const lens = document.getElementById("lgLens");
   if (!cap || !lens) return;
-  const tabs = [...cap.querySelectorAll("a[data-nav]")];
+  // The + in the middle is a button of its own, not a tab: the drop never lands on it.
+  const tabs = [...cap.querySelectorAll("a[data-nav]:not(.lg-plus)")];
   const phone = () => window.matchMedia("(max-width: 980px)").matches;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -23,11 +24,11 @@
 
   function geometry() {
     const r = cap.getBoundingClientRect();
-    st.w = (r.width - PAD * 2) / tabs.length;
+    st.w = tabs[0].offsetWidth;
     lens.style.width = st.w + "px";
     return r;
   }
-  const xFor = (i) => i * st.w;
+  const xFor = (i) => tabs[i].offsetLeft - PAD;
 
   function draw() {
     // Stretch with speed along the direction of travel and thin a little across it, the way a
@@ -94,7 +95,8 @@
   // starts fresh, whatever happened to the last one; and a touch that never ends is let go of
   // after a few seconds.
   let dragging = false, lastX = 0, pointerId = null, navigatedAt = 0, watchdog = 0;
-  const indexAt = (x) => Math.max(0, Math.min(tabs.length - 1, Math.round(x / st.w)));
+  // The tab whose middle is nearest to where the drop is.
+  const indexAt = (x) => tabs.reduce((best, t, i) => (Math.abs(xFor(i) - x) < Math.abs(xFor(best) - x) ? i : best), 0);
   const clampX = (r, clientX) => Math.max(0, Math.min(r.width - PAD * 2 - st.w, clientX - r.left - PAD - st.w / 2));
 
   function settle() {
@@ -107,6 +109,7 @@
 
   cap.addEventListener("pointerdown", (e) => {
     if (!phone() || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (e.target.closest(".lg-plus")) return;
     if (dragging) settle();
     const r = geometry();
     if (st.w <= 0) return;
@@ -159,6 +162,7 @@
   // The tap that follows a handled touch is swallowed so it doesn't navigate twice. Any other tap
   // (keyboard, or a touch this code never saw) goes through as a normal tab.
   cap.addEventListener("click", (e) => {
+    if (e.target.closest(".lg-plus")) return;
     if (Date.now() - navigatedAt < 700) { e.preventDefault(); return; }
     const a = e.target.closest("a[data-nav]");
     if (a && phone()) { e.preventDefault(); go(tabs.indexOf(a)); }

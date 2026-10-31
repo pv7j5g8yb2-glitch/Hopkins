@@ -1111,3 +1111,10 @@ section.chat.drag{outline:1px dashed rgba(255,255,255,.4);outline-offset:-12px}
 .lensing .tabbar:before{opacity:.55}
 .lensing .lens-on.lg:before,.lensing .lens-on.lg:after{display:none}
 .lensing .stats-mini.lensed{border-radius:20px;overflow:hidden}
+/* New chat: the + sits in the middle of the tab bar with no label, like TikTok's (Ismael,
+   2026-10-31). A white rounded key, a touch wider than it is tall, the one solid thing in the glass;
+   it dims when pressed, never grows. */
+.lg-cap a.lg-plus,.lg-cap.dark a.lg-plus{flex:none;align-self:center;width:54px;height:40px;margin:0 4px;border-radius:14px;background:#fff;color:#0C2747;gap:0;
+  box-shadow:0 6px 16px -6px rgba(0,0,0,.45),inset 0 -1px 0 rgba(12,39,71,.08);transition:opacity .15s}
+.lg-cap a.lg-plus svg{width:24px;height:24px;stroke-width:2.6}
+.lg-cap a.lg-plus:active{opacity:.75}

@@ -189,7 +189,9 @@ The product's code is in `app/` (its README says what works and how to run it).
   "Create ads", "Approve and run", "requires an upgrade". Never casual ("No such listing", "Too many
   tries", "Sold, nice", "Drop it in here", "whenever you're ready").
 * **Phones first (Ismael, 2026-10-24):** most use will be on a phone. Design and check every screen at
-  iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar, the main
+  iPhone size first (screenshots, not guesses), then laptop. House rules: a bottom tab bar (Today,
+  Chats, a white + key for New chat in the middle with no label like TikTok's, Leads, Report;
+  Ismael 2026-10-31), the main
   action fixed at the bottom within thumb reach, menus as bottom sheets that swipe away (down, or up
   for a sheet at the top, Ismael 2026-10-27), inputs at 16px (smaller makes
   iPhones zoom), room for the home bar, no suggested replies or reply chips: the empty box says "Ask Hopkins anything" until there's a conversation, then "Reply to Hopkins" (Ismael, 2026-10-27), only the thinking mark while
