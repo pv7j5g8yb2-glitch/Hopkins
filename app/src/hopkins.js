@@ -1186,9 +1186,14 @@ async function applyAI(ws, listing, ads, photos, r, text) {
   // had paused something it hadn't.
   const state = await runState(listing.id);
   const claims = (re) => re.test(reply || "");
-  const reached = ["run", "remove_ads", "new_moment"].includes(r.action) && r.moment !== "sold";
-  if (r.action === "pause" || (state !== "none" && wantsStop(text) && (reached || claims(/\b(paused|stopped|turned off)\b/i)))) return stopOrStart(ws, listing, "pause");
-  if (r.action === "resume" || (state === "paused" && wantsStart(text) && (r.action === "run" || claims(/\b(resumed|running again|back on)\b/i)))) return stopOrStart(ws, listing, "resume");
+  // When the agent's own words say stop or start, they win over the model ("No stop them!" was
+  // once read as "don't stop" and the ads were started again, 2026-10-31).
+  const reached = ["run", "remove_ads", "new_moment", "pause", "resume"].includes(r.action) && r.moment !== "sold";
+  const toStop = wantsStop(text), toStart = !toStop && wantsStart(text);
+  if (state !== "none" && toStop && (reached || claims(/\b(paused|stopped|turned off|resumed)\b/i))) return stopOrStart(ws, listing, "pause");
+  if (state !== "none" && toStart && (reached || claims(/\b(resumed|running again|back on|paused)\b/i))) return stopOrStart(ws, listing, "resume");
+  if (r.action === "pause" && !toStart) return stopOrStart(ws, listing, "pause");
+  if (r.action === "resume" && !toStop) return stopOrStart(ws, listing, "resume");
   // Never says something changed that didn't.
   if (r.action === "none" && claims(/\b(paused|resumed|stopped (the|your|all|both)|turned (it |them |the ads? )?(off|back on)|deleted (the |all |both |your )?(\w+ )?ads?)\b/i)) {
     await say(ws, listing.id, state === "running" ? `The ads for ${listingTitle(listing)} are running. Say "pause" to stop them.` : state === "paused" ? `The ads for ${listingTitle(listing)} are paused.` : "Nothing has changed.");
@@ -1692,9 +1697,10 @@ const STOP_WORDS = /\b(stop|pause|halt|kill|cancel|turn(ed)? (it |them |the ads?
 const START_WORDS = /\b(resume|unpause|restart|start (it |them |the ads? )?(again|back)|turn (it |them |the ads? )?back on|switch (it |them |the ads? )?back on|run (it |them )?again|back on)\b/i;
 // Deleting ads needs the agent to say so: only these words ever remove one.
 const DELETE_WORDS = /\b(remove|delete|get rid|bin|trash|erase|scrap|ditch|drop|lose|take out|throw (it |them )?(out|away))\b/i;
-// A question ("when do they stop?") asks, it doesn't tell.
-export const wantsStop = (text) => STOP_WORDS.test(text) && !START_WORDS.test(text) && !/\?\s*$/.test(text) && !/\bstop (using|saying|showing|writing|putting|making|adding|calling)\b/i.test(text);
-export const wantsStart = (text) => START_WORDS.test(text) && !/\?\s*$/.test(text);
+// A question ("when do they stop?") asks, it doesn't tell. "Don't stop them" means keep them on.
+const DONT_STOP = /\b(don'?t|do not|never|no need to|not)\s+(stop|pause|kill|cancel|turn (them |it )?off)\b/i;
+export const wantsStop = (text) => STOP_WORDS.test(text) && !START_WORDS.test(text) && !DONT_STOP.test(text) && !/\?\s*$/.test(text) && !/\bstop (using|saying|showing|writing|putting|making|adding|calling)\b/i.test(text);
+export const wantsStart = (text) => (START_WORDS.test(text) || DONT_STOP.test(text)) && !/\?\s*$/.test(text);
 
 // ---------- Meta ----------
 

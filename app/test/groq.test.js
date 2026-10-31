@@ -448,6 +448,16 @@ test("running ads: \"stop the ad\" pauses them (never a new plan, never deleting
   assert.equal(r.json.ads.length, 3, "the ads are all still there");
   assert.match(r.json.messages.at(-1).body, /already paused/);
 
+  // The model read "No stop them!" as "don't stop": the agent's words win.
+  next = [turn({ reply: "Resumed.", action: "resume" })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "No stop them!" });
+  assert.equal(r.json.listing.run, "paused");
+  // And "don't stop them" means keep them running.
+  next = [turn({ reply: "Paused.", action: "pause" })];
+  r = await c("POST", `/api/listings/${id}/messages`, { text: "don't stop them" });
+  assert.equal(r.json.listing.run, "running");
+  await c("POST", `/api/listings/${id}/pause`, {});
+
   // The model claims a change it didn't make: the reply says what's true.
   next = [turn({ reply: "The active ad has been paused, so it will no longer run.", action: "none" })];
   r = await c("POST", `/api/listings/${id}/messages`, { text: "is it off now" });
