@@ -237,6 +237,30 @@ The product's code is in `app/` (its README says what works and how to run it).
   drawn, a panel that rebuilds its contents gets its glass back at once, and nothing redraws while
   the screen is still. Test sheets opening, not only still screens.
 
+* **Chat menu (Ismael, 2026-11-01):** a chat's ••• menu (and holding its card) is Rename and Delete
+  chat, nothing else; Pause ads or Resume ads appear there only while a chat has ads running. It's
+  always "chat", never "listing": Hopkins is for any work, not only listings.
+* **Phone header (Ismael, 2026-11-01):** solid `#0B0B0D`, never a blur. Tapping the logo turns
+  the mark once on phones too (the new header carries the turn, `S.spinAt`).
+* **Tab bar glass (Ismael, 2026-11-01):** glass and gliding stay, but no white reflection or lit
+  side: an even hairline all round, so the left (Today, Chats) looks like the right.
+* **Notifications in Settings (Ismael, 2026-11-01):** "Get notified every time a new lead comes in."
+  and two buttons side by side, On and Off; the chosen one white, the other black with white text.
+  No test button.
+* **Demo account (Ismael, 2026-11-01):** in the account menu for admins ("Open demo account"), not
+  on Admin. It opens straight to Today (setup done) and looks like a real agent's weeks: listings
+  with ads in different looks, runs, leads over six weeks, a sold one, plus a carousel, a reel and
+  an everyday email chat (`app/src/demo.js`). "Back to my account" returns to Today.
+* **Report is about ads (Ismael, 2026-11-01):** the board is titled "Ads" and lists only chats that
+  have had ads or leads; a carousel or an email chat never appears there.
+* **Fast replies, and they always arrive (Ismael, 2026-11-01: plain chat "takes too long thinking";
+  leaving mid reply showed a connection error):** plain talk asks Gemini to think lightly and asks
+  Groq too after 4 seconds (making things keeps 12); a reply never waits over 2.5 seconds on Meta or
+  Follow Up Boss data. If the phone drops the connection while Hopkins works, the app never shows
+  an error: the server carries on, the thinking mark stays and the app checks every few seconds
+  until the answer is there (`awaitAnswer`); reopening a chat mid reply shows the thinking mark
+  again (`working` on the chat). Sending a first message and moving elsewhere never pulls the agent
+  back to that chat; the answer waits with its white dot.
 * **Black cards, glass only on the tab bar (Ismael, 2026-11-01, after comparing screenshots):** the
   reeded background stays; every card, panel, sheet, box and the Today box is solid near black
   (`--card`, `#141416`) with no rim or glint; only the tab bar (and its drop and + key) keeps Liquid
@@ -276,12 +300,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   clears the dot at once. Other rows stay as they are. Listing cards carry no tags (no "Ads ready",
   "Approved" or "Sold", Ismael 2026-10-29): just the Hopkins cover, the name and the dot. Every
   card and small square shows the Hopkins cover, never the property photo (Ismael, 2026-10-29).
-  Today shows its three numbers, then "Recent" and the 5 listings used most recently (Ismael,
-  2026-10-29). The three numbers match the three tabs and each opens its own (Ismael,
-  2026-10-29): Chats opens Chats; "Leads this week" opens Leads filtered to this week (a dark
-  "This week ×" chip clears it); "Active listings" (listings whose ads are running now, not paused or over) opens Report on
-  this week with its Active filter on, or All when there are none, never an empty board (Ismael,
-  2026-10-31).
+  Today (Ismael, 2026-11-01): the greeting, the box, Needs attention when there is any, then
+  "Recent" (white, semibold, not grey) and the 5 chats used most recently, or all of them when
+  there are fewer. No numbers strip. The greeting says Good morning from 5:00 to 11:59, Good
+  afternoon from 12:00 to 18:59 and Good evening from 19:00 to 4:59, and changes by itself when
+  the app is opened again.
 * **Small details, done properly (Ismael, 2026-10-31: "an intentional work of art touch by a
   serious software company", "without doing too much"):** the box on Today is a real box: tap in
   and the box wakes, the rest of Today stays as it is (no greying, 2026-11-01), the box grows with the text, Send lights up only when there's something to send, and

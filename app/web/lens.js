@@ -65,11 +65,13 @@ void main(){
   float facing = dot(n, L);
   // (The rim's thin line is drawn crisp by .lens-rim at the screen's full sharpness.)
   float rim = 0.;
-  float inner = pow(t, 5.) * .09 * (.6 + .4 * max(facing, 0.));
+  // Even all round, no brighter side (Ismael, 2026-11-01: the left looked fake next to the right).
+  float inner = pow(t, 5.) * .05;
   // Reflection: a soft diagonal glint lying across the glass, strongest along the edge.
   vec2 u = (lp + c) / size;
   float g = exp(-pow((dot(u, normalize(vec2(1., .55))) - glint) / .075, 2.));
-  float glintAmt = g * (.05 + .3 * pow(t, 2.)) * (1. + press);
+  // No white reflection across the glass (Ismael, 2026-11-01); only a faint one while pressed.
+  float glintAmt = g * .06 * press;
   vec3 outc = col + vec3(rim + inner + glintAmt);
   gl_FragColor = vec4(outc * alpha, alpha);
 }`;

@@ -166,7 +166,10 @@ async function outsideData(ws) {
 }
 
 export async function accountSummary(ws, tz = "UTC") {
-  const [numbers, attention, outside] = await Promise.all([numbersSummary(ws, tz), attentionLine(ws), outsideData(ws).catch(() => "")]);
+  // Meta and Follow Up Boss are read in the background and kept ten minutes; a reply never waits
+  // more than 2.5 seconds on them (the first message after a while goes without, the next has it).
+  const outsideSoon = Promise.race([outsideData(ws).catch(() => ""), new Promise((r) => setTimeout(() => r(""), 2500))]);
+  const [numbers, attention, outside] = await Promise.all([numbersSummary(ws, tz), attentionLine(ws), outsideSoon]);
   return [numbers, crmLine(ws), siteLine(ws), outside, attention].filter(Boolean).join("\n");
 }
 
@@ -1336,6 +1339,9 @@ export function startTurn(key) {
   turns.set(key, turn);
   return turn;
 }
+// Whether Hopkins is still writing a reply in this chat (the app shows the thinking mark again
+// after a reload or a reopened browser, and waits for it).
+export const working = (key) => turns.has(key);
 export function endTurn(key, turn) {
   if (turns.get(key) === turn) turns.delete(key);
   turn.finish();
@@ -2341,8 +2347,11 @@ export async function weeklyReport(ws, range = weekRange()) {
   const launchedIds = new Set(launched.map((r) => r.listing_id));
   const drafts = await all(`SELECT DISTINCT listing_id FROM ads WHERE workspace_id = ? AND status = 'draft'`, [ws.id]);
   const draftIds = new Set(drafts.map((r) => r.listing_id));
+  // Report is about ads and the leads they bring (Ismael, 2026-11-01: Hopkins is an assistant for
+  // any work, so chats that never had ads, a carousel, an email, don't belong on it).
+  const withAds = new Set((await all(`SELECT DISTINCT listing_id FROM ads WHERE workspace_id = ?`, [ws.id])).map((r) => r.listing_id));
 
-  const rows = listings.map((l) => {
+  const rows = listings.filter((l) => withAds.has(l.id) || allTime[l.id]).map((l) => {
     const ls = leads.filter((x) => x.listing_id === l.id);
     const byVersion = {};
     for (const x of ls) if (x.version) byVersion[`Ad ${x.version}`] = (byVersion[`Ad ${x.version}`] || 0) + 1;

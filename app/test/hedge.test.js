@@ -4,7 +4,7 @@ import { boot } from "./helpers.js";
 
 // Free Gemini now and then hangs for minutes. When it hasn't answered in time, Groq is asked too
 // and the first answer wins, so a simple question never waits on Gemini's timeouts.
-await boot({ ANTHROPIC_API_KEY: "", GEMINI_API_KEY: "test-gemini", GROQ_API_KEY: "test-groq", GROQ_BACKUP_MODELS: "", AI_HEDGE_MS: "150" });
+await boot({ ANTHROPIC_API_KEY: "", GEMINI_API_KEY: "test-gemini", GROQ_API_KEY: "test-groq", GROQ_BACKUP_MODELS: "", AI_HEDGE_MS: "150", AI_CHAT_HEDGE_MS: "150" });
 const brain = await import("../src/brain.js");
 
 const asked = [];
@@ -30,4 +30,19 @@ test("a quick Gemini answers on its own, and Groq is never asked", async () => {
   gemini = "quick";
   assert.equal(await brain.titleAI("Email to a quiet buyer"), "From Gemini");
   assert.deepEqual(asked, ["gemini"]);
+});
+
+test("plain talk asks Gemini to think lightly, and a model that won't take that is asked again without it", async () => {
+  const bodies = [];
+  brain.setFetchForTests(async (url, init) => {
+    const body = JSON.parse(init.body);
+    if (!/generativelanguage/.test(String(url))) return { ok: false, status: 500, text: async () => "no" };
+    bodies.push(body);
+    if (body.generationConfig.thinkingConfig) return { ok: false, status: 400, text: async () => "Unknown field thinkingConfig" };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ title: "Plain chat" }) }] } }] }) };
+  });
+  const t = await brain.titleAI("hello there");
+  assert.equal(t, "Plain chat");
+  assert.ok(bodies[0].generationConfig.thinkingConfig, "asked to think lightly first");
+  assert.ok(!bodies[1].generationConfig.thinkingConfig, "then without it");
 });

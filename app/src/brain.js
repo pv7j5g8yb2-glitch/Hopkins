@@ -222,7 +222,7 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
       return JSON.parse(res.content.filter((b) => b.type === "text").map((b) => b.text).join(""));
     }
     if (provider === "gemini") {
-      const asked = gemini({ system, messages, schema, temperature });
+      const asked = gemini({ system, messages, schema, temperature, quick: effort === "low" });
       if (!process.env.GROQ_API_KEY) return await asked;
       // Free Gemini usually answers in a few seconds, but now and then it hangs until each
       // model times out in turn, which left a simple question waiting ten minutes (Ismael,
@@ -234,7 +234,9 @@ async function call({ system, messages, schema, effort, temperature = 0.4 }) {
         console.error("Gemini didn't answer; Groq is answering instead.");
         return await groq({ system, messages, schema, effort, temperature });
       }
-      return await hedged(asked, () => groq({ system, messages, schema, effort, temperature }), HEDGE_MS);
+      // Talking (effort low) shouldn't wait: Groq is asked after 4 seconds instead of 12
+      // (Ismael, 2026-11-01: plain chat took too long). Making things keeps the longer wait.
+      return await hedged(asked, () => groq({ system, messages, schema, effort, temperature }), effort === "low" ? CHAT_HEDGE_MS : HEDGE_MS);
     }
     if (provider === "groq") return await groq({ system, messages, schema, effort, temperature });
     return null;
@@ -305,6 +307,7 @@ async function groq({ system, messages, schema, effort, temperature }) {
 // The first answer of the two. The backup is only asked when the first hasn't answered in ms
 // (or failed), so it's rarely used and its free allowance lasts.
 const HEDGE_MS = Number(process.env.AI_HEDGE_MS) || 12000;
+const CHAT_HEDGE_MS = Number(process.env.AI_CHAT_HEDGE_MS) || 4000;
 const SLOW = Symbol("slow");
 async function hedged(asked, backup, ms) {
   const first = asked.catch((err) => { console.error("Gemini failed:", err.message); return null; });
@@ -369,7 +372,10 @@ let geminiSchemaOk = true;
 // straight to one that answers (2026-10-28: the newest free ones answered "high demand" for a
 // while, taking up to 10 seconds each to say so).
 const geminiResting = new Map();
-async function gemini({ system, messages, schema, temperature, tools }) {
+// Thinking set low for plain talk, so a reply isn't held up by reasoning it doesn't need. If a
+// model won't take the setting, it's asked again without it and left out from then on.
+let geminiThinkOk = true;
+async function gemini({ system, messages, schema, temperature, tools, quick = false }) {
   const contents = messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: geminiParts(m.content) }));
   const ready = GEMINI_MODELS.filter((m) => !(geminiResting.get(m) > Date.now()));
   let limited = false;
@@ -383,7 +389,7 @@ async function gemini({ system, messages, schema, temperature, tools }) {
           systemInstruction: { parts: [{ text: withSchema || !schema ? system : `${system}\n\nAnswer with only a JSON object that matches this JSON Schema, nothing before or after it:\n${JSON.stringify(schema)}` }] },
           contents,
           ...(tools ? { tools } : {}),
-          generationConfig: { temperature, ...(tools ? {} : { responseMimeType: "application/json" }), ...(withSchema ? { responseJsonSchema: schema } : {}) },
+          generationConfig: { temperature, ...(tools ? {} : { responseMimeType: "application/json" }), ...(withSchema ? { responseJsonSchema: schema } : {}), ...(quick && geminiThinkOk ? { thinkingConfig: { thinkingLevel: "low" } } : {}) },
         }),
         // Reading a link through Google can take 40 seconds; anything else that slow is stuck.
         signal: AbortSignal.timeout(tools ? 75000 : 40000),
@@ -399,6 +405,7 @@ async function gemini({ system, messages, schema, temperature, tools }) {
       const err = await res.text();
       if (res.status === 404) break; // that model name is gone: try the next
       if (res.status === 400 && withSchema && /schema/i.test(err)) { geminiSchemaOk = false; continue; }
+      if (res.status === 400 && quick && geminiThinkOk && /think/i.test(err)) { geminiThinkOk = false; continue; }
       if (res.status === 429 || res.status === 503 || res.status === 504) {
         // Over the free limit, or "high demand": this model rests and the next one is asked.
         const wait = Number((err.match(/"retryDelay":\s*"(\d+)s"/) || [])[1]) || 0;

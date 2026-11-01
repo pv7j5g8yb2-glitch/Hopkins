@@ -68,7 +68,7 @@
       } catch (err) {
         if (opts.signal?.aborted) throw Object.assign(new Error("Stopped"), { stopped: true });
         if (method === "GET" && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
-        throw new Error("No connection. Try again.");
+        throw Object.assign(new Error("No connection. Try again."), { offline: true });
       }
       if (res.status >= 502 && res.status <= 504 && method === "GET" && attempt < 2) { await new Promise((r) => setTimeout(r, 1500)); continue; }
       break;
@@ -243,7 +243,7 @@
     if (opts.back) {
       return `<div class="mtop"><a class="icon-btn mback" href="${opts.back}" aria-label="Back">${ICON.back}</a><div class="ttl">${opts.rename ? `<button class="rn" data-act="renameAsk" data-id="${opts.rename}"><b>${esc(title)}</b></button>` : `<b>${esc(title)}</b>`}${opts.sub ? `<span>${esc(opts.sub)}</span>` : ""}</div>${extra}</div>`;
     }
-    return `<div class="mtop"><a class="logo" href="#/today" aria-label="Hopkins, Today">${MARK("lg-mark")}Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account" ${avatarStyle()}>${esc(initials())}</button></div>`;
+    return `<div class="mtop"><a class="logo" href="#/today" aria-label="Hopkins, Today">${MARK(`lg-mark${Date.now() - (S.spinAt || 0) < 400 ? " once" : ""}`)}Hopkins</a>${extra}<button class="av" data-act="account" aria-label="Account" ${avatarStyle()}>${esc(initials())}</button></div>`;
   }
   const buzz = (ms = 8) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
   // Real moments get a plain notice, not a celebration (Ismael, 2026-10-30: it felt like a game).
@@ -454,23 +454,17 @@
       ? `<div class="note"><b>${esc(S.me.plan.name)}</b>Billed monthly. Cancel anytime.</div>`
       : `<div class="note"><b>Free</b></div>`;
     return `<div class="note" style="padding-bottom:2px"><b>${esc(myName())}</b>${esc(S.me.user.email)}</div>${plan}<div class="sep"></div>
-      <a href="#/settings">${ICON.gear}Settings</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a>` : ""}
+      <a href="#/settings">${ICON.gear}Settings</a>${S.me.admin ? `<a href="#/admin">${ICON.shield}Admin</a><button data-act="demoOpen">${ICON.eye}Open demo account</button>` : ""}
       ${S.me.demo ? `<button data-act="demoLeave">${ICON.back}Back to my account</button>` : ""}<button data-act="feedbackAsk">${ICON.msg}Send feedback</button>
       <div class="sep"></div><button data-act="logout">${ICON.out}Sign out</button>`;
   }
 
+  // The chat's ••• menu: Rename and Delete chat (Ismael, 2026-11-01). Running ads keep their one
+  // tap Pause or Resume here too, so they can always be stopped (2026-10-31).
   function listingMenu() {
     const l = S.current.listing;
-    const ad = adFor(S.selected[l.id]);
-    const own = ad
-      ? `<div class="sep"></div><button data-dl="feed">${ICON.down}Download feed image</button><button data-dl="story">${ICON.down}Download story image</button>
-         <button data-copy="${esc(ad.primary_text)}" data-copied="Ad text copied">${ICON.copy}Copy ad text</button>`
-      : "";
-    // Running ads can always be stopped in one tap, and started again (Ismael, 2026-10-31).
     const runBtn = l.run === "running" ? `<button data-act="pauseRun">${ICON.pause}Pause ads</button>` : l.run === "paused" ? `<button data-act="resumeRun">${ICON.play}Resume ads</button>` : "";
-    return `${runBtn}<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button><a href="/l/${esc(l.slug)}" target="_blank" rel="noopener">${ICON.eye}Open lead page</a>
-      ${ad ? `<button data-copy="${esc(`${location.origin}/l/${l.slug}?v=${ad.id}`)}">${ICON.link}Copy ad link</button>` : ""}${own}
-      <div class="sep"></div><button data-act="remake">${ICON.redo}${S.current.ads.length ? "Create new ads" : "Create ads"}</button>
+    return `${runBtn}<button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button>
       <button class="danger" data-act="delListingAsk">${ICON.trash}Delete chat</button>`;
   }
 
@@ -570,7 +564,8 @@
   function drawToday() {
     const first = (S.me.user.name || "").split(" ")[0];
     const h = new Date().getHours();
-    const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+    // Morning 5:00 to 11:59, afternoon 12:00 to 18:59, evening 19:00 to 4:59 (Ismael, 2026-11-01).
+    const greet = h >= 5 && h < 12 ? "Good morning" : h >= 12 && h < 19 ? "Good afternoon" : "Good evening";
     // Each number opens its own tab, showing exactly what it counts (Ismael, 2026-10-29): Chats,
     // Leads (this week's) and Report (the listings with ads running, its Active filter).
     // Active: its ads are running now (not paused, not over).
@@ -599,18 +594,15 @@
     const m = S.me.meta || {};
     const c = S.me.crm || {};
     const setup = [
-      !m.ready ? `<li><div class="tx"><b>Meta</b></div>${!m.available ? `<button class="link" data-act="metaSoon">Connect</button>` : m.connected ? `<a class="link" href="#/settings">Finish</a>` : `<a class="link" href="/api/meta/connect">Connect</a>`}</li>` : "",
+      !m.ready && !S.me.demo ? `<li><div class="tx"><b>Meta</b></div>${!m.available ? `<button class="link" data-act="metaSoon">Connect</button>` : m.connected ? `<a class="link" href="#/settings">Finish</a>` : `<a class="link" href="/api/meta/connect">Connect</a>`}</li>` : "",
       S.pushState === "off" ? `<li><div class="tx"><b>Notifications</b></div><button class="link" data-act="pushOn">Turn on</button></li>` : "",
     ].filter(Boolean).join("");
     const setupHtml = setup ? `<ul class="steps setup">${setup}</ul>` : "";
     if (!S.listings.length) {
       body = `${ask}${setupHtml}`;
     } else {
-      body = `${ask}<nav class="stats-mini" aria-label="At a glance">
-          <a href="#/listings"><b>${S.listings.length}</b><span>${S.listings.length === 1 ? "Chat" : "Chats"}</span></a>
-          <a href="#/leads/week"><b>${leadsWeek}</b><span>${leadsWeek === 1 ? "Lead" : "Leads"} this week</span></a>
-          <a href="#/report/active"><b>${active.length}</b><span>Active ${active.length === 1 ? "listing" : "listings"}</span></a></nav>
-
+      // No numbers strip (Ismael, 2026-11-01): the greeting, the box, then the latest 5 chats.
+      body = `${ask}
         ${attentionHtml()}${setupHtml}
         <div class="sec">Recent</div>${S.listings.slice(0, 5).map(recentCard).join("")}
         ${recent.length ? `<div class="sec">This week</div><div class="list">${recent.map(row).join("")}</div>` : ""}`;
@@ -706,11 +698,8 @@
     c.classList.add("held");
     setTimeout(() => c.classList.remove("held"), 300);
     openPop(c, `<div class="note"><b>${esc(listingName(l))}</b>${esc(homePrice(l))}</div>
-      <a href="#/l/${l.id}">${ICON.eye}Open</a>
       <button data-act="renameAsk" data-id="${l.id}">${ICON.pen}Rename</button>
-      <button data-act="selectOne" data-id="${l.id}">${ICON.check}Select</button>
-      <button data-act="markSold" data-id="${l.id}" data-rent="${l.deal === "rent" ? 1 : 0}" data-sold="${l.status === "sold" ? 0 : 1}">${ICON.flag}${l.deal === "rent" ? (l.status === "sold" ? "Mark as for rent" : "Mark as rented") : l.status === "sold" ? "Mark as for sale" : "Mark as sold"}</button>
-      <div class="sep"></div><button class="danger" data-act="delOne" data-id="${l.id}">${ICON.trash}Delete chat</button>`);
+      <button class="danger" data-act="delOne" data-id="${l.id}">${ICON.trash}Delete chat</button>`);
   }
 
   async function deleteListings(ids) {
@@ -922,6 +911,8 @@
     if (!logo) return;
     const m = logo.querySelector(".mk");
     if (m) { m.classList.remove("once"); void m.getBoundingClientRect(); m.classList.add("once"); }
+    // On a phone the header is drawn again as Today opens, so the new one carries the turn on.
+    S.spinAt = Date.now();
     if (location.hash === "#/today") { e.preventDefault(); $("#main .page")?.scrollTo({ top: 0, behavior: "smooth" }); }
   });
 
@@ -946,13 +937,15 @@
   const topPlan = () => paid() && S.me.plan?.id === S.me.plans.at(-1).id;
   const firstName = () => (S.me.user.name || "").trim().split(/\s+/)[0] || "there";
   // One line always: the font steps down until it fits, never below what reads comfortably.
-  function fitLine(el, min = 22) {
+  function fitLine(el, min = 18) {
     if (!el) return;
     el.style.fontSize = "";
     let size = parseFloat(getComputedStyle(el).fontSize);
     while (el.scrollWidth > el.clientWidth + 1 && size > min) { size -= 1; el.style.fontSize = `${size}px`; }
   }
   window.addEventListener("resize", () => fitLine($("#helloH")));
+  // The font can arrive after the first fit, which made the line wider and cut it: fit again.
+  document.fonts?.ready?.then(() => fitLine($("#helloH")));
 
   function viewNew() {
     S.newChat = [];
@@ -963,6 +956,8 @@
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
     fitLine($("#helloH"));
+    requestAnimationFrame(() => fitLine($("#helloH")));
+    document.fonts?.ready?.then(() => fitLine($("#helloH")));
     const dropEl = $("#drop");
     // Photos come in through the + in the box, or dropped anywhere on the screen.
     const zone = $("section.chat");
@@ -1014,6 +1009,7 @@
         photoIds.push(r.id);
         photoNames[r.id] = f.name;
       }
+      const from = location.hash;
       const { listing } = await api("/api/listings/start", { body: { text, photoIds, photoNames }, signal: ctrl.signal, keepalive: true });
       // From here the thread exists: it shows in the sidebar and opens, whatever happens next.
       const id = listing.id;
@@ -1025,7 +1021,9 @@
         const [, , full] = await Promise.all([loadMe(), loadListings(), api(`/api/listings/${id}`).catch(() => null)]);
         if (full) S.ready = full;
         drawSide();
-        location.hash = `#/l/${id}`;
+        // Only opens the chat if they're still where they sent it from: someone who has moved
+        // on is never pulled back (Ismael, 2026-11-01). The answer waits with its dot.
+        if (location.hash === from || location.hash === "#/new") location.hash = `#/l/${id}`;
         const signal = stoppable({ id });
         const next = await api(`/api/listings/${id}/first`, { body: {}, signal });
         S.firstPending = null;
@@ -1035,8 +1033,11 @@
         }
         refreshSide();
       } catch (err) {
+        if (err.stopped) { S.firstPending = null; throw err; }
+        // The connection dropped (the phone locked, the app was left): the server carries on,
+        // so the thinking mark stays and the answer arrives when it's ready, no error.
+        if (err.offline) { awaitAnswer(id, () => { S.firstPending = null; }); throw Object.assign(new Error("waiting"), { stopped: true }); }
         S.firstPending = null;
-        if (err.stopped) throw err;
         // The thread and the message stay; the thinking mark goes and the error shows.
         $("#typing") && $("#typing").remove();
         refreshSide();
@@ -1069,7 +1070,13 @@
     const row = S.listings.find((x) => x.id === p.listing.id);
     if (p.listing.unread) { p.listing.unread = false; api(`/api/listings/${p.listing.id}/seen`, { body: {} }).catch(() => {}); }
     if (row && row.unread) { row.unread = 0; drawSide(); }
-    const awaitingFirst = S.firstPending === p.listing.id && !p.messages.some((m) => m.role === "hopkins");
+    // Still being answered on the server (reopened mid reply): the thinking mark, then the answer.
+    const resumed = p.working && p.messages.at(-1)?.role === "agent" && !S.busy && S.firstPending !== p.listing.id;
+    if (resumed && !S.waiting?.has(p.listing.id)) {
+      (S.waiting ||= new Set()).add(p.listing.id);
+      awaitAnswer(p.listing.id, () => S.waiting.delete(p.listing.id));
+    }
+    const awaitingFirst = (S.firstPending === p.listing.id && !p.messages.some((m) => m.role === "hopkins")) || resumed;
     S.editing = null;
     const l = p.listing;
     if (!S.selected[l.id]) S.selected[l.id] = 1;
@@ -1124,6 +1131,25 @@
     if (awaitingFirst) showTyping();
   }
 
+  // Waiting for an answer the server is still writing after the connection dropped: checked every
+  // few seconds for up to 15 minutes. It draws in the chat if they're there, otherwise the chat
+  // gets its dot like any reply they haven't seen.
+  async function awaitAnswer(id, done = () => {}) {
+    const asked = Date.now();
+    while (Date.now() - asked < 15 * 60 * 1000) {
+      await new Promise((r) => setTimeout(r, Date.now() - asked < 60000 ? 2500 : 5000));
+      let p;
+      try { p = await api(`/api/listings/${id}`); } catch { continue; }
+      const last = p.messages.at(-1);
+      if (!last || last.role !== "hopkins") continue;
+      done();
+      if (location.hash === `#/l/${id}`) drawListing(p);
+      refreshSide();
+      return;
+    }
+    done();
+  }
+
   // Stop: the app lets go at once, your message stays, the thinking mark goes. The server undoes
   // the reply when it ends, then the chat redraws with Edit on your message.
   function stoppable(l) {
@@ -1149,6 +1175,12 @@
       next = await api(`/api/listings/${l.id}/messages`, { body: { text, version: S.selected[l.id], ...(photoIds.length ? { photoIds } : {}) }, signal, keepalive: text.length < 30000 });
     } catch (err) {
       if (err.stopped) throw err;
+      // The connection dropped but the message got there (keepalive): the server is answering,
+      // so wait for it quietly instead of saying it failed.
+      if (err.offline) {
+        const got = await api(`/api/listings/${l.id}`).catch(() => null);
+        if (got && got.messages.some((m) => m.role === "agent" && m.body === text)) { awaitAnswer(l.id); throw Object.assign(new Error("waiting"), { stopped: true }); }
+      }
       // No answer (no signal, the server's down): stop thinking.
       $("#typing") && $("#typing").remove();
       // The message didn't go, so it goes back in the box (the composer keeps it), not in the chat.
@@ -1867,7 +1899,7 @@
           <span class="rb-track"><i class="${lead ? "top" : ""}" style="width:${width(x)}%"></i></span></span>
         <span class="rb-n"><b>${by === "cpl" ? (v != null ? esc(money(v)) : "") : v || 0}</b><em>${unit}</em></span></button>`;
     };
-    return `<section class="rb" id="board"><div class="rb-head"><h3>Listings</h3><button class="rb-sort" data-act="repSort">${esc(SORTS.find(([k]) => k === by)[1])}${ICON.chev}</button></div>
+    return `<section class="rb" id="board"><div class="rb-head"><h3>Ads</h3><button class="rb-sort" data-act="repSort">${esc(SORTS.find(([k]) => k === by)[1])}${ICON.chev}</button></div>
       <div class="rb-filters">${FILTERS.map(([k, label]) => `<button class="${S.repFilter === k ? "on" : ""}" data-act="repFilter" data-k="${k}">${label}<span>${count(k)}</span></button>`).join("")}</div>
       <div class="rb-list">${rows.length ? rows.map(row).join("") : `<p class="rb-empty">None this week.</p>`}</div></section>`;
   }
@@ -2015,10 +2047,13 @@
   const PUSH_WHY = "Get notified every time a new lead comes in.";
   function pushRow(state, { setup = false } = {}) {
     const title = setup ? `<b>Notifications</b>` : "";
-    if (state === "on") return `<div class="push-row">${title}<p class="small">On</p>${setup ? "" : `<div class="row-acts"><button class="link" data-act="pushTest">Send a test</button><button class="link" data-act="pushOff">Turn off</button></div>`}</div>`;
+    // In Settings: On and Off side by side, the chosen one white (Ismael, 2026-11-01).
+    const pair = (on) => `<div class="onoff"><button class="${on ? "btn" : "btn btn-dark"}" data-act="${on ? "pushNoop" : "pushOn"}" aria-pressed="${on}">On</button><button class="${on ? "btn btn-dark" : "btn"}" data-act="${on ? "pushOff" : "pushNoop"}" aria-pressed="${!on}">Off</button></div>`;
+    if (state === "on") return setup ? `<div class="push-row">${title}<p class="small">On</p></div>` : `<div class="push-row"><p class="small">${PUSH_WHY}</p>${pair(true)}</div>`;
     if (state === "ios-browser") return `<div class="push-row">${title}<p class="small">${PUSH_WHY}</p><p class="small">On iPhone, add Hopkins to your Home Screen first: tap Share, then Add to Home Screen, and open it from there.</p></div>`;
     if (state === "denied") return `<div class="push-row">${title}<p class="small">Blocked in your browser settings.</p></div>`;
     if (state === "unsupported") return `<div class="push-row">${title}<p class="small">Not available in this browser.</p></div>`;
+    if (!setup) return `<div class="push-row"><p class="small">${PUSH_WHY}</p>${pair(false)}</div>`;
     return `<div class="push-row">${title}<p class="small">${PUSH_WHY}</p><div><button class="btn" data-act="pushOn">Turn on</button></div></div>`;
   }
 
@@ -2193,10 +2228,7 @@
       await pushOff();
       S.pushState = "off";
       if ($("#setPush")) $("#setPush").innerHTML = pushRow("off");
-      toast("Notifications off");
-    } else if (act === "pushTest") {
-      await api("/api/push/test", { body: {} });
-      toast("Test sent");
+      toast("Turned off");
     } else if (act === "metaWaive") {
       S.metaWaived = true;
       viewSetup();
@@ -2229,7 +2261,7 @@
     const my = current();
     const [{ workspaces, plans }, { feedback }] = await Promise.all([api("/api/admin/workspaces"), api("/api/admin/feedback")]);
     if (my !== current()) return;
-    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Admin</h1><p class="lede">Only you see this.</p></div><button class="sec-btn" data-act="demoOpen">Open demo account</button></div>
+    main.innerHTML = `${mtop("Admin")}<div class="page"><div class="wrap"><div class="head"><h1>Admin</h1><p class="lede">Only you see this.</p></div>
       <div class="adm">${workspaces.map((w) => `<div class="adm-row"><div class="adm-who"><b>${esc(w.name)}</b><span class="small">${esc(w.emails || "")}</span>
           <span class="small">Joined ${ago(w.created_at)} · last in ${w.last_seen ? ago(w.last_seen) : "never"} · ${w.listings} ${w.listings === 1 ? "listing" : "listings"}, ${w.ads} ads, ${w.leads} ${w.leads === 1 ? "Lead" : "Leads"}</span></div>
           <div class="adm-act"><select data-ws="${w.id}"><option value="free" ${w.plan === "free" ? "selected" : ""}>Free</option>${plans.map((p) => `<option value="${p.id}" ${w.tier === p.id ? "selected" : ""}>${esc(p.name)}, $${p.price}</option>`).join("")}</select>
@@ -2476,7 +2508,7 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "metaWaive", "pushOn", "pushOff", "pushTest", "siteSave", "siteRemove"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "metaWaive", "pushOn", "pushOff", "siteSave", "siteRemove"].includes(act)) await settingsAction(act, t);
       else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
       else if (act === "crCopy") {
         const c = (S.current?.creations || []).find((x) => x.id === t.dataset.id);
@@ -2506,7 +2538,7 @@
         t.disabled = true;
         if (act === "demoOpen") t.textContent = "Building the demo";
         await api(act === "demoOpen" ? "/api/admin/demo" : "/api/demo/leave", { body: {} });
-        location.hash = act === "demoOpen" ? "#/today" : "#/admin";
+        location.hash = "#/today";
         location.reload();
       }
       else if (act === "repPrev" || act === "repNext") {
@@ -2584,11 +2616,11 @@
       } else if (act === "delOne" || act === "delPicked") {
         const ids = act === "delOne" ? [t.dataset.id] : [...S.picked];
         const name = ids.length === 1 ? listingName(S.listings.find((x) => x.id === ids[0]) || {}) : `${ids.length} chats`;
-        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>Delete ${esc(name)}?</b>${ids.length === 1 ? "Its" : "Their"} ads, photos and leads will also be deleted. This can't be undone.</div>
+        openPop(act === "delPicked" ? t : from(ids[0]) || $(`[data-card="${ids[0]}"]`) || t, `<div class="note"><b>${ids.length === 1 ? "Delete chat?" : `Delete ${ids.length} chats?`}</b>This can't be undone.</div>
           <button class="danger" data-act="delYes" data-ids="${ids.join(",")}">${ICON.trash}Delete ${ids.length === 1 ? "chat" : `${ids.length} chats`}</button>`);
       } else if (act === "delYes") await deleteListings(t.dataset.ids.split(","));
       else if (act === "delListingAsk") {
-        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete ${esc(listingName(l))}?</b>Its ads, photos and leads will also be deleted. This can't be undone.</div>
+        openPop($("[data-act=listmenu]") || t, `<div class="note"><b>Delete chat?</b>This can't be undone.</div>
           <button class="danger" data-act="delListingYes">${ICON.trash}Delete chat</button>`);
       } else if (act === "delListingYes") {
         await api(`/api/listings/${l.id}`, { method: "DELETE" });
@@ -2746,7 +2778,7 @@
   // The date, the greeting and the report's days follow the phone's clock: at 00:00 (and at noon
   // and 18:00 for the greeting) the screen on show is redrawn, also when the app comes back from
   // the background after the day changed.
-  const dayKey = () => { const d = new Date(), h = d.getHours(); return `${d.toDateString()} ${h < 12 ? 0 : h < 18 ? 1 : 2}`; };
+  const dayKey = () => { const d = new Date(), h = d.getHours(); return `${d.toDateString()} ${h >= 5 && h < 12 ? 0 : h >= 12 && h < 19 ? 1 : 2}`; };
   let shownDay = dayKey();
   const checkDay = () => {
     const now = dayKey();

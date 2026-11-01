@@ -610,8 +610,12 @@ test("the demo account: admins only, full, rebuilt fresh, out of the admin list,
   assert.equal(me.demo, true);
   assert.equal(me.user.name, "Sarah Mitchell");
   assert.equal(me.workspace.plan, "paid");
+  assert.equal(me.workspace.brand.onboarded, "yes", "opens straight to Today, no setup");
   const listings = (await c("GET", "/api/listings")).json.listings;
-  assert.equal(listings.length, 7);
+  assert.equal(listings.length, 10, "7 listings and 3 other chats");
+  const carousel = listings.find((l) => /carousel/i.test(l.auto_title || l.title || ""));
+  assert.ok(carousel, "a carousel chat");
+  assert.equal((await c("GET", `/api/listings/${carousel.id}`)).json.creations.length, 1);
   assert.ok(listings.some((l) => l.status === "sold"));
   const leads = (await c("GET", "/api/leads")).json.leads;
   assert.ok(leads.length >= 30, `${leads.length} Leads`);

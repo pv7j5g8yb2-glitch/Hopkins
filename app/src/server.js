@@ -10,7 +10,7 @@ import { run, get, all, nowIso } from "./db.js";
 import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, openSignups, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
-  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
+  proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, working, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
   metaConnection, syncMeta,
   runState, pauseOrResume, stopAllRuns, forgetOutside, siteOf, analyseSite,
 } from "./hopkins.js";
@@ -723,7 +723,7 @@ async function listingPayload(ws, id) {
 app.get("/api/listings/:id", async (request, reply) => {
   await markSeen(request.ws, request.params.id);
   const p = await listingPayload(request.ws, request.params.id);
-  return p || reply.code(404).send({ error: "Listing not found." });
+  return p ? { ...p, working: working(`l:${request.params.id}`) } : reply.code(404).send({ error: "Listing not found." });
 });
 // A reply that arrived while the chat was on screen was read as it came in.
 app.post("/api/listings/:id/seen", async (request) => {

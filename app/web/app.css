@@ -1266,3 +1266,23 @@ body.onboarding .tabbar,body.onboarding .side,body.onboarding .mtop{display:none
 .stats-mini{border-radius:20px;overflow:hidden;border:0}
 .stats-mini a,.stats-mini a.key,.stats-mini a.on,.stats-mini .stat{background:transparent!important}
 .stats-mini a:active{background:rgba(255,255,255,.06)!important}
+/* Recent, on Today and in the sidebar: a little bolder and white, not grey (Ismael, 2026-11-01) */
+.sec,.page[data-today] .sec{font-size:14px;font-weight:600;color:#fff;letter-spacing:-.005em}
+.side .lab{font-size:12.5px;font-weight:600;color:rgba(255,255,255,.92)}
+/* New chat: smaller, with room at the sides, never cut */
+.intro.hello{padding:0 24px;box-sizing:border-box}
+.intro.hello h1{font-size:28px;text-overflow:clip}
+@media (max-width:980px){.intro.hello h1{font-size:24px}}
+.btn.btn-dark{background:#0B0B0D;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.onoff{display:flex;gap:10px;margin-top:4px}
+.onoff .btn{min-width:72px}
+/* the phone header is solid, never a blur over what's behind (Ismael, 2026-11-01) */
+@media (max-width:980px){.mtop{background:#0B0B0D!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
+/* the tab bar's glass: an even hairline all round and no white sheen, so the left side looks like
+   the right (Ismael, 2026-11-01) */
+.lens-rim{box-shadow:inset 0 0 0 .6px rgba(255,255,255,.2)!important}
+@media (max-width:980px){
+  .lg-cap.lg:before,.lg-cap .lg:before,.tabbar .lg:before{background:rgba(255,255,255,.16)!important}
+  .lg-cap.lg:after,.lg-cap .lg:after,.tabbar .lg:after{display:none!important}
+  .lg-lens.lens-on .lens-rim,.lg-lens .lens-rim{box-shadow:inset 0 0 0 .6px rgba(255,255,255,.18)!important}
+}

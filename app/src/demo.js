@@ -11,6 +11,7 @@ import { run, get } from "./db.js";
 import { hashPassword } from "./auth.js";
 import { weekRange } from "./hopkins.js";
 import { priceBand } from "./listing.js";
+import { STARTER_LOOKS } from "./style.js";
 
 const PHOTOS = join(dirname(fileURLToPath(import.meta.url)), "..", "demo", "photos");
 const DAY = 86400_000, HOUR = 3600_000;
@@ -21,7 +22,33 @@ export const demoEmail = (adminId) => `demo+${String(adminId).slice(0, 8)}${DEMO
 const BRAND = {
   business: "Mitchell Home Group", agent_name: "Sarah Mitchell", city: "Austin", country: "United States", instagram: "@mitchellhomegroup",
   phone: "(512) 555 0142", voice: "plain", primary: "#1F2A36", accent: "#C8A96A", font: "modern", setup_done: true,
+  // Set up like a real agent (Ismael, 2026-11-01): it opens straight to Today, no setup page.
+  onboarded: "yes", website: "https://mitchellhomegroup.com",
 };
+const SITE = {
+  url: "https://mitchellhomegroup.com", status: "done", pages: ["https://mitchellhomegroup.com"], brokerage: "Mitchell Home Group", agent: "Sarah Mitchell",
+  about: "Sarah Mitchell sells homes across central Austin and the Lake Travis area.", areas: ["Austin", "Westover Hills", "Travis Heights", "Hyde Park", "Barton Hills", "Lakeway"],
+  specialties: [], voice: "plain and warm", score: null, strengths: [], problems: [], checks: [], search: true,
+};
+
+// The work that isn't listings, like a real agent's week: a carousel, a reel and an email.
+const OTHER_CHATS = [
+  { title: "First time buyer carousel", age: 9, ask: "make me a carousel for first time buyers in Austin", kind: "carousel", spec: { title: "First time buyers", theme: "ivory", caption: "", reply: "Here's your carousel.", slides: [
+    { layout: "cover", kicker: "First time buyers", heading: "Buying your first home in Austin", body: "Five things to sort before you tour.", photo: false },
+    { layout: "step", kicker: "Step 1", heading: "Pull your credit reports", body: "All three are free once a year. Fix errors before a lender sees them.", photo: false },
+    { layout: "step", kicker: "Step 2", heading: "Get pre approved, not pre qualified", body: "Sellers take an offer with a pre approval letter seriously.", photo: false },
+    { layout: "step", kicker: "Step 3", heading: "Budget past the mortgage", body: "Property tax, insurance and HOA fees are part of the monthly cost.", photo: false },
+    { layout: "list", kicker: "Step 4", heading: "Know your must haves", body: "", points: ["Bedrooms", "Commute", "Schools", "Yard"], photo: false },
+    { layout: "close", kicker: "", heading: "Questions? Send me a message.", body: "Sarah Mitchell, Mitchell Home Group", photo: false },
+  ] } },
+  { title: "Austin market reel", age: 5, ask: "Can you create an animated reel about the Austin market this month", kind: "reel", spec: { title: "Austin market", theme: "night", caption: "", reply: "Here's your reel.", slides: [
+    { layout: "cover", kicker: "Austin market", heading: "What changed this month", body: "", photo: false },
+    { layout: "statement", kicker: "", heading: "More homes to choose from", body: "Buyers have more room to compare than last spring.", photo: false },
+    { layout: "statement", kicker: "", heading: "Well priced homes still move", body: "The ones priced right from day one get the showings.", photo: false },
+    { layout: "close", kicker: "", heading: "Thinking of moving? Let's talk.", body: "Sarah Mitchell", photo: false },
+  ] } },
+  { title: "Email to a quiet buyer", age: 2, ask: "write an email to a buyer who went quiet after two showings", reply: "Here's a short one:\n\n**Subject:** Still looking?\n\nHi Jordan,\n\nI know the last two showings weren't quite it. No pressure at all, I just wanted to check whether anything has changed on your side, budget, timing or the areas you're looking at.\n\nIf it helps, I can send you the new listings in Travis Heights and Hyde Park as they come up.\n\nSarah" },
+];
 
 // weeks: Leads in each Monday to Sunday week, oldest first, the last one being this week so far.
 const LISTINGS = [
@@ -135,7 +162,20 @@ export async function buildDemo(adminId, tz = "UTC", now = Date.now()) {
     [userId, wsId, demoEmail(adminId), BRAND.agent_name, await hashPassword(randomBytes(24).toString("hex")), iso(now - 42 * DAY)]);
   // Monday 00:00 of each of the last six weeks where the founder is, oldest first.
   const weeks = [5, 4, 3, 2, 1, 0].map((back) => new Date(weekRange(new Date(now), tz, back).from).getTime());
-  let person = 0;
+  let person = 0, lookAt = 0;
+  await run(`UPDATE workspaces SET site = ? WHERE id = ?`, [JSON.stringify({ ...SITE, at: iso(now - 42 * DAY) }), wsId]);
+  for (const C of OTHER_CHATS) {
+    const id = randomUUID(), made = now - C.age * DAY - 5 * HOUR;
+    await run(`INSERT INTO listings (id, workspace_id, slug, auto_title, created_at, updated_at, seen_at) VALUES (?,?,?,?,?,?,?)`, [id, wsId, `c-${randomBytes(5).toString("hex")}`, C.title, iso(made), iso(made + 60_000), iso(made + 60_000)]);
+    await msg(wsId, id, "agent", "text", C.ask, made, { first: true });
+    if (C.spec) {
+      const cid = randomUUID();
+      await run(`INSERT INTO creations (id, workspace_id, listing_id, kind, spec, created_at, updated_at) VALUES (?,?,?,?,?,?,?)`, [cid, wsId, id, C.kind, JSON.stringify(C.spec), iso(made + 40_000), iso(made + 40_000)]);
+      await msg(wsId, id, "hopkins", "creation", `${C.spec.reply} Want a caption and hashtags for it?`, made + 40_000, { creationId: cid, version: 1 });
+    } else {
+      await msg(wsId, id, "hopkins", "text", C.reply, made + 30_000);
+    }
+  }
   for (const L of LISTINGS) {
     const id = randomUUID(), made = now - L.age * DAY - 3 * HOUR;
     await run(
@@ -152,9 +192,11 @@ export async function buildDemo(adminId, tz = "UTC", now = Date.now()) {
     const ads = [];
     for (const [i, a] of L.ads.entries()) {
       const adId = randomUUID();
-      const ad = { version: i + 1, name: a.name, pattern: a.pattern, headline: a.headline, primary_text: a.text, overlay: a.overlay, kicker: a.kicker, cta: "Learn more", photo_id: photoIds[a.photo] || photoIds[0], style: {} };
+      // Each ad its own look, like a real set (src/style.js STARTER_LOOKS).
+      const look = STARTER_LOOKS[(lookAt++) % STARTER_LOOKS.length];
+      const ad = { version: i + 1, name: a.name, pattern: a.pattern, headline: a.headline, primary_text: a.text, overlay: a.overlay, kicker: a.kicker, cta: "Learn more", photo_id: photoIds[a.photo] || photoIds[0], style: look };
       await run(`INSERT INTO ads (id, workspace_id, listing_id, version, moment, name, pattern, headline, primary_text, overlay, kicker, cta, photo_id, status, style, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [adId, wsId, id, ad.version, "new", ad.name, ad.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker, ad.cta, ad.photo_id, approved ? "approved" : "draft", "{}", iso(made + 60_000), iso(made + 60_000)]);
+        [adId, wsId, id, ad.version, "new", ad.name, ad.pattern, ad.headline, ad.primary_text, ad.overlay, ad.kicker, ad.cta, ad.photo_id, approved ? "approved" : "draft", JSON.stringify(look), iso(made + 60_000), iso(made + 60_000)]);
       ads.push({ ...ad, id: adId });
     }
     // The chat: the agent's message, the ads, and for the ones that ran, the yes.
