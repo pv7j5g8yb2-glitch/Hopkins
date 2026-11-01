@@ -264,10 +264,17 @@ The product's code is in `app/` (its README says what works and how to run it).
   password; the brokerage name is in Settings, Profile; anything else (phone, licence, Instagram)
   is said in the chat. Settings has one CRM row that opens the CRM page.
 * **Setup is mandatory, once (Ismael, 2026-10-31):** straight after sign up, a page with no tabs:
-  "Connect Hopkins", 1 Meta, 2 CRM, 3 Notifications, Continue. Nothing else opens until it's done (`onboarded` in the
+  "Connect Hopkins", 1 Meta, 2 CRM, 3 Website, 4 Notifications, Continue. Nothing else opens until it's done (`onboarded` in the
   brand). Meta must be connected; the only ways past it are Meta's login failing for them (before
   App Review only Meta testers can connect), shown as "Continue without Meta", or Meta not being set
-  up on the server yet. The CRM is connected or answered with "I don't use a CRM". Step 3 is
+  up on the server yet. The CRM is optional since 2026-11-01: only "Follow Up Boss API key
+  *(optional)*" (in italics, in brackets), no webhook or Zapier fields on screen. Step 3, Website
+  (Ismael, 2026-11-01), is required: they paste their brokerage's site (placeholder
+  "yourbrokerage.com") so Hopkins knows the brokerage and the site. Hopkins reads it end to end,
+  never a glance: up to 15 pages, robots.txt respected, as HopkinsBot (`crawlSite` in
+  `app/src/site.js`), measured UX checks that stand without a model (`siteChecks`), then a profile
+  and a UX review by the model (`siteAnalysisAI`), in the background; it fills the brokerage name if
+  empty, reaches the chat (`siteLine`) and shows in Settings, Website. Step 4 is
   Notifications (Ismael, 2026-11-01: "just an accept notifications button", on the same page as
   Meta): a "Turn on" button and the phone's own Allow. Web push from Hopkins itself (`app/src/push.js`,
   `app/web/sw.js`, keys made once and stored sealed, free, nothing on Render): a new lead, Needs
@@ -378,7 +385,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   Instagram change from the chat; wording the agent asks for is kept, with one fair housing note.
 * **CRM (Ismael, 2026-10-31):** every new Lead goes straight into the agent's CRM as it comes in:
   Follow Up Boss with their own API key (no app review, checked with Follow Up Boss, kept
-  encrypted), any other CRM through a webhook URL (Zapier, Make). Set up in the first steps or Settings, never
+  encrypted). Optional, and since 2026-11-01 the webhook (Zapier, Make) has no fields on screen
+  (the backend keeps it; an old one shows so it can be removed). Set up in the first steps or Settings, never
   by pasting a key in the chat. A failed send never loses the Lead; Settings says it didn't arrive.
   kvCORE, Lofty and BoomTown need partnerships, so they go through the webhook for now.
   **Every connector gives Hopkins the most data it safely can (Ismael, 2026-10-31), read only:**

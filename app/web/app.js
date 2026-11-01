@@ -600,7 +600,6 @@
     const c = S.me.crm || {};
     const setup = [
       !m.ready ? `<li><div class="tx"><b>Meta</b></div>${!m.available ? `<button class="link" data-act="metaSoon">Connect</button>` : m.connected ? `<a class="link" href="#/settings">Finish</a>` : `<a class="link" href="/api/meta/connect">Connect</a>`}</li>` : "",
-      !(c.fub || c.hook || c.skip) ? `<li><div class="tx"><b>CRM</b></div><a class="link" href="#/crm">Connect</a></li>` : "",
       S.pushState === "off" ? `<li><div class="tx"><b>Notifications</b></div><button class="link" data-act="pushOn">Turn on</button></li>` : "",
     ].filter(Boolean).join("");
     const setupHtml = setup ? `<ul class="steps setup">${setup}</ul>` : "";
@@ -1937,18 +1936,43 @@
     $("#metaPage").addEventListener("change", (e) => e.target.value && save({ pageId: e.target.value }));
   }
 
-  // The agent's CRM: each new Lead goes there as it comes in. Follow Up Boss by its API key, any
-  // other CRM by a webhook URL (Zapier, Make).
+  // The agent's CRM: each new Lead goes there as it comes in, by their Follow Up Boss API key.
+  // Optional (Ismael, 2026-11-01). The webhook stays in the backend but has no fields on screen; an
+  // old one still shows so it can be removed.
   function crmGroup(fld) {
     const c = S.me.crm || {};
     const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:10px">The last lead didn't reach ${esc(c.last.failed.map((f) => f === "webhook" ? "the webhook" : f).join(" or "))}.</p>` : "";
     const fub = c.fub
       ? `<div class="crm-row"><div><b>Follow Up Boss</b><p class="small">${esc(c.fubName || "Connected")}</p></div><button class="link" data-act="crmOff" data-which="fub">Disconnect</button></div>`
-      : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmFub", "Follow Up Boss API key", "", "password", "")}<div><button class="sec-btn" data-act="crmSave" data-which="fub">Connect</button></div></div>`;
-    const hook = c.hook
-      ? `<div class="crm-row"><div><b>Webhook</b><p class="small">${esc(c.hook)}</p></div><div style="display:flex;gap:14px"><button class="link" data-act="crmTest">Send a test</button><button class="link" data-act="crmOff" data-which="hook">Remove</button></div></div>`
-      : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmHook", "Webhook URL, for any other CRM", "", "url", "https://hooks.zapier.com/…")}<div><button class="sec-btn" data-act="crmSave" data-which="hook">Save</button></div></div>`;
+      : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmFub", "Follow Up Boss API key <i>(optional)</i>", "", "password", "")}<div><button class="sec-btn" data-act="crmSave" data-which="fub">Connect</button></div></div>`;
+    const hook = c.hook ? `<div class="crm-row"><div><b>Webhook</b><p class="small">${esc(c.hook)}</p></div><button class="link" data-act="crmOff" data-which="hook">Remove</button></div>` : "";
     return `<div class="group" id="crm"><h4>CRM</h4><div style="display:flex;flex-direction:column;gap:18px">${fub}${hook}</div>${failed}</div>`;
+  }
+
+  // The brokerage website (setup step 3 and Settings). Hopkins reads it end to end in the
+  // background; while it's reading, the app asks again every few seconds.
+  const siteNow = () => S.me.site && S.me.site.url === S.me.workspace.brand.website ? S.me.site : null;
+  function siteGroup(fld, { setup = false } = {}) {
+    const url = S.me.workspace.brand.website, s = siteNow();
+    if (!url || S.siteEdit) return `<div class="group" id="site"><h4>Website</h4><div style="display:flex;flex-direction:column;gap:12px">${fld("siteUrl", "Your brokerage's website", url ? url.replace(/^https?:\/\//, "") : "", "url", "yourbrokerage.com")}<div><button class="sec-btn" data-act="siteSave">${url ? "Save" : "Add"}</button></div></div></div>`;
+    const state = !s || s.status === "reading" ? "Reading…" : s.status === "done" ? (s.brokerage || "Read") : "Restricts access";
+    const head = `<div class="site-head"><div><b>${esc(url.replace(/^https?:\/\//, ""))}</b><p class="small">${esc(state)}</p></div><button class="link" data-act="siteEdit">Change</button></div>`;
+    if (setup || !s || s.status !== "done") return `<div class="group" id="site"><h4>Website</h4>${head}</div>`;
+    const items = [...(s.problems || []), ...(s.checks || [])].slice(0, 6);
+    const list = items.length ? `<ul class="site-ux">${items.map((p) => `<li><b>${esc(p.issue)}</b><p class="small">${esc(p.where)}. ${esc(p.fix)}</p></li>`).join("")}</ul>` : "";
+    return `<div class="group" id="site"><h4>Website</h4>${head}${s.score ? `<p class="small" style="margin-top:12px">UX ${s.score}/10</p>` : ""}${list}</div>`;
+  }
+  function watchSite() {
+    clearTimeout(S.siteTimer);
+    const s = siteNow();
+    if (!S.me.workspace.brand.website || (s && s.status !== "reading")) return;
+    S.siteTimer = setTimeout(async () => {
+      try { const r = await api("/api/site"); S.me.site = r.site; } catch {}
+      const h = location.hash;
+      if (h.startsWith("#/setup")) viewSetup();
+      else if (h.startsWith("#/settings") && $("#site")) $("#site").outerHTML = siteGroup(S.siteFld);
+      if (h.startsWith("#/setup") || h.startsWith("#/settings")) watchSite();
+    }, 4000);
   }
 
   // In Settings, one row: where Leads go, and the way in to change it.
@@ -2011,32 +2035,31 @@
 
   // ---------- setup, once, after sign up ----------
   //
-  // Meta and the CRM are how Hopkins knows the agent's business, so they come before anything else.
-  // Meta has to be connected; it only lets someone through without it when Meta's own login didn't
-  // work for them (before App Review only Meta testers can connect) or isn't set up yet. The CRM is
-  // connected, or the agent says they don't use one.
+  // Meta, the CRM and the website are how Hopkins knows the agent's business, so they come before
+  // anything else. Meta has to be connected; it only lets someone through without it when Meta's own
+  // login didn't work for them (before App Review only Meta testers can connect) or isn't set up yet.
+  // The CRM is optional (Ismael, 2026-11-01). The website is required: it tells Hopkins the brokerage.
   function viewSetup(metaFailed = false) {
     if (metaFailed) S.metaFailed = true;
     const m = S.me.meta || {}, c = S.me.crm || {};
     const fld = (id, label, value, type = "text", ph = "") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
     const metaOk = m.ready || !m.available || S.metaWaived;
-    const crmOk = c.fub || c.hook || c.skip;
+    const siteOk = Boolean(S.me.workspace.brand.website) && !S.siteEdit;
     const meta = !m.available
       ? `<div class="su-row"><div class="tx"><b>Meta</b><p class="small">Available soon</p></div></div>`
       : m.connected
         ? metaGroup()
         : `<div class="su-row"><div class="tx"><b>Meta</b>${S.metaFailed ? `<p class="small warn">Meta didn't connect.</p>` : ""}</div><a class="btn" href="/api/meta/connect">${S.metaFailed ? "Try again" : "Connect"}</a></div>
            ${S.metaFailed && !S.metaWaived ? `<button class="link su-later" data-act="metaWaive">Continue without Meta</button>` : ""}`;
-    const crm = crmOk && !c.skip
-      ? crmGroup(fld)
-      : `${crmGroup(fld).replace("<h4>CRM</h4>", "<h4>CRM</h4>")}<label class="su-none"><input type="checkbox" id="noCrm" ${c.skip ? "checked" : ""}> I don't use a CRM</label>`;
+    const crm = crmGroup(fld);
     main.innerHTML = `<div class="page setup-page"><div class="wrap" style="max-width:560px">
       <div class="su-logo">${MARK("")}<b>Hopkins</b></div>
       <div class="head"><h1>Connect Hopkins</h1></div>
       <div class="su-step"><span class="su-n">1</span>${meta}</div>
       <div class="su-step"><span class="su-n">2</span><div class="su-body">${crm}</div></div>
-      <div class="su-step"><span class="su-n">3</span><div class="su-body" id="suPush">${pushRow(S.pushState || "off", { setup: true })}</div></div>
-      <div class="su-go"><button class="btn" id="suGo" ${metaOk && crmOk && S.pushState && S.pushState !== "off" ? "" : "disabled"}>Continue</button></div>
+      <div class="su-step"><span class="su-n">3</span><div class="su-body">${siteGroup(fld, { setup: true })}</div></div>
+      <div class="su-step"><span class="su-n">4</span><div class="su-body" id="suPush">${pushRow(S.pushState || "off", { setup: true })}</div></div>
+      <div class="su-go"><button class="btn" id="suGo" ${metaOk && siteOk && S.pushState && S.pushState !== "off" ? "" : "disabled"}>Continue</button></div>
     </div></div>`;
     fillMeta();
     // Notifications: on, or not possible here (an iPhone tab, a blocked or unsupported browser).
@@ -2045,10 +2068,9 @@
       S.pushState = st;
       viewSetup();
     });
-    $("#noCrm")?.addEventListener("change", async (e) => {
-      S.me.crm = await api("/api/crm", { method: "PUT", body: { skip: e.target.checked } });
-      viewSetup();
-    });
+    S.siteFld = fld;
+    $("#siteUrl")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $('[data-act="siteSave"]')?.click(); } });
+    watchSite();
     $("#suGo").addEventListener("click", async () => {
       await api("/api/brand", { method: "PUT", body: { onboarded: "yes" } });
       await loadMe();
@@ -2088,6 +2110,7 @@
       <div class="group"><h4>Notifications</h4><div id="setPush">${pushRow(S.pushState || "off")}</div></div>
       ${metaGroup()}
       ${crmRow()}
+      ${siteGroup(fld)}
       <div class="group"><h4>Instant reply to leads</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
@@ -2111,6 +2134,7 @@
       toast("Photo updated");
     });
     fillMeta();
+    S.siteFld = fld; S.siteEdit = false; watchSite();
     pushState().then((st) => { S.pushState = st; if ($("#setPush")) $("#setPush").innerHTML = pushRow(st); });
   }
 
@@ -2140,6 +2164,21 @@
       if (!v) return toast(which === "fub" ? "Enter your API key" : "Enter a webhook URL");
       S.me.crm = await api("/api/crm", { method: "PUT", body: { [which]: v } });
       redrawCrm(); buzz(6); toast(which === "fub" ? "Follow Up Boss connected" : "Saved");
+    } else if (act === "siteSave") {
+      const v = val("#siteUrl").trim();
+      if (!v) return toast("Enter your website");
+      t.disabled = true;
+      try {
+        const r = await api("/api/site", { body: { url: v } });
+        S.me.workspace.brand.website = r.website; S.me.site = r.site; S.siteEdit = false;
+      } catch (err) { t.disabled = false; return toast(err.message || "Something went wrong. Please try again."); }
+      if (location.hash.startsWith("#/setup")) viewSetup();
+      else { $("#site").outerHTML = siteGroup(S.siteFld); watchSite(); }
+    } else if (act === "siteEdit") {
+      S.siteEdit = true;
+      if (location.hash.startsWith("#/setup")) viewSetup();
+      else $("#site").outerHTML = siteGroup(S.siteFld);
+      $("#siteUrl")?.focus();
     } else if (act === "crmOff") {
       S.me.crm = await api("/api/crm", { method: "PUT", body: { [t.dataset.which]: "" } });
       redrawCrm(); toast(t.dataset.which === "fub" ? "Disconnected" : "Removed");
@@ -2443,7 +2482,7 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle", "metaWaive", "pushOn", "pushOff", "pushTest"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle", "metaWaive", "pushOn", "pushOff", "pushTest", "siteSave", "siteEdit"].includes(act)) await settingsAction(act, t);
       else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
       else if (act === "crCopy") {
         const c = (S.current?.creations || []).find((x) => x.id === t.dataset.id);

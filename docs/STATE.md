@@ -993,7 +993,7 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
 * **Roadmap in four stages (ChatGPT's list, Ismael pasted it 2026-10-31), with status:**
   1. Useful every day: Needs attention ✅, real Meta data ✅ (fake Graph API only), instant replies ✅
      (needs Resend), follow up on Leads that haven't converted ❌, Today showing what matters ✅.
-  2. Easy to start: website onboarding (route only, its screen went with Brand), listing links and
+  2. Easy to start: website onboarding ✅ (setup step 3 since 2026-11-01, read end to end with a UX review), listing links and
      photos ✅, chat edits ✅, posts in the chat ✅, minimal personal assistant ✅.
   3. Excellent output: better property ads, carousels ✅ and animated reels ✅ (text based, no
      property video yet), brand consistent creative, varied approaches. Bar: better than what an
@@ -1027,3 +1027,9 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   later: agents on ChatGPT Plus power Hopkins' AI with their own plan, so quality goes up at no cost
   to Hopkins.
 
+* **Setup step 3, Website (Ismael, 2026-11-01):** the brokerage's site is required in setup and read
+  end to end in the background (up to 15 pages, robots.txt respected), with measured UX checks and a
+  model written profile and UX review, shown in Settings and given to the chat. Tested only against
+  fake pages; not yet run on a real brokerage site or with the live free model. The CRM step is now
+  Follow Up Boss only and optional; the webhook has no fields on screen. Idea, not built: a weekly
+  "your site" item in Needs attention when a costly problem is still there.

@@ -12,7 +12,8 @@ import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
-import { creationAI, cleanCreation, captionAI } from "./brain.js";
+import { creationAI, cleanCreation, captionAI, siteAnalysisAI } from "./brain.js";
+import { crawlSite, siteChecks, readSite } from "./site.js";
 import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure, titleAI } from "./brain.js";
 
 // When the model is over its limit, anything the rules can do still gets done; anything that
@@ -141,7 +142,7 @@ export function looksLikeListing(text, photoIds = []) {
 function crmLine(ws) {
   const c = crmPublic(ws);
   const on = [c.fub && "Follow Up Boss", c.hook && `a webhook (${c.hook})`].filter(Boolean);
-  return on.length ? `CRM: each new lead from Hopkins goes straight to ${on.join(" and ")} as it comes in.${c.fub ? " Their Follow Up Boss contacts are below, read with the same key." : " A webhook can't be read back, so their CRM's own contacts aren't visible."}` : "CRM: not connected. With Follow Up Boss connected (their API key, Settings, CRM), Hopkins reads their recent contacts and sends new leads there; any other CRM gets new leads through a webhook (Zapier or Make) but can't be read.";
+  return on.length ? `CRM: each new lead from Hopkins goes straight to ${on.join(" and ")} as it comes in.${c.fub ? " Their Follow Up Boss contacts are below, read with the same key." : " A webhook can't be read back, so their CRM's own contacts aren't visible."}` : "CRM: not connected (it's optional). With Follow Up Boss connected (their API key, Settings, CRM), Hopkins reads their contacts and sends new leads there. Other CRMs can't be connected yet.";
 }
 
 // What's outside Hopkins' own records: the agent's Follow Up Boss contacts and their whole Meta ad
@@ -166,7 +167,64 @@ async function outsideData(ws) {
 
 export async function accountSummary(ws, tz = "UTC") {
   const [numbers, attention, outside] = await Promise.all([numbersSummary(ws, tz), attentionLine(ws), outsideData(ws).catch(() => "")]);
-  return [numbers, crmLine(ws), outside, attention].filter(Boolean).join("\n");
+  return [numbers, crmLine(ws), siteLine(ws), outside, attention].filter(Boolean).join("\n");
+}
+
+// ---------- their website, read end to end (Ismael, 2026-11-01) ----------
+//
+// Setup asks for the brokerage's website. Hopkins reads it page by page (src/site.js), the model
+// writes a profile and a UX review from what the pages hold, and the measured checks (viewport,
+// forms, tap to call, speed, alt text, headings, broken links) stand even without the model. The
+// brokerage name fills in from it when Settings has none. It runs in the background: setup never
+// waits on it.
+export const siteOf = (ws) => safeJson(ws.site, null);
+const analysing = new Set();
+export async function analyseSite(wsId, url) {
+  if (analysing.has(wsId)) return;
+  analysing.add(wsId);
+  try {
+    const crawl = await crawlSite(url).catch(() => null);
+    const ws = await getWorkspace(wsId);
+    if (!ws || ws.brand.website !== url) return; // changed or gone meanwhile
+    if (!crawl) {
+      await run(`UPDATE workspaces SET site = ? WHERE id = ?`, [JSON.stringify({ url, status: "blocked", at: nowIso() }), wsId]);
+      return;
+    }
+    const [ai, basics] = await Promise.all([siteAnalysisAI(crawl).catch(() => null), readSite(url).catch(() => null)]);
+    const checks = siteChecks(crawl);
+    const site = {
+      url, status: "done", at: nowIso(), pages: crawl.pages.map((p) => p.url),
+      brokerage: ai?.brokerage || basics?.business || "", agent: ai?.agent || "", about: ai?.about || "", voice: ai?.voice || "",
+      areas: ai?.areas || [], specialties: ai?.specialties || [], score: ai?.score || null, strengths: ai?.strengths || [],
+      problems: ai?.problems || [], checks,
+      search: crawl.pages.some((p) => p.search),
+    };
+    const fresh = await getWorkspace(wsId);
+    if (!fresh || fresh.brand.website !== url) return;
+    const brand = { ...fresh.brand };
+    if (!brand.business && site.brokerage) brand.business = site.brokerage.slice(0, 120);
+    for (const k of ["phone", "email", "instagram", "city"]) if (!brand[k] && basics?.[k]) brand[k] = basics[k];
+    await run(`UPDATE workspaces SET site = ?, brand = ?, name = ? WHERE id = ?`, [JSON.stringify(site), JSON.stringify(brand), brand.business || fresh.name, wsId]);
+  } catch (err) {
+    console.error("Reading the website failed:", err.message);
+    await run(`UPDATE workspaces SET site = ? WHERE id = ?`, [JSON.stringify({ url, status: "failed", at: nowIso() }), wsId]).catch(() => {});
+  } finally { analysing.delete(wsId); }
+}
+
+function siteLine(ws) {
+  const s = siteOf(ws);
+  if (!ws.brand.website) return "Website: not given yet (Settings, Website).";
+  if (!s || s.url !== ws.brand.website || s.status === "reading") return `Website: ${ws.brand.website}, still being read.`;
+  if (s.status !== "done") return `Website: ${ws.brand.website}. It restricts access, so it couldn't be read.`;
+  const issues = [...s.problems, ...s.checks].slice(0, 8).map((p) => `${p.issue} (${p.where}; fix: ${p.fix})`);
+  return [
+    `Website: ${s.url}, read end to end (${s.pages.length} pages).`,
+    s.brokerage && `Brokerage: ${s.brokerage}.`, s.agent && `Agent named on it: ${s.agent}.`, s.about && `About: ${s.about}`,
+    s.areas.length && `Areas: ${s.areas.join(", ")}.`, s.specialties.length && `Focus: ${s.specialties.join(", ")}.`, s.voice && `Voice of the site: ${s.voice}.`,
+    `Property search on the site: ${s.search ? "yes" : "none found"}.`,
+    s.score && `UX review: ${s.score}/10.`, s.strengths.length && `Does well: ${s.strengths.join("; ")}.`,
+    issues.length && `UX problems, most costly first: ${issues.join(" | ")}`,
+  ].filter(Boolean).join(" ");
 }
 
 // What Hopkins has flagged on Today, so "what should I do this week?" gets a real answer.

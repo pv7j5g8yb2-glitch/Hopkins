@@ -12,7 +12,7 @@ import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
   metaConnection, syncMeta,
-  runState, pauseOrResume, stopAllRuns, forgetOutside,
+  runState, pauseOrResume, stopAllRuns, forgetOutside, siteOf, analyseSite,
 } from "./hopkins.js";
 import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaRevoke, readSignedRequest, checkState, seal, unseal, MetaError } from "./meta.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./plans.js";
@@ -283,6 +283,7 @@ app.get("/api/me", async (request) => {
     photoLabels: PHOTO_LABELS,
     meta: await metaSummary(ws),
     crm: crmPublic(ws),
+    site: siteOf(ws),
   };
 });
 
@@ -377,6 +378,31 @@ app.post("/api/ads/:id/render", { bodyLimit: 12_000_000 }, async (request, reply
 });
 
 const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, instant_reply: 3, onboarded: 3 };
+
+// The brokerage website (setup step 3, Settings): saved at once, then read end to end in the
+// background (analyseSite in src/hopkins.js). The app asks GET /api/site until it's done.
+function siteUrl(raw) {
+  let t = String(raw || "").trim().slice(0, 300);
+  if (!t) return "";
+  if (!/^https?:\/\//i.test(t)) t = `https://${t}`;
+  try {
+    const u = new URL(t);
+    if (!/^https?:$/.test(u.protocol) || !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(u.hostname)) return null;
+    return `${u.protocol}//${u.hostname.toLowerCase()}${u.pathname === "/" ? "" : u.pathname.replace(/\/$/, "")}`;
+  } catch { return null; }
+}
+app.post("/api/site", async (request, reply) => {
+  const url = siteUrl(request.body?.url);
+  if (url === null || url === "") return reply.code(400).send({ error: "Enter a valid website, like yourbrokerage.com." });
+  if (tooMany(`site:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
+  const brand = { ...request.ws.brand, website: url };
+  const site = { url, status: "reading", at: nowIso() };
+  await run(`UPDATE workspaces SET brand = ?, site = ? WHERE id = ?`, [JSON.stringify(brand), JSON.stringify(site), request.ws.id]);
+  forgetOutside(request.ws.id);
+  analyseSite(request.ws.id, url).catch(() => {});
+  return { website: url, site };
+});
+app.get("/api/site", async (request) => ({ website: request.ws.brand.website || "", site: siteOf(request.ws) }));
 // Setup from the agent's website: what the site says about them, for them to check before saving.
 app.post("/api/brand/from-link", async (request, reply) => {
   if (tooMany(`site:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });

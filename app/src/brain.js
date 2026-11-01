@@ -57,8 +57,9 @@ Anything visual you make (an ad, a post, a carousel, a story, a reel, anything t
 What you really do (say only this when asked what you can do, never more):
 - Posts, carousels, stories and animated reels: designed in the app from their words and their own property photos, downloaded as images or a video. You don't take photos, film video or generate photos of homes.
 - Ads: written and designed around their photos, run on their own Meta ad account once they approve: one Housing campaign, an ad set per ad, a 15 mile radius around the property (Meta's Housing rules don't allow age, gender or ZIP targeting), each ad linking to the property's own page where buyers leave their details. You can pause and restart them, change the budget or the length, and you see spend, reach, link clicks and each ad's Leads. You don't touch their Page posts, their other campaigns or anything else in the account.
-- Leads: every lead from a Hopkins page is kept in the app, can get an instant email reply from the agent, and goes straight into their CRM: Follow Up Boss as a contact tagged Hopkins with the property, the ad it came from and their message, or any other CRM through a webhook. With Follow Up Boss connected you also read, never change: their 100 most recent contacts (source, stage, tags, price, when added, last activity), recent enquiries and the properties asked about, deals by stage, upcoming appointments, open and overdue tasks, calls logged and their team, so you can say how they're getting on and what their leads have in common. A webhook CRM can't be read.
+- Leads: every lead from a Hopkins page is kept in the app, can get an instant email reply from the agent, and goes straight into Follow Up Boss when they've connected it (optional), as a contact tagged Hopkins with the property, the ad it came from and their message. Other CRMs can't be connected yet. With Follow Up Boss connected you also read, never change: their 100 most recent contacts (source, stage, tags, price, when added, last activity), recent enquiries and the properties asked about, deals by stage, upcoming appointments, open and overdue tasks, calls logged and their team, so you can say how they're getting on and what their leads have in common.
 - Their Meta ad account: you read, never change outside Hopkins' own campaigns, the account's state, every campaign's status and budget, the last 30 days by campaign and by ad (spend, reach, clicks, click rate, leads Meta counted), Facebook against Instagram, this week against last, and their Instagram followers and recent posts when Meta has granted that, and use it when they ask how their marketing is going. Only use numbers that are in the context; when a source isn't connected, say what connecting it gives them.
+- Their website: you read their brokerage's site end to end (up to 15 pages) and have what it says about them and a UX review of it in the context (most costly problems first, each with where and the fix). Use it when they ask about their site, their brokerage or why enquiries are low, and to match their voice. Never invent a page, a review or a number, and you don't change their site.
 - Compared with an agency, be honest and plain: an agency does more (strategy, shoots and video, custom creative, more channels, a person on call). You do the listing ads, posts and the Lead handling quickly, with the agent approving each step, for a flat monthly price. Never say you're the same as an agency or "the exact same engine".
 
 How you write to the agent:
@@ -838,4 +839,47 @@ export async function chatTurnAI({ listing, photos, brand, ads, history, selecte
   const raw = await call({ system, messages, schema: TURN_SCHEMA, effort: "low", temperature: 0.7 });
   if (process.env.HOPKINS_DEBUG) console.log("chat turn:", JSON.stringify(raw));
   return normalizeTurn(raw);
+}
+
+// The agent's brokerage website, read end to end (Ismael, 2026-11-01): who they are, where they
+// work, how they talk, and a UX review of the site the way a senior designer would walk it as a
+// buyer or seller on a phone. Only from the pages Hopkins read (src/site.js crawlSite).
+const SITE_SCHEMA = {
+  type: "object",
+  properties: {
+    brokerage: { type: "string", description: "The brokerage or team name as the site gives it, or empty." },
+    agent: { type: "string", description: "The agent's own name if the site is one agent's, or empty." },
+    about: { type: "string", description: "One or two plain sentences on who they are and what they do." },
+    areas: { type: "array", items: { type: "string" }, description: "Cities, neighbourhoods or regions they work in, as the site names them." },
+    specialties: { type: "array", items: { type: "string" }, description: "What they focus on (luxury, first time buyers, rentals, new builds, relocation), only when the site says it." },
+    voice: { type: "string", description: "How the site talks, in a few words (formal, warm, bold, luxury)." },
+    score: { type: "integer", description: "Overall UX out of 10." },
+    strengths: { type: "array", items: { type: "string" }, description: "Up to 4 things the site does well, each naming the page." },
+    problems: {
+      type: "array",
+      description: "Up to 8 real UX problems, most costly first: what stops a buyer or seller getting in touch, finding a property, trusting them, or using it on a phone.",
+      items: { type: "object", properties: { issue: { type: "string" }, where: { type: "string" }, fix: { type: "string" } }, required: ["issue", "where", "fix"] },
+    },
+  },
+  required: ["brokerage", "agent", "about", "areas", "specialties", "voice", "score", "strengths", "problems"],
+};
+export async function siteAnalysisAI(crawl) {
+  if (!aiEnabled || !crawl?.pages?.length) return null;
+  const pages = crawl.pages.map((p) => ({ ...p, text: p.text.slice(0, 900) }));
+  const r = await call({
+    system: `You review a real estate business's website end to end, as a senior product designer and a real estate marketer would together. You get what each page holds: title, description, headings, forms and their fields, calls to action, images and how many have no description, whether it has a mobile viewport, how big it is and how long it took, a property search, phone and email links, a chat, and its text. Walk it the way a buyer, a seller and a renter would on a phone: can they find a property, see who the agent is and why to trust them, and get in touch in one step? Judge clarity of the first screen, navigation, calls to action, forms (too many fields, unclear button text), trust (reviews, sold results, faces, licence), speed, mobile, accessibility and search basics (titles, descriptions, headings). Only say what the pages show; never invent a page, a review or a number. Specific: name the page and the exact thing. Plain words, no dashes as punctuation, no jargon.`,
+    messages: [{ role: "user", content: `Site: ${crawl.site}${crawl.https ? "" : " (not on https)"}\nPages that didn't open: ${crawl.broken.join(", ") || "none"}\n\n${JSON.stringify(pages)}` }],
+    schema: SITE_SCHEMA,
+    effort: "medium",
+    temperature: 0.3,
+  });
+  if (!r) return null;
+  const s = (v, n) => String(v || "").replace(/\s*[–—]\s*/g, ", ").trim().slice(0, n);
+  const list = (v, k, n) => (Array.isArray(v) ? v : []).map((x) => s(x, n)).filter(Boolean).slice(0, k);
+  return {
+    brokerage: s(r.brokerage, 120), agent: s(r.agent, 80), about: s(r.about, 400), voice: s(r.voice, 60),
+    areas: list(r.areas, 10, 60), specialties: list(r.specialties, 6, 60), strengths: list(r.strengths, 4, 200),
+    score: Math.max(1, Math.min(10, Math.round(Number(r.score) || 0))) || null,
+    problems: (Array.isArray(r.problems) ? r.problems : []).map((p) => ({ issue: s(p?.issue, 200), where: s(p?.where, 80), fix: s(p?.fix, 240) })).filter((p) => p.issue).slice(0, 8),
+  };
 }

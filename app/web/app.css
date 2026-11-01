@@ -941,6 +941,15 @@ details.more .inner{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .crm-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .crm-row p{margin:2px 0 0;overflow-wrap:anywhere}
 .crm-row b{font-weight:500}
+.lensing .group .crm-row{padding:12px 16px;border-radius:18px}
+.site-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.site-head b{font-weight:500;overflow-wrap:anywhere}
+.site-head p{margin:2px 0 0}
+.site-ux{list-style:none;margin:10px 0 0;padding:0}
+.site-ux li{padding:12px 0;border-top:1px solid var(--line)}
+.site-ux b{font-weight:500;display:block}
+.site-ux .small{margin:4px 0 0}
+.fld label i{font-style:italic;font-weight:400;color:var(--quiet)}
 .warn{color:#9b2c2c}
 
 
