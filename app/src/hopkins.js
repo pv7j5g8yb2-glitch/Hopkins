@@ -5,6 +5,7 @@
 import { randomUUID, randomBytes } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
 import { sendLead, readCrm, crmPublic, fubOverview, overviewSummary } from "./crm.js";
+import { pushTo } from "./push.js";
 import { parseListingText, parseCurrency, readLink, downloadImage, formatPrice, priceBand, labelFromName, FEATURES, factsLine } from "./listing.js";
 import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS, MOMENTS } from "./writer.js";
 import { factProblems, withoutProblems } from "./facts.js";
@@ -2207,6 +2208,7 @@ export async function syncMeta() {
           if (listing) {
             await say(ws, listing.id, `Meta disconnected, so I can't see or change the ads for ${listingTitle(listing)}. They're still running on Meta. Reconnect Meta in Settings.`);
             if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, "Meta disconnected", `Reconnect Meta in Settings to keep managing the ads for ${listingTitle(listing)}.`);
+            pushTo(ws.id, { title: "Meta disconnected", body: `Reconnect Meta in Settings to keep managing the ads for ${listingTitle(listing)}.`, url: "/#/settings", tag: "meta" });
           }
         } catch (e) { console.error("Telling the agent Meta disconnected failed:", e.message); }
       }
@@ -2230,6 +2232,8 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
   const contact = [phone, email].filter(Boolean).join(", ");
   await say(ws, listing.id, `New Lead${ad ? ` from **Ad ${ad.version}**` : ""}: ${name} ${what}.${contact ? ` ${contact}.` : ""}${note ? ` They wrote: "${note}"` : ""}`, "lead", { leadId: id }, false);
   if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New Lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
+  // Straight to the agent's phone (src/push.js); tapping it opens the lead.
+  pushTo(ws.id, { title: `New lead · ${listingTitle(listing)}`, body: `${name} ${what}.${note ? ` "${String(note).slice(0, 90)}"` : ""}`, url: "/#/leads", tag: `lead-${id}` });
   // An instant reply by email, from the agent, so nobody who asks waits (Ismael, 2026-10-31: every
   // enquiry gets handled). Only when it really went out does the chat say so.
   if (email && ws.brand.instant_reply !== "off") {

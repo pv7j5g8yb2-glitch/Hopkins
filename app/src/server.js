@@ -30,6 +30,7 @@ import { notifyFounder, notifyTopic } from "./notify.js";
 import { mailReady, sendMail, resetEmail } from "./mail.js";
 import { checkWording } from "./fairhousing.js";
 import { wipeWorkspace, freshStart } from "./fresh.js";
+import { pushKeys, savePush, dropPush, pushTo, pushCount } from "./push.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB = join(__dirname, "..", "web");
@@ -39,7 +40,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "app.js", "glass.js", "lens.js", "splash.js", "creative.js", "studio.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -136,6 +137,8 @@ app.get("/", async (request, reply) => {
   if (!user) return reply.redirect("/login");
   return reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["app.html"]);
 });
+// The notifications worker lives at the root so it can cover the whole app.
+app.get("/sw.js", async (_, reply) => reply.type(TYPES.js).header("Cache-Control", "no-cache").header("Service-Worker-Allowed", "/").send(files["sw.js"]));
 app.get("/login", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/signup", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/privacy", async (_, reply) => reply.type(TYPES.html).send(files["privacy.html"]));
@@ -454,6 +457,22 @@ app.post("/api/account/delete", async (request, reply) => {
   }
   await wipeWorkspace(ws);
   clearSession(reply);
+  return { ok: true };
+});
+
+// ---------- notifications on the agent's own devices (src/push.js) ----------
+app.get("/api/push", async (request) => ({ key: (await pushKeys()).publicKey, devices: await pushCount(request.ws.id) }));
+app.post("/api/push", async (request, reply) => {
+  if (!(await savePush(request.ws, request.user.id, request.body?.subscription, request.headers["user-agent"]))) return reply.code(400).send({ error: "Something went wrong. Please try again." });
+  return { ok: true, devices: await pushCount(request.ws.id) };
+});
+app.delete("/api/push", async (request) => {
+  if (typeof request.body?.endpoint === "string") await dropPush(request.ws, request.body.endpoint);
+  return { ok: true, devices: await pushCount(request.ws.id) };
+});
+app.post("/api/push/test", async (request, reply) => {
+  const sent = await pushTo(request.ws.id, { title: "Hopkins", body: "Notifications are on.", url: "/#/settings", tag: "test" });
+  if (!sent) return reply.code(400).send({ error: "Notifications aren't on for this device." });
   return { ok: true };
 });
 

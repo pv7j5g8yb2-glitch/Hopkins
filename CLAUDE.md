@@ -264,10 +264,17 @@ The product's code is in `app/` (its README says what works and how to run it).
   password; the brokerage name is in Settings, Profile; anything else (phone, licence, Instagram)
   is said in the chat. Settings has one CRM row that opens the CRM page.
 * **Setup is mandatory, once (Ismael, 2026-10-31):** straight after sign up, a page with no tabs:
-  "Connect Hopkins", 1 Meta, 2 CRM, Continue. Nothing else opens until it's done (`onboarded` in the
+  "Connect Hopkins", 1 Meta, 2 CRM, 3 Notifications, Continue. Nothing else opens until it's done (`onboarded` in the
   brand). Meta must be connected; the only ways past it are Meta's login failing for them (before
   App Review only Meta testers can connect), shown as "Continue without Meta", or Meta not being set
-  up on the server yet. The CRM is connected or answered with "I don't use a CRM".
+  up on the server yet. The CRM is connected or answered with "I don't use a CRM". Step 3 is
+  Notifications (Ismael, 2026-11-01: "just an accept notifications button", on the same page as
+  Meta): a "Turn on" button and the phone's own Allow. Web push from Hopkins itself (`app/src/push.js`,
+  `app/web/sw.js`, keys made once and stored sealed, free, nothing on Render): a new lead, Needs
+  attention and Meta disconnecting reach every device, tapping one opens the right screen. iPhones
+  only allow it once Hopkins is on the Home Screen (Apple's rule), so there step 3 shows the two
+  taps instead and doesn't hold up Continue; nor do a blocked or unsupported browser. Settings and
+  Today offer the same button wherever it's still off. The ntfy app setup is gone from Settings.
 * **Makes what's asked, nothing else (Ismael, 2026-10-31):** no automatic set of 3 ads. A property
   on its own (facts, a link, photos) is read back in one line and Hopkins asks what to make for
   it; ads come when asked ("make ads", "run it"). Posts, carousels, stories and animated reels are

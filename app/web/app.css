@@ -1193,3 +1193,5 @@ body.onboarding .tabbar,body.onboarding .side,body.onboarding .mtop{display:none
 .su-go .btn{width:100%;justify-content:center}
 .su-go .btn:disabled{opacity:.35}
 .small.warn{color:#FF9B91}
+.row-acts{display:flex;gap:16px;flex:none}
+#setPush .su-row .tx b{font-weight:500;font-size:15px}

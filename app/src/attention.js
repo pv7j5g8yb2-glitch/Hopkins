@@ -7,6 +7,7 @@
 import { randomUUID } from "node:crypto";
 import { run, get, all, nowIso } from "./db.js";
 import { notifyTopic } from "./notify.js";
+import { pushTo } from "./push.js";
 import { metaReady, unseal, updateAdSet } from "./meta.js";
 import { getWorkspace, loadListing, listingTitle, proposeRun, changeRun, pauseOrResume, PROPERTY, capLeads } from "./hopkins.js";
 
@@ -134,6 +135,7 @@ export async function refreshAttention(ws, now = Date.now()) {
   }
   for (const s of stored) if (s.status === "open" && !found.some((f) => f.key === s.key)) await run(`UPDATE attention SET status = 'gone', resolved_at = ? WHERE id = ?`, [nowIso(), s.id]);
   if (fresh.length && ws.brand?.alerts_topic) for (const f of fresh) notifyTopic(ws.brand.alerts_topic, f.title, f.body);
+  for (const f of fresh) pushTo(ws.id, { title: capLeads(f.title), body: capLeads(f.body || ""), url: "/#/today", tag: `att-${f.key}` });
   return openAttention(ws);
 }
 

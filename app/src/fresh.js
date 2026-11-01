@@ -5,7 +5,7 @@ import { notifyFounder } from "./notify.js";
 
 // Every table that holds an account's data. Deleting an account (or every account) clears all of
 // them; ad_renders goes through its ads.
-export const ACCOUNT_TABLES = ["attention", "creations", "meta_ads", "meta_connections", "leads", "tests", "launches", "ads", "messages", "photos", "listings", "feedback", "users"];
+export const ACCOUNT_TABLES = ["push_subs", "attention", "creations", "meta_ads", "meta_connections", "leads", "tests", "launches", "ads", "messages", "photos", "listings", "feedback", "users"];
 
 // Removes one workspace and everything in it. Its ads stop on Meta first (the caller does that,
 // so it can refuse when Meta won't pause), and a paid subscription is ended.

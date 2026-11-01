@@ -229,6 +229,18 @@ await client.executeMultiple(`
   );
 
   -- What pilot users tell the founder from the app (account menu, Send feedback).
+  -- Devices the agent turned notifications on for (src/push.js), one row per browser or phone.
+  CREATE TABLE IF NOT EXISTS push_subs (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    ua TEXT,
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS feedback (
     id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,

@@ -601,6 +601,7 @@
     const setup = [
       !m.ready ? `<li><div class="tx"><b>Meta</b></div>${!m.available ? `<button class="link" data-act="metaSoon">Connect</button>` : m.connected ? `<a class="link" href="#/settings">Finish</a>` : `<a class="link" href="/api/meta/connect">Connect</a>`}</li>` : "",
       !(c.fub || c.hook || c.skip) ? `<li><div class="tx"><b>CRM</b></div><a class="link" href="#/crm">Connect</a></li>` : "",
+      S.pushState === "off" ? `<li><div class="tx"><b>Notifications</b></div><button class="link" data-act="pushOn">Turn on</button></li>` : "",
     ].filter(Boolean).join("");
     const setupHtml = setup ? `<ul class="steps setup">${setup}</ul>` : "";
     if (!S.listings.length) {
@@ -1959,6 +1960,55 @@
   }
 
   // The CRM on its own, from Today's setup: the same two fields, and Skip.
+  // ---------- notifications (src/push.js, web/sw.js) ----------
+  //
+  // One button and the phone's own Allow. iPhones only allow it once Hopkins is on the Home
+  // Screen (Apple's rule for every web app), so there the button becomes the two taps to get it there.
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const standalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  async function pushState() {
+    if (isIOS() && !standalone()) return "ios-browser";
+    if (!pushSupported()) return "unsupported";
+    if (Notification.permission === "denied") return "denied";
+    try {
+      const reg = await navigator.serviceWorker.getRegistration("/");
+      const sub = reg && (await reg.pushManager.getSubscription());
+      return sub && Notification.permission === "granted" ? "on" : "off";
+    } catch { return "off"; }
+  }
+  const b64 = (s) => { const p = "=".repeat((4 - (s.length % 4)) % 4); const r = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from([...r].map((c) => c.charCodeAt(0))); };
+  async function pushOn() {
+    const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return perm;
+    const { key } = await api("/api/push");
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) });
+    await api("/api/push", { body: { subscription: sub.toJSON() } });
+    return "on";
+  }
+  async function pushOff() {
+    const reg = await navigator.serviceWorker.getRegistration("/");
+    const sub = reg && (await reg.pushManager.getSubscription());
+    if (sub) { await api("/api/push", { method: "DELETE", body: { endpoint: sub.endpoint } }).catch(() => {}); await sub.unsubscribe(); }
+  }
+  // What the notifications row says and offers, wherever it appears.
+  function pushRow(state, { setup = false } = {}) {
+    if (state === "on") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">On</p></div>${setup ? "" : `<div class="row-acts"><button class="link" data-act="pushTest">Send a test</button><button class="link" data-act="pushOff">Turn off</button></div>`}</div>`;
+    if (state === "ios-browser") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">Add Hopkins to your Home Screen: tap Share, then Add to Home Screen. Open Hopkins from there to turn them on.</p></div></div>`;
+    if (state === "denied") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">Blocked in your browser settings.</p></div></div>`;
+    if (state === "unsupported") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">Not available in this browser.</p></div></div>`;
+    return `<div class="su-row"><div class="tx"><b>Notifications</b></div><button class="btn" data-act="pushOn">Turn on</button></div>`;
+  }
+  // A tapped notification opens Hopkins where it points.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (e) => { if (e.data?.go) { const u = new URL(e.data.go); location.hash = u.hash || "#/today"; } });
+    // Kept registered so notifications keep arriving after the app's been closed.
+    navigator.serviceWorker.getRegistration("/").then((r) => { if (r) navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {}); }).catch(() => {});
+  }
+
   // ---------- setup, once, after sign up ----------
   //
   // Meta and the CRM are how Hopkins knows the agent's business, so they come before anything else.
@@ -1985,9 +2035,16 @@
       <div class="head"><h1>Connect Hopkins</h1></div>
       <div class="su-step"><span class="su-n">1</span>${meta}</div>
       <div class="su-step"><span class="su-n">2</span><div class="su-body">${crm}</div></div>
-      <div class="su-go"><button class="btn" id="suGo" ${metaOk && crmOk ? "" : "disabled"}>Continue</button></div>
+      <div class="su-step"><span class="su-n">3</span><div class="su-body" id="suPush">${pushRow(S.pushState || "off", { setup: true })}</div></div>
+      <div class="su-go"><button class="btn" id="suGo" ${metaOk && crmOk && S.pushState && S.pushState !== "off" ? "" : "disabled"}>Continue</button></div>
     </div></div>`;
     fillMeta();
+    // Notifications: on, or not possible here (an iPhone tab, a blocked or unsupported browser).
+    pushState().then((st) => {
+      if (S.pushState === st || !location.hash.startsWith("#/setup")) return;
+      S.pushState = st;
+      viewSetup();
+    });
     $("#noCrm")?.addEventListener("change", async (e) => {
       S.me.crm = await api("/api/crm", { method: "PUT", body: { skip: e.target.checked } });
       viewSetup();
@@ -2028,11 +2085,7 @@
       <div class="group"><h4>Password</h4><div style="display:flex;flex-direction:column;gap:12px">
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
-      <div class="group"><h4>Lead alerts</h4>${b.alerts_topic
-        ? `<p>On</p>
-           <ol class="steps-small"><li>Install ntfy from the App Store or Google Play.</li><li>Tap +, then subscribe to <b>${esc(b.alerts_topic)}</b> <button class="link" data-copy="${esc(b.alerts_topic)}" data-copied="Name copied">Copy</button></li><li>Send a test to check it arrives.</li></ol>
-           <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><button class="sec-btn" data-act="testAlert">Send a test alert</button><button class="link" data-act="alertsOff">Turn off</button></div>`
-        : `<div><button class="sec-btn" data-act="alertsOn">Turn on lead alerts</button></div>`}</div>
+      <div class="group"><h4>Notifications</h4><div id="setPush">${pushRow(S.pushState || "off")}</div></div>
       ${metaGroup()}
       ${crmRow()}
       <div class="group"><h4>Instant reply to leads</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
@@ -2058,6 +2111,7 @@
       toast("Photo updated");
     });
     fillMeta();
+    pushState().then((st) => { S.pushState = st; if ($("#setPush")) $("#setPush").innerHTML = pushRow(st); });
   }
 
   async function settingsAction(act, t) {
@@ -2093,6 +2147,23 @@
       const next = S.me.workspace.brand.instant_reply === "off" ? "on" : "off";
       await api("/api/brand", { method: "PUT", body: { instant_reply: next } });
       await loadMe(); viewSettings(); toast(next === "on" ? "Instant reply on" : "Instant reply off");
+    } else if (act === "pushOn") {
+      t.disabled = true;
+      let st;
+      try { st = await pushOn(); } catch (err) { t.disabled = false; return toast("Something went wrong. Please try again."); }
+      S.pushState = st === "on" ? "on" : st === "denied" ? "denied" : await pushState();
+      if (S.pushState === "on") toast("Notifications on");
+      if (location.hash.startsWith("#/setup")) viewSetup();
+      else if ($("#setPush")) $("#setPush").innerHTML = pushRow(S.pushState);
+      else if (location.hash === "#/today" || !location.hash) { S.todayHtml = ""; drawToday(); }
+    } else if (act === "pushOff") {
+      await pushOff();
+      S.pushState = "off";
+      if ($("#setPush")) $("#setPush").innerHTML = pushRow("off");
+      toast("Notifications off");
+    } else if (act === "pushTest") {
+      await api("/api/push/test", { body: {} });
+      toast("Test sent");
     } else if (act === "metaWaive") {
       S.metaWaived = true;
       viewSetup();
@@ -2372,7 +2443,7 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle", "metaWaive"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle", "metaWaive", "pushOn", "pushOff", "pushTest"].includes(act)) await settingsAction(act, t);
       else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
       else if (act === "crCopy") {
         const c = (S.current?.creations || []).find((x) => x.id === t.dataset.id);
@@ -2670,6 +2741,8 @@
     if (!location.hash) location.hash = "#/today";
     else route();
     warmTabs();
+    // Whether this device has notifications on, so Today can offer them once if not.
+    pushState().then((st) => { S.pushState = st; if (st === "off" && (location.hash === "#/today" || !location.hash)) { S.todayHtml = ""; drawToday(); } }).catch(() => {});
     setInterval(async () => { try { await loadInbox(); await loadListings(); drawSide(); } catch {} }, 60000);
   })();
 })();
