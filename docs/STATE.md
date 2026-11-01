@@ -1033,3 +1033,7 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   fake pages; not yet run on a real brokerage site or with the live free model. The CRM step is now
   Follow Up Boss only and optional; the webhook has no fields on screen. Idea, not built: a weekly
   "your site" item in Needs attention when a costly problem is still there.
+* **Plans and free (Ismael, 2026-11-01):** Free is unlimited chat plus 1 piece of content; Solo
+  $99, Pro $149, Max $199, one agent each. What separates the three is still to decide. Stripe is
+  wired; it takes money once `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are on Render
+  (`docs/STRIPE.md`). Instant Lead Reply was removed: no automations yet.

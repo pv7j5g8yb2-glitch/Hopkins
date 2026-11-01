@@ -160,7 +160,7 @@ The product's code is in `app/` (its README says what works and how to run it).
   marketing agency for real estate that you run from one chat, but it stops waiting to be asked.
   It watches the agent's listings, ads and Leads, notices what needs doing, prepares it and asks
   for approval; the agent can still ask it anything. The loop to make excellent before anything
-  else: listing, campaign, approval, launch, enquiry, instant reply and follow up, results, the
+  else: listing, campaign, approval, launch, enquiry and follow up, results, the
   next recommendation. Rules for it: every recommendation comes from real data with a minimum of
   evidence (never "failing" after a few dollars), says exactly what approving does (which ads,
   how much money, how long), changes nothing without approval, and is said once. Never generic
@@ -246,9 +246,15 @@ The product's code is in `app/` (its README says what works and how to run it).
   Manage). Links are never underlined. Every button gives a little when pressed (scale .95,
   slightly dimmed, the + key .9) and comes back, never grows or bounces. Connecting anything shows
   only that notice, nothing else.
-* **Settings (Ismael, 2026-11-01):** Meta shows only its two boxes (ad account, Page), no
-  "Connected as"; "Follow Up Boss" with an "API Key" box (no "optional" here) and a white Connect;
-  Website as one line; "Instant Lead Reply"; Notifications with one title.
+* **Settings (Ismael, 2026-11-01):** Meta shows only its two boxes (ad account, Page) and a white
+  Disconnect under them, no "Connected as"; "Follow Up Boss" with an "API Key" box (no "optional"
+  here) and a white Connect; Website is a box like every other field, the site in it with a white
+  Remove on its right, which empties it back to "yourbrokerage.com" with Add (same in setup);
+  Notifications with one title; Plan with Upgrade on its right (none on Max); Sign out white, Delete
+  account a red button with dark text; Terms and Privacy policy as plain text further down.
+* **Chat boxes like Claude's (Ismael, 2026-11-01):** the message box and the agent's own messages
+  are a filled shade (`#1E1E21`) with no outline. Today's box never greys out the rest of Today
+  while typing.
 * **New chat (Ismael, 2026-11-01):** "What are you working on, Ismael?" with their first name, in
   the middle of the screen, in Today's greeting type (light, large), always one line: the font
   steps down to fit (`fitLine`), never below 22px. New chats start from the + key on phones and
@@ -361,11 +367,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
   its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the
   failure to avoid.
-* **Free plan (Ismael, 2026-10-25; creations count since 2026-10-31):** 3 things in all (ads,
-  posts, carousels, stories and reels counted together), the real thing: no watermark, and they can
-  be downloaded. Changes to those 3 are included. After that, strictly nothing new without upgrading
-  to a solo or team plan: no new set, no extra ad, no ads for another listing, and deleting a
-  listing or an ad never gives any back. Running any ad needs the paid plan too.
+* **Free plan (Ismael, 2026-11-01, replacing 3 ads):** unlimited chat (tips, advice, general
+  chatting), and 1 piece of content in all, whatever it is (an ad, a post, a carousel, a story or a
+  reel), the real thing with no watermark, downloadable, changes to it included. After that nothing
+  new without a plan, and deleting never gives it back. Running any ad needs a plan. Asking for ads
+  on Free makes one ad. `FREE_AD_LIMIT` in `app/src/plans.js` (tests set `FREE_LIMIT=3` for room).
 * **Pilot users (Ismael, 2026-10-26):** on the paid plan by default. Everyone who signs up with an
   invite code starts on paid (`PILOT_PLAN=free` changes that once sign ups open).
 * **Chats (Ismael, 2026-10-29):** everything is a chat, like ChatGPT and Claude: "New chat", the
@@ -434,9 +440,9 @@ The product's code is in `app/` (its README says what works and how to run it).
   another has none after 4 days and $20, a run with Leads ending within 2 days. Each has one button
   that does exactly what its label says ("Pause Ad 2, move $26 to Ad 1", "Run another week
   (+$140)") and Dismiss, which is final. Money moves go to Meta first, all or nothing.
-* **Instant reply to Leads (2026-10-31):** a Lead who leaves an email gets an email from the agent
-  straight away ("via Hopkins", replies go to the agent), only saying the agent will be in touch.
-  The chat says so only when it really went out. Settings has the switch. Needs Resend set up.
+* **No automations yet (Ismael, 2026-11-01):** Instant Lead Reply was removed from the whole
+  platform: "we aren't an automation platform. Yet. Should start straightforward and minimally
+  valuable." Don't add automations that act on the agent's behalf without being asked.
 * **Setup from the agent's website (2026-10-31):** `POST /api/brand/from-link` reads the business
   name, logo, colours, phone, email, Instagram and city from the agent's site. Its screen went with
   the Brand page the same day; the route stays for the chat to use.
@@ -513,17 +519,16 @@ The product's code is in `app/` (its README says what works and how to run it).
   last, each side of a hyphen or apostrophe) starts with a capital, however it was typed: Leads,
   the account name and the agent name on the brand. Only first letters change, so "McDonald"
   stays as typed. `app/src/names.js`; names saved before are fixed when the server starts.
-* **Plans (Ismael, 2026-10-30, replacing the single "Pro" plan):** priced by the agents whose names go
-  on the ads, unlimited listings on every plan: Solo $99 a month (1 agent), Duo $149 (2), Team $299
-  (up to 5), Team Plus $549 (up to 10), Max $799 (up to 15), Max Plus $999 (up to 20), more than 20
-  by quote. Free stays 3 ads. Plans show by name alone, "Duo", "Free", never "Duo plan" (Ismael,
-  2026-10-30). Prices only in the plan picker ("$149/mo"); "Billed monthly. Cancel anytime." only
-  under the plan in Settings and under the plan in the account sheet (Ismael, 2026-10-31). Self-serve: "Upgrade to Duo" goes straight to Stripe
-  Checkout and the plan starts when it's paid, never a request or a call; only Enterprise (over 20
-  agents) is "Contact sales". Settings, Manage opens Stripe's portal to cancel. `PLANS` in
-  `app/src/plans.js` is the one list; Admin can still switch a plan by hand (pilots, quotes). Setup:
-  `docs/STRIPE.md`. "Pro" is gone. The account corner and menu show the person's own name, not the
-  brokerage they work at.
+* **Plans (Ismael, 2026-11-01, replacing the agent priced list):** Hopkins starts niched on single
+  agents, not whole teams or brokerages: Free, Solo $99/mo, Pro $149/mo, Max $199/mo, one agent
+  each; a team gets a plan per agent for now. What separates Solo, Pro and Max isn't decided yet.
+  Plans show by name alone ("Pro", "Free"). Prices only in the plan picker ("$149/mo"); "Billed
+  monthly. Cancel anytime." only under the plan in Settings and in the account sheet. Self-serve:
+  Upgrade goes straight to Stripe Checkout (prices built from `PLANS` in `app/src/plans.js`, no
+  Stripe products needed) and the plan starts when it's paid. Moving to another plan ends the old
+  subscription at once with the unused part credited, never two at once. Settings, Manage opens
+  Stripe's portal to cancel. Admin can still switch a plan by hand. Setup: `docs/STRIPE.md`. The
+  account corner and menu show the person's own name, not the brokerage.
 * **Paid (Ismael, 2026-10-27):** a normal monthly subscription, billed every month from the day they
   sign up. Never say billing waits for the first ad to go live. In copy it's "billed monthly", never
   "paid monthly" (Ismael, 2026-10-27). Month to month, cancel anytime ("anytime", never "any

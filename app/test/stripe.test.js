@@ -22,6 +22,7 @@ stripe.setStripeFetchForTests(async (url, init = {}) => {
   }
   if (path === "checkout/sessions/cs_1") return ok({ ...session, status: "complete", customer: "cus_1", subscription: "sub_1" });
   if (path === "billing_portal/sessions") return ok({ url: "https://billing.stripe.test/p_1" });
+  if (init.method === "DELETE" && path.startsWith("subscriptions/")) return ok({ id: path.split("/")[1], status: "canceled" });
   return { ok: false, status: 404, json: async () => ({ error: { message: "unexpected" } }) };
 });
 
@@ -32,13 +33,13 @@ function signed(event) {
 }
 const hook = (event, sig) => app.inject({ method: "POST", url: "/api/stripe/webhook", headers: { "content-type": "application/json", "stripe-signature": sig ?? signed(event).sig }, payload: signed(event).raw });
 
-test("choosing Duo opens Checkout at $149 a month, and the plan starts on the way back", async () => {
+test("choosing Pro opens Checkout at $149 a month, and the plan starts on the way back", async () => {
   const c = client(app);
   await c("POST", "/api/signup", { email: "pay@duo.test", password: "password123", invite: "EARLY1", name: "Kim Duo" });
   const me = (await c("GET", "/api/me")).json;
   assert.deepEqual(me.billing, { ready: true, customer: false });
 
-  const r = await c("POST", "/api/billing/checkout", { plan: "duo" });
+  const r = await c("POST", "/api/billing/checkout", { plan: "pro" });
   assert.equal(r.json.url, "https://checkout.stripe.test/cs_1");
   const p = calls.at(-1).params;
   assert.equal(p.mode, "subscription");
@@ -53,7 +54,7 @@ test("choosing Duo opens Checkout at $149 a month, and the plan starts on the wa
   const back = await c("GET", "/api/billing/return?session_id=cs_1");
   assert.equal(back.status, 302);
   const now = (await c("GET", "/api/me")).json;
-  assert.equal(now.plan.name, "Duo");
+  assert.equal(now.plan.name, "Pro");
   assert.equal(now.billing.customer, true);
   assert.equal((await c("POST", "/api/billing/portal", {})).json.url, "https://billing.stripe.test/p_1");
 
@@ -70,7 +71,24 @@ test("the webhook alone starts a plan, for an agent who closed the tab after pay
   const c = client(app);
   await c("POST", "/api/signup", { email: "team@five.test", password: "password123", invite: "EARLY1", name: "Lee Team" });
   const ws = (await c("GET", "/api/me")).json.workspace.id;
-  const r = await hook({ type: "checkout.session.completed", data: { object: { mode: "subscription", client_reference_id: ws, metadata: { plan: "team" }, customer: "cus_2", subscription: "sub_2" } } });
+  const r = await hook({ type: "checkout.session.completed", data: { object: { mode: "subscription", client_reference_id: ws, metadata: { plan: "max" }, customer: "cus_2", subscription: "sub_2" } } });
   assert.equal(r.statusCode, 200);
-  assert.equal((await c("GET", "/api/me")).json.plan.name, "Team");
+  assert.equal((await c("GET", "/api/me")).json.plan.name, "Max");
+});
+
+test("moving from Solo to Max replaces the subscription: the old one ends, credited, and the plan stays paid", async () => {
+  const c = client(app);
+  await c("POST", "/api/signup", { email: "move@solo.test", password: "password123", invite: "EARLY1", name: "Ari Move" });
+  const ws = (await c("GET", "/api/me")).json.workspace.id;
+  await hook({ type: "checkout.session.completed", data: { object: { mode: "subscription", client_reference_id: ws, metadata: { plan: "solo" }, customer: "cus_m", subscription: "sub_old" } } });
+  assert.equal((await c("GET", "/api/me")).json.plan.name, "Solo");
+  await hook({ type: "checkout.session.completed", data: { object: { mode: "subscription", client_reference_id: ws, metadata: { plan: "max" }, customer: "cus_m", subscription: "sub_new" } } });
+  const ended = calls.find((x) => x.method === "DELETE" && x.path === "subscriptions/sub_old");
+  assert.ok(ended, "the old subscription is ended");
+  assert.equal(ended.params.prorate, "true", "the unused part is credited");
+  // Stripe then says the old one was deleted: that never turns the account back to Free.
+  await hook({ type: "customer.subscription.deleted", data: { object: { id: "sub_old", status: "canceled" } } });
+  const me = (await c("GET", "/api/me")).json;
+  assert.equal(me.plan.name, "Max");
+  assert.equal(me.workspace.plan, "paid");
 });

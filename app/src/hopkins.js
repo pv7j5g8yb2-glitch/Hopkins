@@ -2292,40 +2292,12 @@ export async function addLead(listing, { name, email, phone, wants, note, adId, 
   if (ws.brand.alerts_topic) notifyTopic(ws.brand.alerts_topic, `New Lead · ${listing.address || "your listing"}`, `${name} ${what}. Open Hopkins to reply.`);
   // Straight to the agent's phone (src/push.js); tapping it opens the lead.
   pushTo(ws.id, { title: `New lead · ${listingTitle(listing)}`, body: `${name} ${what}.${note ? ` "${String(note).slice(0, 90)}"` : ""}`, url: "/#/leads", tag: `lead-${id}` });
-  // An instant reply by email, from the agent, so nobody who asks waits (Ismael, 2026-10-31: every
-  // enquiry gets handled). Only when it really went out does the chat say so.
-  if (email && ws.brand.instant_reply !== "off") {
-    instantReply(ws, listing, { name, email, wants }).then(async (sent) => {
-      if (!sent) return;
-      await run(`UPDATE leads SET replied_at = ? WHERE id = ?`, [nowIso(), id]);
-      await say(ws, listing.id, `I emailed ${name.split(" ")[0]} back straight away to say you'll be in touch.`, "text", null, false);
-    }).catch((err) => console.error("Instant reply failed:", err.message));
-  }
   // Into their CRM as it comes in, without making the person on the lead page wait.
   const lead = { id, name, email, phone, wants, note, created_at: nowIso() };
   sendLead(ws, { lead, listing, ad, pageUrl: base ? `${base}/l/${listing.slug}` : null })
     .then(async (last) => { if (last) await run(`UPDATE workspaces SET crm = ? WHERE id = ?`, [JSON.stringify({ ...readCrm(await getWorkspace(ws.id)), last }), ws.id]); })
     .catch((err) => console.error("Sending a Lead to the CRM failed:", err.message));
   return id;
-}
-
-// The instant reply: short, from the agent, about the property they asked about, nothing promised
-// that the agent hasn't said. Replies go to the agent's own email.
-const NEXT = {
-  showing: "I'll be in touch shortly to arrange a showing. If you have times that suit you, reply to this email with them.",
-  offer: "I'll be in touch shortly to talk it through.",
-  apply: "I'll be in touch shortly with the next steps.",
-  info: "I'll get back to you shortly with an answer.",
-};
-export async function instantReply(ws, listing, { name, email, wants }) {
-  const { sendMail, mailReady } = await import("./mail.js");
-  if (!mailReady()) return false;
-  const owner = await get(`SELECT email, name FROM users WHERE workspace_id = ? ORDER BY created_at LIMIT 1`, [ws.id]);
-  const agent = ws.brand.agent_name || owner?.name || "";
-  const where = listing.address || listing.area || listingTitle(listing);
-  const sign = [agent, ws.brand.business, ws.brand.phone].filter(Boolean).join("\n");
-  const text = `Hi ${name.split(" ")[0]},\n\nThanks for asking about ${where}. ${NEXT[wants] || NEXT.info}\n\n${sign}`;
-  return sendMail({ to: email, subject: `About ${where}`, text, replyTo: ws.brand.email || owner?.email, fromName: agent });
 }
 
 // ---------- the Monday report ----------

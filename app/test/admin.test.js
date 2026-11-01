@@ -40,13 +40,13 @@ test("plans: the founder can switch one on by hand (pilots, quotes), and the acc
   const agent = client(app);
   await agent("POST", "/api/signup", { email: "duo@example.com", password: "password123", invite: "EARLY1", name: "Kim Duo" });
   const me = (await agent("GET", "/api/me")).json;
-  assert.deepEqual(me.plans.map((p) => [p.name, p.price, p.agents]), [["Solo", 99, 1], ["Duo", 149, 2], ["Team", 299, 5], ["Team Plus", 549, 10], ["Max", 799, 15], ["Max Plus", 999, 20]]);
+  assert.deepEqual(me.plans.map((p) => [p.name, p.price]), [["Solo", 99], ["Pro", 149], ["Max", 199]]);
   assert.equal(me.plan, null, "free has no paid plan");
 
-  assert.equal((await boss("PATCH", `/api/admin/workspaces/${me.workspace.id}`, { plan: "duo" })).status, 200);
+  assert.equal((await boss("PATCH", `/api/admin/workspaces/${me.workspace.id}`, { plan: "pro" })).status, 200);
   const now = (await agent("GET", "/api/me")).json;
   assert.equal(now.workspace.plan, "paid");
-  assert.equal(now.plan.name, "Duo");
+  assert.equal(now.plan.name, "Pro");
   assert.equal((await boss("PATCH", `/api/admin/workspaces/${me.workspace.id}`, { plan: "gold" })).status, 400);
   // "paid" alone (accounts from before the plans had names) is Solo.
   await boss("PATCH", `/api/admin/workspaces/${me.workspace.id}`, { plan: "paid" });

@@ -2,7 +2,9 @@
 
 Choosing a plan in Hopkins opens Stripe Checkout for a monthly subscription. The plan starts as
 soon as the payment goes through, and ends when it's cancelled in Stripe's customer portal
-(Settings, Manage). More than 20 agents is by quote and doesn't go through Stripe. The code is in
+(Settings, Manage). Plans (2026-11-01): Solo $99, Pro $149, Max $199 a month, one agent each.
+The prices come from `app/src/plans.js`, so nothing needs creating in Stripe's product list. Moving
+from one plan to another ends the old subscription with the unused part credited. The code is in
 `app/src/stripe.js`. Until the keys below are set, Upgrade says "Payments are not available yet."
 
 ## 1. The Stripe account

@@ -16,7 +16,7 @@ import {
 } from "./hopkins.js";
 import { metaReady, loginUrl, finishLogin, assets as metaAssets, revoke as metaRevoke, readSignedRequest, checkState, seal, unseal, MetaError } from "./meta.js";
 import { adsMade, FREE_AD_LIMIT, PRICE_FROM, PLANS, findPlan, planOf } from "./plans.js";
-import { stripeReady, checkout, getSession, portal, readEvent } from "./stripe.js";
+import { stripeReady, checkout, getSession, portal, readEvent, cancelSubscription } from "./stripe.js";
 import { nameCase } from "./names.js";
 import { readCrm, crmPublic, checkFubKey, sealKey, hookOk, testHook } from "./crm.js";
 import { refreshAttention, openAttention, actOnAttention, watchAll } from "./attention.js";
@@ -377,7 +377,7 @@ app.post("/api/ads/:id/render", { bodyLimit: 12_000_000 }, async (request, reply
   return { ok: true };
 });
 
-const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, instant_reply: 3, onboarded: 3 };
+const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, onboarded: 3 };
 
 // The brokerage website (setup step 3, Settings): saved at once, then read end to end in the
 // background (analyseSite in src/hopkins.js). The app asks GET /api/site until it's done.
@@ -403,6 +403,13 @@ app.post("/api/site", async (request, reply) => {
   return { website: url, site };
 });
 app.get("/api/site", async (request) => ({ website: request.ws.brand.website || "", site: siteOf(request.ws) }));
+app.delete("/api/site", async (request) => {
+  const brand = { ...request.ws.brand };
+  delete brand.website;
+  await run(`UPDATE workspaces SET brand = ?, site = NULL WHERE id = ?`, [JSON.stringify(brand), request.ws.id]);
+  forgetOutside(request.ws.id);
+  return { website: "", site: null };
+});
 // Setup from the agent's website: what the site says about them, for them to check before saving.
 app.post("/api/brand/from-link", async (request, reply) => {
   if (tooMany(`site:${request.user.id}`, 10)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
@@ -427,7 +434,6 @@ app.put("/api/brand", async (request, reply) => {
     if ((k === "primary" || k === "accent") && v && !/^#[0-9a-fA-F]{6}$/.test(v)) return reply.code(400).send({ error: "Enter colours as hex, like #1F2A36." });
     if (k === "voice" && !["plain", "warm", "premium"].includes(v)) continue;
     if (k === "font" && !FONT_KEYS.includes(v)) continue;
-    if (k === "instant_reply" && !["on", "off"].includes(v)) continue;
     if (k === "alerts_topic" && v && !/^[A-Za-z0-9_-]{6,64}$/.test(v)) return reply.code(400).send({ error: "Alerts topic: 6 to 64 letters, numbers, hyphens or underscores." });
     brand[k] = v;
   }
@@ -569,6 +575,11 @@ async function startPlan(workspaceId, planId, customer, subscription) {
   if (!ws) return;
   if (ws.plan === "paid" && ws.tier === plan.id && ws.stripe_subscription === subscription) return;
   await run(`UPDATE workspaces SET plan = 'paid', tier = ?, stripe_customer = ?, stripe_subscription = ? WHERE id = ?`, [plan.id, customer || null, subscription || null, workspaceId]);
+  // Moving from one plan to another: the new subscription replaces the old one, which ends now
+  // with the unused part of the month credited to their next invoice. Never two at once.
+  if (ws.stripe_subscription && subscription && ws.stripe_subscription !== subscription) {
+    try { await cancelSubscription(ws.stripe_subscription, { prorate: true }); } catch (err) { console.error("Ending the old subscription failed:", err.message); notifyFounder("Hopkins: check Stripe", `${ws.name} moved to ${plan.name} but the old subscription ${ws.stripe_subscription} didn't end.`, ["warning"]); }
+  }
   notifyFounder("Hopkins: new subscription", `${ws.name} is on ${plan.name} ($${plan.price}/mo).`, ["moneybag"]);
 }
 app.post("/api/billing/checkout", async (request, reply) => {

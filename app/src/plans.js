@@ -1,22 +1,19 @@
 // The free plan and the paid plans, as decided (see CLAUDE.md, "Product decisions").
 //
-// Free: 3 ads in all, with no watermark, and they can be downloaded. Changes to those 3 are
-// included. Any new ad after that (a new set, another ad, another listing's, even after deleting
-// one) or pressing "run it" brings up the upgrade message in the chat.
-// Paid plans (Ismael, 2026-10-30): priced by the agents whose names go on the ads, unlimited
-// listings. Billed every month from the day they sign up (Ismael, 2026-10-27), cancel anytime, a
-// flat price with no cut of ad spend. More than 20 agents is by quote.
+// Free (Ismael, 2026-11-01): unlimited chat (tips, advice, anything), and 1 piece of content in
+// all, whatever it is (an ad, a post, a carousel, a story or a reel). Changes to it are included.
+// Paid (Ismael, 2026-11-01): three plans, one agent each (a team gets a plan per agent for now).
+// Billed every month from the day they sign up, cancel anytime, a flat price with no cut of ad
+// spend. Checkout builds the price from this list, so Stripe needs no products set up.
 
 import { get } from "./db.js";
 
-export const FREE_AD_LIMIT = 3;
+// FREE_LIMIT only changes it for tests that need room to make a whole set.
+export const FREE_AD_LIMIT = Number(process.env.FREE_LIMIT) || 1;
 export const PLANS = [
-  { id: "solo", name: "Solo", price: 99, agents: 1 },
-  { id: "duo", name: "Duo", price: 149, agents: 2 },
-  { id: "team", name: "Team", price: 299, agents: 5 },
-  { id: "teamplus", name: "Team Plus", price: 549, agents: 10 },
-  { id: "max", name: "Max", price: 799, agents: 15 },
-  { id: "maxplus", name: "Max Plus", price: 999, agents: 20 },
+  { id: "solo", name: "Solo", price: 99 },
+  { id: "pro", name: "Pro", price: 149 },
+  { id: "max", name: "Max", price: 199 },
 ];
 export const PRICE_FROM = PLANS[0].price;
 export const findPlan = (id) => PLANS.find((p) => p.id === id) || null;
@@ -46,6 +43,6 @@ export async function canMake(workspace, count) {
 export function upgradeText(reason, { usedOn } = {}) {
   if (reason === "run") return "Running ads requires an upgrade.";
   if (reason === "plan") return `Plans start at $${PRICE_FROM}/month. No cut of your ad spend.`;
-  if (reason === "saved") return `Your ${FREE_AD_LIMIT} free ads went on ${usedOn || "an earlier listing"}. This listing is saved. Upgrade, then tap Create ads.`;
-  return `You've used your ${FREE_AD_LIMIT} free creations. New ones require an upgrade.`;
+  if (reason === "saved") return `Your free creation went on ${usedOn || "an earlier listing"}. This listing is saved. Upgrade, then tap Create ads.`;
+  return "You've used your free creation. New ones require an upgrade.";
 }

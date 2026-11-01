@@ -848,7 +848,7 @@
   // ---------- the box on Today ----------
   //
   // Small things done properly (Ismael, 2026-10-31: "an intentional work of art"): the glass wakes
-  // when you tap in (its rim brightens and a glint crosses it once), the rest of Today steps back
+  // when you tap in (its rim brightens and a glint crosses it once), Today stays as it is
   // while you write, the box grows with what you type, Send lights up only when there's something
   // to send, and the words you sent rise from the box into the new chat as your first message.
   function askGrow(ta) {
@@ -942,6 +942,8 @@
   }
 
   // The first name they signed up with, for the New chat line.
+  // The top plan has nothing to upgrade to.
+  const topPlan = () => paid() && S.me.plan?.id === S.me.plans.at(-1).id;
   const firstName = () => (S.me.user.name || "").trim().split(/\s+/)[0] || "there";
   // One line always: the font steps down until it fits, never below what reads comfortably.
   function fitLine(el, min = 22) {
@@ -1250,18 +1252,16 @@
     if (next.upgrade) upgradeSheet(next.upgrade);
   }
 
-  // The plans, as a card over the screen: what Run it, a new ad past the free 3, or Upgrade opens.
-  // Self-serve (Ismael, 2026-10-30): the button goes straight to Stripe Checkout. Over 20 agents is
-  // by quote, by email.
-  const agentsLine = (p) => (p.agents === 1 ? "1 agent" : p.agents === 2 ? "2 agents" : `Up to ${p.agents} agents`);
+  // The plans, as a card over the screen: what Run it, a new creation past the free one, or
+  // Upgrade opens. Self-serve: the button goes straight to Stripe Checkout.
   function upgradeSheet(reason = "plans", anchor) {
-    if (!S.pickPlan) S.pickPlan = S.me.plans[0].id;
+    // On a plan already, the picker starts at the next one up.
+    if (!S.pickPlan) { const i = paid() ? S.me.plans.findIndex((p) => p.id === S.me.plan?.id) + 1 : 0; S.pickPlan = (S.me.plans[i] || S.me.plans[0]).id; }
     const pick = S.me.plans.find((p) => p.id === S.pickPlan);
-    const title = reason === "run" ? "Upgrade to run ads" : reason === "plans" ? "Upgrade your plan" : "Upgrade for more ads";
+    const title = reason === "run" ? "Upgrade to run ads" : reason === "plans" ? "Upgrade your plan" : "Upgrade to create more";
     openPop(anchor || $(".actrow [data-act=run]") || $(".mtop"), `<div class="upsell">
       <h3>${title}</h3>
-      <div class="plans">${S.me.plans.map((p) => `<button class="pl${p.id === S.pickPlan ? " sel" : ""}" data-plan="${p.id}"><span><b>${esc(p.name)}</b><span>${agentsLine(p)}</span></span><b>$${p.price}<span>/mo</span></b></button>`).join("")}
-        <a class="pl" href="mailto:gethopkins@gmail.com?subject=Hopkins%20for%20a%20team%20of%20over%2020"><span><b>Enterprise</b><span>Over 20 agents</span></span><b class="pl-q">Contact sales</b></a></div>
+      <div class="plans">${S.me.plans.map((p) => `<button class="pl${p.id === S.pickPlan ? " sel" : ""}" data-plan="${p.id}"><span><b>${esc(p.name)}</b></span><b>$${p.price}<span>/mo</span></b></button>`).join("")}</div>
       <button class="btn" data-checkout>Upgrade to ${esc(pick.name)}</button>
       <button class="link upsell-later" data-act="notNow">Not now</button></div>`);
   }
@@ -1926,7 +1926,7 @@
     return `<div class="group" id="metaGroup"><h4>Meta</h4>
       <div class="grid2"><div class="fld"><label for="metaAcct">Ad account</label><select id="metaAcct"><option value="">${esc(m.adAccountName || "Choose…")}</option></select></div>
       <div class="fld"><label for="metaPage">Facebook Page</label><select id="metaPage"><option value="">${esc(m.pageName || "Choose…")}</option></select></div></div>
-      <div style="margin-top:12px"><button class="link" data-act="metaOff">Disconnect</button></div></div>`;
+      <div style="margin-top:12px"><button class="btn" data-act="metaOff">Disconnect</button></div></div>`;
   }
   async function fillMeta() {
     if (!S.me.meta?.connected || !$("#metaGroup")) return;
@@ -1963,10 +1963,11 @@
 
   // The brokerage website (setup step 2 and Settings). Hopkins reads it end to end in the
   // background to know the agent; what it learnt stays in the chat, not on screen (Ismael, 2026-11-01).
-  function siteGroup(fld) {
+  // A box like every other field: the site in it with Remove beside it, or empty with Add.
+  function siteGroup() {
     const url = S.me.workspace.brand.website;
-    if (!url || S.siteEdit) return `<div class="group" id="site"><h4>Website</h4><div style="display:flex;flex-direction:column;gap:12px">${fld("siteUrl", "Your brokerage's website", url ? siteHost(url) : "", "url", "yourbrokerage.com")}<div><button class="btn" data-act="siteSave">${url ? "Save" : "Add"}</button></div></div></div>`;
-    return `<div class="group" id="site"><h4>Website</h4><div class="site-head"><div><b>${esc(siteHost(url))}</b><p class="small">Connected</p></div><button class="link" data-act="siteEdit">Change</button></div></div>`;
+    const box = `<input id="siteUrl" type="url" value="${esc(url ? siteHost(url) : "")}" placeholder="yourbrokerage.com" autocomplete="off" aria-label="Your brokerage's website" ${url ? "readonly" : ""}>`;
+    return `<div class="group" id="site"><h4>Website</h4><div class="fld inline">${box}<button class="btn" data-act="${url ? "siteRemove" : "siteSave"}">${url ? "Remove" : "Add"}</button></div></div>`;
   }
   const siteHost = (u) => String(u).replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
 
@@ -2039,7 +2040,7 @@
     const m = S.me.meta || {}, c = S.me.crm || {};
     const fld = (id, label, value, type = "text", ph = "") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="off"></div>`;
     const metaOk = m.ready || !m.available || S.metaWaived;
-    const siteOk = Boolean(S.me.workspace.brand.website) && !S.siteEdit;
+    const siteOk = Boolean(S.me.workspace.brand.website);
     const meta = !m.available
       ? `<div class="su-row"><div class="tx"><b>Meta</b><p class="small">Available soon</p></div></div>`
       : m.connected
@@ -2055,7 +2056,7 @@
       <div class="su-logo">${MARK("")}<b>Hopkins</b></div>
       <div class="head"><h1>Connect Hopkins</h1></div>
       <div class="su-step"><span class="su-n">1</span>${meta}</div>
-      <div class="su-step"><span class="su-n">2</span><div class="su-body">${siteGroup(fld)}</div></div>
+      <div class="su-step"><span class="su-n">2</span><div class="su-body">${siteGroup()}</div></div>
       <div class="su-step"><span class="su-n">3</span><div class="su-body">${crm}</div></div>
       ${mobile ? `<div class="su-step"><span class="su-n">4</span><div class="su-body" id="suPush">${pushRow(S.pushState || "off", { setup: true })}</div></div>` : ""}
       <div class="su-go"><button class="btn" id="suGo" ${metaOk && siteOk && pushOk ? "" : "disabled"}>Continue</button></div>
@@ -2067,7 +2068,6 @@
       S.pushState = st;
       viewSetup();
     });
-    S.siteFld = fld;
     $("#siteUrl")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $('[data-act="siteSave"]')?.click(); } });
     $("#suGo").addEventListener("click", async () => {
       await api("/api/brand", { method: "PUT", body: { onboarded: "yes" } });
@@ -2108,15 +2108,14 @@
       <div class="group"><h4>Notifications</h4><div id="setPush">${pushRow(S.pushState || "off")}</div></div>
       ${metaGroup()}
       ${crmGroup(fld)}
-      ${siteGroup(fld)}
-      <div class="group"><h4>Instant Lead Reply</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
-      <div class="group"><h4>Plan</h4>${paid()
-        ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
-           ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="btn" data-act="billing">Manage</button></div>` : ""}`
-        : `<p>Free</p><div style="margin-top:12px"><button class="btn" data-upgrade>Upgrade</button></div>`}</div>
+      ${siteGroup()}
+      <div class="group"><h4>Plan</h4><div class="plan-row"><div><p>${paid() ? esc(S.me.plan.name) : "Free"}</p>${paid() ? `<p class="small">Billed monthly. Cancel anytime.</p>` : ""}</div>
+        ${topPlan() ? "" : `<button class="btn" data-upgrade>Upgrade</button>`}</div>
+        ${paid() && S.me.billing.customer ? `<div style="margin-top:12px"><button class="btn" data-act="billing">Manage</button></div>` : ""}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
         <button class="btn" data-act="logout">${ICON.out}Sign out</button>
-        <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/terms" target="_blank" rel="noopener">Terms</a><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
+        <button class="btn btn-red" data-act="deleteAsk">Delete account</button></div></div>
+      <div class="legal-links"><a href="/terms" target="_blank" rel="noopener">Terms</a><a href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div>
     </div></div>`;
     $("#sEmail").addEventListener("input", (e) => $("#sEmailPw").classList.toggle("hidden", e.target.value.trim().toLowerCase() === u.email));
     $("#avFile").addEventListener("change", async (e) => {
@@ -2132,7 +2131,6 @@
       toast("Photo updated");
     });
     fillMeta();
-    S.siteFld = fld; S.siteEdit = false;
     pushState().then((st) => { S.pushState = st; if ($("#setPush")) $("#setPush").innerHTML = pushRow(st); });
   }
 
@@ -2172,19 +2170,16 @@
       } catch (err) { t.disabled = false; return toast(err.message || "Something went wrong. Please try again."); }
       toast("Connected");
       if (location.hash.startsWith("#/setup")) viewSetup();
-      else $("#site").outerHTML = siteGroup(S.siteFld);
-    } else if (act === "siteEdit") {
-      S.siteEdit = true;
+      else $("#site").outerHTML = siteGroup();
+    } else if (act === "siteRemove") {
+      await api("/api/site", { method: "DELETE" });
+      S.me.workspace.brand.website = ""; S.me.site = null;
       if (location.hash.startsWith("#/setup")) viewSetup();
-      else $("#site").outerHTML = siteGroup(S.siteFld);
+      else $("#site").outerHTML = siteGroup();
       $("#siteUrl")?.focus();
     } else if (act === "crmOff") {
       S.me.crm = await api("/api/crm", { method: "PUT", body: { [t.dataset.which]: "" } });
       redrawCrm(); toast(t.dataset.which === "fub" ? "Disconnected" : "Removed");
-    } else if (act === "replyToggle") {
-      const next = S.me.workspace.brand.instant_reply === "off" ? "on" : "off";
-      await api("/api/brand", { method: "PUT", body: { instant_reply: next } });
-      await loadMe(); viewSettings(); toast(next === "on" ? "Instant reply on" : "Instant reply off");
     } else if (act === "pushOn") {
       t.disabled = true;
       let st;
@@ -2481,7 +2476,7 @@
         return startEdit(row, m ? m.body : $(".tx", row.previousElementSibling).textContent);
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
-      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "replyToggle", "metaWaive", "pushOn", "pushOff", "pushTest", "siteSave", "siteEdit"].includes(act)) await settingsAction(act, t);
+      if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "metaWaive", "pushOn", "pushOff", "pushTest", "siteSave", "siteRemove"].includes(act)) await settingsAction(act, t);
       else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
       else if (act === "crCopy") {
         const c = (S.current?.creations || []).find((x) => x.id === t.dataset.id);

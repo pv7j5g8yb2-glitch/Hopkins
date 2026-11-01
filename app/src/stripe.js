@@ -1,7 +1,7 @@
 // Stripe: self-serve plans (Ismael, 2026-10-30). Choosing a plan opens Stripe Checkout for a
 // monthly subscription; Stripe tells Hopkins when it starts, changes or ends (the webhook), and
-// the customer portal is where they cancel or change their card. Over 20 agents is by quote and
-// never comes through here. Setup: docs/STRIPE.md.
+// the customer portal is where they cancel or change their card. Plans: Solo, Pro, Max (src/plans.js).
+// Setup: docs/STRIPE.md.
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
@@ -70,5 +70,6 @@ export function readEvent(raw, header, secret = process.env.STRIPE_WEBHOOK_SECRE
   try { return JSON.parse(raw); } catch { return null; }
 }
 
-// Ends a subscription straight away (an account being deleted).
-export const cancelSubscription = (id) => stripe("DELETE", `subscriptions/${encodeURIComponent(id)}`);
+// Ends a subscription straight away (an account being deleted, or a move to another plan, where
+// the unused part is credited).
+export const cancelSubscription = (id, { prorate = false } = {}) => stripe("DELETE", `subscriptions/${encodeURIComponent(id)}`, prorate ? { prorate: "true" } : undefined);

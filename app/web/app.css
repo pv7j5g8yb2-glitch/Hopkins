@@ -1108,9 +1108,7 @@ select option{color:#111;background:#fff}
 .ask-sheen:before{content:"";position:absolute;top:-20%;bottom:-20%;left:-40%;width:28%;transform:translateX(0) skewX(-18deg);background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.22),rgba(255,255,255,0));opacity:0}
 .askbox.lit .ask-sheen:before{animation:askSheen 1s cubic-bezier(.3,.6,.2,1) .05s 1}
 @keyframes askSheen{0%{opacity:0;transform:translateX(0) skewX(-18deg)}15%{opacity:1}100%{opacity:0;transform:translateX(560%) skewX(-18deg)}}
-/* While writing, the rest of Today steps back. */
 .page[data-today] .wrap>*{transition:opacity .35s var(--ease)}
-.page[data-today].asking .wrap>:not(.askbox):not(.head){opacity:.32}
 /* The sent words rise from the box into the chat. */
 .ask-fly{position:fixed;left:0;top:0;z-index:300;color:#fff;font-size:15px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word;pointer-events:none;will-change:transform;transition:opacity .18s var(--ease)}
 .ask-fly.gone{opacity:0}
@@ -1241,3 +1239,19 @@ body.onboarding .tabbar,body.onboarding .side,body.onboarding .mtop{display:none
 .intro.hello h1{width:100%;text-align:center;white-space:nowrap;overflow:hidden;font-size:34px;font-weight:300;letter-spacing:-.04em;line-height:1.1}
 @media (max-width:980px){.intro.hello h1{font-size:30px}}
 .su-body .group h4{font-size:17px;font-weight:600;letter-spacing:-.01em;color:#fff;margin-bottom:12px}
+/* ---------- 2026-11-01, second pass ---------- */
+/* chat boxes like Claude's and ChatGPT's: a filled shade, no outline */
+.comp,.comp.lg{background:#1E1E21!important;border:0!important}
+.comp:focus-within,.comp.lg:focus-within{border:0!important;box-shadow:none!important}
+.me{background:#1E1E21;border:0}
+/* Settings */
+.fld.inline{display:flex;align-items:center;gap:10px}
+.fld.inline input{flex:1;min-width:0}
+.fld.inline input[readonly]{color:#fff;cursor:default}
+.fld.inline .btn{flex:none}
+.plan-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.plan-row p{margin:0}
+.btn.btn-red{background:#FF6B61;color:#0B0B0D}
+.legal-links{display:flex;gap:22px;margin:36px 0 8px;font-size:14px}
+.legal-links a{color:var(--quiet)}
+.legal-links a:active{opacity:.55}
