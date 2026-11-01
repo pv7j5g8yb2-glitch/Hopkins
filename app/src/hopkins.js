@@ -11,7 +11,7 @@ import { writeSet, writeVersion, polish, polishChat, KINDS, KIND_NAMES, MAX_ADS,
 import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
-import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS } from "./style.js";
+import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS, freshLooks } from "./style.js";
 import { creationAI, cleanCreation, captionAI, siteAnalysisAI } from "./brain.js";
 import { crawlSite, siteChecks, readSite } from "./site.js";
 import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure, titleAI } from "./brain.js";
@@ -658,7 +658,9 @@ function lookNow(ads) {
 
 const LOOK_WORDS = new RegExp(`\\b(background|label|colou?r|font|serif|layout|frame|fade|bigger|smaller|text size|centered|centred|${Object.keys(COLOUR_WORDS).join("|")})\\b`, "i");
 export const refersBack = (text) => {
-  const t = String(text || "").toLowerCase();
+  // "put X under it in the same font" describes the new line, not another ad's look; "in the
+  // same font as ad 1" still refers back.
+  const t = String(text || "").toLowerCase().replace(/\bin the same (font|colou?rs?|style|size|weight)\b(?!\s+as\b)/g, "");
   return /\b(do that|that too|this too|those too|as well|match(ing)?|copy (that|it|the look)|like (ad|version|number) ?[1-5])\b/.test(t)
     || /\b(do|did|make|apply|give|put|want|need)\b[^.?!]{0,30}\bsame\b/.test(t)
     || /\bsame\b[^.?!]{0,16}\b(for|on|to|with)\b\s*(ads?|versions?|v|number|the|them|all|both|[1-5])\b/.test(t)
@@ -974,12 +976,21 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
   } else if (aiEnabled) {
     ({ ads: set, reply } = await writtenSet({ ...ctx, recent: await recentLooks(ws, listing.id) }, built, { count: room, brief, extra: brief, design: true }));
   }
+  // Every new ad has its own look: the model's when it gave one (kept until 2026-11-01 this was
+  // wiped on saving, so every set came out the same navy), otherwise a starting look that isn't on
+  // its siblings or the agent's recent ads.
+  {
+    const recent = await all(`SELECT style FROM ads WHERE workspace_id = ? AND listing_id != ? ORDER BY created_at DESC LIMIT 6`, [ws.id, listing.id]).catch(() => []);
+    const avoid = new Set([...recent.map((r) => safeJson(r.style, {}).bg), ...set.map((a) => a.style?.bg)].filter(Boolean));
+    const spare = freshLooks(set.length, avoid);
+    set = set.map((a, i) => (a.style && (a.style.bg || a.style.font || a.style.layout) ? a : { ...a, style: { ...(a.style || {}), ...spare[i] } }));
+  }
   // Paid: a new set replaces the old ads in place, so their links (and the leads they bring)
   // carry on. Free: the old ones go and still count, so a new set uses up free ads like any.
   const reuse = isPaid(ws) || inPlace;
   if (!reuse && existing.length) await removeAds(ws, listing, existing);
   for (const ad of set) {
-    await saveAd(ws, listing, moment, ad.version, { ...ad, style: {} }, reuse ? existing.find((e) => e.version === ad.version) : null);
+    await saveAd(ws, listing, moment, ad.version, { ...ad, style: ad.style || {} }, reuse ? existing.find((e) => e.version === ad.version) : null);
   }
   // A smaller set than before: the extra ones go (and still count as made).
   const extraOld = reuse ? existing.filter((e) => e.version > set.length) : [];

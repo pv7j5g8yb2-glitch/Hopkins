@@ -1035,5 +1035,7 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   "your site" item in Needs attention when a costly problem is still there.
 * **Plans and free (Ismael, 2026-11-01):** Free is unlimited chat plus 1 piece of content; Solo
   $99, Pro $149, Max $199, one agent each. What separates the three is still to decide. Stripe is
-  wired; it takes money once `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are on Render
-  (`docs/STRIPE.md`). Instant Lead Reply was removed: no automations yet.
+  wired and both Stripe keys are on Render (Ismael, 2026-11-01); no real payment has gone through
+  yet. Proposed plan split, awaiting his yes: Solo 40 creations a month and ads on 2 listings at a
+  time; Pro 150 and 6; Max unlimited and first access to new features. Everyone keeps the full
+  loop (leads, Follow Up Boss, Report, Needs attention, notifications). Instant Lead Reply was removed: no automations yet.

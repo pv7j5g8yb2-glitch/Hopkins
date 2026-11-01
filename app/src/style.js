@@ -172,3 +172,25 @@ export function keepReadable(changes, current = {}, brandBg = "#1F2A36") {
   }
   return { changes: out, dropped };
 }
+
+// Looks to start from when the model leaves one out (or there's no model): each new ad gets one
+// that isn't on its siblings or the agent's recent ads, so no two sets come out the same navy
+// template (Ismael, 2026-11-01). All are readable as they are; the agent changes anything.
+export const STARTER_LOOKS = [
+  { bg: "#F4EBDD", text: "#1A1A1A", accent: "#9C4A26", font: "editorial", layout: "card" },
+  { bg: "#111111", text: "#FFFFFF", accent: "#D7AE62", font: "elegant", layout: "fade" },
+  { bg: "#1E3A2B", text: "#FBF7EE", accent: "#E9C46A", font: "classic", layout: "frame" },
+  { bg: "#FBF7EE", text: "#2B2B2B", accent: "#1F6F6B", font: "minimal", layout: "split" },
+  { bg: "#5A1A24", text: "#FBF7EE", accent: "#F1D3D3", font: "bold", layout: "top" },
+  { bg: "#E8DCC8", text: "#2B2B2B", accent: "#C0603F", font: "modern", layout: "card" },
+  { bg: "#3E4C59", text: "#FFFFFF", accent: "#9CC3E6", font: "modern", layout: "fade" },
+  { bg: "#2B2B2B", text: "#FFFFFF", accent: "#E8B4C0", font: "bold", layout: "split" },
+  { bg: "#C2A27C", text: "#1A1A1A", accent: "#FBF7EE", font: "elegant", layout: "frame" },
+  { bg: "#1F6F6B", text: "#FFFFFF", accent: "#F4EBDD", font: "classic", layout: "top" },
+];
+export function freshLooks(count, avoid = new Set(), seed = Math.random()) {
+  const pool = STARTER_LOOKS.filter((l) => !avoid.has(l.bg));
+  const from = pool.length >= count ? pool : STARTER_LOOKS;
+  const start = Math.floor(seed * from.length);
+  return Array.from({ length: count }, (_, i) => ({ ...from[(start + i * 3) % from.length] }));
+}

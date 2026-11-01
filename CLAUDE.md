@@ -237,9 +237,14 @@ The product's code is in `app/` (its README says what works and how to run it).
   drawn, a panel that rebuilds its contents gets its glass back at once, and nothing redraws while
   the screen is still. Test sheets opening, not only still screens.
 
+* **Black cards, glass only on the tab bar (Ismael, 2026-11-01, after comparing screenshots):** the
+  reeded background stays; every card, panel, sheet, box and the Today box is solid near black
+  (`--card`, `#141416`) with no rim or glint; only the tab bar (and its drop and + key) keeps Liquid
+  Glass (`SELECTORS` in `app/web/lens.js`).
+* **Sign in, sign up and forgot password are final (Ismael, 2026-11-01: "stay the exact same now i
+  like how they look"):** don't change their look or wording unless he asks.
 * **Less glass (Ismael, 2026-11-01: "too much glass", "AI vibecoded slop", not "a serious billion
-  dollar software company"):** glass stays only on what floats (the tab bar, Today's box, sheets)
-  and the panels. Solid instead: the chat's message box and the agent's own messages (near black
+  dollar software company"):** Solid instead: the chat's message box and the agent's own messages (near black
   `#0E0E10` with a hairline), notices (a solid black pill dropping from the top, one line, e.g.
   "Connected", "Turned on"), secondary buttons and Settings rows. Buttons people act on in setup
   and Settings are the white pill (Connect, Add, Change photo, Save, Change password, Sign out,
@@ -279,8 +284,7 @@ The product's code is in `app/` (its README says what works and how to run it).
   2026-10-31).
 * **Small details, done properly (Ismael, 2026-10-31: "an intentional work of art touch by a
   serious software company", "without doing too much"):** the box on Today is a real box: tap in
-  and the glass wakes (rim brightens, one glint crosses it), the rest of Today steps back while you
-  write, the box grows with the text, Send lights up only when there's something to send, and
+  and the box wakes, the rest of Today stays as it is (no greying, 2026-11-01), the box grows with the text, Send lights up only when there's something to send, and
   sending opens the new chat with the words rising from the box into the first message. Look for
   touches like this across the platform: quiet, purposeful, never a celebration or a bounce.
 * **No Brand page (Ismael, 2026-10-31):** removed completely. Sign up is name, email and
@@ -345,6 +349,12 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Fair housing warns, never blocks (Ismael, 2026-10-31):** the US Fair Housing Act covers any
   housing statement or ad, paid or organic, so wording like "perfect for couples" gets one plain
   warning and a safer alternative, and the agent decides. Not legal advice.
+* **Every set looks different (lesson, 2026-11-01):** Ismael saw "a fucking navy background with
+  white copywrited text" again. The model's look for each ad had been wiped when the set was saved
+  (`style: {}` in `makeAds`) since the design change of 2026-10-31, so every set was the default
+  navy. Now the model's look is kept, and an ad without one gets a starting look (`freshLooks` in
+  `app/src/style.js`) not on its siblings or the agent's recent ads. A test checks a set has three
+  different looks. Check the saved result, not just what the model returned.
 * **Never the same template twice, for anything visual (Ismael, 2026-10-31):** ads, posts,
   carousels, stories, reels and anything else Hopkins makes that's seen. What the agent says it
   should be like, feel like or look like always comes first, before Hopkins' own taste; then they

@@ -195,7 +195,10 @@ test("\"no you didn't\" gets the ads' real look, not an apology for a change tha
   const r = await c("POST", `/api/listings/${id}/messages`, { text: "no you didn't lol?", version: 1 });
   const body = r.json.messages.at(-1).body;
   assert.doesNotMatch(body, /let me fix/i);
-  assert.match(body, /All three ads have a grey background/);
+  // Each ad keeps its own look apart from the grey, so the reply says it ad by ad.
+  assert.match(body, /\*\*Ad 1\*\* has a grey background/);
+  assert.match(body, /\*\*Ad 2\*\* has a grey background/);
+  assert.match(body, /\*\*Ad 3\*\* has a grey background/);
 });
 
 test("\"the same\" in a chat from before looks were remembered copies the ad that was just changed", async () => {

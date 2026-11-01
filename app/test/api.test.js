@@ -295,14 +295,16 @@ test("the look of an ad: from the chat in plain words, and from the Style sheet"
   const fact = await c("POST", `/api/listings/${id}/messages`, { text: "it has a white kitchen", version: 1 });
   assert.equal(fact.json.ads[0].style.bg, "#2F5D46");
   // a colour that wouldn't read on the background is left out, and the reply says so
+  const textBefore = fact.json.ads[2].style.text;
   const dark = await c("POST", `/api/listings/${id}/messages`, { text: "version 3 dark green text please", version: 1 });
-  assert.equal(dark.json.ads[2].style.text, undefined);
+  assert.equal(dark.json.ads[2].style.text, textBefore, "the unreadable colour isn't applied");
   assert.match(dark.json.messages.at(-1).body, /dark green wouldn't be readable on green\. A lighter one will work\.$/);
   const cream = await c("POST", `/api/listings/${id}/messages`, { text: "version 3 cream text please", version: 1 });
   assert.equal(cream.json.ads[2].style.text, "#F4EBDD");
   // the Style sheet: one version, then all, then back to the brand look; nonsense is ignored
+  const fontBefore = cream.json.ads[2].style.font;
   let s = await c("PATCH", `/api/listings/${id}/style`, { versions: [3], style: { bg: "#6d1f2c", layout: "frame", font: "comic sans" } });
-  assert.deepEqual([s.json.ads[2].style.bg, s.json.ads[2].style.layout, s.json.ads[2].style.font], ["#6D1F2C", "frame", undefined]);
+  assert.deepEqual([s.json.ads[2].style.bg, s.json.ads[2].style.layout, s.json.ads[2].style.font], ["#6D1F2C", "frame", fontBefore], "comic sans is ignored");
   s = await c("PATCH", `/api/listings/${id}/style`, { versions: [1, 2, 3], style: {}, sizeStep: 0.1 });
   assert.equal(s.json.ads[0].style.size, 1.1);
   s = await c("PATCH", `/api/listings/${id}/style`, { versions: [1], style: { reset: true } });
@@ -490,7 +492,7 @@ test("any message can be edited: Hopkins forgets the old one and puts the ads ba
   // Meant to delete one, not recolour them: the green goes, the old message and its reply go.
   const edited = await c("POST", `/api/messages/${sent.id}/edit`, { text: "delete the second one", version: 1 });
   assert.equal(edited.status, 200);
-  assert.deepEqual(edited.json.ads.map((a) => a.style.bg ?? null), original.slice(0, 2));
+  assert.deepEqual(edited.json.ads.map((a) => a.style.bg ?? null), [original[0], original[2]], "ads 1 and 3 stay as they were");
   assert.equal(edited.json.ads.length, 2);
   assert.ok(!edited.json.messages.some((m) => /green/.test(m.body)), "the old wording is gone");
   assert.equal(edited.json.messages.length, before + 2);
@@ -771,4 +773,14 @@ test("a new chat gets its answer even if the app never asks for it (the page was
   const got = (await c("GET", `/api/listings/${s.json.listing.id}`)).json;
   assert.equal(got.ads.length, 3);
   assert.ok(got.messages.some((m) => m.role === "hopkins"));
+});
+
+test("every new set is designed fresh: three different looks, and not the ones on the agent's last listing", async () => {
+  const { c } = await signup("fresh-looks@ellery.test");
+  const a = await c("POST", "/api/listings", { text: DESCRIPTION });
+  const first = a.json.ads.map((x) => x.style.bg);
+  assert.equal(new Set(first).size, 3, "three different looks");
+  for (const x of a.json.ads) assert.ok(x.style.font && x.style.layout, "each has its own font and layout");
+  const b = await c("POST", "/api/listings", { text: "88 Peachtree St, Atlanta. 2 bed 2 bath condo, $2,400/mo" });
+  for (const x of b.json.ads) assert.ok(!first.includes(x.style.bg), "not a look from the last listing");
 });

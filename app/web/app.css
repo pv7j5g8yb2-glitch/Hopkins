@@ -1255,3 +1255,14 @@ body.onboarding .tabbar,body.onboarding .side,body.onboarding .mtop{display:none
 .legal-links{display:flex;gap:22px;margin:36px 0 8px;font-size:14px}
 .legal-links a{color:var(--quiet)}
 .legal-links a:active{opacity:.55}
+/* ---------- black cards (Ismael, 2026-11-01): the background stays, every card and panel is a
+   solid near black, and only the tab bar keeps its Liquid Glass ---------- */
+:root{--card:#141416}
+.askbox,.csearch,.steps,.stats-mini,.card-l,.hero,.lead,.stat,.rp-sum,.pl,.empty,.notice,.attn,.pop,.selbar,.plan,.sheet,.me-sheet{
+  background:var(--card)!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.lg:not(.lg-cap):not(.lg-cap *):before,.lg:not(.lg-cap):not(.lg-cap *):after{display:none!important}
+.ask-sheen{display:none!important}
+.card-l .ph.cover,.hero .ph.cover{background:#0E0E10}
+.stats-mini{border-radius:20px;overflow:hidden;border:0}
+.stats-mini a,.stats-mini a.key,.stats-mini a.on,.stats-mini .stat{background:transparent!important}
+.stats-mini a:active{background:rgba(255,255,255,.06)!important}
