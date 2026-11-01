@@ -201,8 +201,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   Hopkins works, never a list of steps (Ismael, 2026-10-27), never a blank screen.
 * **Serious software, not a game (Ismael, 2026-10-30, restyled 2026-10-31):** the app "felt like a
   mobile game". Look and move like Linear, Stripe, ChatGPT or Claude, in the new look: pill buttons
-  (white for the main action, quiet glass for the rest) that dim when pressed (never grow or
-  bounce), frosted glass panels with a light edge and no drop shadow, lists as hairline rows, page
+  (white for the main action, quiet solid pills for the rest) that give a little when pressed
+  (never grow or bounce), frosted glass panels with a light edge and no drop shadow, lists as hairline rows, page
   titles 24px semibold (Today's greeting large and light), no progress bars, no celebrations (a
   plain notice instead), no springy or staggered entrances, notices as a small dark glass bar.
   What floats over content (tab bar, message box, sheets) is nearly solid glass, and the page fades
@@ -227,8 +227,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Liquid Glass (Ismael, 2026-10-24):** Apple's iOS 26 style, on phones only, never laptop or desktop
   (same as Claude and ChatGPT). It has to match Apple's, not be a cheap copy. Since 2026-10-31
   (Ismael: "a white background made less bright is NOT Apple Liquid Glass") every glass panel on
-  phones (tab bar and its drop, message box, Ask box, panels, cards, sheets, buttons, notices) has
-  all three: refraction (what's behind magnified in the middle and bent at the edges), a rim of
+  phones (tab bar and its drop, Ask box, panels, cards, sheets; since 2026-11-01 not the message
+  box, buttons, notices or rows, see "Less glass") has all three: refraction (what's behind magnified in the middle and bent at the edges), a rim of
   light along the edge, and a glint that slides as the panel moves. Browsers can't bend what's
   behind an element on iPhone, so `app/web/lens.js` draws the background picture through a lens
   with WebGL for each panel; content scrolling under a floating bar isn't bent, only the
@@ -237,6 +237,23 @@ The product's code is in `app/` (its README says what works and how to run it).
   drawn, a panel that rebuilds its contents gets its glass back at once, and nothing redraws while
   the screen is still. Test sheets opening, not only still screens.
 
+* **Less glass (Ismael, 2026-11-01: "too much glass", "AI vibecoded slop", not "a serious billion
+  dollar software company"):** glass stays only on what floats (the tab bar, Today's box, sheets)
+  and the panels. Solid instead: the chat's message box and the agent's own messages (near black
+  `#0E0E10` with a hairline), notices (a solid black pill dropping from the top, one line, e.g.
+  "Connected", "Turned on"), secondary buttons and Settings rows. Buttons people act on in setup
+  and Settings are the white pill (Connect, Add, Change photo, Save, Change password, Sign out,
+  Manage). Links are never underlined. Every button gives a little when pressed (scale .95,
+  slightly dimmed, the + key .9) and comes back, never grows or bounces. Connecting anything shows
+  only that notice, nothing else.
+* **Settings (Ismael, 2026-11-01):** Meta shows only its two boxes (ad account, Page), no
+  "Connected as"; "Follow Up Boss" with an "API Key" box (no "optional" here) and a white Connect;
+  Website as one line; "Instant Lead Reply"; Notifications with one title.
+* **New chat (Ismael, 2026-11-01):** "What are you working on, Ismael?" with their first name, in
+  the middle of the screen, in Today's greeting type (light, large), always one line: the font
+  steps down to fit (`fitLine`), never below 22px. New chats start from the + key on phones and
+  Today's box on a laptop; no New chat card on Chats and no New chat in the sidebar. The avatar is
+  the first letter of the first name on white until they add a photo.
 * **Best quality, always (Ismael, 2026-10-29):** ads are always given in the best quality and
   resolution. Photos are kept at 1920 pixels on the short side (4096 at most on the long side, JPEG
   0.92), photos from a link are taken at the largest size the site gives, ads download as PNG at
@@ -264,23 +281,28 @@ The product's code is in `app/` (its README says what works and how to run it).
   password; the brokerage name is in Settings, Profile; anything else (phone, licence, Instagram)
   is said in the chat. Settings has one CRM row that opens the CRM page.
 * **Setup is mandatory, once (Ismael, 2026-10-31):** straight after sign up, a page with no tabs:
-  "Connect Hopkins", 1 Meta, 2 CRM, 3 Website, 4 Notifications, Continue. Nothing else opens until it's done (`onboarded` in the
+  "Connect Hopkins", 1 Meta, 2 Website, 3 Follow Up Boss, 4 Notifications (phones only), Continue. Nothing else opens until it's done (`onboarded` in the
   brand). Meta must be connected; the only ways past it are Meta's login failing for them (before
   App Review only Meta testers can connect), shown as "Continue without Meta", or Meta not being set
-  up on the server yet. The CRM is optional since 2026-11-01: only "Follow Up Boss API key
-  *(optional)*" (in italics, in brackets), no webhook or Zapier fields on screen. Step 3, Website
-  (Ismael, 2026-11-01), is required: they paste their brokerage's site (placeholder
+  up on the server yet. Step 3 is titled "Follow Up Boss" and is optional since 2026-11-01: one box
+  labelled "API Key *(optional)*" (in italics, in brackets) and a white Connect, no webhook or
+  Zapier fields on screen. Step 2, Website (Ismael, 2026-11-01), is required: they paste their brokerage's site (placeholder
   "yourbrokerage.com") so Hopkins knows the brokerage and the site. Hopkins reads it end to end,
   never a glance: up to 15 pages, robots.txt respected, as HopkinsBot (`crawlSite` in
   `app/src/site.js`), measured UX checks that stand without a model (`siteChecks`), then a profile
   and a UX review by the model (`siteAnalysisAI`), in the background; it fills the brokerage name if
-  empty, reaches the chat (`siteLine`) and shows in Settings, Website. Step 4 is
+  empty and reaches the chat (`siteLine`). It's only so Hopkins knows them: nothing of the review
+  is ever shown on screen (Ismael, 2026-11-01: "no one ever asked for" it). On screen it's one
+  line, the site with "Connected" under it and Change beside it. Step 4 is
   Notifications (Ismael, 2026-11-01: "just an accept notifications button", on the same page as
   Meta): a "Turn on" button and the phone's own Allow. Web push from Hopkins itself (`app/src/push.js`,
   `app/web/sw.js`, keys made once and stored sealed, free, nothing on Render): a new lead, Needs
   attention and Meta disconnecting reach every device, tapping one opens the right screen. iPhones
-  only allow it once Hopkins is on the Home Screen (Apple's rule), so there step 3 shows the two
-  taps instead and doesn't hold up Continue; nor do a blocked or unsupported browser. Settings and
+  only allow it once Hopkins is on the Home Screen (Apple's rule), so on an iPhone step 4 shows the
+  two taps instead and doesn't hold up Continue; nor do a blocked or unsupported browser. Android
+  gets Turn on. Step 4 is shown on phones only: a laptop's browser allows notifications without
+  any of that, so laptops turn them on in Settings (Ismael, 2026-11-01). The notifications text
+  always says what they get: "Get notified every time a new lead comes in." One title only. Settings and
   Today offer the same button wherever it's still off. The ntfy app setup is gone from Settings.
 * **Makes what's asked, nothing else (Ismael, 2026-10-31):** no automatic set of 3 ads. A property
   on its own (facts, a link, photos) is read back in one line and Hopkins asks what to make for

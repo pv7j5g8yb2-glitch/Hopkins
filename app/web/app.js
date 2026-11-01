@@ -87,9 +87,9 @@
   const TOAST_MS = 3200;
   function toast(msg) {
     const t = $("#toast");
-    if (!t.firstChild) t.innerHTML = `<img src="/static/mark.svg" alt=""><span></span>`;
+    if (!t.querySelector(".tmsg")) t.innerHTML = `<span class="tmsg"></span>`;
     const was = t.classList.contains("on");
-    t.lastChild.textContent = msg;
+    t.querySelector(".tmsg").textContent = msg;
     t.style.transform = "";
     t.classList.remove("bump");
     if (was) { void t.offsetWidth; t.classList.add("bump"); }
@@ -234,7 +234,7 @@
 
   // The person, not the brokerage they work at (Ismael, 2026-10-27).
   const myName = () => S.me.user.name || S.me.workspace.brand?.agent_name || S.me.user.email.split("@")[0];
-  const initials = () => (S.me.user.name || S.me.user.email).split(/[\s@.]+/).map((w) => w[0]).join("").slice(0, 2);
+  const initials = () => ((S.me.user.name || S.me.user.email).trim()[0] || "").toUpperCase();
   // Your profile photo if you've added one, your initials if not.
   const avatarStyle = () => (S.me.user.avatar_id ? `style="background:#ddd url(${photoUrl(S.me.user.avatar_id, true)}) center/cover;color:transparent"` : "");
   // The phone's top bar. Top level pages show the logo and your avatar; inside a listing it
@@ -653,7 +653,7 @@
     const q = (S.chatQ || "").trim().toLowerCase();
     // Only what's on the card: a match on a hidden city or name read as wrong (Ismael, 2026-10-29).
     const shown = props.filter((l) => !q || listingName(l).toLowerCase().includes(q));
-    const cardsHtml = () => `${shown.map(card).join("")}${sel || q ? "" : `<a class="card-new" href="#/new">${ICON.plus}New chat</a>`}`;
+    const cardsHtml = () => shown.map(card).join("");
     const top = sel ? `<p class="lede">${n ? `${n} selected` : "Select chats to delete"}</p>` : props.length ? "" : `<p class="lede">Your chats appear here.</p>`;
     main.innerHTML = `${mtop("Chats")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Chats</h1>${top}</div>
       ${props.length ? `<button class="sel-btn" data-act="selectMode">${sel ? "Done" : "Select"}</button>` : ""}</div>
@@ -941,14 +941,26 @@
     (window.requestIdleCallback || ((f) => setTimeout(f, 800)))(go);
   }
 
+  // The first name they signed up with, for the New chat line.
+  const firstName = () => (S.me.user.name || "").trim().split(/\s+/)[0] || "there";
+  // One line always: the font steps down until it fits, never below what reads comfortably.
+  function fitLine(el, min = 22) {
+    if (!el) return;
+    el.style.fontSize = "";
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > el.clientWidth + 1 && size > min) { size -= 1; el.style.fontSize = `${size}px`; }
+  }
+  window.addEventListener("resize", () => fitLine($("#helloH")));
+
   function viewNew() {
     S.newChat = [];
     main.innerHTML = `${mtop("New chat", "", { back: "#/today" })}<section class="chat"><div class="ch"><div class="tt"><h2>New chat</h2></div></div>
-      <div class="msgs" id="msgs"><div class="intro"><h1>What are you working on?</h1>
+      <div class="msgs" id="msgs"><div class="intro hello"><h1 id="helloH">What are you working on, ${esc(firstName())}?</h1>
       ${!paid() && S.me.usage.adsMade >= S.me.usage.freeLimit ? `<div class="notice"><button class="link" data-upgrade>Upgrade your plan</button></div>` : ""}</div>
       <label class="drop quiet" id="drop"><div class="grid" id="dropGrid"></div><input type="file" accept="image/*,.heic,.heif" multiple hidden id="dropFiles"></label>
       <div class="thread" id="thread" style="margin-top:18px"></div></div>
       ${composerHtml(ASK)}</section>`;
+    fitLine($("#helloH"));
     const dropEl = $("#drop");
     // Photos come in through the + in the box, or dropped anywhere on the screen.
     const zone = $("section.chat");
@@ -1910,9 +1922,9 @@
     const m = S.me.meta || {};
     if (!m.available) return "";
     if (!m.connected) return `<div class="group"><h4>Meta</h4><p class="small">Facebook and Instagram ads.</p>
-      <div style="margin-top:12px"><a class="sec-btn" href="/api/meta/connect">${m.expired ? "Reconnect Meta" : "Connect Meta"}</a></div></div>`;
-    return `<div class="group" id="metaGroup"><h4>Meta</h4><p>Connected as ${esc(m.name || "you")}.</p>
-      <div class="grid2" style="margin-top:12px"><div class="fld"><label for="metaAcct">Ad account</label><select id="metaAcct"><option value="">${esc(m.adAccountName || "Choose…")}</option></select></div>
+      <div style="margin-top:12px"><a class="btn" href="/api/meta/connect">${m.expired ? "Reconnect" : "Connect"}</a></div></div>`;
+    return `<div class="group" id="metaGroup"><h4>Meta</h4>
+      <div class="grid2"><div class="fld"><label for="metaAcct">Ad account</label><select id="metaAcct"><option value="">${esc(m.adAccountName || "Choose…")}</option></select></div>
       <div class="fld"><label for="metaPage">Facebook Page</label><select id="metaPage"><option value="">${esc(m.pageName || "Choose…")}</option></select></div></div>
       <div style="margin-top:12px"><button class="link" data-act="metaOff">Disconnect</button></div></div>`;
   }
@@ -1939,49 +1951,27 @@
   // The agent's CRM: each new Lead goes there as it comes in, by their Follow Up Boss API key.
   // Optional (Ismael, 2026-11-01). The webhook stays in the backend but has no fields on screen; an
   // old one still shows so it can be removed.
-  function crmGroup(fld) {
+  function crmGroup(fld, { optional = false } = {}) {
     const c = S.me.crm || {};
     const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:10px">The last lead didn't reach ${esc(c.last.failed.map((f) => f === "webhook" ? "the webhook" : f).join(" or "))}.</p>` : "";
     const fub = c.fub
-      ? `<div class="crm-row"><div><b>Follow Up Boss</b><p class="small">${esc(c.fubName || "Connected")}</p></div><button class="link" data-act="crmOff" data-which="fub">Disconnect</button></div>`
-      : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmFub", "Follow Up Boss API key <i>(optional)</i>", "", "password", "")}<div><button class="sec-btn" data-act="crmSave" data-which="fub">Connect</button></div></div>`;
+      ? `<div class="crm-row"><div><b>${esc(c.fubName || "Follow Up Boss")}</b><p class="small">Connected</p></div><button class="link" data-act="crmOff" data-which="fub">Disconnect</button></div>`
+      : `<div style="display:flex;flex-direction:column;gap:12px">${fld("crmFub", optional ? "API Key <i>(optional)</i>" : "API Key", "", "password", "")}<div><button class="btn" data-act="crmSave" data-which="fub">Connect</button></div></div>`;
     const hook = c.hook ? `<div class="crm-row"><div><b>Webhook</b><p class="small">${esc(c.hook)}</p></div><button class="link" data-act="crmOff" data-which="hook">Remove</button></div>` : "";
-    return `<div class="group" id="crm"><h4>CRM</h4><div style="display:flex;flex-direction:column;gap:18px">${fub}${hook}</div>${failed}</div>`;
+    return `<div class="group" id="crm"><h4>Follow Up Boss</h4><div style="display:flex;flex-direction:column;gap:18px">${fub}${hook}</div>${failed}</div>`;
   }
 
-  // The brokerage website (setup step 3 and Settings). Hopkins reads it end to end in the
-  // background; while it's reading, the app asks again every few seconds.
-  const siteNow = () => S.me.site && S.me.site.url === S.me.workspace.brand.website ? S.me.site : null;
-  function siteGroup(fld, { setup = false } = {}) {
-    const url = S.me.workspace.brand.website, s = siteNow();
-    if (!url || S.siteEdit) return `<div class="group" id="site"><h4>Website</h4><div style="display:flex;flex-direction:column;gap:12px">${fld("siteUrl", "Your brokerage's website", url ? url.replace(/^https?:\/\//, "") : "", "url", "yourbrokerage.com")}<div><button class="sec-btn" data-act="siteSave">${url ? "Save" : "Add"}</button></div></div></div>`;
-    const state = !s || s.status === "reading" ? "Reading…" : s.status === "done" ? (s.brokerage || "Read") : "Restricts access";
-    const head = `<div class="site-head"><div><b>${esc(url.replace(/^https?:\/\//, ""))}</b><p class="small">${esc(state)}</p></div><button class="link" data-act="siteEdit">Change</button></div>`;
-    if (setup || !s || s.status !== "done") return `<div class="group" id="site"><h4>Website</h4>${head}</div>`;
-    const items = [...(s.problems || []), ...(s.checks || [])].slice(0, 6);
-    const list = items.length ? `<ul class="site-ux">${items.map((p) => `<li><b>${esc(p.issue)}</b><p class="small">${esc(p.where)}. ${esc(p.fix)}</p></li>`).join("")}</ul>` : "";
-    return `<div class="group" id="site"><h4>Website</h4>${head}${s.score ? `<p class="small" style="margin-top:12px">UX ${s.score}/10</p>` : ""}${list}</div>`;
+  // The brokerage website (setup step 2 and Settings). Hopkins reads it end to end in the
+  // background to know the agent; what it learnt stays in the chat, not on screen (Ismael, 2026-11-01).
+  function siteGroup(fld) {
+    const url = S.me.workspace.brand.website;
+    if (!url || S.siteEdit) return `<div class="group" id="site"><h4>Website</h4><div style="display:flex;flex-direction:column;gap:12px">${fld("siteUrl", "Your brokerage's website", url ? siteHost(url) : "", "url", "yourbrokerage.com")}<div><button class="btn" data-act="siteSave">${url ? "Save" : "Add"}</button></div></div></div>`;
+    return `<div class="group" id="site"><h4>Website</h4><div class="site-head"><div><b>${esc(siteHost(url))}</b><p class="small">Connected</p></div><button class="link" data-act="siteEdit">Change</button></div></div>`;
   }
-  function watchSite() {
-    clearTimeout(S.siteTimer);
-    const s = siteNow();
-    if (!S.me.workspace.brand.website || (s && s.status !== "reading")) return;
-    S.siteTimer = setTimeout(async () => {
-      try { const r = await api("/api/site"); S.me.site = r.site; } catch {}
-      const h = location.hash;
-      if (h.startsWith("#/setup")) viewSetup();
-      else if (h.startsWith("#/settings") && $("#site")) $("#site").outerHTML = siteGroup(S.siteFld);
-      if (h.startsWith("#/setup") || h.startsWith("#/settings")) watchSite();
-    }, 4000);
-  }
+  const siteHost = (u) => String(u).replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
 
-  // In Settings, one row: where Leads go, and the way in to change it.
-  function crmRow() {
-    const c = S.me.crm || {};
-    const on = [c.fub && "Follow Up Boss", c.hook && "Webhook"].filter(Boolean).join(" and ");
-    const failed = c.last && !c.last.ok ? `<p class="small warn" style="margin-top:6px">The last lead didn't arrive.</p>` : "";
-    return `<div class="group"><h4>CRM</h4><div class="crm-row"><p>${on ? esc(on) : "Not connected"}</p><a class="link" href="#/crm/settings">${on ? "Edit" : "Connect"}</a></div>${failed}</div>`;
-  }
+
+
 
   // The CRM on its own, from Today's setup: the same two fields, and Skip.
   // ---------- notifications (src/push.js, web/sw.js) ----------
@@ -2018,14 +2008,19 @@
     const sub = reg && (await reg.pushManager.getSubscription());
     if (sub) { await api("/api/push", { method: "DELETE", body: { endpoint: sub.endpoint } }).catch(() => {}); await sub.unsubscribe(); }
   }
-  // What the notifications row says and offers, wherever it appears.
+  // What the notifications row says and offers, wherever it appears. The title is the group's in
+  // Settings and the step's in setup, never twice.
+  const isMobile = () => isIOS() || /Android|Mobi/i.test(navigator.userAgent);
+  const PUSH_WHY = "Get notified every time a new lead comes in.";
   function pushRow(state, { setup = false } = {}) {
-    if (state === "on") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">On</p></div>${setup ? "" : `<div class="row-acts"><button class="link" data-act="pushTest">Send a test</button><button class="link" data-act="pushOff">Turn off</button></div>`}</div>`;
-    if (state === "ios-browser") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">Add Hopkins to your Home Screen: tap Share, then Add to Home Screen. Open Hopkins from there to turn them on.</p></div></div>`;
-    if (state === "denied") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">Blocked in your browser settings.</p></div></div>`;
-    if (state === "unsupported") return `<div class="su-row"><div class="tx"><b>Notifications</b><p class="small">Not available in this browser.</p></div></div>`;
-    return `<div class="su-row"><div class="tx"><b>Notifications</b></div><button class="btn" data-act="pushOn">Turn on</button></div>`;
+    const title = setup ? `<b>Notifications</b>` : "";
+    if (state === "on") return `<div class="push-row">${title}<p class="small">On</p>${setup ? "" : `<div class="row-acts"><button class="link" data-act="pushTest">Send a test</button><button class="link" data-act="pushOff">Turn off</button></div>`}</div>`;
+    if (state === "ios-browser") return `<div class="push-row">${title}<p class="small">${PUSH_WHY}</p><p class="small">On iPhone, add Hopkins to your Home Screen first: tap Share, then Add to Home Screen, and open it from there.</p></div>`;
+    if (state === "denied") return `<div class="push-row">${title}<p class="small">Blocked in your browser settings.</p></div>`;
+    if (state === "unsupported") return `<div class="push-row">${title}<p class="small">Not available in this browser.</p></div>`;
+    return `<div class="push-row">${title}<p class="small">${PUSH_WHY}</p><div><button class="btn" data-act="pushOn">Turn on</button></div></div>`;
   }
+
   // A tapped notification opens Hopkins where it points.
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("message", (e) => { if (e.data?.go) { const u = new URL(e.data.go); location.hash = u.hash || "#/today"; } });
@@ -2035,7 +2030,7 @@
 
   // ---------- setup, once, after sign up ----------
   //
-  // Meta, the CRM and the website are how Hopkins knows the agent's business, so they come before
+  // Meta, the website and Follow Up Boss are how Hopkins knows the agent's business, so they come before
   // anything else. Meta has to be connected; it only lets someone through without it when Meta's own
   // login didn't work for them (before App Review only Meta testers can connect) or isn't set up yet.
   // The CRM is optional (Ismael, 2026-11-01). The website is required: it tells Hopkins the brokerage.
@@ -2051,15 +2046,19 @@
         ? metaGroup()
         : `<div class="su-row"><div class="tx"><b>Meta</b>${S.metaFailed ? `<p class="small warn">Meta didn't connect.</p>` : ""}</div><a class="btn" href="/api/meta/connect">${S.metaFailed ? "Try again" : "Connect"}</a></div>
            ${S.metaFailed && !S.metaWaived ? `<button class="link su-later" data-act="metaWaive">Continue without Meta</button>` : ""}`;
-    const crm = crmGroup(fld);
+    const crm = crmGroup(fld, { optional: true });
+    // Notifications are a step on phones only: a laptop's browser asks by itself whenever they turn
+    // them on in Settings (Ismael, 2026-11-01).
+    const mobile = isMobile();
+    const pushOk = !mobile || (S.pushState && S.pushState !== "off");
     main.innerHTML = `<div class="page setup-page"><div class="wrap" style="max-width:560px">
       <div class="su-logo">${MARK("")}<b>Hopkins</b></div>
       <div class="head"><h1>Connect Hopkins</h1></div>
       <div class="su-step"><span class="su-n">1</span>${meta}</div>
-      <div class="su-step"><span class="su-n">2</span><div class="su-body">${crm}</div></div>
-      <div class="su-step"><span class="su-n">3</span><div class="su-body">${siteGroup(fld, { setup: true })}</div></div>
-      <div class="su-step"><span class="su-n">4</span><div class="su-body" id="suPush">${pushRow(S.pushState || "off", { setup: true })}</div></div>
-      <div class="su-go"><button class="btn" id="suGo" ${metaOk && siteOk && S.pushState && S.pushState !== "off" ? "" : "disabled"}>Continue</button></div>
+      <div class="su-step"><span class="su-n">2</span><div class="su-body">${siteGroup(fld)}</div></div>
+      <div class="su-step"><span class="su-n">3</span><div class="su-body">${crm}</div></div>
+      ${mobile ? `<div class="su-step"><span class="su-n">4</span><div class="su-body" id="suPush">${pushRow(S.pushState || "off", { setup: true })}</div></div>` : ""}
+      <div class="su-go"><button class="btn" id="suGo" ${metaOk && siteOk && pushOk ? "" : "disabled"}>Continue</button></div>
     </div></div>`;
     fillMeta();
     // Notifications: on, or not possible here (an iPhone tab, a blocked or unsupported browser).
@@ -2070,7 +2069,6 @@
     });
     S.siteFld = fld;
     $("#siteUrl")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $('[data-act="siteSave"]')?.click(); } });
-    watchSite();
     $("#suGo").addEventListener("click", async () => {
       await api("/api/brand", { method: "PUT", body: { onboarded: "yes" } });
       await loadMe();
@@ -2087,7 +2085,7 @@
       ${c.fub || c.hook ? `<div style="margin-top:20px"><a class="btn" href="${back}">Done</a></div>` : back === "#/today" ? `<div style="margin-top:20px"><button class="link" data-act="crmSkip">Skip</button></div>` : ""}
     </div></div>`;
   }
-  const redrawCrm = () => (location.hash.startsWith("#/setup") ? viewSetup() : viewCrm(S.crmBack));
+  const redrawCrm = () => (location.hash.startsWith("#/setup") ? viewSetup() : location.hash.startsWith("#/settings") ? viewSettings() : viewCrm(S.crmBack));
 
   function viewSettings() {
     const u = S.me.user, b = S.me.workspace.brand, use = S.me.usage;
@@ -2096,28 +2094,28 @@
       <div class="head"><h1>Settings</h1></div>
       <div class="group"><h4>Profile</h4>
         <div class="set-av"><span class="av big" id="setAv" ${avatarStyle()}>${esc(initials())}</span><div>
-          <label class="sec-btn">Change photo<input type="file" accept="image/*,.heic,.heif" hidden id="avFile"></label>
+          <label class="btn">Change photo<input type="file" accept="image/*,.heic,.heif" hidden id="avFile"></label>
           ${u.avatar_id ? `<button class="link" data-act="avRemove" style="margin-left:10px">Remove</button>` : ""}</div></div>
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${fld("sName", "Your name", u.name, "text", "Sam Ellery", "name")}
           ${fld("sBiz", "Brokerage or team", b.business, "text", "Ellery Realty", "organization")}
           ${fld("sEmail", "Email", u.email, "email", "", "email")}
           <div class="fld hidden" id="sEmailPw">${`<label for="sEmailPass">Current password, required to change email</label><input id="sEmailPass" type="password" autocomplete="current-password">`}</div>
-          <div><button class="sec-btn" data-act="saveProfile">Save</button></div></div></div>
+          <div><button class="btn" data-act="saveProfile">Save</button></div></div></div>
       <div class="group"><h4>Password</h4><div style="display:flex;flex-direction:column;gap:12px">
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
-        <div><button class="sec-btn" data-act="savePw">Change password</button></div></div></div>
+        <div><button class="btn" data-act="savePw">Change password</button></div></div></div>
       <div class="group"><h4>Notifications</h4><div id="setPush">${pushRow(S.pushState || "off")}</div></div>
       ${metaGroup()}
-      ${crmRow()}
+      ${crmGroup(fld)}
       ${siteGroup(fld)}
-      <div class="group"><h4>Instant reply to leads</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
+      <div class="group"><h4>Instant Lead Reply</h4><div class="crm-row"><p>${b.instant_reply === "off" ? "Off" : "On"}</p><button class="link" data-act="replyToggle">${b.instant_reply === "off" ? "Turn on" : "Turn off"}</button></div></div>
       <div class="group"><h4>Plan</h4>${paid()
         ? `<p>${esc(S.me.plan.name)}</p><p class="small">Billed monthly. Cancel anytime.</p>
-           ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="sec-btn" data-act="billing">Manage</button></div>` : ""}`
+           ${S.me.billing.customer ? `<div style="margin-top:12px"><button class="btn" data-act="billing">Manage</button></div>` : ""}`
         : `<p>Free</p><div style="margin-top:12px"><button class="btn" data-upgrade>Upgrade</button></div>`}</div>
       <div class="group"><h4>Account</h4><div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px">
-        <button class="sec-btn" data-act="logout">${ICON.out}Sign out</button>
+        <button class="btn" data-act="logout">${ICON.out}Sign out</button>
         <button class="link danger" data-act="deleteAsk">Delete account</button><a class="link" href="/terms" target="_blank" rel="noopener">Terms</a><a class="link" href="/privacy" target="_blank" rel="noopener">Privacy policy</a></div></div>
     </div></div>`;
     $("#sEmail").addEventListener("input", (e) => $("#sEmailPw").classList.toggle("hidden", e.target.value.trim().toLowerCase() === u.email));
@@ -2134,7 +2132,7 @@
       toast("Photo updated");
     });
     fillMeta();
-    S.siteFld = fld; S.siteEdit = false; watchSite();
+    S.siteFld = fld; S.siteEdit = false;
     pushState().then((st) => { S.pushState = st; if ($("#setPush")) $("#setPush").innerHTML = pushRow(st); });
   }
 
@@ -2163,7 +2161,7 @@
       const v = val(which === "fub" ? "#crmFub" : "#crmHook").trim();
       if (!v) return toast(which === "fub" ? "Enter your API key" : "Enter a webhook URL");
       S.me.crm = await api("/api/crm", { method: "PUT", body: { [which]: v } });
-      redrawCrm(); buzz(6); toast(which === "fub" ? "Follow Up Boss connected" : "Saved");
+      redrawCrm(); buzz(6); toast("Connected");
     } else if (act === "siteSave") {
       const v = val("#siteUrl").trim();
       if (!v) return toast("Enter your website");
@@ -2172,8 +2170,9 @@
         const r = await api("/api/site", { body: { url: v } });
         S.me.workspace.brand.website = r.website; S.me.site = r.site; S.siteEdit = false;
       } catch (err) { t.disabled = false; return toast(err.message || "Something went wrong. Please try again."); }
+      toast("Connected");
       if (location.hash.startsWith("#/setup")) viewSetup();
-      else { $("#site").outerHTML = siteGroup(S.siteFld); watchSite(); }
+      else $("#site").outerHTML = siteGroup(S.siteFld);
     } else if (act === "siteEdit") {
       S.siteEdit = true;
       if (location.hash.startsWith("#/setup")) viewSetup();
@@ -2191,7 +2190,7 @@
       let st;
       try { st = await pushOn(); } catch (err) { t.disabled = false; return toast("Something went wrong. Please try again."); }
       S.pushState = st === "on" ? "on" : st === "denied" ? "denied" : await pushState();
-      if (S.pushState === "on") toast("Notifications on");
+      if (S.pushState === "on") toast("Turned on");
       if (location.hash.startsWith("#/setup")) viewSetup();
       else if ($("#setPush")) $("#setPush").innerHTML = pushRow(S.pushState);
       else if (location.hash === "#/today" || !location.hash) { S.todayHtml = ""; drawToday(); }

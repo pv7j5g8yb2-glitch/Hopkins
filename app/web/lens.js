@@ -14,9 +14,11 @@
 (function () {
   const phone = window.matchMedia("(max-width: 980px)");
   const SELECTORS = [
-    ".lg-cap", ".lg-lens", ".comp", ".askbox", ".steps", ".attn", ".pop", ".toast", ".selbar",
-    ".sec-btn", ".me", ".notice", ".stats-mini", ".plan", ".rp-sum", ".stat", ".empty", ".hero", ".card-l",
-    ".pl", ".seg.lensed", ".pvb .actrow.lg", ".lead", ".group .crm-row",
+    // Less glass (Ismael, 2026-11-01): the message box, notices, rows and secondary buttons are
+    // solid now; glass stays for what floats (tab bar, Today's box, sheets) and the panels.
+    ".lg-cap", ".lg-lens", ".askbox", ".steps", ".attn", ".pop", ".selbar",
+    ".notice", ".stats-mini", ".plan", ".rp-sum", ".stat", ".empty", ".hero", ".card-l",
+    ".pl", ".seg.lensed", ".pvb .actrow.lg", ".lead",
   ].join(",");
   const SKIP = ".lg-circle, .btn, .cr-slide, .cr-reel";
 
