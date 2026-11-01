@@ -905,6 +905,10 @@
     requestAnimationFrame(step);
   }
 
+  // iPhones only show :active presses when the page listens for touches; this empty listener is
+  // what makes every button react the instant it's touched.
+  document.addEventListener("touchstart", () => {}, { passive: true });
+
   // Tapping the logo goes to Today, and the mark turns once, the way it does while Hopkins thinks.
   document.addEventListener("click", (e) => {
     const logo = e.target.closest(".mtop .logo, .brand");
@@ -937,11 +941,21 @@
   const topPlan = () => paid() && S.me.plan?.id === S.me.plans.at(-1).id;
   const firstName = () => (S.me.user.name || "").trim().split(/\s+/)[0] || "there";
   // One line always: the font steps down until it fits, never below what reads comfortably.
+  // Measured, not guessed: the line's real width at its full size is compared with the room there
+  // is, and the size scales down to fit, never below a readable 18px. Nothing is clipped, so no
+  // letter can be cut at the sides or the bottom (Ismael, 2026-11-01).
   function fitLine(el, min = 18) {
-    if (!el) return;
+    if (!el || !el.isConnected) return;
     el.style.fontSize = "";
-    let size = parseFloat(getComputedStyle(el).fontSize);
-    while (el.scrollWidth > el.clientWidth + 1 && size > min) { size -= 1; el.style.fontSize = `${size}px`; }
+    const cs = getComputedStyle(el);
+    const full = parseFloat(cs.fontSize);
+    const room = el.parentElement.clientWidth - parseFloat(getComputedStyle(el.parentElement).paddingLeft) - parseFloat(getComputedStyle(el.parentElement).paddingRight);
+    const ctx = (fitLine.c ||= document.createElement("canvas").getContext("2d"));
+    ctx.font = `${cs.fontWeight} ${full}px ${cs.fontFamily}`;
+    // letter-spacing isn't in the canvas measure: add it per character.
+    const ls = parseFloat(cs.letterSpacing) || 0;
+    const width = ctx.measureText(el.textContent).width + ls * el.textContent.length;
+    if (room > 0 && width > room * 0.96) el.style.fontSize = `${Math.max(min, Math.floor(full * (room * 0.96) / width))}px`;
   }
   window.addEventListener("resize", () => fitLine($("#helloH")));
   // The font can arrive after the first fit, which made the line wider and cut it: fit again.
@@ -1684,7 +1698,6 @@
   // ---------- Leads ----------
 
   const STATUS = { new: "New", contacted: "Contacted", showing: "Showing booked", offer: "Offer", closed: "Closed", not_a_fit: "Not a fit" };
-  const WANTS = { showing: "Wants a showing", info: "Has a question", offer: "Wants to talk about an offer", apply: "Wants to apply" };
   // On a rental, the offer step is the application (2026-10-29).
   const statusName = (x, k) => (k === "offer" && x.deal === "rent" ? "Application" : STATUS[k]);
 
@@ -1707,9 +1720,11 @@
     const leads = week ? all.filter((x) => x.created_at >= S.weekFrom) : all;
     const fresh = leads.filter((x) => x.status === "new").length;
     const tel = (n) => n.replace(/[^\d+]/g, "");
-    const item = (x, i) => `<div class="lead ${x.status === "new" ? "new" : ""}" style="animation-delay:${Math.min(i, 8) * 0.04}s"><span class="av">${esc(x.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span>
-      <div class="tx"><b>${esc(x.name)}</b><p>${esc(WANTS[x.wants] || x.wants)}${x.note ? `: "${esc(x.note)}"` : ""}</p>
-      <div class="small">${esc(x.address || x.area || "Listing")} · ${x.version ? `Ad ${x.version}` : "Lead page"} · ${ago(x.created_at)}</div>
+    // Each lead: the name, where it came from (the address and the ad) and how long ago, nothing
+    // else (Ismael, 2026-11-01).
+    const item = (x) => `<div class="lead ${x.status === "new" ? "new" : ""}"><span class="av">${esc(x.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span>
+      <div class="tx"><b>${esc(x.name)}</b>
+      <div class="small">${esc(x.address || x.area || "Lead page")}${x.version ? ` · Ad ${x.version}` : ""} · ${ago(x.created_at)}</div>
       <div class="acts">${x.phone ? `<a href="tel:${esc(tel(x.phone))}">${ICON.phone}Call</a><a href="sms:${esc(tel(x.phone))}">${ICON.msg}Text</a>` : ""}${x.email ? `<a href="mailto:${esc(x.email)}">${ICON.mail}Email</a>` : ""}
       <select data-lead="${x.id}" aria-label="Status">${Object.keys(STATUS).map((k) => `<option value="${k}" ${x.status === k ? "selected" : ""}>${statusName(x, k)}</option>`).join("")}</select></div></div></div>`;
     main.innerHTML = `${mtop("Leads")}<div class="page"><div class="wrap"><div class="head head-row"><div><h1>Leads</h1>${leads.length && !week ? `<p class="lede">${leads.length} in total${fresh ? `, ${fresh} new` : ""}.</p>` : ""}</div>
@@ -1725,7 +1740,7 @@
       toast("Saved");
     }));
     // Search: name, phone, email, home, what they asked and the status, as they type.
-    const words = leads.map((x) => [x.name, x.email, x.phone, x.phone && tel(x.phone), x.address, x.area, x.note, WANTS[x.wants], statusName(x, x.status), x.version && `Ad ${x.version}`].filter(Boolean).join(" ").toLowerCase());
+    const words = leads.map((x) => [x.name, x.email, x.phone, x.phone && tel(x.phone), x.address, x.area, x.note, statusName(x, x.status), x.version && `Ad ${x.version}`].filter(Boolean).join(" ").toLowerCase());
     const rows = $$("#leadList .lead");
     $("#lq")?.addEventListener("input", (e) => {
       const q = e.target.value.trim().toLowerCase();
@@ -1844,16 +1859,11 @@
             : pct < 0 ? `<span class="rp-delta down">${ICON.down}${-pct}%</span> vs the week before`
               : `<span class="rp-delta">No change</span> vs the week before`;
     const sub = delta;
-    // Top ads: the three single ads with the most Leads this week, each shown as itself (its photo
-    // and its line) with its count. A tap opens that ad.
+    // Top ads: the three ads with the most leads this week, just the ads themselves, no ranks,
+    // names or counts (Ismael, 2026-11-01). A tap opens that ad.
     const top = r.topAds || [];
-    const winning = top.length ? `<section class="ta"><h3>Top ads</h3><div class="ta-row">${top.map((a, i) => {
-      const l = S.listings.find((x) => x.id === a.listing_id);
-      return `<a class="ta-card" href="#/l/${a.listing_id}" data-act="openAd" data-id="${a.listing_id}" data-v="${a.version}">
-        <div class="ta-ph" style="${a.photo_id ? `background-image:url(${photoUrl(a.photo_id, true)})` : ""}"><span class="rb-rank m${i + 1}">${i + 1}</span><b>${esc(a.overlay)}</b></div>
-        <div class="ta-bd"><span class="ta-nm">${esc(a.name)}</span><span class="ta-n"><b>${a.leads}</b> ${a.leads === 1 ? "lead" : "leads"}</span></div>
-        <span class="ta-where">${esc(l ? listingName(l) : "")} · Ad ${a.version}</span></a>`;
-    }).join("")}</div></section>` : "";
+    const winning = top.length ? `<section class="ta"><h3>Top ads</h3><div class="ta-row">${top.map((a) => `<a class="ta-card" href="#/l/${a.listing_id}" data-act="openAd" data-id="${a.listing_id}" data-v="${a.version}">
+        <div class="ta-ph" style="${a.photo_id ? `background-image:url(${photoUrl(a.photo_id, true)})` : ""}"><b>${esc(a.overlay)}</b></div></a>`).join("")}</div></section>` : "";
 
     main.innerHTML = `${mtop("Report")}<div class="page" data-report><div class="wrap">
       <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>

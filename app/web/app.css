@@ -1286,3 +1286,21 @@ body.onboarding .tabbar,body.onboarding .side,body.onboarding .mtop{display:none
   .lg-cap.lg:after,.lg-cap .lg:after,.tabbar .lg:after{display:none!important}
   .lg-lens.lens-on .lens-rim,.lg-lens .lens-rim{box-shadow:inset 0 0 0 .6px rgba(255,255,255,.18)!important}
 }
+/* Top ads on a phone: one swipe each way, from the first ad to the last and never past it */
+@media (max-width:980px){
+  .ta-row{grid-auto-columns:76%;overscroll-behavior-x:contain;scroll-snap-type:x mandatory}
+  .ta-row:after{display:none}
+  .ta-card{scroll-snap-align:center;scroll-snap-stop:always}
+  .ta-card:first-child{scroll-snap-align:start}
+  .ta-card:last-child{scroll-snap-align:end}
+}
+.intro.hello h1{overflow:visible;line-height:1.3;padding:4px 0}
+/* the tab bar reads dark graphite all the way across, the selected tab a touch lighter */
+.lensing .lg-lens.lens-on{background:rgba(255,255,255,.07)!important}
+/* Every button answers the instant it's touched (Ismael, 2026-11-01: "extremely fast and
+   responsive"): no double tap wait, the press shows at once, the release eases back quickly. */
+a,button,label,select,summary,[data-act],.card-l,.hero,.ta-card,.lg-cap a{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn,.sec-btn,.sel-btn,.icon-btn,.lg-cap a.lg-plus,.lg-circle,.pop button,.pop a,.card-l,.hero,.ta-card{transition:transform .12s cubic-bezier(.2,.8,.2,1),opacity .12s,background .12s}
+.btn:active,.sec-btn:active,.sel-btn:active,.icon-btn:active,.lg-cap a.lg-plus:active,.lg-circle:active,.pop button:active,.pop a:active,.card-l:active,.hero:active,.ta-card:active{transition-duration:0s}
+.card-l:active,.hero:active,.ta-card:active{transform:scale(.985);opacity:.9}
+.pop button:active,.pop a:active{background:rgba(255,255,255,.08)}

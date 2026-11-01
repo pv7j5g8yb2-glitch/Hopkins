@@ -284,7 +284,7 @@ export async function newChat(ws, history, tz = "UTC") {
   const ask = lastReply?.includes("Send me a listing") ? "" : "Send me a listing: paste the link, add the photos, or tell me the address, price and what stands out.";
   const options =
     intent.kind === "greeting" ? [`Hi${first ? ` ${first}` : ""}. ${ask || "What are you working on?"}`, "Hi again. Paste a listing link or add the photos."]
-    : intent.kind === "question" && intent.topic === "plan" ? [`The free plan makes 3 ads, yours to download. ${upgradeText("plan")}`]
+    : intent.kind === "question" && intent.topic === "plan" ? [`The free plan includes 1 creation, yours to download. ${upgradeText("plan")}`]
     : intent.kind === "question" && intent.topic === "help" ? [`I make ads for each listing, each a different idea, so you can test them against each other. You change them with me here, and nothing runs without your approval. ${ask}`]
     : intent.kind === "thanks" ? ["Anytime."]
     : [`I need a listing to start. ${ask}`, `I couldn't find a listing in that. Paste the link or add the photos.`];
@@ -1812,7 +1812,7 @@ async function applyRules(ws, listing, ads, photos, text, selected, { busy = fal
 
   if (intent.kind === "question") {
     const answers = {
-      plan: `The free plan makes 3 ads, yours to download. ${upgradeText("plan")}`,
+      plan: `The free plan includes 1 creation, yours to download. ${upgradeText("plan")}`,
       which: ads.length
         ? "It's too early to tell. The ads run side by side on the same budget, and the one with the cheapest Leads gets the rest. Monday's report will show which."
         : "Once the ads are made, the test decides. They run side by side and the cheapest Leads win.",

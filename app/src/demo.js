@@ -135,6 +135,14 @@ const PEOPLE = ["Dana Price", "Marcus Lee", "Priya Shah", "Tom Alvarez", "Grace 
 const WANTS = ["showing", "info", "showing", "offer", "info", "showing"];
 const WANT_WORDS = { showing: "wants a showing", info: "has a question", offer: "wants to talk about an offer" };
 const AD_PICK = [0, 0, 1, 0, 2, 0, 1, 0];
+// How each listing chat went, like the real Hopkins (Ismael, 2026-11-01: never an automatic set
+// of 3): the property is read back with one question, the agent asks for what they want, and only
+// then come the ads, as many as they asked for. Shoal Creek hasn't been asked for anything yet.
+const ASKED = {
+  westover: ["make 2 ads for it, one on the pool", 2], travis: ["can you do 2 ads for this one", 2], hydepark: ["just one ad please", 1],
+  lakeway: ["2 ads, the pool and the view", 2], barton: ["make me an ad for it", 1], bullcreek: ["2 ads please", 2], shoalcreek: [null, 0],
+};
+const WHAT_NEXT = "What should I make for it: a post, a carousel, a reel, or ads to run?";
 
 const iso = (t) => new Date(t).toISOString();
 const slug = (s) => `${s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${randomBytes(3).toString("hex")}`;
@@ -190,7 +198,8 @@ export async function buildDemo(adminId, tz = "UTC", now = Date.now()) {
     }
     const approved = Boolean(L.run);
     const ads = [];
-    for (const [i, a] of L.ads.entries()) {
+    const [ask, count] = ASKED[L.key] || ["make ads for it", 2];
+    for (const [i, a] of L.ads.slice(0, count).entries()) {
       const adId = randomUUID();
       // Each ad its own look, like a real set (src/style.js STARTER_LOOKS).
       const look = STARTER_LOOKS[(lookAt++) % STARTER_LOOKS.length];
@@ -201,13 +210,17 @@ export async function buildDemo(adminId, tz = "UTC", now = Date.now()) {
     }
     // The chat: the agent's message, the ads, and for the ones that ran, the yes.
     await msg(wsId, id, "agent", "text", L.text, made, { first: true, photos: photoIds });
-    const list = ads.map((a) => `- **Ad ${a.version}**: ${a.name}`).join("\n");
-    await msg(wsId, id, "hopkins", "ads", `Here are 3 ads for ${L.address}, each testing a different idea:\n\n${list}\n\nTell me what to change, or tap Run ad.`, made + 60_000, { moment: "new", snapshot: ads.map(({ id: _, ...a }) => a) }, approved ? 0 : 1);
+    await msg(wsId, id, "hopkins", "text", `Got it: ${L.address}, ${money(L.price)}, ${L.beds} bed ${L.baths} bath. ${WHAT_NEXT}`, made + 20_000);
+    if (ask) {
+      await msg(wsId, id, "agent", "text", ask, made + 45_000);
+      const list = ads.map((a) => `- **Ad ${a.version}**: ${a.name}`).join("\n");
+      await msg(wsId, id, "hopkins", "ads", ads.length === 1 ? `Here's your ad for ${L.address}: **${ads[0].name}**. Tell me what to change, or tap Run ad.` : `Here are ${ads.length} ads for ${L.address}, each a different idea:\n\n${list}\n\nTell me what to change, or tap Run ad.`, made + 60_000, { moment: "new", snapshot: ads.map(({ id: _, ...a }) => a) }, approved ? 0 : 1);
+    }
     if (approved) {
       const at = now - L.run.ago * DAY;
       await run(`INSERT INTO launches (id, workspace_id, listing_id, ad_ids, budget, days, radius_miles, created_at) VALUES (?,?,?,?,?,?,?,?)`, [randomUUID(), wsId, id, JSON.stringify(ads.map((a) => a.id)), L.run.budget, L.run.days, 15, iso(at)]);
       await msg(wsId, id, "agent", "text", "run it", at - 5 * 60_000);
-      await msg(wsId, id, "hopkins", "text", `Approved. 3 ads, ${money(L.run.budget)} over ${L.run.days} days. They go live as soon as your Meta ad account is connected. Each ad has its own link, so Leads land here and on the Leads page.`, at);
+      await msg(wsId, id, "hopkins", "text", `Approved. ${ads.length === 1 ? "1 ad" : `${ads.length} ads`}, ${money(L.run.budget)} over ${L.run.days} days. They go live as soon as your Meta ad account is connected. Each ad has its own link, so Leads land here and on the Leads page.`, at);
     }
     // Leads, week by week, at set hours so the same demo looks the same every time.
     const counts = new Array(ads.length).fill(0);
@@ -225,7 +238,7 @@ export async function buildDemo(adminId, tz = "UTC", now = Date.now()) {
         if (!approved || t <= start || t >= now) continue;
         lastAt = Math.max(lastAt, t);
         const name = PEOPLE[person % PEOPLE.length], wants = WANTS[person % WANTS.length];
-        const ad = ads[AD_PICK[person % AD_PICK.length]];
+        const ad = ads[AD_PICK[person % AD_PICK.length] % ads.length];
         counts[ad.version - 1]++;
         const fresh = now - t < 3 * DAY;
         const status = fresh ? "new" : ["contacted", "showing", "contacted", "offer", "not_a_fit", "closed"][person % 6];

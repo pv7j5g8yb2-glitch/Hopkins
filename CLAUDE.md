@@ -243,14 +243,26 @@ The product's code is in `app/` (its README says what works and how to run it).
 * **Phone header (Ismael, 2026-11-01):** solid `#0B0B0D`, never a blur. Tapping the logo turns
   the mark once on phones too (the new header carries the turn, `S.spinAt`).
 * **Tab bar glass (Ismael, 2026-11-01):** glass and gliding stay, but no white reflection or lit
-  side: an even hairline all round, so the left (Today, Chats) looks like the right.
+  side: an even hairline all round, so the left (Today, Chats) looks like the right, and a dark
+  graphite tint (0.86 in `lens.js`) so the background's purple never shows through it.
 * **Notifications in Settings (Ismael, 2026-11-01):** "Get notified every time a new lead comes in."
   and two buttons side by side, On and Off; the chosen one white, the other black with white text.
   No test button.
 * **Demo account (Ismael, 2026-11-01):** in the account menu for admins ("Open demo account"), not
-  on Admin. It opens straight to Today (setup done) and looks like a real agent's weeks: listings
+  on Admin. Its chats follow today's Hopkins, never an automatic set of 3 (Ismael, 2026-11-01,
+  furious it still showed one): the property, read back with one question, the agent asking for a
+  number of ads, then those ads. It opens straight to Today (setup done) and looks like a real
+  agent's weeks: listings
   with ads in different looks, runs, leads over six weeks, a sold one, plus a carousel, a reel and
   an everyday email chat (`app/src/demo.js`). "Back to my account" returns to Today.
+* **Leads and Top ads (Ismael, 2026-11-01):** a lead row is the name, where it came from (the
+  address and the ad) and how long ago, then Call, Text, Email and its status; no "wants a showing",
+  "has a question" or other tags. Top ads on Report is just the 3 best ads themselves, no ranks,
+  names or counts, and on a phone it swipes from the first to the last and never past it.
+* **Buttons react instantly (Ismael, 2026-11-01: "too slow", "the entire platform is going to fall
+  in ruins"):** no double tap wait (`touch-action: manipulation`), presses show at once (iPhones
+  need the page's touchstart listener for that) and ease back in .12s. The app can't be zoomed by
+  the phone (`maximum-scale=1`), which had left the New chat line cut at the sides.
 * **Report is about ads (Ismael, 2026-11-01):** the board is titled "Ads" and lists only chats that
   have had ads or leads; a carousel or an email chat never appears there.
 * **Fast replies, and they always arrive (Ismael, 2026-11-01: plain chat "takes too long thinking";
@@ -285,8 +297,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   are a filled shade (`#1E1E21`) with no outline. Today's box never greys out the rest of Today
   while typing.
 * **New chat (Ismael, 2026-11-01):** "What are you working on, Ismael?" with their first name, in
-  the middle of the screen, in Today's greeting type (light, large), always one line: the font
-  steps down to fit (`fitLine`), never below 22px. New chats start from the + key on phones and
+  the middle of the screen, in Today's greeting type (light, large), always one line and never
+  clipped: `fitLine` measures the text's real width and scales it down to fit, never below 18px. New chats start from the + key on phones and
   Today's box on a laptop; no New chat card on Chats and no New chat in the sidebar. The avatar is
   the first letter of the first name on white until they add a photo.
 * **Best quality, always (Ismael, 2026-10-29):** ads are always given in the best quality and

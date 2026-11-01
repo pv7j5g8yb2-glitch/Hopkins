@@ -153,7 +153,7 @@ void main(){
     const isLens = el.classList.contains("lg-lens");
     panels.set(el, {
       canvas, rim, ctx: canvas.getContext("2d"), key: "", radius, isLens,
-      tint: isLens ? 0.08 : el.matches(".pop, .toast") ? 0.62 : 0.4,
+      tint: isLens ? 0.72 : el.matches(".lg-cap") ? 0.86 : el.matches(".pop, .toast") ? 0.62 : 0.4,
       mag: isLens ? 0.8 : 0.9,
     });
   }
