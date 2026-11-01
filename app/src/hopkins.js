@@ -27,6 +27,9 @@ import { metaReady, unseal, launch as metaLaunch, campaignState, setCampaignStat
 
 const LISTING_FIELDS = ["address", "city", "area", "price", "beds", "baths", "sqft", "home_type", "open_house", "currency", "deal"];
 export const DEFAULT_BUDGET = 200;
+// One ad per request (Ismael, 2026-11-01). ADS_PER_ASK only changes it for older tests that check
+// how several ads are edited.
+const ADS_PER_ASK = Number(process.env.ADS_PER_ASK) || 1;
 export const DEFAULT_DAYS = 10;
 
 // ---------- loading ----------
@@ -614,7 +617,7 @@ function introFor(moment, listing, ads = []) {
     if (moment === "open_house") return `Here's ${one}, for the open house at ${where}${listing.open_house ? `, ${listing.open_house}` : ""}. Run it in the days before.`;
     if (moment === "sold") return listing.deal === "rent" ? `Rented. Here's ${one}, for owners nearby who might rent out next.` : `Sold. Here's ${one}, for people nearby who might sell next.`;
     if (STAGE_INTRO[moment]) return `${STAGE_INTRO[moment](where)} Here's ${one}.`;
-    return `Here's ${one}, for ${where}. Tell me what to change, or tap Run ad.`;
+    return `Here's your ad for ${where}${ads[0].name ? `: **${ads[0].name}**` : ""}. Tell me what to change, or tap Run ad.`;
   }
   const list = `\n\n${IDEAS(ads)}\n\n`;
   if (moment === "price") return `The price changed on ${where}, so here are ${ads.length} ads for the new price:${list}A new price gives people who scrolled past a reason to look again.`;
@@ -935,7 +938,9 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
   // inPlace: the listing's first message was edited, so its ads are written again over the same
   // ones. That's a change to ads already made, not new ads, on either plan.
   inPlace = inPlace && existing.length > 0;
-  const want = inPlace ? existing.length : Math.max(1, Math.min(MAX_ADS, count || (aiSet?.ads?.length) || 3));
+  // One ad at a time (Ismael, 2026-11-01, said four times): Hopkins makes one, and the agent
+  // changes it however they want. Another comes only when they ask for another.
+  const want = inPlace ? existing.length : ADS_PER_ASK === 1 ? 1 : Math.max(1, Math.min(MAX_ADS, count || (aiSet?.ads?.length) || ADS_PER_ASK));
   // On the free plan a new set is new ads, even when it replaces the old ones, so it needs free
   // ads left. Changes to existing ads stay included (they go through the chat, not here).
   const room = isPaid(ws) || inPlace ? want : Math.min(want, FREE_AD_LIMIT - (await adsMade(ws.id)));
@@ -1003,7 +1008,7 @@ async function makeAdsNow(ws, listing, moment = "new", extra = {}, { note = null
   await clearActions(listing.id);
   // The first set says once how to change the look (Ismael, 2026-10-27: people didn't know).
   const firstSet = moment === "new" && !(await get(`SELECT 1 FROM messages WHERE listing_id = ? AND kind = 'ads'`, [listing.id]));
-  const tip = firstSet ? 'Tap **Style** to change the look, or just say it ("navy background", "classic font").' : null;
+  const tip = firstSet ? 'You can change anything by saying it: the words, the photo, "navy background", "classic font".' : null;
   // A stage (coming soon, under contract, back) says what the ads are for, in Hopkins' own words.
   const body = [(STAGE_INTRO[moment] ? introFor(moment, listing, set) : reply || introFor(moment, listing, set)), note].filter(Boolean).join(" ") + (tip ? `\n\n${tip}` : "");
   await say(ws, listing.id, body, "ads", { moment, snapshot: await snapshot(listing) }, true);
@@ -1071,7 +1076,7 @@ async function changeSetNow(ws, listing, ads, photos, r, text) {
   // add_ads
   const from = Math.max(0, ...ads.map((a) => a.version)) + 1;
   const asked = countFrom(text) || Math.max(1, r.ads.filter((a) => !ads.some((x) => x.version === a.version)).length);
-  const n = Math.min(asked, MAX_ADS - ads.length);
+  const n = Math.min(ADS_PER_ASK === 1 ? 1 : asked, MAX_ADS - ads.length);
   if (n < 1) {
     await say(ws, listing.id, `This listing has ${ads.length} ads, the most at once. Tell me which one to swap and what for, and I'll turn it into the new idea.`);
     return {};
@@ -1302,7 +1307,7 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
   let busy = false;
 
   if (aiEnabled) {
-    const history = await all(`SELECT role, body, data FROM messages WHERE listing_id = ? ORDER BY created_at`, [listingId]);
+    const history = await all(`SELECT role, body, data FROM messages WHERE listing_id = ? AND kind != 'lead' ORDER BY created_at`, [listingId]);
     const plan = { paid: isPaid(ws), name: planOf(ws)?.name, adsMade: await adsMade(ws.id), limit: FREE_AD_LIMIT };
     const agentPhoto = await hasAgentPhoto(ws);
     // Each ad's Leads, so "which one is working?" gets real numbers, never "engagement".
@@ -2379,6 +2384,14 @@ export async function weeklyReport(ws, range = weekRange()) {
     if (x.created_at > a.last) a.last = x.created_at;
   }
   const topAds = Object.values(byAd).sort((a, b) => b.leads - a.leads || b.last.localeCompare(a.last)).slice(0, 3).map(({ last, ...a }) => a);
+  // Each with the whole ad and its listing's price and place, so Report draws the real ad at full
+  // size, the way the chat does (Ismael, 2026-11-01: it showed a small photo).
+  for (const t of topAds) {
+    const ad = await get(`SELECT version, name, pattern, headline, primary_text, overlay, subline, kicker, cta, photo_id, style FROM ads WHERE id = ?`, [t.ad_id]);
+    const l = await get(`SELECT price, currency, deal, area, city FROM listings WHERE id = ?`, [t.listing_id]);
+    if (ad) t.ad = { ...ad, style: safeJson(ad.style, {}) };
+    if (l) t.listing = l;
+  }
 
   const next = [];
   for (const r of rows) {

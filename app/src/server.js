@@ -696,7 +696,9 @@ app.get("/api/listings", async (request) => {
 
 // Unread: a Hopkins message (a reply, new ads, a new Lead) came in after the agent last had the
 // chat open, say because they left before the reply arrived.
-const UNREAD = `(l.seen_at IS NOT NULL AND EXISTS (SELECT 1 FROM messages m WHERE m.listing_id = l.id AND m.role = 'hopkins' AND m.created_at > l.seen_at))`;
+// A new lead never puts a dot on a chat: the phone notification, Today and Leads say it (Ismael,
+// 2026-11-01: in the chat it "spams too much").
+const UNREAD = `(l.seen_at IS NOT NULL AND EXISTS (SELECT 1 FROM messages m WHERE m.listing_id = l.id AND m.role = 'hopkins' AND m.kind != 'lead' AND m.created_at > l.seen_at))`;
 const markSeen = (ws, id) => run(`UPDATE listings SET seen_at = ? WHERE id = ? AND workspace_id = ?`, [nowIso(), id, ws.id]);
 
 async function listingPayload(ws, id) {
@@ -706,7 +708,7 @@ async function listingPayload(ws, id) {
   const [photos, ads, messages, leads, creations] = await Promise.all([
     loadPhotos(id),
     currentAds(listing),
-    all(`SELECT id, role, kind, body, data, needs_action, created_at, undo IS NOT NULL AS editable FROM messages WHERE listing_id = ? ORDER BY created_at`, [id]),
+    all(`SELECT id, role, kind, body, data, needs_action, created_at, undo IS NOT NULL AS editable FROM messages WHERE listing_id = ? AND kind != 'lead' ORDER BY created_at`, [id]),
     get(`SELECT COUNT(*) AS n FROM leads WHERE listing_id = ?`, [id]),
     all(`SELECT id, kind, spec, version, updated_at FROM creations WHERE listing_id = ? ORDER BY created_at`, [id]),
   ]);

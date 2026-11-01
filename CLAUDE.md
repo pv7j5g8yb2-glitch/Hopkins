@@ -255,10 +255,11 @@ The product's code is in `app/` (its README says what works and how to run it).
   agent's weeks: listings
   with ads in different looks, runs, leads over six weeks, a sold one, plus a carousel, a reel and
   an everyday email chat (`app/src/demo.js`). "Back to my account" returns to Today.
-* **Leads and Top ads (Ismael, 2026-11-01):** a lead row is the name, where it came from (the
-  address and the ad) and how long ago, then Call, Text, Email and its status; no "wants a showing",
-  "has a question" or other tags. Top ads on Report is just the 3 best ads themselves, no ranks,
-  names or counts, and on a phone it swipes from the first to the last and never past it.
+* **Leads and Top-Performing Ads (Ismael, 2026-11-01):** a lead row is the name, where it came from
+  (the address and the ad) and how long ago, then Call, Text, Email and its status; no "wants a
+  showing", "has a question" or other tags. Top-Performing Ads on Report is just the 3 best ads
+  themselves, no ranks, names or counts, and on a phone it swipes from the first to the last and
+  never past it.
 * **Buttons react instantly (Ismael, 2026-11-01: "too slow", "the entire platform is going to fall
   in ruins"):** no double tap wait (`touch-action: manipulation`), presses show at once (iPhones
   need the page's touchstart listener for that) and ease back in .12s. The app can't be zoomed by
@@ -408,10 +409,17 @@ The product's code is in `app/` (its README says what works and how to run it).
   bounce; about two seconds; a tap skips. Shown only when
   Hopkins is opened fresh in a tab after sign in, never on the sign in page, never on returning to
   an open tab or a reload (`app/web/splash.js`, per tab with sessionStorage).
-* **Ads are never a fixed set (Ismael, 2026-10-25):** no set names like "The life / The standout /
-  The facts" and no forced count. Each listing gets ideas that fit that home, each ad named after
-  its own idea, 3 by default or what the agent asks for. Generic, could-be-any-listing ads are the
-  failure to avoid.
+* **One ad at a time (Ismael, 2026-11-01, said four times, furious: "I TOLD YOU 3 TIMES NOW"):**
+  Hopkins makes one ad per request, whatever number is named, then the agent changes it however
+  they want; another comes only when they ask for another, again one. Never a set, never "3 ads",
+  never offering several. The ad sits in the chat like a post, big, with Run ad (until it runs)
+  and Download under it. There is no Chat and Ads switch and no separate ad screen or Style sheet:
+  everything is said in the chat. Each ad is its own idea for that home, named after it.
+  (`ADS_PER_ASK` in `app/src/hopkins.js`; older tests set 3 to check editing several.)
+* **Leads stay out of chats (Ismael, 2026-11-01: "it spams too much"):** a new lead is never posted
+  in the chat and never puts a dot on it; the phone notification, Today and Leads are enough.
+* **Top-Performing Ads (Ismael, 2026-11-01):** Report draws the 3 best ads as the real ads at full
+  size, the same renderer as the chat, never a small photo.
 * **Free plan (Ismael, 2026-11-01, replacing 3 ads):** unlimited chat (tips, advice, general
   chatting), and 1 piece of content in all, whatever it is (an ad, a post, a carousel, a story or a
   reel), the real thing with no watermark, downloadable, changes to it included. After that nothing

@@ -1103,12 +1103,13 @@
     const chip = l.status === "sold" ? `<span class="chip green">${doneWord(l)}</span>` : l.moment !== "new" ? `<span class="chip gold">${esc(l.deal === "rent" && l.moment === "sold" ? "Just rented" : S.me.moments[l.moment])}</span>` : "";
     const sub = [l.priceText, l.facts].filter(Boolean).join(" · ");
     const firstPhoto = p.photos[0];
-    main.innerHTML = `${mtop(listingName(l), `${p.ads.length ? `<div class="seg ptab" data-seg="view"><button data-act="chat" class="${showPv ? "" : "on"}">Chat</button><button data-act="ads" class="${showPv ? "on" : ""}">Ads</button></div>` : ""}<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub, rename: l.id })}
-      <div class="lv ${showPv ? "showpv" : ""} ${p.ads.length ? "" : "noads"}" id="lv">
+    // One chat for everything (Ismael, 2026-11-01): no Chat and Ads switch, no separate ad
+    // screen; an ad sits in the chat like a post, with Run ad and Download under it.
+    main.innerHTML = `${mtop(listingName(l), `<button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button>`, { back: "#/listings", sub, rename: l.id })}
+      <div class="lv noads" id="lv">
       <section class="chat"><div class="ch">${firstPhoto ? `<i class="thumb" style="background-image:url(${photoUrl(firstPhoto.id, true)})"></i>` : ""}<div class="tt"><button class="rn" data-act="renameAsk" data-id="${l.id}" title="Rename"><h2>${esc(listingName(l))}</h2></button><span class="sub">${esc(sub)}</span></div>${chip}
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
-        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section>
-      <section class="pv" id="pv"></section></div>`;
+        <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section></div>`;
     S.seen[l.id] = p.messages.length;
     const msgs = $("#msgs");
     msgs.style.scrollBehavior = "auto";
@@ -1425,6 +1426,14 @@
       const mark = isFirst ? (anim ? MARK("settle") : `<img class="m" src="/static/mark.svg" alt="">`) : `<span class="m"></span>`;
       const wrap = (inner, acts = true) => `<div class="hk${anim}">${mark}<div class="b">${inner}${acts ? msgActs(`data-mid="${m.id}"`, false) : ""}</div></div>`;
       const text = md(m.body);
+      if (m.kind === "ads" && m === lastAds && p.ads.length) {
+        // The ad itself, big, like a post: Run ad (until it runs) and Download.
+        const one = p.ads.length === 1;
+        const canRun = !["running", "paused"].includes(p.listing.run);
+        return wrap(`${text}<div class="adin ${reveal ? "reveal" : ""}">${p.ads.map((a) => `<button class="vc ${one ? "solo" : a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}">
+          <canvas data-mini="${a.version}" width="1080" height="1350"></canvas></button>`).join("")}</div>
+          <div class="acts">${canRun ? `<button class="btn" data-act="run">Run ad</button>` : ""}<button class="btn btn-dark" data-dl="feed">Download</button></div>`);
+      }
       // A reply that changed ads shows them as they were right then, so every round of changes
       // is visible where it happened. Drawn once into a small image and kept.
       const snap = m.data && Array.isArray(m.data.snapshot) ? m.data.snapshot : null;
@@ -1432,13 +1441,9 @@
         return wrap(`${text}<div class="vers ${i >= seen ? "reveal" : ""}">${snap.map((a) => {
           const key = `${m.id}:${a.version}`;
           S.snaps[key] = a;
-          return `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
-            <img class="snap" data-snap="${key}" alt="Ad ${a.version}" ${S.snapImg[key] ? `src="${S.snapImg[key]}"` : ""}><span>Ad ${a.version}</span></button>`;
+          return `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}">
+            <img class="snap" data-snap="${key}" alt="Ad ${a.version}" ${S.snapImg[key] ? `src="${S.snapImg[key]}"` : ""}>${snap.length > 1 ? `<span>Ad ${a.version}</span>` : ""}</button>`;
         }).join("")}</div>`);
-      }
-      if (m.kind === "ads" && m === lastAds && p.ads.length) {
-        return wrap(`${text}<div class="vers ${reveal ? "reveal" : ""}">${p.ads.map((a) => `<button class="vc ${a.version === S.selected[p.listing.id] ? "sel" : ""}" data-pick="${a.version}" data-open="1">
-          <canvas data-mini="${a.version}" width="1080" height="1350"></canvas><span>Ad ${a.version}</span></button>`).join("")}</div>`);
       }
       if (m.kind === "plan") {
         const d = m.data;
@@ -1470,8 +1475,7 @@
     return S.current.ads.find((a) => a.version === version);
   }
 
-  function renderOpts(ad, format) {
-    const l = S.current.listing;
+  function renderOpts(ad, format, l = S.current.listing) {
     const b = S.me.workspace.brand;
     return {
       ad, brand: b, format,
@@ -1859,11 +1863,12 @@
             : pct < 0 ? `<span class="rp-delta down">${ICON.down}${-pct}%</span> vs the week before`
               : `<span class="rp-delta">No change</span> vs the week before`;
     const sub = delta;
-    // Top ads: the three ads with the most leads this week, just the ads themselves, no ranks,
-    // names or counts (Ismael, 2026-11-01). A tap opens that ad.
-    const top = r.topAds || [];
-    const winning = top.length ? `<section class="ta"><h3>Top ads</h3><div class="ta-row">${top.map((a) => `<a class="ta-card" href="#/l/${a.listing_id}" data-act="openAd" data-id="${a.listing_id}" data-v="${a.version}">
-        <div class="ta-ph" style="${a.photo_id ? `background-image:url(${photoUrl(a.photo_id, true)})` : ""}"><b>${esc(a.overlay)}</b></div></a>`).join("")}</div></section>` : "";
+    // Top-Performing Ads: the three ads with the most leads this week, each drawn as the real ad at
+    // full size like in the chat, no ranks, names or counts (Ismael, 2026-11-01). A tap opens it.
+    const top = (r.topAds || []).filter((a) => a.ad);
+    const winning = top.length ? `<section class="ta"><h3>Top-Performing Ads</h3><div class="ta-row">${top.map((a, i) => `<a class="ta-card" href="#/l/${a.listing_id}" data-act="openAd" data-id="${a.listing_id}" data-v="${a.version}">
+        <canvas class="ta-ad" data-top="${i}" width="1080" height="1350"></canvas></a>`).join("")}</div></section>` : "";
+    S.topAds = top;
 
     main.innerHTML = `${mtop("Report")}<div class="page" data-report><div class="wrap">
       <div class="head"><h1>Report</h1><div class="rp-week">${reportHead(mon)}</div></div>
@@ -1872,6 +1877,10 @@
       ${winning}
       ${r.listings.length ? boardHtml(r) : ""}
     </div></div>`;
+    for (const c of $$("canvas[data-top]")) {
+      const t = S.topAds[Number(c.dataset.top)];
+      if (t) Creative.render(c, renderOpts(t.ad, "feed", t.listing || {})).catch(() => {});
+    }
   }
 
   // The listings, ranked: best first by what's picked (leads, showings, cost per lead, or newest),
@@ -2664,15 +2673,12 @@
       else if (t.dataset.say) { if (!S.busy) { S.busy = true; buzz(6); try { await say(t.dataset.say); } finally { S.busy = false; } } }
       else if (t.dataset.pick) {
         pick(Number(t.dataset.pick));
-        // On a phone, tapping an ad card in the chat opens it big.
-        if (t.dataset.open && phone()) showAds(true);
       } else if (t.dataset.fmt) { S.format = t.dataset.fmt; buzz(5); drawPreview(); }
       else if (act === "run" && !paid()) { buzz(8); upgradeSheet("run", t); }
       else if (act === "run") {
         t.disabled = true;
         buzz(8);
         const next = await api(`/api/listings/${l.id}/run`, { body: { versions: S.current.ads.map((a) => a.version) } });
-        $("#lv").classList.remove("showpv");
         drawListing(next);
         refreshSide();
       } else if (t.dataset.confirm) {

@@ -1304,3 +1304,12 @@ a,button,label,select,summary,[data-act],.card-l,.hero,.ta-card,.lg-cap a{touch-
 .btn:active,.sec-btn:active,.sel-btn:active,.icon-btn:active,.lg-cap a.lg-plus:active,.lg-circle:active,.pop button:active,.pop a:active,.card-l:active,.hero:active,.ta-card:active{transition-duration:0s}
 .card-l:active,.hero:active,.ta-card:active{transform:scale(.985);opacity:.9}
 .pop button:active,.pop a:active{background:rgba(255,255,255,.08)}
+/* an ad in the chat, like a post: one at a time, big enough to read, Run ad and Download under it */
+.adin{display:flex;gap:10px;overflow-x:auto;margin-top:12px;scrollbar-width:none;overscroll-behavior-x:contain}
+.adin::-webkit-scrollbar{display:none}
+.adin .vc{flex:0 0 78%;max-width:420px;padding:0;border:0;background:none;border-radius:14px;overflow:hidden}
+.adin .vc.solo{flex-basis:100%}
+.adin .vc canvas{display:block;width:100%;height:auto;border-radius:14px}
+.adin .vc.sel{box-shadow:0 0 0 2px #fff}
+.hk .acts .btn{margin-right:8px}
+.ta-card .ta-ad{display:block;width:100%;height:auto;border-radius:14px}

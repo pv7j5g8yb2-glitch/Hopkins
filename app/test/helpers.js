@@ -16,6 +16,8 @@ export async function boot(extraEnv = {}) {
     PILOT_PLAN: "free",
     // The real free plan is 1 creation (src/plans.js); most tests need room for a whole set.
     FREE_LIMIT: "3",
+    // The real Hopkins makes one ad per request; these tests check sets of three being edited.
+    ADS_PER_ASK: "3",
     ...extraEnv,
   });
   const { app } = await import("../src/server.js");

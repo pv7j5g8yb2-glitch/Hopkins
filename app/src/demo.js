@@ -137,10 +137,10 @@ const WANT_WORDS = { showing: "wants a showing", info: "has a question", offer: 
 const AD_PICK = [0, 0, 1, 0, 2, 0, 1, 0];
 // How each listing chat went, like the real Hopkins (Ismael, 2026-11-01: never an automatic set
 // of 3): the property is read back with one question, the agent asks for what they want, and only
-// then come the ads, as many as they asked for. Shoal Creek hasn't been asked for anything yet.
+// then one ad, which they change from there. Shoal Creek hasn't been asked for anything yet.
 const ASKED = {
-  westover: ["make 2 ads for it, one on the pool", 2], travis: ["can you do 2 ads for this one", 2], hydepark: ["just one ad please", 1],
-  lakeway: ["2 ads, the pool and the view", 2], barton: ["make me an ad for it", 1], bullcreek: ["2 ads please", 2], shoalcreek: [null, 0],
+  westover: ["make an ad for it, about the pool", 1], travis: ["can you do an ad for this one", 1], hydepark: ["an ad please", 1],
+  lakeway: ["make an ad, the view", 1], barton: ["make me an ad for it", 1], bullcreek: ["ad please", 1], shoalcreek: [null, 0],
 };
 const WHAT_NEXT = "What should I make for it: a post, a carousel, a reel, or ads to run?";
 

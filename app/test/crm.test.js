@@ -75,7 +75,9 @@ test("Follow Up Boss and a webhook get every new Lead, with the property and the
   const last = (await c("GET", "/api/me")).json.crm.last;
   assert.deepEqual([last.ok, last.failed], [false, ["webhook"]]);
   const listing = await c("GET", `/api/listings/${created.json.listing.id}`);
-  assert.ok(listing.json.messages.some((m) => /New lead: Lee Park/.test(m.body)));
+  // The lead is kept (Leads, Today, the phone) but never posted into the chat (2026-11-01).
+  assert.ok(!listing.json.messages.some((m) => /Lee Park/.test(m.body)), "no lead message in the chat");
+  assert.ok((await c("GET", "/api/leads")).json.leads.some((x) => x.name === "Lee Park"), "it's on Leads");
   hookDown = false;
 
   // Turning each off.
