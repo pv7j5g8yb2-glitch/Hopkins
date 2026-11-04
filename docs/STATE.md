@@ -1059,3 +1059,19 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   V0NxqmBU74XEKMIUpGsO and GEGrg0xSb0tXID7qWft4) but not downloaded or rendered. r8 and r10 lead
   with ads and leads, which the pivot puts second; held until Ismael decides. Covers not made.
   The highlights made on the other account (zip there, from screenshots) aren't in the repo.
+
+## Coffee & Contracts, the model to beat (checked 2026-11-04)
+
+* Ismael's plan: take what Coffee & Contracts does, which agents already pay for, and make it far
+  better with Hopkins. Learn the structure, never copy their templates, captions or designs. He's
+  on their 7 day free trial and will send screenshots of the inside.
+* What it is (their help centre and a hands-on review, Sept 2026): a members' content library for
+  agents, with thousands of social posts, captions, reel templates and talking head scripts, story
+  templates, listing presentations, buyer guides, lead magnets, farming materials, email
+  newsletters, Instagram analytics, live trainings and a Facebook group. Dashboard sections:
+  Calendar, Vault, Studio, Learn, plus a link in bio page. Members edit templates in Canva and post
+  by hand. It also has a Claude connector to use the library inside Claude or ChatGPT.
+* Price: $74/month, $199/quarter or $740/year for one agent; enterprise is 50+ seats.
+* Gaps the review names: no scheduling or auto posting ("every post is manual"), no CRM or MLS
+  link, the same templates shared by every member with no city exclusivity, Canva Pro needed on
+  top, and nothing for teams of 5 to 49.
