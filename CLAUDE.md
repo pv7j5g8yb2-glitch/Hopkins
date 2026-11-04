@@ -85,10 +85,11 @@ copy. Second style: italic serif headings with soft highlighter marks on grid pa
 ## Hopkins brand (locked)
 
 The product (since the pivot, 2026-11-03): **a personal assistant for real estate agents that
-runs their Instagram and social media content by itself, so they can stay out showing houses.**
+runs their Instagram and Facebook content by itself, so they can stay out showing houses.**
 Every week it studies their local market and what nearby agents post, plans and designs the week,
-the agent approves once on Monday, and it posts each day. Ads and leads are an optional second
-layer. Lead every description, bio, highlight and reel with the weekly content, never with ads.
+the agent approves once on Monday, and it posts each day. **Organic content only for now: ads come
+later** (Ismael, 2026-11-04: both at once is too many offers and features). Never lead with, sell
+or show ads, leads or Meta ad features until he says so.
 Before the pivot: one chat that runs a real estate business's marketing like an agency would.
 **Positioning (Ismael, 2026-10-31):** "The personal assistant for real estate agents" (he said
 "Realtors Personal Assistant"; public copy says real estate agents because Realtor is NAR's
@@ -163,8 +164,8 @@ The product's code is in `app/` (its README says what works and how to run it).
 
 * **THE PIVOT (Ismael, 2026-11-03, worked out on his other Claude account; it overrides anything
   below that leads with ads):** Hopkins is a personal assistant for real estate agents that runs
-  their **Instagram and social media content**, so they can stay out showing houses. Organic
-  content is the core; ads are an optional second layer. The loop:
+  their **Instagram and Facebook content**, so they can stay out showing houses. Organic content
+  only; ads come later, not now (2026-11-04: offering both at once is too much). The loop:
   1. Setup asks the area (neighbourhood or whole city), the style (real estate only or personal
      brand), how often to post and music taste; Instagram must be a Business or Creator account.
   2. Every week, by itself: research (local news and trends, nearby agents' public post numbers
@@ -173,8 +174,8 @@ The product's code is in `app/` (its README says what works and how to run it).
   3. Monday notification: the week is ready; the agent edits in plain words and approves once.
   4. Hopkins posts each day at the planned time through Instagram's official publishing API, with
      its own scheduler (the API has none). Stories are planned only and posted by the agent by hand.
-  5. Ads stay optional: turn a post into an ad on their own Meta account, leads to the phone and
-     Follow Up Boss, Needs attention for people waiting.
+  5. Later, not now: ads (turn a post into an ad on their own Meta account, leads to the phone and
+     Follow Up Boss). The ad code stays in the app, hidden from agents until then.
   6. Plain chat works like a team leader who answers honestly and never invents data.
   Rules from that session: **never AI generated images, anywhere in Hopkins**; never scraping
   (no Pinterest or Cosmos scraping, no unofficial tools like Phantombuster); photos come from the
