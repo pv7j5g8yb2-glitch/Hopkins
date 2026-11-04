@@ -1144,3 +1144,16 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   The YC text says nothing about what makes agents succeed, so the brand question can only be
   answered by agents. The real risk in organic content is proving it brings business; the fix is
   counting enquiries (DMs, profile visits, website taps) from day one and asking agents first.
+
+## Cosmos (cosmos.so) as a look for Hopkins (2026-11-04)
+
+* Ismael loves its interface and sent screenshots and a webarchive. What its code shows: warm off
+  white page (`#FCFBFA`), cards a shade darker (`#F2F1F0`), black text, black pill buttons, a
+  custom tight grotesk ("Cosmos Oracle") for big headings, colour only from the pictures. Motion:
+  things arrive from a blur (`summer-hero-in`: blur 18px, 10px lower, fading in), a hero of tilted
+  photos drifting, a search box whose last word changes ("forever chair", "signature bag"),
+  marquees of logos and names.
+* It matches the brand's own reference style in CLAUDE.md (black on warm off white, bold grotesk).
+  Claude's read: good for Hopkins now the product is a week of visual posts, since the posts would
+  be the colour on screen. Keep the pink only in the mark; skip the logo marquee (no customers to
+  show). Not decided; the white preview he wanted had solid white cards, not see-through ones.
