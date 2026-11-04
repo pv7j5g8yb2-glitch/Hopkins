@@ -1071,7 +1071,33 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   newsletters, Instagram analytics, live trainings and a Facebook group. Dashboard sections:
   Calendar, Vault, Studio, Learn, plus a link in bio page. Members edit templates in Canva and post
   by hand. It also has a Claude connector to use the library inside Claude or ChatGPT.
-* Price: $74/month, $199/quarter or $740/year for one agent; enterprise is 50+ seats.
+* Price (their own checkout, seen in the trial 2026-11-04): Solo $74/month, $198/quarter or
+  $740/year. Team from 2 seats: $54 a seat a month, $155 a seat a quarter, $600 a seat a year.
+  Cash App Pay among the payment options. (The "50+ seats" and "nothing for teams of 5 to 49"
+  from the review were wrong.) Their own line: "Your first post is waiting. Already written and
+  designed, swap in your photos and post."
+* Inside the trial, batch 1 of Ismael's screenshots (2026-11-04):
+  * Trial: 7 days, 7 template unlocks (he'd used 1).
+  * Menu: Dashboard, Calendar, Vault (All Templates, Content Drops, Stock Library), Studio,
+    Link in Bio, Analytics, Learn (Learning Hub, Training Library, Support), Facebook Community.
+  * Dashboard: a "Describe what you need" search box, "Pick a post and get it live today" with
+    suggested first posts, each tagged by purpose (Personal Brand Builder, Local Guide,
+    Relocation Reach, Local Shareable). Examples: a 29 slide "my application to be your [City
+    Name] Realtor" carousel, a 15 slide "Ultimate Guide to [Season] in [City Name]", a relocation
+    reel, a 17 slide "[CITY NAME] EDITION" list. Every one is generic with placeholders.
+  * The 3 steps they give for a reel: film your own B roll and edit in Edits or Instagram, add the
+    hook yourself (centred, white), pick a trending sound from Instagram's charts or their Weekly
+    Strategy email. Then Open in Canva.
+  * "Your First Week" checklist: make a first post, set a content strategy so Calendar plans the
+    week, favourite this week's templates (new ones land in Vault every Monday), audit Instagram
+    in Analytics.
+  * Calendar: "Create strategy (2 min)" fills the calendar with template picks.
+  * Analytics: connect Instagram for Reach, New Followers, Engagement, Shares, plus a profile audit.
+  * Template actions: add to calendar, favourite, select, duplicate, open in Canva.
+  * Trainings: live platform demo Tuesday and Thursday 1pm EST, new member onboarding.
+  * Upsell: community of 5,000+, weekly live trainings, new content weekly.
+* What the agent still does by hand, by their own steps: fill every placeholder, find and film
+  their own clips, write or place the hook, choose the sound, edit in Canva (Pro for much of it),
+  write the caption to fit, and post each one themselves. Nothing posts for them.
 * Gaps the review names: no scheduling or auto posting ("every post is manual"), no CRM or MLS
-  link, the same templates shared by every member with no city exclusivity, Canva Pro needed on
-  top, and nothing for teams of 5 to 49.
+  link, the same templates shared by every member with no city exclusivity.
