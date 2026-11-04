@@ -1168,3 +1168,13 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   that turn white with a tick and a "Choose 3, 0/3" counter, and an appearance step whose phone
   preview flips light and dark live. The app itself is graphite (`#222`), the website cream.
   Ismael called Hopkins' cream redesign "so boring": it has to be creative and fun like this.
+* Cosmos intro, every frame at 60fps (2026-11-04): 46 different photos before sign up. 30 in the
+  strobe (the first fills the app as it opens, then a hard cut every 4 frames, 66.7ms, about 15 a
+  second, each centred, still, a different size and shape, no fades; the phone ticks on each), 8 in
+  the collage around the wordmark, 3 on page 2, 4 on page 3, 1 on page 4. The last strobe photo
+  shrinks about 15% as a white dot appears on it, the dot alone stays, five more dots pop in one by
+  one around a ring (0.17s), the ring holds about 1.2s, the dots leave one by one back to one
+  (0.2s), and the dot cuts straight to the wordmark. The 8 photos then come in from a blur and low
+  opacity over 0.73s with the line at the top, the small legal line and the Start pill (dim grey to
+  white last); after that they drift by only a point or two. Their type is "Cosmos Oracle", which
+  looks like a cut of Dinamo's paid Oracle typeface.
