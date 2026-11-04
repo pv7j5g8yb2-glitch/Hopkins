@@ -612,7 +612,13 @@ test("the demo account: admins only, full, rebuilt fresh, out of the admin list,
   assert.equal(me.workspace.plan, "paid");
   assert.equal(me.workspace.brand.onboarded, "yes", "opens straight to Today, no setup");
   const listings = (await c("GET", "/api/listings")).json.listings;
-  assert.equal(listings.length, 10, "7 listings and 3 other chats");
+  assert.equal(listings.length, 11, "7 listings, 3 other chats and this week's plan");
+  const week = (await c("GET", "/api/week")).json;
+  assert.equal(week.status, "ready", "this week is planned and waiting for approval");
+  assert.equal(week.posts.length, 5);
+  assert.deepEqual(week.posts.map((p) => p.day), [0, 1, 2, 3, 5], "Monday to Saturday, in order");
+  assert.equal((await c("POST", "/api/week/approve", {})).json.status, "approved");
+  assert.equal((await c("GET", "/api/library")).json.items.length, 7, "the week's 5 and the carousel and reel chats");
   const carousel = listings.find((l) => /carousel/i.test(l.auto_title || l.title || ""));
   assert.ok(carousel, "a carousel chat");
   assert.equal((await c("GET", `/api/listings/${carousel.id}`)).json.creations.length, 1);

@@ -10,6 +10,7 @@ import { dirname, join } from "node:path";
 import { run, get } from "./db.js";
 import { hashPassword } from "./auth.js";
 import { weekRange } from "./hopkins.js";
+import { mondayOf } from "./week.js";
 import { priceBand } from "./listing.js";
 import { STARTER_LOOKS } from "./style.js";
 
@@ -49,6 +50,24 @@ const OTHER_CHATS = [
   ] } },
   { title: "Email to a quiet buyer", age: 2, ask: "write an email to a buyer who went quiet after two showings", reply: "Here's a short one:\n\n**Subject:** Still looking?\n\nHi Jordan,\n\nI know the last two showings weren't quite it. No pressure at all, I just wanted to check whether anything has changed on your side, budget, timing or the areas you're looking at.\n\nIf it helps, I can send you the new listings in Travis Heights and Hyde Park as they come up.\n\nSarah" },
 ];
+
+// This week, planned by Hopkins (the pivot): five posts from Monday to Saturday in the agent's own
+// photos and city, waiting for one look and one approval.
+const WEEK = {
+  photos: ["travis-1", "hydepark-1", "hydepark-2", "westover-1"],
+  posts: [
+    { day: 0, time: "18:30", kind: "post", spec: { title: "Just listed in Travis Heights", theme: "photo", caption: "", reply: "", slides: [
+      { layout: "cover", kicker: "Just listed · Travis Heights", heading: "Mornings start on the porch", body: "1107 Travis Heights Blvd · 3 bed, 2 bath", photo: 1 } ] } },
+    { day: 1, time: "12:00", kind: "carousel", from: "First time buyer carousel" },
+    { day: 2, time: "19:00", kind: "reel", from: "Austin market reel" },
+    { day: 3, time: "18:00", kind: "carousel", spec: { title: "A weekend in Hyde Park", theme: "photo", caption: "", reply: "", slides: [
+      { layout: "cover", kicker: "Hyde Park, Austin", heading: "A weekend in Hyde Park", body: "Where locals actually go.", photo: 2 },
+      { layout: "statement", kicker: "Saturday", heading: "Coffee on Duval, then the farmers market", body: "", photo: 3 },
+      { layout: "close", kicker: "", heading: "Thinking about Hyde Park? Ask me anything.", body: "Sarah Mitchell", photo: 2 } ] } },
+    { day: 5, time: "10:00", kind: "story", spec: { title: "Open house Saturday", theme: "photo", caption: "", reply: "", slides: [
+      { layout: "cover", kicker: "Open house · 1 to 3pm", heading: "2814 Westover Hills Dr", body: "Come and see the pool.", photo: 4 } ] } },
+  ],
+};
 
 // weeks: Leads in each Monday to Sunday week, oldest first, the last one being this week so far.
 const LISTINGS = [
@@ -157,7 +176,7 @@ const msg = (wsId, listingId, role, kind, body, at, data = null, needs = 0) =>
 export async function clearDemo(adminId) {
   const old = await get(`SELECT workspace_id FROM users WHERE email = ?`, [demoEmail(adminId)]);
   if (!old) return;
-  for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "listings", "feedback", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [old.workspace_id]);
+  for (const t of ["leads", "tests", "launches", "ads", "messages", "photos", "creations", "listings", "feedback", "users"]) await run(`DELETE FROM ${t} WHERE workspace_id = ?`, [old.workspace_id]);
   await run(`DELETE FROM workspaces WHERE id = ?`, [old.workspace_id]);
 }
 
@@ -183,6 +202,21 @@ export async function buildDemo(adminId, tz = "UTC", now = Date.now()) {
     } else {
       await msg(wsId, id, "hopkins", "text", C.reply, made + 30_000);
     }
+  }
+  {
+    const monday = mondayOf(new Date(now), tz);
+    const id = randomUUID(), made = new Date(weekRange(new Date(now), tz).from).getTime() - 10 * HOUR;
+    const label = new Date(`${monday}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+    await run(`INSERT INTO listings (id, workspace_id, slug, auto_title, week_of, week_status, created_at, updated_at, seen_at) VALUES (?,?,?,?,?,?,?,?,?)`, [id, wsId, `w-${randomBytes(5).toString("hex")}`, `Week of ${label}`, monday, "ready", iso(made), iso(made + 60_000), iso(made + 60_000)]);
+    for (const [i, key] of WEEK.photos.entries()) {
+      const p = photoBytes(key);
+      await run(`INSERT INTO photos (id, workspace_id, listing_id, kind, label, position, mime, data, thumb, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`, [randomUUID(), wsId, id, "listing", null, i, "image/jpeg", p.full, p.thumb, iso(made)]);
+    }
+    for (const [i, P] of WEEK.posts.entries()) {
+      const spec = { ...(P.spec || OTHER_CHATS.find((c) => c.title === P.from).spec), plan: { day: P.day, time: P.time } };
+      await run(`INSERT INTO creations (id, workspace_id, listing_id, kind, spec, created_at, updated_at) VALUES (?,?,?,?,?,?,?)`, [randomUUID(), wsId, id, P.kind, JSON.stringify(spec), iso(made + i * 1000), iso(made + i * 1000)]);
+    }
+    await msg(wsId, id, "hopkins", "text", `Your week is ready: ${WEEK.posts.length} posts, Monday to Saturday. Tell me anything to change, or approve it.`, made + 30_000);
   }
   for (const L of LISTINGS) {
     const id = randomUUID(), made = now - L.age * DAY - 3 * HOUR;

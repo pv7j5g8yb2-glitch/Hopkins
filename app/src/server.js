@@ -31,6 +31,7 @@ import { mailReady, sendMail, resetEmail } from "./mail.js";
 import { checkWording } from "./fairhousing.js";
 import { wipeWorkspace, freshStart } from "./fresh.js";
 import { pushKeys, savePush, dropPush, pushTo, pushCount } from "./push.js";
+import { mondayOf, weekFor, approveWeek, library } from "./week.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB = join(__dirname, "..", "web");
@@ -966,6 +967,16 @@ app.get("/api/inbox", async (request) => {
   const [items, week, attention] = await Promise.all([inbox(request.ws, timeZone(request)), get(`SELECT COUNT(*) AS n FROM leads WHERE workspace_id = ? AND created_at >= ? AND created_at < ?`, [request.ws.id, week0.from, week0.to]), refreshAttention(request.ws)]);
   return { items, leadsWeek: Number(week?.n || 0), weekFrom: week0.from, attention };
 });
+
+// The week on Home (the pivot): this week's posts, day by day, and whether they're approved.
+app.get("/api/week", async (request) => weekFor(request.ws, mondayOf(new Date(), timeZone(request))));
+app.post("/api/week/approve", async (request, reply) => {
+  const r = await approveWeek(request.ws, mondayOf(new Date(), timeZone(request)));
+  if (r.error) return reply.code(404).send(r);
+  return r;
+});
+// The Library: everything Hopkins has made, newest first.
+app.get("/api/library", async (request) => ({ items: await library(request.ws) }));
 
 // What needs attention: the agent taps its button (it does exactly what the button says) or Dismiss.
 app.post("/api/attention/:id", async (request, reply) => {
