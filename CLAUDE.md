@@ -115,6 +115,12 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   `design/brand/` (icon at 1024, Instagram picture at 1080, SVGs); the app uses
   `app/web/mark.svg` and the `hpk-sun` gradient. It matches the new look's warm pink and has
   no purple, which the platform doesn't use.
+* **The cream look (Ismael, 2026-11-04, after Cosmos; replaces the black look and the reeded
+  background):** a flat warm off white page (`#F6F3EE`) with no picture, pink glow or stripes behind
+  it; solid white cards with a hairline; black text and black pill buttons; the sunset pink only in
+  the mark. The Liquid Glass tab bar stays, recoloured cream. `design/new-look/cream.py` turned the
+  black colours over (neutrals flip, anything with a hue stays); the pinned surfaces are at the end
+  of `app/web/app.css`.
 * **Colours (Ismael, 2026-10-31: black replaced the blue dusk the same evening, "matches the logo
   since it's on black"; oxblood, cream, gold, plum and navy are retired everywhere):** a graphite
   black (`#0B0B0D` to `#18181B`, never flat #000) seen through reeded glass with one warm house

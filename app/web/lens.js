@@ -58,7 +58,7 @@ void main(){
   vec3 col = vec3(soft(s + split).r, soft(s).g, soft(s - split).b);
   // A touch brighter and richer than what's behind, then the blue tint that keeps text readable.
   col = mix(vec3(dot(col, vec3(.299, .587, .114))), col, 1.18) * 1.04;
-  col = mix(col, vec3(.06, .06, .065), tint);
+  col = mix(col, vec3(.976, .968, .955), tint);
   // Rim: a thin line of light on the edge, strongest facing the light (top left), a fainter
   // line opposite, and a soft glow just inside where the glass curves.
   vec2 L = normalize(vec2(-.55, -.85));
@@ -153,7 +153,7 @@ void main(){
     const isLens = el.classList.contains("lg-lens");
     panels.set(el, {
       canvas, rim, ctx: canvas.getContext("2d"), key: "", radius, isLens,
-      tint: isLens ? 0.72 : el.matches(".lg-cap") ? 0.86 : el.matches(".pop, .toast") ? 0.62 : 0.4,
+      tint: isLens ? 0.6 : el.matches(".lg-cap") ? 0.72 : el.matches(".pop, .toast") ? 0.62 : 0.4,
       mag: isLens ? 0.8 : 0.9,
     });
   }
