@@ -35,9 +35,10 @@ SKY = os.environ.get("FIELD_SKY", "blue")
 SKIES = {
     "blue": [(0, "#0F3A73"), (0.30, "#1B5694"), (0.55, "#20609F"), (0.80, "#174A86"), (1, "#0C2B5C")],
     "black": [(0, "#0B0B0D"), (0.30, "#141416"), (0.55, "#18181B"), (0.80, "#111113"), (1, "#070708")],
+    "white": [(0, "#FFFFFF"), (0.30, "#FBFAF9"), (0.55, "#F8F6F5"), (0.80, "#FBFAF9"), (1, "#FFFFFF")],
     "forest": [(0, "#0C2A22"), (0.30, "#14382D"), (0.55, "#17402F"), (0.80, "#103226"), (1, "#081C16")],
 }
-SHADOW = {"blue": "#0A1E52", "black": "#09090B", "forest": "#0A231B"}[SKY]
+SHADOW = {"blue": "#0A1E52", "black": "#09090B", "forest": "#0A231B", "white": "#F3EEF1"}[SKY]
 a = vgrad(SKIES[SKY])
 
 def blob(points, blur):
@@ -98,7 +99,8 @@ g = g * shade[None, :, None]
 
 # Reading veil at the bottom, and grain.
 yy = np.linspace(0, 1, H)[:, None, None]
-g = g * (1 - 0.22 * np.clip((yy - 0.62) / 0.38, 0, 1) ** 1.3)
+veil = 0.22 * np.clip((yy - 0.62) / 0.38, 0, 1) ** 1.3
+g = g + (1 - g) * veil if SKY == "white" else g * (1 - veil)
 g = g + rng.normal(0, 0.018, g.shape).astype(np.float32)
 Image.fromarray((np.clip(g, 0, 1) * 255).astype(np.uint8)).save(out, optimize=True)
 print(out)
