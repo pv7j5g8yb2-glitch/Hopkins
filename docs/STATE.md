@@ -1127,3 +1127,14 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   plan from real numbers (their own results and nearby agents' via Business Discovery) instead of
   a 2 minute questionnaire; posted for them after one approval. Not matched soon: the community,
   live trainings and 1,128 templates' breadth.
+
+## Y Combinator scan (2026-11-04)
+
+* Everything from Ismael's paste of the YC directory and all Requests for Startups (Summer 2024 to
+  Winter 2027) is in `docs/YC.md`: the numbers, what recent batches build, the companies closest
+  to Hopkins (Grocalo "AI brain for creators that runs their social content", Remix, tday, Uplane,
+  Lapis, Adside, RealPact), the partner requests that bear on Hopkins, and Claude's read.
+* Main read: AI run social content is crowded in general, empty for real estate agents in that
+  list; YC's partners back AI that does the whole job and sells the result; 8 figures is about
+  8,400 agents at $99 a month, 9 figures needs teams, brokerages and later ads on top.
+
