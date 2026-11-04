@@ -35,10 +35,11 @@ SKY = os.environ.get("FIELD_SKY", "blue")
 SKIES = {
     "blue": [(0, "#0F3A73"), (0.30, "#1B5694"), (0.55, "#20609F"), (0.80, "#174A86"), (1, "#0C2B5C")],
     "black": [(0, "#0B0B0D"), (0.30, "#141416"), (0.55, "#18181B"), (0.80, "#111113"), (1, "#070708")],
+    "cream": [(0, "#F7F4EF"), (0.30, "#F5F2ED"), (0.55, "#F3F0EA"), (0.80, "#F5F2ED"), (1, "#F7F4EF")],
     "white": [(0, "#FFFFFF"), (0.30, "#FBFAF9"), (0.55, "#F8F6F5"), (0.80, "#FBFAF9"), (1, "#FFFFFF")],
     "forest": [(0, "#0C2A22"), (0.30, "#14382D"), (0.55, "#17402F"), (0.80, "#103226"), (1, "#081C16")],
 }
-SHADOW = {"blue": "#0A1E52", "black": "#09090B", "forest": "#0A231B", "white": "#F3EEF1"}[SKY]
+SHADOW = {"blue": "#0A1E52", "black": "#09090B", "forest": "#0A231B", "white": "#F3EEF1", "cream": "#EFE9E6"}[SKY]
 a = vgrad(SKIES[SKY])
 
 def blob(points, blur):
@@ -94,13 +95,14 @@ t = (xs % RIB) / RIB
 centre = xs - (xs % RIB) + RIB / 2
 sample = np.clip((centre + (0.5 - t) * RIB * 1.25).round().astype(int), 0, W - 1)
 g = a[:, sample, :]
-shade = 1 + 0.06 * (0.5 - t) + 0.13 * np.exp(-((t - 0.04) / 0.03) ** 2) - 0.08 * np.exp(-((t - 0.97) / 0.035) ** 2)
+RIBK = 0.4 if SKY == "cream" else 1.0  # on cream the ribs are a whisper, like frosted glass
+shade = 1 + RIBK * (0.06 * (0.5 - t) + 0.13 * np.exp(-((t - 0.04) / 0.03) ** 2) - 0.08 * np.exp(-((t - 0.97) / 0.035) ** 2))
 g = g * shade[None, :, None]
 
 # Reading veil at the bottom, and grain.
 yy = np.linspace(0, 1, H)[:, None, None]
 veil = 0.22 * np.clip((yy - 0.62) / 0.38, 0, 1) ** 1.3
-g = g + (1 - g) * veil if SKY == "white" else g * (1 - veil)
-g = g + rng.normal(0, 0.018, g.shape).astype(np.float32)
+g = g + (1 - g) * veil if SKY in ("white", "cream") else g * (1 - veil)
+g = g + rng.normal(0, 0.012 if SKY == "cream" else 0.018, g.shape).astype(np.float32)
 Image.fromarray((np.clip(g, 0, 1) * 255).astype(np.uint8)).save(out, optimize=True)
 print(out)
