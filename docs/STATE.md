@@ -1099,5 +1099,31 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
 * What the agent still does by hand, by their own steps: fill every placeholder, find and film
   their own clips, write or place the hook, choose the sound, edit in Canva (Pro for much of it),
   write the caption to fit, and post each one themselves. Nothing posts for them.
-* Gaps the review names: no scheduling or auto posting ("every post is manual"), no CRM or MLS
-  link, the same templates shared by every member with no city exclusivity.
+* Batch 2 (2026-11-04):
+  * Trial limits: 7 template unlocks, 1 lead magnet, 1 auto DM, 25 leads, 7 scheduled posts. So
+    C&C does schedule posts and has auto DMs and lead magnets; the review's "every post is
+    manual" is out of date. How scheduling works (straight to Instagram or a reminder) not seen yet.
+  * Vault: 1,128 templates, searched by intent ("help me engage more followers", "celebrate a
+    recent closing"), filtered by content type, social content pillar and drop. Example:
+    "[City Name] little luxuries" reel, shown with a Savannah version.
+  * Content Drops: "Our team curates..." every week and month. Week of 2 to 8 November had 5,
+    e.g. "Where [Show/Characters] would live in [City Name]", 16 slides, a pop culture hook.
+  * Calendar: empty until "Create Strategy (2min)", "two simple steps"; views by Content Pillars
+    and Content Type.
+  * Content Studio, "Your content, created for you, built on the strategy that's actually
+    working": a 5 minute profile (market and ideal client questionnaire), then AI tools:
+    Talking Head Reel Scripts (pick one of 5 hooks, get script, strategy and caption, you record),
+    Relocation B Roll Hooks, Case Study (a client win as a 5 slide carousel and caption "ready to
+    paste into Canva"), Email Drip Campaign (new). The AI writes words; design stays in Canva and
+    footage stays the agent's.
+  * Settings: Account (name, email, Instagram handle, city, state, phone required and verified,
+    birthday), AI Settings (title, e.g. agent or broker, and caption voice), Shared Access (an
+    assistant gets the whole account), Developer (Claude connector, MCP server, API keys), Refer
+    and Earn. Notifications: email, text, and an email per lead magnet sign up.
+* What C&C is, in one line: a big shared library of placeholder templates, refreshed weekly, plus
+  AI that writes scripts and captions, a calendar, scheduling, lead capture and a community.
+* Where Hopkins can be far better (from the screenshots, unproven until built): finished posts,
+  not templates (their city, this week, their photos, already designed, nothing to fill in); a
+  plan from real numbers (their own results and nearby agents' via Business Discovery) instead of
+  a 2 minute questionnaire; posted for them after one approval. Not matched soon: the community,
+  live trainings and 1,128 templates' breadth.
