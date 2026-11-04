@@ -42,7 +42,8 @@ def spoken(text):
 
 sp = json.loads(subprocess.check_output(["node", "spoken.mjs", reel + ".html"]))
 phrases = sp["phrases"]
-pipe = KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M")
+import os as _os
+pipe = None if _os.environ.get("EXT") else KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M")
 
 # group phrases into sentences so the voice keeps its natural flow
 groups, cur = [], []
@@ -93,8 +94,44 @@ def align(clip, words):
     if out and out[0]: out[0] = (min(out[0][0], .04), out[0][1])
     return out
 
-track, t0 = [np.zeros(int(LEAD * SR), np.float32)], LEAD
-timing = [{"w": [], "last": 0} for _ in phrases]
+import os
+EXT = os.environ.get("EXT")   # a finished recording of the whole script (ElevenLabs, 2026-11-01)
+if EXT:
+    # The whole read in one take, with "Get Hopkins." on the end for promo reels: every caption word
+    # is aligned against it, and the sign off is cut off and placed on the end card.
+    raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", EXT, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"])
+    clip = np.frombuffer(raw, np.float32).copy()
+    hop = int(.01 * SR); env = np.array([np.abs(clip[i:i + hop]).max() for i in range(0, len(clip), hop)])
+    on = np.where(env > .02)[0]; clip = clip[max(0, on[0] * hop - int(.03 * SR)):(on[-1] + 1) * hop + int(.06 * SR)]
+    words, owner = [], []
+    for i, ph in enumerate(phrases):
+        if ph["say"]:
+            for w in spoken(ph["say"]).split(): words.append(w); owner.append((i, None))
+        else:
+            for k, tok in enumerate(ph["toks"]):
+                for w in spoken(tok).split(): words.append(w); owner.append((i, k))
+    if sp["signoff"]: words += ["Get", "Hopkins."]; owner += [None, None]
+    times = align(clip, words)
+    for n in range(len(times)):
+        if times[n] is None: times[n] = next((times[m] for m in list(range(n - 1, -1, -1)) + list(range(n + 1, len(times))) if times[m]), (0, len(clip) / SR))
+    outro = None
+    if sp["signoff"]:
+        cut = int((times[-2][0] - .05) * SR); outro = clip[cut:]; clip = clip[:cut]
+    timing = [{"w": [], "last": 0} for _ in phrases]
+    seen = set()
+    for o, (s_, e_), w in zip(owner, times, words):
+        if o is None: continue
+        i, k = o; s_, e_ = LEAD + s_ - AHEAD, LEAD + e_
+        if k is None: timing[i].setdefault("say", []).append((s_, e_, w))
+        elif (i, k) not in seen: seen.add((i, k)); timing[i]["w"].append(s_)
+        timing[i]["last"] = max(timing[i]["last"], e_)
+    track, t0 = [np.zeros(int(LEAD * SR), np.float32), clip], LEAD + len(clip) / SR
+    groups = []
+    VOICE, SPEED = "elevenlabs", 1.0
+    speak = (lambda text: outro) if outro is not None else speak
+else:
+    track, t0 = [np.zeros(int(LEAD * SR), np.float32)], LEAD
+if not EXT: timing = [{"w": [], "last": 0} for _ in phrases]
 for g in groups:
     words, owner = [], []          # spoken words, and the (phrase, token) each belongs to
     for i in g:

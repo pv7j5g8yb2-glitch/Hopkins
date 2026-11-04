@@ -156,7 +156,32 @@ badge after the handle.
 
 The product's code is in `app/` (its README says what works and how to run it).
 
-* **Direction (Ismael, 2026-10-31, after a long review he pasted):** Hopkins stays a self-serve
+* **THE PIVOT (Ismael, 2026-11-03, worked out on his other Claude account; it overrides anything
+  below that leads with ads):** Hopkins is a personal assistant for real estate agents that runs
+  their **Instagram and social media content**, so they can stay out showing houses. Organic
+  content is the core; ads are an optional second layer. The loop:
+  1. Setup asks the area (neighbourhood or whole city), the style (real estate only or personal
+     brand), how often to post and music taste; Instagram must be a Business or Creator account.
+  2. Every week, by itself: research (local news and trends, nearby agents' public post numbers
+     through Instagram's official Business Discovery API, the agent's own past results), keep the
+     formats that worked, plan the week (carousels, reels, captions, hashtags, story ideas).
+  3. Monday notification: the week is ready; the agent edits in plain words and approves once.
+  4. Hopkins posts each day at the planned time through Instagram's official publishing API, with
+     its own scheduler (the API has none). Stories are planned only and posted by the agent by hand.
+  5. Ads stay optional: turn a post into an ad on their own Meta account, leads to the phone and
+     Follow Up Boss, Needs attention for people waiting.
+  6. Plain chat works like a team leader who answers honestly and never invents data.
+  Rules from that session: **never AI generated images, anywhere in Hopkins**; never scraping
+  (no Pinterest or Cosmos scraping, no unofficial tools like Phantombuster); photos come from the
+  agent's own photo bank (uploads and their past Instagram posts) by default, and a Change photo
+  button opens Pinterest, Cosmos or the camera roll so the agent saves and picks the image
+  themselves; HEIC is converted to JPEG on upload; agents confirm they have the rights to images
+  they add; music only from a licensed catalog (Epidemic Sound or Soundstripe, not chosen), built
+  into the reel file; carousels all photos or all videos, 2 to 10 slides; Fair Housing guardrails
+  on everything. Approving the week counts as asking, so daily posting isn't an unasked
+  automation. Nothing of this is built yet except the chat, ads, leads and Today.
+* **Direction (Ismael, 2026-10-31, after a long review he pasted; ads first, now superseded by the
+  pivot above):** Hopkins stays a self-serve
   marketing agency for real estate that you run from one chat, but it stops waiting to be asked.
   It watches the agent's listings, ads and Leads, notices what needs doing, prepares it and asks
   for approval; the agent can still ask it anything. The loop to make excellent before anything

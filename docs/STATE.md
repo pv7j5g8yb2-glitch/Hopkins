@@ -1039,3 +1039,23 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   yet. Proposed plan split, awaiting his yes: Solo 40 creations a month and ads on 2 listings at a
   time; Pro 150 and 6; Max unlimited and first access to new features. Everyone keeps the full
   loop (leads, Follow Up Boss, Report, Needs attention, notifications). Instant Lead Reply was removed: no automations yet.
+
+## The pivot to organic content (2026-11-03 to 11-04)
+
+* Decided on Ismael's other Claude account while this one was out of usage; see "THE PIVOT" in
+  CLAUDE.md. That account never saw this repo. It wrote an `instagram.js` module (publish photo
+  posts, carousels and reels, quota check, error sorting, own and Business Discovery numbers), 12
+  mocked tests and an "Instagram build brief" for Claude Code. **None of it is in the repo**: Ismael
+  has to bring those files over. Never run against Meta.
+* Checked 2026-11-04 against Meta's docs: Stories publishing is Business accounts only; Business
+  Discovery returns other professional accounts' followers and each post's likes, comments and
+  views (views mix paid and organic), but only for usernames Hopkins already knows (no search), and
+  their media can't be opened. Publishing limit 50 posts a day.
+* Not built: the setup questions, the weekly research and plan, the Monday review screen, the photo
+  bank, the scheduler and Instagram publishing (needs instagram_content_publish through App Review
+  and business verification), the music catalog, advisor mode.
+* Reels 8 to 10 (new look, ElevenLabs voice "James", one take each): r8 rendered
+  (`reports/hopkins-brand/reels/new/r8.mp4`, 41s); r9 and r10 voiced on ElevenLabs (flows
+  V0NxqmBU74XEKMIUpGsO and GEGrg0xSb0tXID7qWft4) but not downloaded or rendered. r8 and r10 lead
+  with ads and leads, which the pivot puts second; held until Ismael decides. Covers not made.
+  The highlights made on the other account (zip there, from screenshots) aren't in the repo.

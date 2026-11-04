@@ -1,0 +1,101 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script src="engine.js"></script>
+<script src="chat.js"></script>
+<script>
+const {$,$$,P,ease,vis,pop,slam,show,typeBox}=E;
+// Reel 8 (2026-11-01, the new Hopkins): the whole job in one chat, as the app really does it. A
+// Zillow link read back, one ad asked for, a change said in words, a carousel in the same chat,
+// Run, approve, and a lead on the phone. Every step is something the app does today.
+const R={
+theme:"new",hook:2,signoff:true,cta:"Join the waitlist · link in bio",
+sfx:[{s:"hit",at:.02,shake:14},{s:"stamp",at:"canva",shake:10},{s:"whoosh",at:"this"},
+ {s:"pop",at:"zillow"},{s:"pop2",at:"reads",d:.2},{s:"pop",at:"makeanadforit"},{s:"ding",at:"photos"},
+ {s:"pop",at:"tell"},{s:"select",at:"done"},{s:"pop",at:"carousel"},{s:"ding",at:"ready"},
+ {s:"select",at:"run"},{s:"stamp",at:"approve",shake:8},{s:"ding",at:"phone"},{s:"hit",at:"onechat",shake:10}],
+script:[
+ "Still opening [Canva] for every listing post?",
+ {t:"Watch ^this.",pause:.35},
+ "I paste the ^Zillow link into Hopkins,",
+ {t:"and it ^reads ^back the whole listing.",pause:.35},
+ "Then I just say, [make an ad for it.]",
+ {t:"One ad, built on the listing's own ^photos.",pause:.4},
+ "Line too long? I just ^tell it.",
+ {t:"Make it shorter. [Done.]",pause:.4},
+ "Same chat, I ask for a ^carousel for first time buyers.",
+ {t:"Slides, ^ready to post.",pause:.4},
+ "When the ad's right, I tap ^Run.",
+ "It runs on my own Meta account,",
+ {t:"and nothing goes live until I [approve] it.",pause:.4},
+ {t:"Someone fills in the form? It's on my ^phone.",pause:.4},
+ {t:"No Canva. No Ads Manager. [One chat.]",pause:.3},
+],
+css:`
+#tpl{position:absolute;left:190px;top:760px;width:700px;height:875px;border-radius:24px;background:#d9d9d9;opacity:0;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.6)}
+#tpl .tb{height:70px;background:#7d2ae8;display:flex;align-items:center;padding:0 26px;gap:14px;color:#fff;font-size:24px;font-weight:700}
+#tpl .cv{position:absolute;left:60px;right:60px;top:130px;bottom:60px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;border:3px dashed #b7b7b7}
+#tpl .cv b{font-size:78px;font-weight:700;color:#e8463a;letter-spacing:-.02em;font-family:Georgia,serif;font-style:italic}
+#tpl .cv i{width:420px;height:230px;background:repeating-linear-gradient(45deg,#ececec 0 18px,#e1e1e1 18px 36px);display:block;border-radius:6px}
+#tpl .cv span{font-size:28px;color:#999}
+#x{position:absolute;left:300px;top:1080px;width:480px;height:16px;background:#F0708A;border-radius:8px;transform:rotate(-24deg) scaleX(0);opacity:.95}
+.ph{top:520px;height:1250px}
+.ph .sb,.ph .hd{position:relative;z-index:2;background:#0B0B0D}
+#nt{position:absolute;left:174px;width:732px;top:-180px;z-index:5;border-radius:30px;background:rgba(40,40,44,.97);padding:22px 26px;display:flex;gap:18px;align-items:center;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+#nt .ic{width:64px;height:64px;border-radius:15px;background:linear-gradient(#26262B,#08080A);display:flex;align-items:center;justify-content:center;flex:none}
+#nt b{display:block;font-size:24px}#nt span{display:block;font-size:22px;color:rgba(255,255,255,.75);margin-top:4px}
+#nt small{position:absolute;right:26px;top:22px;font-size:18px;color:rgba(255,255,255,.5)}
+#ap{transition:none}
+`,
+scenes:`
+<div class="scene" id="sA"><div id="tpl"><div class="tb">▦ Templates <span style="margin-left:auto;font-weight:400;opacity:.8">Just listed #47</span></div>
+ <div class="cv"><b>Just listed!</b><i></i><span>Add your photo here</span></div></div><i id="x"></i></div>
+<div class="scene" id="sB">${E.phone("pa",{title:"1107 Travis Heights Blvd",sub:"$849,000 · 3 bed, 2 bath",items:[
+ {id:"m1",who:"me",text:"zillow.com/homedetails/1107-Travis-Heights-Blvd"},
+ {id:"t1",who:"think"},
+ {id:"h1",who:"hk",text:"Got it: 1107 Travis Heights Blvd, $849,000, 3 bed 2 bath. What should I make for it: a post, a carousel, a reel, or ads to run?"},
+ {id:"m2",who:"me",text:"make an ad for it"},
+ {id:"t2",who:"think"},
+ {id:"h2",who:"hk",text:"Here's your ad for 1107 Travis Heights Blvd: <b>The porch</b>.",extra:`<div style="margin-top:16px">${E.ad({photo:"travis-1",w:520,kicker:"Just listed · Travis Heights",line:"Mornings start on the wraparound porch.",price:"$849K"})}</div><div class="acts"><span>Run ad</span><span class="d">Download</span></div>`},
+ {id:"m3",who:"me",text:"make the line shorter"},
+ {id:"h3",who:"hk",text:"Done. The line now reads “Porch mornings.”",extra:`<div style="margin-top:16px">${E.ad({photo:"travis-1",w:520,kicker:"Just listed · Travis Heights",line:"Porch mornings.",price:"$849K"})}</div>`},
+ {id:"m4",who:"me",text:"now a carousel for first time buyers"},
+ {id:"t4",who:"think"},
+ {id:"h4",who:"hk",text:"Here's your carousel. Want a caption and hashtags for it?",extra:`<div class="slides" style="margin-top:16px">
+   <div class="sl" style="background:#F4EBDD;color:#1A1A1A"><small>First time buyers</small><b>Buying your first home in Austin</b><small>1 / 6</small></div>
+   <div class="sl" style="background:#F4EBDD;color:#1A1A1A"><small>Step 1</small><b>Pull your free credit reports</b><small>2 / 6</small></div>
+   <div class="sl" style="background:#F4EBDD;color:#1A1A1A"><small>Step 2</small><b>Get pre approved</b><small>3 / 6</small></div></div>`},
+ {id:"m5",who:"me",text:"run the porch ad"},
+ {id:"h5",who:"hk",text:"Here's the plan: $200 over 10 days. Approve it to run.",extra:`<div class="acts"><span id="ap">Approve and run</span><span class="d">Change the budget</span></div>`},
+]})}<div id="nt" style="display:none"></div></div>
+`,
+update(t,C,endAt){
+ // hook: a template slams in, then gets struck out
+ vis("#sA",t,0,C.this-.05,{dy:0,blur:0});
+ slam("#tpl",t,.02,{s:1.45,r:-7});
+ $("#x").style.transform=`rotate(-24deg) scaleX(${ease(P(t,C.canva,C.canva+.25))})`;
+ // the chat
+ vis("#sB",t,C.this-.1,endAt-.05,{dy:0,blur:0});
+ slam(".ph",t,C.this-.1,{s:1.25,r:4});
+ show("#m1",t,C.zillow);
+ show("#t1",t,C.zillow+.35,C.reads);
+ show("#h1",t,C.reads);
+ show("#m2",t,C.makeanadforit-.1);
+ show("#t2",t,C.makeanadforit+.5,C.p5);
+ show("#h2",t,C.p5);
+ show("#m3",t,C.tell+.2);
+ show("#h3",t,C.done-.1);
+ show("#m4",t,C.carousel);
+ show("#t4",t,C.carousel+.6,C.p9);
+ show("#h4",t,C.p9);
+ show("#m5",t,C.run-.1);
+ show("#h5",t,C.p11+.4);
+ const ap=ease(P(t,C.approve-.1,C.approve+.2));const b=$("#ap");if(b){b.style.transform=`scale(${1-.08*Math.sin(ap*Math.PI)})`;b.textContent=t>=C.approve+.15?"Approved ✓":"Approve and run"}
+ // the lead lands on the phone
+ const n=$("#nt");n.style.display="flex";
+ if(!n.innerHTML)n.innerHTML=`<div class="ic">${E.mk(46)}</div><div><b>New lead · 1107 Travis Heights Blvd</b><span>Dana Price · (512) 555 0199</span></div><small>now</small>`;
+ const nk=ease(P(t,C.phone-.2,C.phone+.2)),nq=ease(P(t,C.p14+.2,C.p14+.5));n.style.top=`${420+190*nk}px`;n.style.opacity=nk*(1-ease(P(t,endAt-.2,endAt+.1)));
+ // one chat: the phone settles big
+ const oc=ease(P(t,C.onechat-.2,C.onechat+.3));$(".ph").style.transform=`scale(${1+.04*oc})`;
+}};
+E.boot(R);
+render(0);
+</script></body></html>

@@ -39,7 +39,7 @@ E.inout=x=>{x=E.clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
 E.back=x=>{x=E.clamp(x);const c=1.7;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
 E.$=s=>document.querySelector(s);E.$$=s=>[...document.querySelectorAll(s)];
 let seed=11;E.rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
-E.MARK=MARK;
+E.MARK=MARK;E.SUNMARK=MARK.replace('fill="#5B4873"','fill="url(#sun)"').replace('fill="#D7AE62"','fill="url(#sun)"');
 // show/hide an element with blur + rise, like the reference reels
 E.vis=(sel,t,a,b,o={})=>{const el=typeof sel==="string"?E.$(sel):sel;if(!el)return 0;
   const i=E.ease(E.P(t,a,a+(o.dur||.45))), q=b==null?0:E.inout(E.P(t,b,b+.35));
@@ -145,18 +145,33 @@ function caption(t,P,HOOK=0){
   el.innerHTML=p.toks.map((w,i)=>{const e=E.ease(E.P(t,w.t,w.t+.2));
     let st;if(big){const k=E.P(t,w.t-.02,w.t+.12);st=`opacity:${E.clamp(k*6)*fo};transform:scale(${1.45-.45*E.back(k)});color:var(--cream)`}
     else st=`opacity:${e*fo};filter:blur(${(1-e)*10}px);transform:translateY(${(1-e)*14}px);color:${i===last||w.kind?"var(--cream)":"var(--rose)"}`;
-    if(w.kind==="h"){const b=E.ease(E.P(t,w.t,w.t+.25));st+=`;background:rgba(54,21,28,${b});box-shadow:0 0 0 ${3*b}px rgba(244,235,221,${b})`;
+    if(w.kind==="h"){const b=E.ease(E.P(t,w.t,w.t+.25));st+=E.NEW?`;background:rgba(255,255,255,${.96*b});color:${b>.5?"#0B0B0D":"#fff"}`:`;background:rgba(54,21,28,${b});box-shadow:0 0 0 ${3*b}px rgba(244,235,221,${b})`;
       return `<span class="w hl" style="${st}">${w.txt}${b>.05?`<i style="left:-8px;top:-8px;opacity:${b}"></i><i style="right:-8px;bottom:-8px;opacity:${b}"></i>`:""}</span>`}
-    if(w.kind==="s")return `<span class="w serif" style="${st};color:var(--gold)">${w.txt}</span>`;
+    if(w.kind==="s")return `<span class="w serif" style="${st};color:${E.NEW?"#F0708A":"var(--gold)"}">${w.txt}</span>`;
     return `<span class="w" style="${st}">${w.txt}</span>`}).join("");
 }
+// The new look (2026-11-01): the app's own reeded graphite background, white type, the sunset
+// mark, black cards with a hairline, a white pill. Reels from r8 on set theme:"new".
+const NEWCSS=`
+:root{--ox:#0B0B0D;--ox2:#141416;--cream:#FFFFFF;--paper:#1E1E21;--gold:#FFFFFF;--bronze:#F0708A;--plum:#B9408F;--lilac:#FFC3A0;--rose:rgba(255,255,255,.72);--ink:#FFFFFF;--quiet:rgba(255,255,255,.62);--sun:linear-gradient(160deg,#FFC3A0,#F0708A 55%,#B9408F)}
+html,body{background:#0B0B0D}
+#bg{position:absolute;inset:0;background:url(field.jpg) center/cover}
+#grid{display:none}
+#vig{background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(0,0,0,.55) 100%)}
+#wm{color:rgba(255,255,255,.85)}
+.hl i{display:none}
+.card{background:#141416;color:#fff;box-shadow:0 0 0 1.5px rgba(255,255,255,.12),0 40px 90px rgba(0,0,0,.5)}
+#end .cta{color:#0B0B0D;background:#fff}
+#fade{background:#0B0B0D}
+`;
 E.boot=(R)=>{
-  const st=document.createElement("style");st.textContent=CSS+(R.css||"");document.head.appendChild(st);
-  document.body.innerHTML=`<div id="grid"></div><div id="vig"></div>
+  E.NEW=R.theme==="new";
+  const st=document.createElement("style");st.textContent=CSS+(E.NEW?NEWCSS:"")+(R.css||"");document.head.appendChild(st);
+  document.body.innerHTML=`${E.NEW?`<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC3A0"/><stop offset=".55" stop-color="#F0708A"/><stop offset="1" stop-color="#B9408F"/></linearGradient></defs></svg><div id="bg"></div>`:""}<div id="grid"></div><div id="vig"></div>
   <svg id="grain" width="1080" height="1920"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
-  <div id="wm"><svg width="44" height="44" viewBox="0 0 120 120">${MARK}</svg>@gethopkins</div><div id="cap"></div>
+  <div id="wm"><svg width="44" height="44" viewBox="0 0 120 120">${E.NEW?E.SUNMARK:MARK}</svg>@gethopkins</div><div id="cap"></div>
   ${R.scenes}
-  <div id="end"><div class="lock"><svg id="endmark" width="160" height="160" viewBox="0 0 120 120">${MARK}</svg><div class="nm">Hopkins</div></div>
+  <div id="end"><div class="lock"><svg id="endmark" width="160" height="160" viewBox="0 0 120 120">${E.NEW?E.SUNMARK:MARK}</svg><div class="nm">Hopkins</div></div>
   <div class="cta">${R.cta||"Follow @gethopkins"}</div></div><div id="fade"></div>`;
   const spoken=R.script.map(ph=>typeof ph==="string"?ph:ph.t).join("|");
   let TIM=null;if(window.TIMING){if(window.TIMING.text===spoken)TIM=window.TIMING.phrases;else console.warn("timing is stale, run vo.py again")}
