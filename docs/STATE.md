@@ -1138,3 +1138,9 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   list; YC's partners back AI that does the whole job and sells the result; 8 figures is about
   8,400 agents at $99 a month, 9 figures needs teams, brokerages and later ads on top.
 
+* Asked (2026-11-04) whether the YC reading shows a bigger self serve gap than Hopkins, or whether
+  personal brand is what makes agents succeed. Claude's answer: no clearly bigger gap in that text;
+  the bigger prizes (an AI run brokerage, selling to big brokerages) are harder to sell, not easier.
+  The YC text says nothing about what makes agents succeed, so the brand question can only be
+  answered by agents. The real risk in organic content is proving it brings business; the fix is
+  counting enquiries (DMs, profile visits, website taps) from day one and asking agents first.
