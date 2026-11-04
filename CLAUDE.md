@@ -90,6 +90,10 @@ Every week it studies their local market and what nearby agents post, plans and 
 the agent approves once on Monday, and it posts each day. **Organic content only for now: ads come
 later** (Ismael, 2026-11-04: both at once is too many offers and features). Never lead with, sell
 or show ads, leads or Meta ad features until he says so.
+**One goal (Ismael, 2026-11-04):** great platforms have one goal (Uber books a ride, Airbnb books a
+stay, Duolingo teaches a language, Spotify plays music). Hopkins and every plan for it stay on one
+goal; don't pile features on top or explain it in layers. Most agents post badly, rarely or never,
+so nothing should rest on "what's working on their account".
 Before the pivot: one chat that runs a real estate business's marketing like an agency would.
 **Positioning (Ismael, 2026-10-31):** "The personal assistant for real estate agents" (he said
 "Realtors Personal Assistant"; public copy says real estate agents because Realtor is NAR's
