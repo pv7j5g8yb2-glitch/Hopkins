@@ -84,7 +84,12 @@ copy. Second style: italic serif headings with soft highlighter marks on grid pa
 
 ## Hopkins brand (locked)
 
-The product: one chat that runs a real estate business's marketing like an agency would.
+The product (since the pivot, 2026-11-03): **a personal assistant for real estate agents that
+runs their Instagram and social media content by itself, so they can stay out showing houses.**
+Every week it studies their local market and what nearby agents post, plans and designs the week,
+the agent approves once on Monday, and it posts each day. Ads and leads are an optional second
+layer. Lead every description, bio, highlight and reel with the weekly content, never with ads.
+Before the pivot: one chat that runs a real estate business's marketing like an agency would.
 **Positioning (Ismael, 2026-10-31):** "The personal assistant for real estate agents" (he said
 "Realtors Personal Assistant"; public copy says real estate agents because Realtor is NAR's
 trademark). It works like Claude: open a new chat, ask for a carousel post or an animated reel
