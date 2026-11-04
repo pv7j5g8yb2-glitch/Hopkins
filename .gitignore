@@ -6,3 +6,4 @@ dist/
 # Rendered reels and covers: re-render from content/reels (see docs/STATE.md)
 reports/hopkins-brand/reels/*.mp4
 reports/hopkins-brand/reels/*.png
+reports/hopkins-brand/reels/new/
