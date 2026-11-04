@@ -1157,3 +1157,14 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   Claude's read: good for Hopkins now the product is a week of visual posts, since the posts would
   be the colour on screen. Keep the pink only in the mark; skip the logo marquee (no customers to
   show). Not decided; the white preview he wanted had solid white cards, not see-through ones.
+* Cosmos app intro, watched frame by frame from Ismael's recording (2026-11-04, 97s): a strobe of
+  about a dozen full colour photos, one every 2 or 3 frames, centred, each a different size; the
+  logo's six dots turn, then drop away one by one into a single dot that becomes the wordmark;
+  around it about ten small photos fade in from a blur at scattered sizes, with one line above and
+  a white Start pill. Pages move as one vertical feed (the old collage rises out as the next rises
+  in, about 0.35s); page 4's background takes the photo's own olive. Sign up is one question per
+  screen in big centred type with no box, a progress line at the top, the pill dim until the answer
+  is valid, a spinner inside the pill while checking, live "available" in green, interests as chips
+  that turn white with a tick and a "Choose 3, 0/3" counter, and an appearance step whose phone
+  preview flips light and dark live. The app itself is graphite (`#222`), the website cream.
+  Ismael called Hopkins' cream redesign "so boring": it has to be creative and fun like this.
