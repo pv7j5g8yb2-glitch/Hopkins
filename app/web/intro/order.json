@@ -1,5 +1,63 @@
 {
-  "note": "Ismael's intro photos (2026-11-04 and 05), kept byte for byte as sent except 15-sifnos-house, cropped at the bottom to take out the photographer's watermark with her permission. The strobe is 30 hard cuts; the order changes shape and brightness on every cut, and the keys come last because that photo shrinks into the pebble.",
-  "strobe": ["14-manhattan-dusk", "06-marble-island", "12-concrete-stair", "08-desert-pool", "25-candle-table", "22-barragan-pool", "05-a-frame-snow", "01-spiral-stair", "02-cypress-lane", "24-chelsea-pastels", "21-chalet-balcony", "26-plaster-arches", "17-riad-courtyard", "07-paris-salon", "03-ocean-deck", "18-nordic-bedroom", "23-wooden-bath", "15-sifnos-house", "09-japanese-room", "20-forest-house-dusk", "16-black-door", "29-rooftop-sunset", "27-cactus-court", "11-midcentury-lounge", "04-forest-bath", "13-cotswold-cottage", "10-orange-tree", "19-brownstone-street", "30-library-ladder", "28-keys-in-door"],
-  "collage": [], "page2": [], "page3": [], "page4": []
+  "note": "Ismael's intro photos (2026-11-04 and 05), kept byte for byte as sent except 15-sifnos-house, cropped at the bottom to take out the photographer's watermark with her permission. The strobe is 30 hard cuts; the order changes shape and brightness on every cut, and the keys come last because that photo shrinks into the pebble. Batch 3 (2026-11-05): 35 and 36 are on hold (35 looks AI generated; 36 is a Pinterest screenshot with the app's buttons on it and looks AI made too), and 46 may be a 3D render; none is used until replaced or confirmed.",
+  "strobe": [
+    "14-manhattan-dusk",
+    "06-marble-island",
+    "12-concrete-stair",
+    "08-desert-pool",
+    "25-candle-table",
+    "22-barragan-pool",
+    "05-a-frame-snow",
+    "01-spiral-stair",
+    "02-cypress-lane",
+    "24-chelsea-pastels",
+    "21-chalet-balcony",
+    "26-plaster-arches",
+    "17-riad-courtyard",
+    "07-paris-salon",
+    "03-ocean-deck",
+    "18-nordic-bedroom",
+    "23-wooden-bath",
+    "15-sifnos-house",
+    "09-japanese-room",
+    "20-forest-house-dusk",
+    "16-black-door",
+    "29-rooftop-sunset",
+    "27-cactus-court",
+    "11-midcentury-lounge",
+    "04-forest-bath",
+    "13-cotswold-cottage",
+    "10-orange-tree",
+    "19-brownstone-street",
+    "30-library-ladder",
+    "28-keys-in-door"
+  ],
+  "collage": [
+    "39-roof-dormer",
+    "42-oak-handle",
+    "43-stone-vases",
+    "44-moss-steps",
+    "45-sheer-curtain",
+    "46-shadow-wall",
+    "40-cane-chair",
+    null
+  ],
+  "page2": [
+    "38-brownstone-row",
+    "37-house-number",
+    "41-linen-table"
+  ],
+  "page3": [
+    null,
+    "34-dolomites-pool",
+    "33-grey-door",
+    "32-kids-bedroom"
+  ],
+  "page4": [
+    "31-blue-stairs"
+  ],
+  "hold": [
+    "35-green-living-room",
+    "36-outdoor-kitchen"
+  ]
 }
