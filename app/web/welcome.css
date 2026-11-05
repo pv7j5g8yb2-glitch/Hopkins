@@ -140,3 +140,22 @@ body.blue .pill{color:#0A4593}
 .tick{position:fixed;left:-100px;top:0;width:1px;height:1px;overflow:hidden;opacity:0}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important;animation-duration:.01s!important}}
 .flow:not(.on),.flow:not(.on) *{pointer-events:none!important}
+/* a question with a few answers */
+.opts{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-bottom:90px}
+.opt{width:min(100%,340px);min-height:58px;padding:12px 22px;border-radius:30px;background:var(--fchip);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background-color .22s,color .22s,transform .12s var(--ease)}
+.opt b{font-size:16.5px;font-weight:600}
+.opt span{font-size:13.5px;color:var(--fsoft);transition:color .22s}
+.opt:active{transform:scale(.96)}
+.opt.on{background:var(--fink);color:var(--fbg)}
+.opt.on span{color:color-mix(in srgb,var(--fbg) 70%,transparent)}
+.fdock.hide{opacity:0;pointer-events:none!important}
+.fdock.hide>*{pointer-events:none!important}
+.fdock{transition:bottom .25s var(--ease),opacity .25s}
+/* handles added on the agents question */
+.handles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;min-height:44px;margin:-90px 0 40px;padding:0 10px}
+.handles .chip i svg{width:12px;height:12px}
+/* the last screen: the pebbles turning while everything is saved */
+.making{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding-bottom:12vh}
+.making svg{width:56px;height:56px;fill:var(--fink);animation:turn 1.4s cubic-bezier(.6,.05,.4,.95) infinite}
+.making p{font-size:17px;font-weight:500;color:var(--fink);animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}

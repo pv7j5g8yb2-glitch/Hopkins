@@ -509,6 +509,9 @@
     // Setup comes first, once (Ismael, 2026-10-31): nothing else opens until it's done.
     const setupDone = S.me?.workspace?.brand?.onboarded === "yes";
     document.body.classList.toggle("onboarding", !setupDone);
+    // The questions (Instagram, city, taste, appearance) come first, once, on the front door's own
+    // screens (welcome.js); the demo account has its answers already.
+    if (S.me?.workspace?.brand?.profiled !== "yes" && !S.me?.demo) { location.replace("/start"); return; }
     if (!setupDone && view !== "setup") { location.hash = id === "meta-failed" ? "#/setup/meta-failed" : "#/setup"; return; }
     if (setupDone && view === "setup") { location.hash = "#/today"; return; }
     if (view !== "listings") { S.selecting = false; document.body.classList.remove("selecting"); }

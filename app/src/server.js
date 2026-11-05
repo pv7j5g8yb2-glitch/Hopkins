@@ -152,6 +152,11 @@ app.get("/", async (request, reply) => {
 app.get("/sw.js", async (_, reply) => reply.type(TYPES.js).header("Cache-Control", "no-cache").header("Service-Worker-Allowed", "/").send(files["sw.js"]));
 // Sign in, sign up, forgot and reset are all questions on the front door now (2026-11-05).
 app.get("/welcome", async (_, reply) => reply.redirect("/"));
+// The questions for someone signed in who hasn't answered them yet (app.js sends them here).
+app.get("/start", async (request, reply) => {
+  if (!(await currentUser(request))) return reply.redirect("/");
+  return reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["welcome.html"]);
+});
 for (const p of ["/login", "/signup", "/forgot", "/reset"]) app.get(p, async (_, reply) => reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["welcome.html"]));
 app.get("/privacy", async (_, reply) => reply.type(TYPES.html).send(files["privacy.html"]));
 app.get("/terms", async (_, reply) => reply.type(TYPES.html).send(files["terms.html"]));
@@ -396,7 +401,7 @@ app.post("/api/ads/:id/render", { bodyLimit: 12_000_000 }, async (request, reply
   return { ok: true };
 });
 
-const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, onboarded: 3, area: 120, styles: 300, likes: 800, appearance: 10 };
+const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, onboarded: 3, area: 120, styles: 300, likes: 800, appearance: 10, content_style: 20, post_often: 10, agents: 200, music: 200, profiled: 3 };
 
 // The brokerage website (setup step 3, Settings): saved at once, then read end to end in the
 // background (analyseSite in src/hopkins.js). The app asks GET /api/site until it's done.

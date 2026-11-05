@@ -85,6 +85,19 @@
   }
   requestAnimationFrame(drift);
 
+  // How far a photo can float from where it's placed (its path plus the lean), kept clear of text.
+  const ROOM = 24;
+  const rel = (el) => { const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(); return { top: r.top - s.top, bottom: r.bottom - s.top, left: r.left - s.left, right: r.right - s.left }; };
+  function textBox(el) { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(), s = stage.getBoundingClientRect(); return { top: b.top - s.top, bottom: b.bottom - s.top, left: b.left - s.left, right: b.right - s.left }; }
+  // Moves and, if it must, shrinks a placed photo into [top, bottom], inside the screen's sides.
+  function keepIn(el, top, bottom) {
+    let w = parseFloat(el.style.width), h = parseFloat(el.style.height), x = parseFloat(el.style.left), y = parseFloat(el.style.top);
+    const room = bottom - top;
+    if (h > room) { const k = room / h; x += (w - w * k) / 2; w *= k; h = room; }
+    y = Math.min(Math.max(y, top), bottom - h);
+    x = Math.min(Math.max(x, ROOM / 2), W - ROOM / 2 - w);
+    Object.assign(el.style, { width: `${w}px`, height: `${h}px`, left: `${x}px`, top: `${y}px` });
+  }
   function build() {
     measure();
     floaters.length = 0;
@@ -98,12 +111,23 @@
       el.style.zIndex = Math.round(SPOTS[i][2] * 10);
       collage.appendChild(el); float(el, i, 0.4 + SPOTS[i][2] * 2.2);
     });
+    // above the word or below it, never over the line at the top, the word or the legal line
+    {
+      const line = textBox(pages[0].querySelector(".line")), word = textBox($("#word")), legal = rel($("#legal"));
+      const footTop = Math.min(legal.top, rel(pill).top);
+      collage.querySelectorAll("img").forEach((el, i) => {
+        const above = SPOTS[i][1] < 0.485;
+        keepIn(el, above ? line.bottom + ROOM : word.bottom + ROOM, above ? word.top - ROOM : footTop - ROOM);
+      });
+    }
     const stack = $("#stack"); stack.innerHTML = "";
     [[0.36, 0.37, 0.66, 0.34], [0.77, 0.52, 0.38, 0.3], [0.44, 0.685, 0.5, 0.3]].forEach((p, i) => {
       const k = order.page2[i]; if (!k) return;
       const el = photo(k); place(el, k, p[0], p[1], p[2], p[3]); el.style.zIndex = i === 1 ? 3 : 1;
       stack.appendChild(el); float(el, i + 10, 0.8);
     });
+    const lineBottom = textBox(pages[1].querySelector(".line")).bottom, pillTop = rel(pill).top;
+    stack.querySelectorAll("img").forEach((el) => keepIn(el, lineBottom + ROOM, pillTop - ROOM));
     // the week's grid as large as the screen allows above the button
     const cell = Math.min((W * 0.86 - 10) / 2, ((H * 0.64 - 100) / 2) * 0.8);
     const grid = $("#grid");
@@ -111,7 +135,7 @@
     grid.innerHTML = order.page3.map((k, i) => (k ? `<figure><img src="${src(k)}" alt="" draggable="false"><b>${WEEK[i][0]}</b><span>${WEEK[i][1]}</span></figure>` : "")).join("");
     const hero = $("#hero"); hero.innerHTML = "";
     const k = order.page4[0];
-    if (k) { const el = photo(k); place(el, k, 0.5, 0.505, 0.78, 0.58); hero.appendChild(el); float(el, 21, 0.6); }
+    if (k) { const el = photo(k); place(el, k, 0.5, 0.505, 0.78, 0.58); hero.appendChild(el); float(el, 21, 0.6); keepIn(el, textBox(pages[3].querySelector(".line")).bottom + ROOM, rel(pill).top - ROOM); }
   }
 
   const show = (el, on) => el.classList.toggle("on", on);
@@ -171,7 +195,7 @@
       if (!f.el.closest("#collage")) continue;
       const r = f.el.getBoundingClientRect(), s = stage.getBoundingClientRect();
       const ex = r.left - s.left + r.width / 2 - cx, ey = r.top - s.top + r.height / 2 - cy;
-      f.enter = { t0, d: D, dx: ex * 0.28, dy: ey * 0.28 };
+      f.enter = { t0, d: D, dx: ex * 0.05, dy: ey * 0.05 };
       f.el.style.opacity = 0;
     }
     pages[0].querySelector(".line").animate([{ opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0)" }], { duration: 730, easing: ease, fill: "both" });
@@ -227,7 +251,7 @@
   // ---------- the questions ----------
   const flow = $("#flow"), screen = $("#screen"), goBtn = $("#go"), goText = $("#goText"), goCount = $("#goCount"), aside = $("#aside"), backBtn = $("#back"), barFill = $("#barFill");
   let inFlow = false, step = null, history = [], cur = null;
-  const A = { email: "", password: "", name: "", invite, instagram: "", area: "", styles: new Set(), likes: new Set(), appearance: localStorage.getItem("hpk-appearance") || "dark", created: false, exists: false, needInvite: false };
+  const A = { email: "", password: "", name: "", invite, instagram: "", area: "", styles: new Set(), likes: new Set(), music: new Set(), agents: [], business: "", content_style: "", post_often: "", profile: false, appearance: localStorage.getItem("hpk-appearance") || "dark", created: false, exists: false, needInvite: false };
   const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const STYLES = [
     ["Listings", ["Just listed", "Open houses", "Just sold", "Coming soon"]],
@@ -257,7 +281,12 @@
   const saveBrand = (b) => api("/api/brand", b, "PUT").catch(() => {});
 
   // The new account's questions, in order; their count fills the bar.
-  const signupPath = () => ["email", ...(A.needInvite ? ["invite"] : []), "password", "name", "instagram", "area", "styles", "likes", "appearance", ...(pushOk() ? ["notify"] : [])];
+  // The questions that shape someone's Hopkins, asked once, after sign up or at the first sign in.
+  const profilePath = () => ["instagram", "business", "area", "content_style", "post_often", "styles", "likes", "agents", "music", "appearance", ...(pushOk() ? ["notify"] : []), "ready"];
+  const signupPath = () => (A.profile ? profilePath() : ["email", ...(A.needInvite ? ["invite"] : []), "password", "name", ...profilePath()]);
+  // A question with a few answers: tap one and it moves on, like Cosmos' gender screen.
+  const options = (field, list) => `<div class="opts">${list.map(([k, t, d]) => `<button class="opt${A[field] === k ? " on" : ""}" type="button" data-opt="${k}"><b>${esc(t)}</b>${d ? `<span>${esc(d)}</span>` : ""}</button>`).join("")}</div>`;
+  const chips = (set, groups) => `<div class="chips">${groups.map(([h, list]) => `${h ? `<h3>${h}</h3>` : ""}<div>${list.map((c) => `<button class="chip${A[set].has(c) ? " on" : ""}" type="button" data-chip="${esc(c)}" data-set="${set}">${esc(c)}<i>${A[set].has(c) ? ICON.check : ICON.plus}</i></button>`).join("")}</div>`).join("")}</div>`;
 
   // An input that is the whole screen: big, centred, no box.
   const bigInput = (id, attrs, value) => `<div class="field">${attrs.at ? `<label class="at"><span>@</span><input class="big" id="${id}" ${attrs.html} value="${esc(value)}" size="1"></label>` : `<input class="big" id="${id}" ${attrs.html} value="${esc(value)}">`}${attrs.eye ? `<button class="eye" id="eye" type="button" aria-label="Show password">${ICON.eyeOff}</button>` : ""}</div>`;
@@ -276,11 +305,14 @@
       },
     },
     login: {
-      title: "Enter your password", sub: "Welcome back",
+      title: "Welcome back", sub: () => `Enter the password for ${esc(A.email)}`,
       body: () => bigInput("in", { html: 'type="password" autocomplete="current-password" placeholder="Password" enterkeyhint="go"', eye: true }, ""),
       aside: "Forgot password?", onAside: () => to("forgot"),
       valid: () => val().length > 0,
-      async next() { await api("/api/login", { email: A.email, password: val() }); return finish(); },
+      async next() {
+        await api("/api/login", { email: A.email, password: val() });
+        return startProfile();
+      },
     },
     forgot: {
       title: "Reset your password", sub: "Hopkins emails you a link",
@@ -305,7 +337,7 @@
       async next() { A.invite = val().trim(); return "password"; },
     },
     password: {
-      title: "Choose a password", sub: "Keep your account secure",
+      title: "Create a password", sub: "New to Hopkins? Keep your account secure",
       body: () => bigInput("in", { html: 'type="password" autocomplete="new-password" placeholder="Password" enterkeyhint="next"', eye: true }, A.password),
       valid: () => val().length >= 8,
       // while it's too short, the line underneath says what it needs, like Cosmos
@@ -331,17 +363,35 @@
       body: () => bigInput("in", { at: true, html: 'type="text" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="yourhandle" enterkeyhint="next"' }, A.instagram),
       valid: () => /^[A-Za-z0-9._]{1,30}$/.test(val().trim().replace(/^@/, "")),
       hint: () => (val() && !/^[A-Za-z0-9._@]*$/.test(val()) ? "Letters, numbers, full stops and underscores only" : null),
-      async next() { A.instagram = val().trim().replace(/^@/, ""); saveBrand({ instagram: A.instagram }); return "area"; },
+      async next() { A.instagram = val().trim().replace(/^@/, ""); saveBrand({ instagram: A.instagram }); return "business"; },
+    },
+    business: {
+      title: "Your brokerage", sub: "It goes on your posts",
+      body: () => bigInput("in", { html: 'type="text" autocomplete="organization" autocapitalize="words" placeholder="Brokerage name" enterkeyhint="next"' }, A.business),
+      valid: () => val().trim().length >= 2, aside: "Skip", onAside: () => to("area"),
+      async next() { A.business = val().trim(); saveBrand({ business: A.business }); return "area"; },
     },
     area: {
       title: "Where do you sell?", sub: "A city or a neighbourhood",
       body: () => bigInput("in", { html: 'type="text" autocomplete="address-level2" autocapitalize="words" placeholder="Austin, Texas" enterkeyhint="next"' }, A.area),
       valid: () => val().trim().length >= 2,
-      async next() { A.area = val().trim(); saveBrand({ city: A.area, area: A.area }); return "styles"; },
+      async next() { A.area = val().trim(); saveBrand({ city: A.area, area: A.area }); return "content_style"; },
+    },
+    content_style: {
+      title: "How do you want to show up?", sub: "Hopkins plans your week around it",
+      body: () => options("content_style", [["listings", "Real estate only", "Your listings, the market and your city"], ["personal", "Personal brand too", "You, your story and your life as well"]]),
+      field: "content_style", valid: () => !!A.content_style,
+      async next() { saveBrand({ content_style: A.content_style }); return "post_often"; },
+    },
+    post_often: {
+      title: "How often should Hopkins post?", sub: "You approve the week first, every Monday",
+      body: () => options("post_often", [["3", "3 times a week"], ["5", "5 times a week"], ["7", "Every day"]]),
+      field: "post_often", valid: () => !!A.post_often,
+      async next() { saveBrand({ post_often: A.post_often }); return "styles"; },
     },
     styles: {
       title: "What do you want to post?", sub: "Pick three to plan your first week.<br>You can change it anytime.",
-      body: () => `<div class="chips">${STYLES.map(([h, list]) => `<h3>${h}</h3><div>${list.map((s) => `<button class="chip${A.styles.has(s) ? " on" : ""}" type="button" data-chip="${esc(s)}">${esc(s)}<i>${A.styles.has(s) ? ICON.check : ICON.plus}</i></button>`).join("")}</div>`).join("")}</div>`,
+      body: () => chips("styles", STYLES),
       valid: () => A.styles.size >= 3, count: () => `${Math.min(A.styles.size, 3)} / 3`,
       async next() { saveBrand({ styles: [...A.styles].join(", ") }); return "likes"; },
     },
@@ -349,20 +399,46 @@
       title: "Pick five you love", sub: "Hopkins designs your posts around your taste",
       body: () => `<div class="wall${A.likes.size >= 5 ? " full" : ""}">${order.likes.map((k) => `<button type="button" class="${A.likes.has(k) ? "on" : ""}" data-like="${k}"><img src="${src(k)}" alt="" loading="lazy" draggable="false"><i>${ICON.check}</i></button>`).join("")}</div>`,
       valid: () => A.likes.size === 5, count: () => `${A.likes.size} / 5`,
-      async next() { saveBrand({ likes: [...A.likes].join(",") }); return "appearance"; },
+      async next() { saveBrand({ likes: [...A.likes].join(",") }); return "agents"; },
+    },
+    agents: {
+      title: "Agents whose content you like", sub: "Up to 3 Instagram handles. Hopkins learns from their style.",
+      body: () => `${bigInput("in", { at: true, html: 'type="text" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="theirhandle" enterkeyhint="done"' }, "")}<div class="handles" id="handles"></div>`,
+      valid: () => A.agents.length > 0 || /^[A-Za-z0-9._]{1,30}$/.test(val().trim().replace(/^@/, "")),
+      aside: "Skip", onAside: () => to("music"),
+      // Enter adds the handle; Continue adds what's typed and moves on
+      onEnter() { return addAgent(); },
+      async next() { addAgent(); saveBrand({ agents: A.agents.join(",") }); return "music"; },
+      mount: () => drawHandles(),
+    },
+    music: {
+      title: "Music for your reels", sub: "Pick up to three",
+      body: () => chips("music", [["", ["Acoustic", "Piano", "Lo-fi", "Jazz", "Soul", "R&B", "Pop", "Indie", "Electronic", "House", "Cinematic", "Ambient", "Hip hop", "Classical"]]]),
+      max: 3, valid: () => A.music.size >= 1, count: () => `${A.music.size} / 3`,
+      async next() { saveBrand({ music: [...A.music].join(", ") }); return "appearance"; },
     },
     appearance: {
       title: "Select your appearance", sub: "You can always change it in Settings",
       body: () => `<div class="preview"><div class="phone"><div class="ps"><span>9:41</span><span>●●●</span></div><div class="ph"><svg viewBox="0 0 120 120">${PEBBLES}</svg>This week<span>Mon</span></div><div class="pg">${order.collage.slice(0, 6).map((k) => `<img src="${src(k)}" alt="">`).join("")}</div><div class="pt"><i></i><i></i><i></i></div></div></div>
         <div class="modes">${[["light", "Light", ICON.sun], ["system", "System", ICON.half], ["dark", "Dark", ICON.moon]].map(([k, n, ic]) => `<button class="mode${A.appearance === k ? " on" : ""}" type="button" data-mode="${k}">${ic}${n}</button>`).join("")}</div>`,
       valid: () => true, label: "Confirm",
-      async next() { saveBrand({ appearance: A.appearance }); return pushOk() ? "notify" : finish(); },
+      async next() { saveBrand({ appearance: A.appearance }); return pushOk() ? "notify" : "ready"; },
     },
     notify: {
       title: "Know when your week is ready", sub: "Hopkins tells you on Monday, and when anything needs you",
       body: () => `<div class="field"><svg viewBox="0 0 120 120" style="width:84px;fill:var(--fink)">${PEBBLES}</svg></div>`,
-      valid: () => true, label: "Turn on notifications", aside: "Not now", onAside: () => finish(),
-      async next() { await pushOn().catch(() => {}); return finish(); },
+      valid: () => true, label: "Turn on notifications", aside: "Not now", onAside: () => to("ready"),
+      async next() { await pushOn().catch(() => {}); return "ready"; },
+    },
+    ready: {
+      title: "", sub: "",
+      body: () => `<div class="making"><svg viewBox="0 0 120 120">${PEBBLES}</svg><p>Setting up your Hopkins</p></div>`,
+      valid: () => false,
+      // every answer is saved before Hopkins opens; the pebbles turn while it happens
+      async auto() {
+        await Promise.all([saveBrand({ profiled: "yes", onboarded: "yes" }), wait(2600)]);
+        finish();
+      },
     },
   };
   const val = () => (screen.querySelector("#in")?.value || "");
@@ -378,8 +454,31 @@
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) });
     await api("/api/push", { subscription: sub.toJSON() });
   }
+  // After signing in: straight into Hopkins, or first the questions if they haven't answered them.
+  async function startProfile() {
+    const me = await fetch("/api/me").then((r) => r.json()).catch(() => null);
+    const b = me?.workspace?.brand || {};
+    if (!me || me.demo || b.profiled === "yes") { finish(); return null; }
+    A.profile = true; A.created = true;
+    A.name = me.user?.name || ""; A.instagram = b.instagram || ""; A.business = b.business || ""; A.area = b.area || b.city || "";
+    history.length = 0;
+    return "instagram";
+  }
+  function addAgent() {
+    const i = cur?.querySelector("#in"); if (!i) return false;
+    const h = i.value.trim().replace(/^@/, "");
+    if (!/^[A-Za-z0-9._]{1,30}$/.test(h)) return false;
+    if (!A.agents.includes(h) && A.agents.length < 3) A.agents.push(h);
+    i.value = ""; fitAt(); drawHandles(); setReady(); tick();
+    return true;
+  }
+  function drawHandles() {
+    const box = cur?.querySelector("#handles"); if (!box) return;
+    box.innerHTML = A.agents.map((h, n) => `<button class="chip on" type="button" data-rm="${n}">@${esc(h)}<i><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg></i></button>`).join("");
+    box.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => { A.agents.splice(Number(b.dataset.rm), 1); tick(); drawHandles(); setReady(); }));
+    const inp = cur.querySelector("#in"); if (inp) inp.disabled = A.agents.length >= 3;
+  }
   async function finish() {
-    if (A.created) await saveBrand({ onboarded: "yes" });
     flow.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: "forwards", easing: ease });
     setTimeout(() => location.replace("/"), 240);
     return null;
@@ -405,7 +504,7 @@
   function progress() {
     const path = signupPath(), i = path.indexOf(step);
     const onPath = i >= 0 && !(step === "email" && false);
-    $("#bar").style.opacity = ["login", "forgot", "sent", "reset"].includes(step) ? 0 : 1;
+    $("#bar").style.opacity = ["login", "forgot", "sent", "reset", "ready"].includes(step) ? 0 : 1;
     barFill.style.width = `${onPath ? Math.max(8, ((i + 1) / path.length) * 100) : 8}%`;
   }
 
@@ -440,6 +539,7 @@
       el.animate([{ opacity: 0, transform: `translateY(${back ? -12 : 14}px)`, filter: "blur(4px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], { duration: 300, easing: ease, delay: 60, fill: "backwards" });
     } else el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, easing: ease });
     goText.textContent = s.label || "Continue";
+    $("#fdock").classList.toggle("hide", !!s.field || !!s.auto);
     aside.textContent = s.aside || "";
     // Back: never to before the account was made, and never off the first question
     const lockedBefore = A.created ? history.lastIndexOf("name") : -1;
@@ -449,19 +549,28 @@
     const input = el.querySelector("#in");
     if (input) {
       input.addEventListener("input", () => { const sub = cur.querySelector(".sub"); if (sub.classList.contains("err")) { sub.classList.remove("err"); sub.textContent = subText(s); } setReady(); fitAt(); });
-      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (s.onEnter && s.onEnter()) return; submit(); } });
       input.focus({ preventScroll: true });
       fitAt();
     }
     const eye = el.querySelector("#eye");
     if (eye) eye.addEventListener("click", () => { tick(); const shown = input.type === "text"; input.type = shown ? "password" : "text"; eye.innerHTML = shown ? ICON.eyeOff : ICON.eye; input.focus(); });
     el.querySelectorAll("[data-chip]").forEach((b) => b.addEventListener("click", () => {
+      const set = A[b.dataset.set], k = b.dataset.chip;
+      if (set.has(k)) set.delete(k); else if (!s.max || set.size < s.max) set.add(k); else return;
       tick();
-      const k = b.dataset.chip;
-      if (A.styles.has(k)) A.styles.delete(k); else A.styles.add(k);
-      b.classList.toggle("on", A.styles.has(k)); b.querySelector("i").innerHTML = A.styles.has(k) ? ICON.check : ICON.plus;
+      b.classList.toggle("on", set.has(k)); b.querySelector("i").innerHTML = set.has(k) ? ICON.check : ICON.plus;
       setReady();
     }));
+    el.querySelectorAll("[data-opt]").forEach((b) => b.addEventListener("click", () => {
+      if (goBtn.classList.contains("busy")) return;
+      tick();
+      A[s.field] = b.dataset.opt;
+      el.querySelectorAll("[data-opt]").forEach((x) => x.classList.toggle("on", x === b));
+      setTimeout(submit, 220);
+    }));
+    if (s.mount) s.mount();
+    if (s.auto) s.auto();
     el.querySelectorAll("[data-like]").forEach((b) => b.addEventListener("click", () => {
       const k = b.dataset.like;
       if (A.likes.has(k)) A.likes.delete(k); else if (A.likes.size < 5) A.likes.add(k); else return;
@@ -518,6 +627,7 @@
   const path = location.pathname;
   fetch("/static/intro/order.json").then((r) => r.json()).then((o) => {
     order = o; sizes = o.sizes;
+    if (path === "/start") return startProfile().then((id) => id && openFlow(id));
     if (path === "/login") return openFlow("email");
     if (path === "/forgot") return openFlow("forgot");
     if (path === "/reset") return openFlow("reset");

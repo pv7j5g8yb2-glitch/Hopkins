@@ -115,6 +115,14 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   `design/brand/` (icon at 1024, Instagram picture at 1080, SVGs); the app uses
   `app/web/mark.svg` and the `hpk-sun` gradient. It matches the new look's warm pink and has
   no purple, which the platform doesn't use.
+* **The mark is black and white now (Ismael, 2026-11-05):** no sunset pink anywhere (app, splash,
+  favicon, intro, Terms and Privacy): black on light, white on dark. `app/web/mark.svg` switches with
+  the system's dark mode.
+* **The front door (Ismael, 2026-11-05):** signed out, `/` is the intro then one question per screen
+  (`app/web/welcome.*`). The questions that shape someone's Hopkins (Instagram, brokerage, city, real
+  estate only or personal brand, how often, what to post, 5 photos they love, agents they like,
+  music, appearance) are asked once, after sign up or at the first sign in (`profiled` in the
+  brand; app.js sends anyone without it to `/start`). Forgot password belongs only to sign in.
 * **The cream look (Ismael, 2026-11-04, after Cosmos; replaces the black look and the reeded
   background):** a flat warm off white page (`#F6F3EE`) with no picture, pink glow or stripes behind
   it; solid white cards with a hairline; black text and black pill buttons; the sunset pink only in
