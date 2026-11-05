@@ -282,7 +282,7 @@
 
   // The new account's questions, in order; their count fills the bar.
   // The questions that shape someone's Hopkins, asked once, after sign up or at the first sign in.
-  const profilePath = () => ["instagram", "business", "area", "content_style", "post_often", "styles", "likes", "agents", "music", "appearance", ...(pushOk() ? ["notify"] : []), "ready"];
+  const profilePath = () => ["instagram", "business", "area", "content_style", "post_often", "styles", "music", "appearance", ...(pushOk() ? ["notify"] : []), "ready"];
   const signupPath = () => (A.profile ? profilePath() : ["email", ...(A.needInvite ? ["invite"] : []), "password", "name", ...profilePath()]);
   // A question with a few answers: tap one and it moves on, like Cosmos' gender screen.
   const options = (field, list) => `<div class="opts">${list.map(([k, t, d]) => `<button class="opt${A[field] === k ? " on" : ""}" type="button" data-opt="${k}"><b>${esc(t)}</b>${d ? `<span>${esc(d)}</span>` : ""}</button>`).join("")}</div>`;
@@ -378,8 +378,8 @@
       async next() { A.area = val().trim(); saveBrand({ city: A.area, area: A.area }); return "content_style"; },
     },
     content_style: {
-      title: "How do you want to show up?", sub: "Hopkins plans your week around it",
-      body: () => options("content_style", [["listings", "Real estate only", "Your listings, the market and your city"], ["personal", "Personal brand too", "You, your story and your life as well"]]),
+      title: "What type of content do you want to post?", sub: "Hopkins plans your content around it",
+      body: () => options("content_style", [["listings", "Real Estate", "Your listings, the market, your city"], ["personal", "Personal Brand", "You, your story, your life"], ["both", "Both", "A mix of the two"]]),
       field: "content_style", valid: () => !!A.content_style,
       async next() { saveBrand({ content_style: A.content_style }); return "post_often"; },
     },
@@ -393,7 +393,7 @@
       title: "What do you want to post?", sub: "Pick three to plan your first week.<br>You can change it anytime.",
       body: () => chips("styles", STYLES),
       valid: () => A.styles.size >= 3, count: () => `${Math.min(A.styles.size, 3)} / 3`,
-      async next() { saveBrand({ styles: [...A.styles].join(", ") }); return "likes"; },
+      async next() { saveBrand({ styles: [...A.styles].join(", ") }); return "music"; },
     },
     likes: {
       title: "Pick five you love", sub: "Hopkins designs your posts around your taste",

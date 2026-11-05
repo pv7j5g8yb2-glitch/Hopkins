@@ -119,9 +119,9 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   favicon, intro, Terms and Privacy): black on light, white on dark. `app/web/mark.svg` switches with
   the system's dark mode.
 * **The front door (Ismael, 2026-11-05):** signed out, `/` is the intro then one question per screen
-  (`app/web/welcome.*`). The questions that shape someone's Hopkins (Instagram, brokerage, city, real
-  estate only or personal brand, how often, what to post, 5 photos they love, agents they like,
-  music, appearance) are asked once, after sign up or at the first sign in (`profiled` in the
+  (`app/web/welcome.*`). The questions that shape someone's Hopkins (Instagram, brokerage, city, Real
+  Estate, Personal Brand or Both, how often, what to post, music, appearance; the 5 photos and the
+  agents they like were dropped on 2026-11-05) are asked once, after sign up or at the first sign in (`profiled` in the
   brand; app.js sends anyone without it to `/start`). Forgot password belongs only to sign in.
 * **The cream look (Ismael, 2026-11-04, after Cosmos; replaces the black look and the reeded
   background):** a flat warm off white page (`#F6F3EE`) with no picture, pink glow or stripes behind
