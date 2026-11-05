@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { run, get, all, nowIso } from "./db.js";
-import { EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, openSignups, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
+import { knownDevice, EMAIL_RE, inviteOk, isAdmin, adminSignupBlocked, createAccount, pilotPlan, openSignups, verifyPassword, setSession, clearSession, currentUser, changePassword, makeResetLink, userForReset } from "./auth.js";
 import {
   getWorkspace, loadListing, loadPhotos, currentAds, createListing, handleMessage, makeAds, patchListing,
   proposeRun, confirmRun, addLead, weeklyReport, weekRange, inbox, looksLikeListing, newChat, answerIfNotListing, startThread, firstReply, undoFirst, PROPERTY, deleteListing, forgetGuessedCities, capitaliseNames, startTurn, endTurn, stopTurn, working, settleTurn, undoLatestReply, dropStoppedListing, restyle, numberUntitled, editMessage, firstMessageId,
@@ -41,7 +41,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg", "intro.html", "intro.css", "intro.js"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "welcome.html", "welcome.css", "welcome.js", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { json: "application/json; charset=utf-8", html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -60,7 +60,7 @@ for (const [path, [file, type]] of Object.entries(VENDOR)) { const raw = readFil
 // What a page may load: scripts only from this server, plus the small inline scripts in the
 // login and lead pages by their hashes (worked out here, so editing them can't break it). Even if
 // someone got text onto a page that looked like code, the browser wouldn't run it.
-const inlineScripts = ["login.html", "lead.html"].flatMap((f) => [...files[f].matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash("sha256").update(m[1]).digest("base64")}'`));
+const inlineScripts = ["welcome.html", "lead.html"].flatMap((f) => [...files[f].matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash("sha256").update(m[1]).digest("base64")}'`));
 const CSP = [
   "default-src 'self'",
   // wasm-unsafe-eval lets WebAssembly (the HEIC decoder) start; it doesn't let text run as code.
@@ -131,7 +131,7 @@ for (const [path, v] of Object.entries(VENDOR)) {
 }
 // The intro's photos (web/intro), each read once and cached hard: they never change under a name.
 const INTRO = Object.fromEntries(readdirSync(join(WEB, "intro")).filter((f) => /\.(jpg|json)$/.test(f)).map((f) => [f, readFileSync(join(WEB, "intro", f))]));
-for (const f of ["intro.css", "intro.js"]) app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
+for (const f of ["welcome.css", "welcome.js"]) app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 app.get("/static/intro/:f", async (request, reply) => {
   const f = request.params.f;
   if (!INTRO[f]) return reply.code(404).send({ error: "Not found" });
@@ -143,18 +143,18 @@ app.get("/apple-touch-icon.png", async (_, reply) => reply.type(TYPES.png).send(
 
 app.get("/", async (request, reply) => {
   const user = await currentUser(request);
-  if (!user) return reply.redirect("/welcome");
+  // Signed out: Hopkins' front door, the intro for someone new (web/welcome.js decides).
+  if (!user) return reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["welcome.html"]);
+  knownDevice(reply);
   return reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["app.html"]);
 });
 // The notifications worker lives at the root so it can cover the whole app.
 app.get("/sw.js", async (_, reply) => reply.type(TYPES.js).header("Cache-Control", "no-cache").header("Service-Worker-Allowed", "/").send(files["sw.js"]));
-app.get("/welcome", async (_, reply) => reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["intro.html"]));
-app.get("/login", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
-app.get("/signup", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
+// Sign in, sign up, forgot and reset are all questions on the front door now (2026-11-05).
+app.get("/welcome", async (_, reply) => reply.redirect("/"));
+for (const p of ["/login", "/signup", "/forgot", "/reset"]) app.get(p, async (_, reply) => reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["welcome.html"]));
 app.get("/privacy", async (_, reply) => reply.type(TYPES.html).send(files["privacy.html"]));
 app.get("/terms", async (_, reply) => reply.type(TYPES.html).send(files["terms.html"]));
-app.get("/reset", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
-app.get("/forgot", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 
 // ---------- accounts ----------
 
@@ -182,6 +182,15 @@ const appUrl = (request) => (process.env.APP_URL || process.env.RENDER_EXTERNAL_
 const clean = (v, max = 200) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 
 app.get("/api/open", async () => ({ open: openSignups() }));
+// The front door's first question: is there an account for this email? It decides sign in or sign up,
+// like Cosmos. Braked per address and per visitor so it can't be used to sweep a list of emails.
+app.post("/api/email-status", async (request, reply) => {
+  const email = clean(request.body?.email, 200)?.toLowerCase();
+  if (!email || !EMAIL_RE.test(email)) return reply.code(400).send({ error: "Enter a valid email address." });
+  if (tooMany(`email-status:${request.ip}`, 30)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
+  const user = await get(`SELECT id FROM users WHERE email = ?`, [email]);
+  return { exists: Boolean(user), open: openSignups() };
+});
 app.post("/api/signup", async (request, reply) => {
   if (tooMany(`signup:${request.ip}`)) return reply.code(429).send({ error: "Too many attempts. Try again in a few minutes." });
   const { email, password, name, business, invite } = request.body || {};
@@ -262,7 +271,7 @@ app.addHook("onSend", async (request, reply, payload) => {
 
 app.addHook("preHandler", async (request, reply) => {
   const path = request.url.split("?")[0];
-  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset", "/api/meta/deletion", "/api/stripe/webhook", "/api/open"].includes(path) || path.startsWith("/api/l/")) return;
+  if (!path.startsWith("/api/") || ["/api/signup", "/api/login", "/api/logout", "/api/forgot", "/api/reset", "/api/meta/deletion", "/api/stripe/webhook", "/api/open", "/api/email-status"].includes(path) || path.startsWith("/api/l/")) return;
   const user = await currentUser(request);
   if (!user) return reply.code(401).send({ error: "Please sign in." });
   request.user = user;
@@ -387,7 +396,7 @@ app.post("/api/ads/:id/render", { bodyLimit: 12_000_000 }, async (request, reply
   return { ok: true };
 });
 
-const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, onboarded: 3 };
+const BRAND_KEYS = { business: 120, agent_name: 80, phone: 40, email: 120, city: 80, country: 60, instagram: 40, voice: 20, primary: 7, accent: 7, font: 20, logo_id: 40, alerts_topic: 64, license: 60, onboarded: 3, area: 120, styles: 300, likes: 800, appearance: 10 };
 
 // The brokerage website (setup step 3, Settings): saved at once, then read end to end in the
 // background (analyseSite in src/hopkins.js). The app asks GET /api/site until it's done.

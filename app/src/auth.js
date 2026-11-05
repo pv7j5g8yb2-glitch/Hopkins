@@ -68,6 +68,12 @@ export async function createAccount({ email, password, name, business, plan = "f
 // no number and count as 0.
 export function setSession(reply, userId, ver = 0) {
   reply.setCookie(COOKIE, `${userId}.${ver}`, { path: "/", httpOnly: true, sameSite: "lax", signed: true, maxAge: MAX_AGE, secure: process.env.NODE_ENV === "production" });
+  knownDevice(reply);
+}
+// This device has had a Hopkins account (2026-11-05): signed out, it opens on the email question,
+// never the intro for someone new. Kept a year, readable by the page, holds nothing about who.
+export function knownDevice(reply) {
+  reply.setCookie("hpk_known", "1", { path: "/", sameSite: "lax", maxAge: 365 * 24 * 3600, secure: process.env.NODE_ENV === "production" });
 }
 
 // A new password: saved, other devices signed out, this one kept signed in.

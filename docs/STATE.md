@@ -1185,3 +1185,13 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   the last in the blue of the stairs photo. Font: Geist (free) standing in for Cosmos' Oracle. Get
   started still goes to the old sign up page; the one question per screen sign up is next. Photo
   slots and order: app/web/intro/order.json.
+* The front door (2026-11-05, replaces /welcome and the old sign in page): signed out, `/` serves
+  app/web/welcome.html. New device: the intro, then one question per screen (email decides sign in
+  or sign up via POST /api/email-status; invite code only when sign ups are closed; password, name,
+  Instagram handle, city, 3 content types, 5 photos they love, Light/System/Dark, notifications on
+  Android). A device that has ever signed in carries the `hpk_known` cookie (set on every sign in
+  and app visit) and opens straight on the email question. /login, /signup, /forgot, /reset all
+  open their question there. Finishing marks setup done, so the old Meta setup page no longer shows.
+  Font Instrument Sans. Homes float around HOPKINS (own slow paths, lean with tilt or pointer).
+  Vibration: browsers forbid it before a first tap, so the strobe can't tick on a first visit;
+  every tap after that ticks (Android vibrate, iPhone switch trick).
