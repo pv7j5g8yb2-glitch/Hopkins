@@ -31,7 +31,7 @@ import { mailReady, sendMail, resetEmail } from "./mail.js";
 import { checkWording } from "./fairhousing.js";
 import { wipeWorkspace, freshStart } from "./fresh.js";
 import { pushKeys, savePush, dropPush, pushTo, pushCount } from "./push.js";
-import { mondayOf, weekFor, approveWeek, library } from "./week.js";
+import { mondayOf, weekFor, approveWeek, library, planWeek } from "./week.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB = join(__dirname, "..", "web");
@@ -41,7 +41,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "welcome.html", "welcome.css", "welcome.js", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "welcome.html", "welcome.css", "welcome.js", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { json: "application/json; charset=utf-8", html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -60,7 +60,7 @@ for (const [path, [file, type]] of Object.entries(VENDOR)) { const raw = readFil
 // What a page may load: scripts only from this server, plus the small inline scripts in the
 // login and lead pages by their hashes (worked out here, so editing them can't break it). Even if
 // someone got text onto a page that looked like code, the browser wouldn't run it.
-const inlineScripts = ["welcome.html", "lead.html"].flatMap((f) => [...files[f].matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash("sha256").update(m[1]).digest("base64")}'`));
+const inlineScripts = ["welcome.html", "lead.html", "app.html"].flatMap((f) => [...files[f].matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash("sha256").update(m[1]).digest("base64")}'`));
 const CSP = [
   "default-src 'self'",
   // wasm-unsafe-eval lets WebAssembly (the HEIC decoder) start; it doesn't let text run as code.
@@ -119,7 +119,7 @@ app.get("/healthz", async (request) => {
   return { ok: true, started: STARTED, ai: provider || "none", pinged: seen };
 });
 
-for (const f of ["app.css", "app.js", "glass.js", "lens.js", "splash.js", "creative.js", "studio.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
+for (const f of ["app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "creative.js", "studio.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
 for (const [path, v] of Object.entries(VENDOR)) {
@@ -998,6 +998,7 @@ app.post("/api/week/approve", async (request, reply) => {
   if (r.error) return reply.code(404).send(r);
   return r;
 });
+app.post("/api/week/plan", async (request) => planWeek(request.ws, mondayOf(new Date(), timeZone(request)), [request.ws.brand?.agent_name || request.user.name, request.ws.brand?.business].filter(Boolean).join(", ")));
 // The Library: everything Hopkins has made, newest first.
 app.get("/api/library", async (request) => ({ items: await library(request.ws) }));
 

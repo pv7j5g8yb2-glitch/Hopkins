@@ -123,6 +123,15 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   Estate, Personal Brand or Both, how often, what to post, music, appearance; the 5 photos and the
   agents they like were dropped on 2026-11-05) are asked once, after sign up or at the first sign in (`profiled` in the
   brand; app.js sends anyone without it to `/start`). Forgot password belongs only to sign in.
+* **The app redesign (2026-11-05, for the pivot):** tabs are Week, Chats, the + key, Library, You
+  (Leads and Report are off the tab bar; their code stays). Week is home: "This week", the posts as a
+  deck of cards by day (phones swipe one at a time, laptops show three side by side), a day strip,
+  and one Approve the week pill. A new account's first week plans itself from its answers and fills
+  in card by card. Tapping a post opens it big with Change it (the week's chat) and Download.
+  Library is everything Hopkins made, filtered by kind. You holds the front door's answers, each
+  changeable, and Light, System or Dark. Dark is the default. Type is Instrument Sans. The design
+  system is `app/web/hk.css`, loaded after app.css; the tab bar is plain frosted glass (lens.js is
+  no longer loaded).
 * **The cream look (Ismael, 2026-11-04, after Cosmos; replaces the black look and the reeded
   background):** a flat warm off white page (`#F6F3EE`) with no picture, pink glow or stripes behind
   it; solid white cards with a hairline; black text and black pill buttons; the sunset pink only in

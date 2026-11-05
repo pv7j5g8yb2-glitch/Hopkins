@@ -1176,6 +1176,11 @@ const WANTS_ADS = /\b(ads?|adverts?|advertis\w*|campaign|boost|promote|run (it|t
 const KIND_NAME = { carousel: "carousel", reel: "reel", story: "story", post: "post" };
 let creationFake = null;
 export function setCreationForTests(f) { creationFake = f; }
+// One post, carousel, story or reel designed from a plain request, nothing saved (src/week.js plans
+// a week with it).
+export async function makeSpec(args) {
+  return creationFake ? cleanCreation(await creationFake(args), args.kind, args.photos || 0, null) : creationAI(args);
+}
 
 export async function latestCreation(listingId) {
   const c = await get(`SELECT * FROM creations WHERE listing_id = ? ORDER BY updated_at DESC LIMIT 1`, [listingId]);

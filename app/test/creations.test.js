@@ -124,3 +124,20 @@ test("a greeting opens a chat only, and a time of day only when it's the right o
   assert.match(localNow("Europe/Dublin"), /^Their local time now: .* \(Europe\/Dublin\)\.$/);
   assert.equal(localNow("UTC"), "");
 });
+
+test("planning a week makes the agent's posts from their answers, then they approve it once", async () => {
+  const c = await signup("plan@ellery.test");
+  await c("PUT", "/api/brand", { post_often: "3", styles: "Buyer tips, Local spots, Just listed", area: "Austin, Texas", content_style: "both", profiled: "yes" });
+  assert.equal((await c("GET", "/api/week")).json.status, "none");
+  const first = (await c("POST", "/api/week/plan", {})).json;
+  assert.equal(first.status, "planning");
+  assert.equal(first.planned, 3);
+  let w;
+  for (let i = 0; i < 50; i++) { w = (await c("GET", "/api/week")).json; if (w.status === "ready") break; await new Promise((r) => setTimeout(r, 20)); }
+  assert.equal(w.status, "ready");
+  assert.deepEqual(w.posts.map((p) => p.day), [0, 2, 4], "3 a week: Monday, Wednesday, Friday");
+  assert.deepEqual(w.posts.map((p) => p.kind), ["carousel", "post", "reel"]);
+  assert.ok(asked.some((r) => /Austin, Texas/.test(r.request)), "the agent's own city");
+  assert.equal((await c("POST", "/api/week/plan", {})).json.posts.length, 3, "planning again keeps the same week");
+  assert.equal((await c("POST", "/api/week/approve", {})).json.status, "approved");
+});

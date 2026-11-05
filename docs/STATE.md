@@ -1195,3 +1195,12 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   Font Instrument Sans. Homes float around HOPKINS (own slow paths, lean with tilt or pointer).
   Vibration: browsers forbid it before a first tap, so the strobe can't tick on a first visit;
   every tap after that ticks (Android vibrate, iPhone switch trick).
+* The app redesign, first pass (2026-11-05): Week (home), Library, the post viewer and You are built
+  and checked on an iPhone 15 (short and tall screens) and a laptop, dark and light, with the demo
+  and with a fresh account whose week plans itself. `app/src/week.js` plans the week from the
+  answers (3, 5 or 7 posts, kinds rotate, topics from "what to post", voice from Real Estate,
+  Personal Brand or Both) and `GET /api/week`, `POST /api/week/plan`, `POST /api/week/approve`,
+  `GET /api/library` serve it. Approving marks the week approved; nothing posts yet (Instagram
+  publishing needs App Review). Still to redesign: the chat itself, New chat, the account sheet,
+  the appearance step's preview, and the home screen icon (still pink). The demo's chats still
+  carry ads from before the pivot.

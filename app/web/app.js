@@ -504,6 +504,7 @@
   async function route() {
     const seq = ++routeSeq;
     closePop();
+    S.closeViewer?.();
     markNav();
     const [view, id] = location.hash.slice(2).split("/");
     // Setup comes first, once (Ismael, 2026-10-31): nothing else opens until it's done.
@@ -522,6 +523,7 @@
       else if (view === "new") viewNew();
       else if (view === "listings") viewListings();
       else if (view === "leads") await viewLeads();
+      else if (view === "library") await viewLibrary();
       else if (view === "report") {
         // From Today's "Active listings": the Active filter, or All when nothing is active, so it's
         // never an empty board (Ismael, 2026-10-31). Active counts the same way as on Today.
@@ -541,7 +543,7 @@
         if (id === "meta-failed") { toast("Couldn't connect to Meta. Please try again."); history.replaceState(null, "", "#/settings"); }
         if (id === "upgraded" && S.me.plan) { toast(`Upgraded to ${S.me.plan.name}`); history.replaceState(null, "", "#/settings"); }
       }
-      else await viewToday();
+      else await viewWeek();
     } catch (e) {
       if (e.message !== "signed out" && seq === routeSeq) main.innerHTML = `${mtop("Hopkins")}<div class="page"><p class="err">${esc(e.message)}</p></div>`;
     }
@@ -628,6 +630,202 @@
       <div class="tx"><b>${esc(a.title)}</b><p>${esc(a.body)}</p></div>
       <div class="attn-a"><button class="btn" data-act="attAct" data-id="${esc(a.id)}">${esc(a.action?.label || "Open")}</button><button class="link" data-act="attDismiss" data-id="${esc(a.id)}">Dismiss</button></div></div>`).join("")}</div>`;
   }
+
+  const PEB = PEBBLES.replace(/ fill="url\(#hpk-sun\)"/g, "");
+  // ---------- the week (the redesign, 2026-11-05): Hopkins' one goal on one screen ----------
+  // The week's posts as the real posts, big, one per day, swiped through like a deck; the days
+  // underneath; one pill to approve. A new account's first week is planned the moment they land.
+  const DAY = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const DAY_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const KIND_LABEL = { post: "Post", carousel: "Carousel", reel: "Reel", story: "Story" };
+  const tickEl = (() => { const l = document.createElement("label"); l.className = "hk-tick"; l.innerHTML = '<input type="checkbox" switch tabindex="-1">'; l.setAttribute("aria-hidden", "true"); document.body.appendChild(l); return l; })();
+  // A light tick on every meaningful touch: Android vibrates, an iPhone ticks through the switch.
+  const tick = () => { try { if (navigator.vibrate && navigator.vibrate(7)) return; } catch {} try { tickEl.click(); } catch {} };
+  const weekDates = (monday) => {
+    const d = new Date(`${monday}T12:00:00`);
+    const end = new Date(d); end.setDate(d.getDate() + 6);
+    const m = (x) => x.toLocaleDateString(undefined, { month: "long" });
+    return d.getMonth() === end.getMonth() ? `${d.getDate()} to ${end.getDate()} ${m(d)}` : `${d.getDate()} ${m(d)} to ${end.getDate()} ${m(end)}`;
+  };
+  const dayDate = (monday, day) => { const d = new Date(`${monday}T12:00:00`); d.setDate(d.getDate() + day); return d.getDate(); };
+  const postOpts = (p, photos) => ({ kind: p.kind, photos: (photos || []).map((id) => photoUrl(id)), agent: S.me.workspace.brand.agent_name || S.me.user.name || "", footer: S.me.workspace.brand.business || "" });
+
+  async function viewWeek() {
+    const my = current();
+    if (S.week) drawWeek(); else main.innerHTML = `${mtop("Week")}<div class="hk-page"></div>`;
+    let w = await api("/api/week");
+    if (my !== current()) return;
+    // The first week plans itself: nothing to press, it starts filling in.
+    if (w.status === "none" && !S.me.demo && !S.planAsked) { S.planAsked = true; w = await api("/api/week/plan", { body: {} }); }
+    S.week = w;
+    drawWeek();
+    if (w.status === "planning") pollWeek(my);
+  }
+  async function pollWeek(my) {
+    await new Promise((r) => setTimeout(r, 1800));
+    if (my !== current()) return;
+    const w = await api("/api/week").catch(() => null);
+    if (!w) return pollWeek(my);
+    const grew = w.posts.length > (S.week?.posts.length || 0);
+    S.week = w;
+    if (grew || w.status !== "planning") { drawWeek(); if (grew) tick(); }
+    if (w.status === "planning") pollWeek(my);
+  }
+
+  function drawWeek() {
+    const w = S.week;
+    const first = (S.me.user.name || "").split(" ")[0];
+    const slots = w.status === "planning" ? Math.max(w.planned || 0, w.posts.length) : w.posts.length;
+    const state = { planning: "Planning", ready: "Ready for you", approved: "Approved", failed: "Something went wrong" }[w.status] || "";
+    if (w.status === "none" || (w.status === "failed" && !w.posts.length)) {
+      main.innerHTML = `${mtop("Week")}<div class="hk-page hk-empty"><svg class="hk-pebbles" viewBox="0 0 120 120">${PEB}</svg>
+        <h1>${w.status === "failed" ? "Something went wrong" : "Your first week"}</h1><p>${w.status === "failed" ? "Please try again." : "Hopkins plans it from your answers."}</p><button class="hk-pill" data-act="planWeek">${w.status === "failed" ? "Try again" : "Plan my week"}</button></div>`;
+      return;
+    }
+    const cards = Array.from({ length: slots }, (_, i) => {
+      const p = w.posts[i];
+      if (!p) return `<div class="wk-card wait" style="--i:${i}"><div class="wk-day"><b>&nbsp;</b></div><div class="wk-art"><i class="wk-shim"></i><svg class="hk-pebbles turn" viewBox="0 0 120 120">${PEB}</svg></div><div class="wk-meta">&nbsp;</div></div>`;
+      const n = p.spec.slides?.length || 1;
+      return `<button class="wk-card" data-act="openPost" data-i="${i}" style="--i:${i}"><div class="wk-day"><b>${DAY_LONG[p.day]}</b><span>${esc(p.time)}</span></div>
+        <div class="wk-art${p.kind === "story" || p.kind === "reel" ? " tall" : ""}"><canvas data-wk="${i}"></canvas>${p.kind === "reel" ? `<i class="wk-badge">▶</i>` : n > 1 ? `<i class="wk-badge">1/${n}</i>` : ""}</div>
+        <div class="wk-meta">${KIND_LABEL[p.kind]}${p.spec.title ? ` · ${esc(p.spec.title)}` : ""}</div></button>`;
+    }).join("");
+    const days = DAY.map((d, i) => { const has = w.posts.findIndex((p) => p.day === i); return `<button class="wk-dot${has >= 0 ? " has" : ""}" data-act="toDay" data-i="${has}" ${has < 0 ? "disabled" : ""}><span>${d}</span><b>${dayDate(w.monday, i)}</b></button>`; }).join("");
+    const approved = w.status === "approved";
+    main.innerHTML = `${mtop("Week")}<div class="hk-page wk">
+      <header class="wk-head"><p class="wk-hi">${first ? `${esc(first)}, here's your week` : "Here's your week"}</p><h1>This week</h1>
+        <div class="wk-sub"><span>${weekDates(w.monday)}</span><i class="wk-state ${w.status}">${w.status === "planning" ? `<svg viewBox="0 0 120 120">${PEB}</svg>` : ""}${state}</i></div></header>
+      <div class="wk-deck" id="deck">${cards}</div>
+      <nav class="wk-days" id="wkDays">${days}</nav>
+      <div class="wk-dock"><button class="hk-pill wk-approve${approved ? " done" : ""}" data-act="approveWeek" ${approved || w.status !== "ready" ? "disabled" : ""}>
+        <span class="t">${approved ? "Approved" : w.status === "planning" ? `${w.posts.length} of ${slots} ready` : "Approve the week"}</span><svg class="ck" viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9"/></svg></button>
+        ${approved ? `<p class="wk-note">Tap a post to download it</p>` : w.status === "ready" ? `<p class="wk-note">Tap a post to change it</p>` : ""}</div>
+    </div>`;
+    w.posts.forEach((p, i) => { const c = main.querySelector(`canvas[data-wk="${i}"]`); if (c) Studio.drawSlide(c, p.spec, 0, postOpts(p, w.photos)); });
+    deckMotion();
+  }
+
+  // The deck: the card in the middle stands up, the others lean back a little; a tick each time a
+  // new day settles in the middle, and the day underneath lights with it.
+  function deckMotion() {
+    const deck = $("#deck"); if (!deck) return;
+    let last = -1, raf = 0;
+    const update = () => {
+      raf = 0;
+      const mid = deck.scrollLeft + deck.clientWidth / 2;
+      let best = 0, bestD = Infinity;
+      // A laptop shows three days side by side, flat; the first one in view is the day.
+      if (matchMedia("(min-width: 981px)").matches) {
+        const left = deck.scrollLeft + parseFloat(getComputedStyle(deck).paddingLeft);
+        [...deck.children].forEach((c, i) => { c.style.transform = ""; c.style.opacity = ""; const d = Math.abs(c.offsetLeft - left); if (d < bestD) { bestD = d; best = i; } });
+        if (best !== last) { if (last >= 0) tick(); last = best; const day = S.week.posts[best]?.day; $$("#wkDays .wk-dot").forEach((b, i) => b.classList.toggle("on", i === day)); }
+        return;
+      }
+      [...deck.children].forEach((c, i) => {
+        const cx = c.offsetLeft + c.offsetWidth / 2, d = (cx - mid) / deck.clientWidth;
+        const a = Math.min(1, Math.abs(d) * 1.6);
+        c.style.transform = `scale(${1 - a * 0.07}) rotateY(${(-d * 10).toFixed(2)}deg)`;
+        c.style.opacity = String(1 - a * 0.35);
+        if (Math.abs(d) < bestD) { bestD = Math.abs(d); best = i; }
+      });
+      if (best !== last) {
+        if (last >= 0) tick();
+        last = best;
+        const day = S.week.posts[best]?.day;
+        $$("#wkDays .wk-dot").forEach((b, i) => b.classList.toggle("on", i === day));
+      }
+    };
+    deck.addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+    update();
+  }
+
+  // A post, opened: big, every slide swipeable (a reel plays), Change it and Download.
+  function openPost(list, i, photos, { weekChat } = {}) {
+    const p = list[i];
+    const n = p.kind === "reel" ? 1 : p.spec.slides?.length || 1;
+    const v = document.createElement("div");
+    v.className = "hk-viewer";
+    v.innerHTML = `<div class="vw-top"><button class="vw-x" data-v="close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="vw-t"><b>${p.day != null ? `${DAY_LONG[p.day]} · ${esc(p.time)}` : KIND_LABEL[p.kind]}</b><span>${p.day != null ? KIND_LABEL[p.kind] : ""}${p.spec.title ? `${p.day != null ? " · " : ""}${esc(p.spec.title)}` : ""}</span></div></div>
+      <div class="vw-slides${p.kind === "story" || p.kind === "reel" ? " tall" : ""}" id="vwS">${Array.from({ length: n }, (_, k) => `<div class="vw-s"><canvas data-vs="${k}"></canvas></div>`).join("")}</div>
+      ${n > 1 ? `<div class="vw-pips">${Array.from({ length: n }, (_, k) => `<i class="${k ? "" : "on"}"></i>`).join("")}</div>` : `<div class="vw-pips"></div>`}
+      <div class="vw-acts">${weekChat ? `<button class="hk-pill ghost" data-v="change">Change it</button>` : ""}<button class="hk-pill" data-v="dl">Download</button></div>`;
+    document.body.appendChild(v);
+    requestAnimationFrame(() => v.classList.add("on"));
+    tick();
+    const o = postOpts(p, photos);
+    let stop = null;
+    if (p.kind === "reel") Studio.playReel(v.querySelector("canvas"), p.spec, o).then((s) => { stop = s; });
+    else v.querySelectorAll("canvas[data-vs]").forEach((c) => Studio.drawSlide(c, p.spec, Number(c.dataset.vs), o));
+    const sl = v.querySelector("#vwS");
+    sl.addEventListener("scroll", () => { const k = Math.round(sl.scrollLeft / sl.clientWidth); v.querySelectorAll(".vw-pips i").forEach((x, j) => x.classList.toggle("on", j === k)); }, { passive: true });
+    const esc_ = (e) => e.key === "Escape" && close();
+    const close = () => { stop && stop(); S.closeViewer = null; document.removeEventListener("keydown", esc_); v.classList.remove("on"); setTimeout(() => v.remove(), 320); };
+    S.closeViewer = close;
+    document.addEventListener("keydown", esc_);
+    // swipe down to put it away
+    let y0 = null;
+    v.addEventListener("touchstart", (e) => { y0 = e.touches[0].clientY; }, { passive: true });
+    v.addEventListener("touchend", (e) => { if (y0 != null && e.changedTouches[0].clientY - y0 > 90) close(); y0 = null; });
+    v.addEventListener("click", async (e) => {
+      const a = e.target.closest("[data-v]")?.dataset.v;
+      if (!a) return;
+      tick();
+      if (a === "close") close();
+      if (a === "change") { close(); S.prefill = `Change ${DAY_LONG[p.day]}'s ${KIND_LABEL[p.kind].toLowerCase()}: `; location.hash = `#/l/${weekChat}`; }
+      if (a === "dl") {
+        const btn = e.target.closest("button"); btn.disabled = true; btn.textContent = p.kind === "reel" ? "Preparing video" : "Preparing";
+        try {
+          const name = (p.spec.title || p.kind).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || p.kind;
+          if (p.kind === "reel") { const blob = await Studio.recordReel(p.spec, o); await saveFiles([new File([blob], `${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`, { type: blob.type })]); }
+          else {
+            const files = [];
+            for (let k = 0; k < (p.spec.slides?.length || 1); k++) { const cv = document.createElement("canvas"); await Studio.drawSlide(cv, p.spec, k, o); files.push(new File([await new Promise((r) => cv.toBlob(r, "image/png"))], `${name}-${k + 1}.png`, { type: "image/png" })); }
+            await saveFiles(files);
+          }
+        } catch (err) { toast(err.message || "Something went wrong. Please try again."); }
+        btn.disabled = false; btn.textContent = "Download";
+      }
+    });
+  }
+
+  async function weekAction(act, t) {
+    if (act === "planWeek") { tick(); S.week = await api("/api/week/plan", { body: {} }); drawWeek(); pollWeek(current()); return true; }
+    if (act === "openPost") { openPost(S.week.posts, Number(t.dataset.i), S.week.photos, { weekChat: S.week.chat?.id }); return true; }
+    if (act === "toDay") { tick(); const c = $("#deck").children[Number(t.dataset.i)]; const dk = $("#deck"); c && dk.scrollTo({ left: matchMedia("(min-width: 981px)").matches ? c.offsetLeft - parseFloat(getComputedStyle(dk).paddingLeft) : c.offsetLeft - (dk.clientWidth - c.offsetWidth) / 2, behavior: "smooth" }); return true; }
+    if (act === "approveWeek") {
+      tick(); t.classList.add("going");
+      const w = await api("/api/week/approve", { body: {} });
+      await new Promise((r) => setTimeout(r, 420));
+      S.week = { ...S.week, ...w }; drawWeek(); return true;
+    }
+    if (act === "libFilter") { tick(); S.libKind = t.dataset.k; drawLibrary(); return true; }
+    if (act === "openLib") { const i = Number(t.dataset.i), it = S.libShown[i]; openPost(S.libShown.map((x) => ({ ...x, day: null })), i, it.photos); return true; }
+    return false;
+  }
+
+  // ---------- Library: everything Hopkins has made, like a wall of saved posts ----------
+  async function viewLibrary() {
+    const my = current();
+    if (S.library) drawLibrary(); else main.innerHTML = `${mtop("Library")}<div class="hk-page"></div>`;
+    const r = await api("/api/library");
+    if (my !== current()) return;
+    S.library = r.items; drawLibrary();
+  }
+  function drawLibrary() {
+    const all = S.library || [];
+    const k = S.libKind || "all";
+    S.libShown = k === "all" ? all : all.filter((x) => x.kind === k);
+    const kinds = [["all", "All"], ["carousel", "Carousels"], ["post", "Posts"], ["reel", "Reels"], ["story", "Stories"]].filter(([key]) => key === "all" || all.some((x) => x.kind === key));
+    main.innerHTML = `${mtop("Library")}<div class="hk-page lib"><header class="hk-head"><h1>Library</h1><p>${all.length ? `${all.length} made by Hopkins` : ""}</p></header>
+      ${all.length ? `<div class="lib-f">${kinds.map(([key, n]) => `<button class="lib-c${k === key ? " on" : ""}" data-act="libFilter" data-k="${key}">${n}</button>`).join("")}</div>
+      <div class="lib-wall">${S.libShown.map((x, i) => `<button class="lib-i" data-act="openLib" data-i="${i}" style="--i:${i % 12}"><canvas data-lib="${i}"></canvas><span>${KIND_LABEL[x.kind]}</span></button>`).join("")}</div>`
+      : `<div class="hk-empty in"><svg class="hk-pebbles" viewBox="0 0 120 120">${PEB}</svg><h1>Nothing here yet</h1><p>Every post Hopkins makes lands here.</p></div>`}</div>`;
+    // drawn as they come into view, so a long library opens instantly
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting) return; io.unobserve(e.target); const x = S.libShown[Number(e.target.dataset.lib)]; Studio.drawSlide(e.target, x.spec, 0, postOpts(x, x.photos)).then(() => e.target.classList.add("in")); }), { rootMargin: "300px" });
+    main.querySelectorAll("canvas[data-lib]").forEach((c) => io.observe(c));
+  }
+
 
   // ---------- Listings ----------
 
@@ -1114,6 +1312,7 @@
         <div class="r"><button class="icon-btn" data-act="listmenu" aria-label="More">${ICON.dots}</button></div></div>
         <div class="msgs" id="msgs"><div class="thread" id="thread">${messagesHtml(p, seen, reveal)}</div></div>${composerHtml(REPLY)}</section></div>`;
     S.seen[l.id] = p.messages.length;
+    if (S.prefill) { const ta = $("#ta"); if (ta) { ta.value = S.prefill; setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); ta.dispatchEvent(new Event("input")); }, 60); } S.prefill = null; }
     const msgs = $("#msgs");
     msgs.style.scrollBehavior = "auto";
     msgs.scrollTop = prevScroll ?? msgs.scrollHeight;
@@ -2147,8 +2346,10 @@
   function viewSettings() {
     const u = S.me.user, b = S.me.workspace.brand, use = S.me.usage;
     const fld = (id, label, value, type = "text", ph = "", auto = "off") => `<div class="fld"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value || "")}" placeholder="${esc(ph)}" autocomplete="${auto}"></div>`;
-    main.innerHTML = `${mtop("Settings")}<div class="page"><div class="wrap" style="max-width:600px">
-      <div class="head"><h1>Settings</h1></div>
+    main.innerHTML = `${mtop("You")}<div class="page"><div class="wrap" style="max-width:600px">
+      <div class="head"><h1>You</h1></div>
+      <div class="group"><h4>Your Hopkins</h4>${youRows()}</div>
+      <div class="group"><h4>Appearance</h4><div class="you-modes">${[["light", "Light"], ["system", "System"], ["dark", "Dark"]].map(([k, n]) => `<button data-act="youTheme" data-k="${k}" class="${appearance() === k ? "on" : ""}">${n}</button>`).join("")}</div></div>
       <div class="group"><h4>Profile</h4>
         <div class="set-av"><span class="av big" id="setAv" ${avatarStyle()}>${esc(initials())}</span><div>
           <label class="btn">Change photo<input type="file" accept="image/*,.heic,.heif" hidden id="avFile"></label>
@@ -2163,9 +2364,7 @@
         ${fld("sPwCur", "Current password", "", "password", "", "current-password")}${fld("sPwNew", "New password", "", "password", "At least 8 characters", "new-password")}
         <div><button class="btn" data-act="savePw">Change password</button></div></div></div>
       <div class="group"><h4>Notifications</h4><div id="setPush">${pushRow(S.pushState || "off")}</div></div>
-      ${metaGroup()}
-      ${crmGroup(fld)}
-      ${siteGroup()}
+
       <div class="group"><h4>Plan</h4><div class="plan-row"><div><p>${paid() ? esc(S.me.plan.name) : "Free"}</p>${paid() ? `<p class="small">Billed monthly. Cancel anytime.</p>` : ""}</div>
         ${topPlan() ? "" : `<button class="btn" data-upgrade>Upgrade</button>`}</div>
         ${paid() && S.me.billing.customer ? `<div style="margin-top:12px"><button class="btn" data-act="billing">Manage</button></div>` : ""}</div>
@@ -2187,9 +2386,72 @@
       viewSettings();
       toast("Photo updated");
     });
-    fillMeta();
     pushState().then((st) => { S.pushState = st; if ($("#setPush")) $("#setPush").innerHTML = pushRow(st); });
   }
+
+  // ---------- You: the answers from the front door, each one changeable here ----------
+  const YOU = [
+    ["instagram", "Instagram", "text", "yourhandle"], ["business", "Brokerage", "text", "Brokerage name"], ["area", "Where you sell", "text", "Austin, Texas"],
+    ["content_style", "Content", "one", [["listings", "Real Estate"], ["personal", "Personal Brand"], ["both", "Both"]]],
+    ["post_often", "How often", "one", [["3", "3 times a week"], ["5", "5 times a week"], ["7", "Every day"]]],
+    ["styles", "What to post", "many", ["Just listed", "Open houses", "Just sold", "Coming soon", "Local spots", "Market updates", "Neighbourhood guides", "Events", "Behind the scenes", "Buyer tips", "Seller tips", "Your story", "Client stories"]],
+    ["music", "Music", "many", ["Acoustic", "Piano", "Lo-fi", "Jazz", "Soul", "R&B", "Pop", "Indie", "Electronic", "House", "Cinematic", "Ambient", "Hip hop", "Classical"], 3],
+  ];
+  const chev = '<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>';
+  function youShown(k, kind, opts) {
+    const b = S.me.workspace.brand;
+    const v = b[k] || (k === "area" ? b.city : "") || "";
+    if (kind === "one") return (opts.find(([key]) => key === v) || [])[1] || "";
+    if (k === "instagram" && v) return `@${v.replace(/^@+/, "")}`;
+    return v;
+  }
+  function youRows() {
+    return `<div class="you-rows">${YOU.map(([k, label, kind, opts]) => S.youOpen === k ? `<div class="you-row" style="display:block">${youEditor(k, label, kind, opts)}</div>`
+      : `<button class="you-row" data-act="youOpen" data-k="${k}"><b>${label}</b><span>${esc(youShown(k, kind, opts)) || "Add"}</span>${chev}</button>`).join("")}</div>`;
+  }
+  function youEditor(k, label, kind, opts) {
+    const b = S.me.workspace.brand;
+    const v = b[k] || (k === "area" ? b.city : "") || "";
+    if (kind === "text") return `<div class="you-edit"><b>${label}</b><input class="in" id="youIn" value="${esc(v)}" placeholder="${esc(opts)}" autocomplete="off"><div><button class="btn" data-act="youSave" data-k="${k}">Save</button> <button class="link" data-act="youOpen" data-k="">Cancel</button></div></div>`;
+    const on = kind === "many" ? new Set(String(v).split(",").map((x) => x.trim()).filter(Boolean)) : new Set([v]);
+    const list = kind === "one" ? opts : opts.map((x) => [x, x]);
+    return `<div class="you-edit"><b>${label}</b><div class="opts">${list.map(([key, n]) => `<button class="${on.has(key) ? "on" : ""}" data-act="youPick" data-k="${k}" data-v="${esc(key)}">${esc(n)}</button>`).join("")}</div><div><button class="link" data-act="youOpen" data-k="">Done</button></div></div>`;
+  }
+  const appearance = () => { try { return localStorage.getItem("hpk-appearance") || S.me?.workspace?.brand?.appearance || "dark"; } catch { return "dark"; } };
+  function applyAppearance(a) {
+    try { localStorage.setItem("hpk-appearance", a); } catch {}
+    const t = a === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : a;
+    const go = () => { document.documentElement.dataset.theme = t; const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === "light" ? "#F4F3F1" : "#111111"; };
+    if (document.documentElement.dataset.theme === t) return go();
+    document.startViewTransition ? document.startViewTransition(go) : go();
+  }
+  applyAppearance(appearance());
+  matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { if (appearance() === "system") applyAppearance("system"); });
+  async function youAction(act, t) {
+    const k = t.dataset.k;
+    if (act === "youOpen") { tick(); S.youOpen = k; viewSettings(); setTimeout(() => $("#youIn")?.focus(), 30); return true; }
+    if (act === "youSave") {
+      let v = $("#youIn").value.trim();
+      if (k === "instagram") v = v.replace(/^@/, "");
+      await api("/api/brand", { method: "PUT", body: k === "area" ? { area: v, city: v } : { [k]: v } });
+      await loadMe(); S.youOpen = null; tick(); viewSettings(); toast("Saved"); return true;
+    }
+    if (act === "youPick") {
+      const [, , kind, , max] = YOU.find((x) => x[0] === k);
+      let v = t.dataset.v;
+      if (kind === "many") {
+        const cur = new Set(String(S.me.workspace.brand[k] || "").split(",").map((x) => x.trim()).filter(Boolean));
+        if (cur.has(v)) cur.delete(v); else if (!max || cur.size < max) cur.add(v); else return true;
+        v = [...cur].join(", ");
+      }
+      tick();
+      await api("/api/brand", { method: "PUT", body: { [k]: v } });
+      await loadMe(); if (kind === "one") S.youOpen = null; viewSettings(); return true;
+    }
+    if (act === "youTheme") { tick(); applyAppearance(k); api("/api/brand", { method: "PUT", body: { appearance: k } }).catch(() => {}); $$(".you-modes button").forEach((b) => b.classList.toggle("on", b.dataset.k === k)); return true; }
+    return false;
+  }
+
 
   async function settingsAction(act, t) {
     const val = (id) => ($(id) ? $(id).value : "");
@@ -2519,6 +2781,8 @@
     const t = e.target.closest("[data-act],[data-pick],[data-fmt],[data-confirm],[data-fill],[data-upgrade],[data-checkout],[data-copy],[data-dl],[data-use],[data-say]");
     if (!t) return;
     const act = t.dataset.act;
+    if (await weekAction(act, t)) return;
+    if (await youAction(act, t)) return;
     if (t.closest("#pop") && act !== "deleteYes") closePop();
     const l = S.current && S.current.listing;
     try {
@@ -2805,7 +3069,7 @@
     const newDate = now.split(" ").slice(0, 4).join(" ") !== shownDay.split(" ").slice(0, 4).join(" ");
     shownDay = now;
     const view = location.hash.slice(2).split("/")[0] || "today";
-    if (view === "today") (newDate ? viewToday() : drawToday());
+    if (view === "today") viewWeek();
     else if (view === "report" && newDate) {
       // Watching this week when a new one starts: move on with it.
       if (S.repFollow) S.repMonday = mondayOf(new Date());

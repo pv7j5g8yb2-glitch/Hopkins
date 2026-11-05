@@ -25,6 +25,9 @@ const BRAND = {
   phone: "(512) 555 0142", voice: "plain", primary: "#1F2A36", accent: "#C8A96A", font: "modern", setup_done: true,
   // Set up like a real agent (Ismael, 2026-11-01): it opens straight to Today, no setup page.
   onboarded: "yes", website: "https://mitchellhomegroup.com",
+  // The front door's answers (2026-11-05), so You shows a real agent's Hopkins.
+  profiled: "yes", area: "Austin", content_style: "both", post_often: "5",
+  styles: "Just listed, Open houses, Local spots, Buyer tips, Market updates", music: "Acoustic, Soul, House",
 };
 const SITE = {
   url: "https://mitchellhomegroup.com", status: "done", pages: ["https://mitchellhomegroup.com"], brokerage: "Mitchell Home Group", agent: "Sarah Mitchell",
