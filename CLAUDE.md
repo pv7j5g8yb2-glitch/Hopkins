@@ -90,6 +90,10 @@ Every week it studies their local market and what nearby agents post, plans and 
 the agent approves once on Monday, and it posts each day. **Organic content only for now: ads come
 later** (Ismael, 2026-11-04: both at once is too many offers and features). Never lead with, sell
 or show ads, leads or Meta ad features until he says so.
+**No AI made design (Ismael, 2026-11-05, furious, after two weeks of seeing the results):** the
+platform must not rely on AI crafting designs, carousels, reels or posts: "it sucks", it's mid, and
+agents could get the same from Claude. Whatever Hopkins becomes, its value can't be AI creative.
+Which direction replaces the organic content plan isn't decided yet.
 **One goal (Ismael, 2026-11-04):** great platforms have one goal (Uber books a ride, Airbnb books a
 stay, Duolingo teaches a language, Spotify plays music). Hopkins and every plan for it stay on one
 goal; don't pile features on top or explain it in layers. Most agents post badly, rarely or never,
