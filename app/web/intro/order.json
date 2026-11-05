@@ -55,5 +55,191 @@
   ],
   "page4": [
     "31-blue-stairs"
-  ]
+  ],
+  "sizes": {
+    "09-japanese-room": [
+      1080,
+      1080
+    ],
+    "05-a-frame-snow": [
+      900,
+      1200
+    ],
+    "22-barragan-pool": [
+      563,
+      704
+    ],
+    "08-desert-pool": [
+      2576,
+      1821
+    ],
+    "32-kids-bedroom": [
+      1200,
+      1800
+    ],
+    "02-cypress-lane": [
+      1168,
+      1752
+    ],
+    "34-dolomites-pool": [
+      1080,
+      1350
+    ],
+    "37-house-number": [
+      736,
+      914
+    ],
+    "28-keys-in-door": [
+      736,
+      919
+    ],
+    "39-roof-dormer": [
+      1080,
+      1350
+    ],
+    "33-grey-door": [
+      787,
+      1181
+    ],
+    "36-paris-facade": [
+      1080,
+      1350
+    ],
+    "29-rooftop-sunset": [
+      1075,
+      1343
+    ],
+    "10-orange-tree": [
+      1168,
+      1752
+    ],
+    "27-cactus-court": [
+      700,
+      1050
+    ],
+    "07-paris-salon": [
+      600,
+      900
+    ],
+    "42-oak-handle": [
+      1280,
+      1706
+    ],
+    "21-chalet-balcony": [
+      1024,
+      681
+    ],
+    "45-sheer-curtain": [
+      736,
+      414
+    ],
+    "31-blue-stairs": [
+      857,
+      1200
+    ],
+    "30-library-ladder": [
+      1162,
+      1536
+    ],
+    "16-black-door": [
+      533,
+      800
+    ],
+    "41-linen-table": [
+      564,
+      845
+    ],
+    "23-wooden-bath": [
+      1000,
+      1382
+    ],
+    "14-manhattan-dusk": [
+      1280,
+      1707
+    ],
+    "18-nordic-bedroom": [
+      1199,
+      1492
+    ],
+    "46-concrete-lamp": [
+      900,
+      1200
+    ],
+    "40-cane-chair": [
+      736,
+      920
+    ],
+    "17-riad-courtyard": [
+      720,
+      897
+    ],
+    "25-candle-table": [
+      675,
+      1200
+    ],
+    "26-plaster-arches": [
+      1500,
+      2250
+    ],
+    "38-brownstone-row": [
+      1170,
+      1184
+    ],
+    "04-forest-bath": [
+      1067,
+      1600
+    ],
+    "13-cotswold-cottage": [
+      1080,
+      1294
+    ],
+    "01-spiral-stair": [
+      431,
+      434
+    ],
+    "03-ocean-deck": [
+      2000,
+      1429
+    ],
+    "12-concrete-stair": [
+      1717,
+      2576
+    ],
+    "06-marble-island": [
+      1080,
+      1350
+    ],
+    "15-sifnos-house": [
+      734,
+      900
+    ],
+    "44-moss-steps": [
+      1500,
+      2000
+    ],
+    "11-midcentury-lounge": [
+      960,
+      1280
+    ],
+    "20-forest-house-dusk": [
+      1080,
+      1350
+    ],
+    "24-chelsea-pastels": [
+      1080,
+      1328
+    ],
+    "19-brownstone-street": [
+      828,
+      1017
+    ],
+    "43-stone-vases": [
+      1080,
+      1349
+    ],
+    "35-ocean-living-room": [
+      1125,
+      1958
+    ]
+  }
 }

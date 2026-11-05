@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import { randomUUID, createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -41,8 +41,8 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
-const TYPES = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
+for (const f of ["app.html", "app.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "login.html", "lead.html", "privacy.html", "terms.html", "mark.svg", "intro.html", "intro.css", "intro.js"]) files[f] = readFileSync(join(WEB, f), "utf8");
+const TYPES = { json: "application/json; charset=utf-8", html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
 for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg"]) files[f] = readFileSync(join(WEB, f));
@@ -129,17 +129,26 @@ for (const [path, v] of Object.entries(VENDOR)) {
     return reply.send(v.raw);
   });
 }
+// The intro's photos (web/intro), each read once and cached hard: they never change under a name.
+const INTRO = Object.fromEntries(readdirSync(join(WEB, "intro")).filter((f) => /\.(jpg|json)$/.test(f)).map((f) => [f, readFileSync(join(WEB, "intro", f))]));
+for (const f of ["intro.css", "intro.js"]) app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
+app.get("/static/intro/:f", async (request, reply) => {
+  const f = request.params.f;
+  if (!INTRO[f]) return reply.code(404).send({ error: "Not found" });
+  return reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", f.endsWith(".json") ? "no-cache" : "public, max-age=604800").send(INTRO[f]);
+});
 app.get("/apple-touch-icon.png", async (_, reply) => reply.type(TYPES.png).send(files["apple-touch-icon.png"]));
 
 // ---------- pages ----------
 
 app.get("/", async (request, reply) => {
   const user = await currentUser(request);
-  if (!user) return reply.redirect("/login");
+  if (!user) return reply.redirect("/welcome");
   return reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["app.html"]);
 });
 // The notifications worker lives at the root so it can cover the whole app.
 app.get("/sw.js", async (_, reply) => reply.type(TYPES.js).header("Cache-Control", "no-cache").header("Service-Worker-Allowed", "/").send(files["sw.js"]));
+app.get("/welcome", async (_, reply) => reply.type(TYPES.html).header("Cache-Control", "no-cache").send(files["intro.html"]));
 app.get("/login", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/signup", async (_, reply) => reply.type(TYPES.html).send(files["login.html"]));
 app.get("/privacy", async (_, reply) => reply.type(TYPES.html).send(files["privacy.html"]));

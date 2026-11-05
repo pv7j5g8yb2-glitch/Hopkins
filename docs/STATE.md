@@ -1178,3 +1178,10 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   opacity over 0.73s with the line at the top, the small legal line and the Start pill (dim grey to
   white last); after that they drift by only a point or two. Their type is "Cosmos Oracle", which
   looks like a cut of Dinamo's paid Oracle typeface.
+* The intro is built (2026-11-05): `/welcome` (app/web/intro.html, intro.css, intro.js), where a
+  signed out visit to `/` now lands. 30 photo strobe with a tick on each cut (Android vibrates; iPhone
+  tries Safari's switch tick, not yet tested on a real iPhone; browsers only vibrate after a tap),
+  the pebbles in white, HOPKINS among 8 drifting photos, three pages that rise in like one feed,
+  the last in the blue of the stairs photo. Font: Geist (free) standing in for Cosmos' Oracle. Get
+  started still goes to the old sign up page; the one question per screen sign up is next. Photo
+  slots and order: app/web/intro/order.json.
