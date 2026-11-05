@@ -140,6 +140,40 @@ body:before,body:after{display:none!important}
 .sp-mark{color:var(--ink)}
 .sp-word{color:var(--ink)!important;font-family:"Instrument Sans",system-ui,sans-serif}
 
+/* the calendar: one row a day, the format and the hook, a made post in its row */
+.cal-list{max-width:640px;margin:18px auto 0;padding:0 16px;display:flex;flex-direction:column;gap:10px}
+.cal-row{display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:14px 14px 14px 16px;border-radius:18px;background:var(--card);box-shadow:0 0 0 1px var(--line);animation:wkup .5s var(--ease) both;animation-delay:calc(var(--i) * 60ms);transition:transform .14s var(--ease)}
+.cal-row.made:active{transform:scale(.98)}
+.cal-row:disabled{opacity:1;cursor:default}
+.cal-day{flex:none;width:44px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.cal-day span{font-size:12.5px;font-weight:500;color:var(--soft)}
+.cal-day b{font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cal-body{flex:1;min-width:0}
+.cal-body small{display:block;font-size:12.5px;font-weight:600;color:var(--soft);letter-spacing:.01em}
+.cal-body b{display:block;font-size:16.5px;font-weight:600;letter-spacing:-.012em;margin-top:2px;line-height:1.25}
+.cal-body p{font-size:14px;color:var(--soft);margin-top:3px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cal-th{flex:none;width:58px;height:72px;border-radius:9px;overflow:hidden;background:var(--card2);display:grid;place-items:center}
+.cal-th.none{display:none}
+.cal-th canvas{width:100%;height:100%;object-fit:cover;display:block;animation:wkpaint .5s var(--ease) both}
+.cal-th .hk-pebbles{width:22px;height:22px;opacity:.55}
+.wk-note-btn{font-size:14.5px;color:var(--soft);font-weight:500}
+.cal-page .wk-dock{gap:12px;padding-top:56px;background:linear-gradient(to bottom,transparent,var(--bg) 46px);bottom:calc(env(safe-area-inset-bottom,0px) + 80px);padding-bottom:16px}
+.cal-page .wk-head{max-width:672px;padding-left:16px;padding-right:16px}
+.cal-page{padding-bottom:260px!important}
+@media (min-width:981px){.cal-page .wk-dock{bottom:0;padding-bottom:34px}}
+/* the same plan in the chat */
+.cal{margin-top:12px;border-radius:16px;background:var(--card2);overflow:hidden}
+.cal.old{opacity:.6}
+.cal-r{display:flex;gap:14px;padding:13px 16px}
+.cal-r+.cal-r{box-shadow:0 -1px 0 var(--line)}
+.cal-d{flex:none;width:46px}
+.cal-d b{display:block;font-size:15px;font-weight:600}
+.cal-d span{font-size:12.5px;color:var(--soft);font-variant-numeric:tabular-nums}
+.cal-t{min-width:0}
+.cal-t small{display:block;font-size:12px;font-weight:600;color:var(--soft)}
+.cal-t b{display:block;font-size:15.5px;font-weight:600;line-height:1.28;margin-top:1px}
+.cal-t p{font-size:14px;color:var(--soft);line-height:1.38;margin-top:2px}
+
 /* ---------- a post, opened ---------- */
 .hk-viewer{position:fixed;inset:0;z-index:300;background:color-mix(in srgb,var(--bg) 94%,transparent);-webkit-backdrop-filter:blur(30px) saturate(1.2);backdrop-filter:blur(30px) saturate(1.2);display:flex;flex-direction:column;opacity:0;transition:opacity .3s var(--ease)}
 .hk-viewer.on{opacity:1}

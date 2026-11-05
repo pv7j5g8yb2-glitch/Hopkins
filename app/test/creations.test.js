@@ -66,6 +66,25 @@ test("a carousel and a reel in a plain chat, a change to the one just made, and 
   assert.equal(q.json.creations[1].version, 1);
 });
 
+test("every version stays in the chat, and the first one can be brought back", async () => {
+  const c = await signup("versions@ellery.test");
+  const s = await c("POST", "/api/listings/start", { text: "Make me an animated reel about the Austin market this month" });
+  const f = await c("POST", `/api/listings/${s.json.listing.id}/first`, {});
+  const first = f.json.creations[0].spec.slides[0].heading;
+  const r = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "make it more entertaining, it's too boring" });
+  assert.equal(r.json.creations[0].version, 2);
+  assert.notEqual(r.json.creations[0].spec.theme, f.json.creations[0].spec.theme, "a redo never comes back in the same look");
+  assert.match(r.json.messages.at(-1).body, /^New version: a .+ look, a new hook/);
+  const made = r.json.messages.filter((m) => m.kind === "creation");
+  assert.equal(made.length, 2);
+  assert.equal(made[0].data.spec.slides[0].heading, first, "the first message still holds the first version");
+  assert.notEqual(made[1].data.spec.slides[0].heading, first);
+  const b = await c("POST", `/api/listings/${s.json.listing.id}/messages`, { text: "bring back the first one" });
+  assert.equal(b.json.creations[0].version, 3);
+  assert.equal(b.json.creations[0].spec.slides[0].heading, first);
+  assert.equal(b.json.messages.at(-1).body, "Here's the first version back.");
+});
+
 test("a property on its own is read back and Hopkins asks what to make; a post for it uses its facts", async () => {
   const c = await signup("prop@ellery.test");
   const s = await c("POST", "/api/listings/start", { text: "12 Elm St, Austin, TX. 3 bed 2 bath, $585,000" });
@@ -125,19 +144,39 @@ test("a greeting opens a chat only, and a time of day only when it's the right o
   assert.equal(localNow("UTC"), "");
 });
 
-test("planning a week makes the agent's posts from their answers, then they approve it once", async () => {
+test("Plan my week asks first, then lays out a calendar to change in words, and only then makes the posts", async () => {
   const c = await signup("plan@ellery.test");
   await c("PUT", "/api/brand", { post_often: "3", styles: "Buyer tips, Local spots, Just listed", area: "Austin, Texas", content_style: "both", profiled: "yes" });
   assert.equal((await c("GET", "/api/week")).json.status, "none");
-  const first = (await c("POST", "/api/week/plan", {})).json;
-  assert.equal(first.status, "planning");
-  assert.equal(first.planned, 3);
+  const start = (await c("POST", "/api/week/start", {})).json;
+  assert.equal(start.status, "asking");
+  let chat = (await c("GET", `/api/listings/${start.chat}`)).json;
+  assert.match(chat.messages.at(-1).body, /A few quick questions/);
+  assert.equal((await c("GET", "/api/week")).json.posts.length, 0, "nothing is made before they answer");
+  // their answers: a calendar comes back, nothing made yet
+  const a = (await c("POST", `/api/listings/${start.chat}/messages`, { text: "No listings. Open house Saturday 1 to 3 at 4503 Avenue F. The school fair is on." })).json;
+  const cal = a.messages.at(-1);
+  assert.equal(cal.kind, "calendar");
+  assert.deepEqual(cal.data.plan.map((p) => p.day), [0, 2, 4], "3 a week: Monday, Wednesday, Friday");
+  assert.equal((await c("GET", "/api/week")).json.status, "proposed");
+  assert.equal((await c("GET", "/api/week")).json.posts.length, 0);
+  // a change in words is a new calendar, still nothing made
+  const ch = (await c("POST", `/api/listings/${start.chat}/messages`, { text: "swap Wednesday for a reel" })).json;
+  assert.equal(ch.messages.at(-1).kind, "calendar");
+  assert.equal(ch.creations.length, 0);
+  // go: the posts are made from the calendar
+  await c("POST", `/api/listings/${start.chat}/messages`, { text: "looks good" });
   let w;
-  for (let i = 0; i < 50; i++) { w = (await c("GET", "/api/week")).json; if (w.status === "ready") break; await new Promise((r) => setTimeout(r, 20)); }
+  for (let i = 0; i < 80; i++) { w = (await c("GET", "/api/week")).json; if (w.status === "ready") break; await new Promise((r) => setTimeout(r, 25)); }
   assert.equal(w.status, "ready");
-  assert.deepEqual(w.posts.map((p) => p.day), [0, 2, 4], "3 a week: Monday, Wednesday, Friday");
-  assert.deepEqual(w.posts.map((p) => p.kind), ["carousel", "post", "reel"]);
-  assert.ok(asked.some((r) => /Austin, Texas/.test(r.request)), "the agent's own city");
-  assert.equal((await c("POST", "/api/week/plan", {})).json.posts.length, 3, "planning again keeps the same week");
+  assert.deepEqual(w.posts.map((p) => p.day), [0, 2, 4]);
+  assert.ok(asked.some((r) => /Austin, Texas/.test(r.request) && /school fair/.test(r.request)), "their city and what they said about the week");
+  chat = (await c("GET", `/api/listings/${start.chat}`)).json;
+  assert.equal(chat.messages.at(-1).kind, "weekready");
+  assert.equal((await c("POST", "/api/week/start", {})).json.chat, start.chat, "the same week opens again");
+  // a change to one day's post keeps its day
+  const thu = (await c("POST", `/api/listings/${start.chat}/messages`, { text: "make Wednesday's post shorter" })).json;
+  const wed = thu.creations.find((x) => x.spec.plan?.day === 2);
+  assert.equal(wed.version, 2);
   assert.equal((await c("POST", "/api/week/approve", {})).json.status, "approved");
 });

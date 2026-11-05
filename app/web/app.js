@@ -655,11 +655,9 @@
     if (S.week) drawWeek(); else main.innerHTML = `${mtop("Week")}<div class="hk-page"></div>`;
     let w = await api("/api/week");
     if (my !== current()) return;
-    // The first week plans itself: nothing to press, it starts filling in.
-    if (w.status === "none" && !S.me.demo && !S.planAsked) { S.planAsked = true; w = await api("/api/week/plan", { body: {} }); }
     S.week = w;
     drawWeek();
-    if (w.status === "planning") pollWeek(my);
+    if (w.status === "making") pollWeek(my);
   }
   async function pollWeek(my) {
     await new Promise((r) => setTimeout(r, 1800));
@@ -668,20 +666,24 @@
     if (!w) return pollWeek(my);
     const grew = w.posts.length > (S.week?.posts.length || 0);
     S.week = w;
-    if (grew || w.status !== "planning") { drawWeek(); if (grew) tick(); }
-    if (w.status === "planning") pollWeek(my);
+    if (grew || w.status !== "making") { drawWeek(); if (grew) tick(); }
+    if (w.status === "making") pollWeek(my);
   }
 
   function drawWeek() {
     const w = S.week;
     const first = (S.me.user.name || "").split(" ")[0];
-    const slots = w.status === "planning" ? Math.max(w.planned || 0, w.posts.length) : w.posts.length;
-    const state = { planning: "Planning", ready: "Ready for you", approved: "Approved", failed: "Something went wrong" }[w.status] || "";
-    if (w.status === "none" || (w.status === "failed" && !w.posts.length)) {
+    const slots = w.posts.length;
+    const state = { proposed: "Planned", making: "Making", ready: "Ready for you", approved: "Approved", failed: "Something went wrong" }[w.status] || "";
+    // Nothing yet, or the questions are waiting: planning a week is a conversation in its chat.
+    if (w.status === "none" || w.status === "asking" || (w.status === "failed" && !w.posts.length)) {
+      const asking = w.status === "asking";
       main.innerHTML = `${mtop("Week")}<div class="hk-page hk-empty"><svg class="hk-pebbles" viewBox="0 0 120 120">${PEB}</svg>
-        <h1>${w.status === "failed" ? "Something went wrong" : "Your first week"}</h1><p>${w.status === "failed" ? "Please try again." : "Hopkins plans it from your answers."}</p><button class="hk-pill" data-act="planWeek">${w.status === "failed" ? "Try again" : "Plan my week"}</button></div>`;
+        <h1>${w.status === "failed" ? "Something went wrong" : "Your week"}</h1><p>${w.status === "failed" ? "Please try again." : asking ? "Hopkins asked a few questions." : "A few quick questions, then Hopkins plans it."}</p><button class="hk-pill" data-act="${asking ? "openWeekChat" : "planWeek"}">${w.status === "failed" ? "Try again" : asking ? "Answer in chat" : "Plan my week"}</button></div>`;
       return;
     }
+    // The calendar: what each day will be, before anything's made, then filling in as it's made.
+    if (w.status === "proposed" || w.status === "making") return drawCalendar(w, first, state);
     const cards = Array.from({ length: slots }, (_, i) => {
       const p = w.posts[i];
       if (!p) return `<div class="wk-card wait" style="--i:${i}"><div class="wk-day"><b>&nbsp;</b></div><div class="wk-art"><i class="wk-shim"></i><svg class="hk-pebbles turn" viewBox="0 0 120 120">${PEB}</svg></div><div class="wk-meta">&nbsp;</div></div>`;
@@ -777,7 +779,12 @@
         const btn = e.target.closest("button"); btn.disabled = true; btn.textContent = p.kind === "reel" ? "Preparing video" : "Preparing";
         try {
           const name = (p.spec.title || p.kind).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || p.kind;
-          if (p.kind === "reel") { const blob = await Studio.recordReel(p.spec, o); await saveFiles([new File([blob], `${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`, { type: blob.type })]); }
+          if (p.kind === "reel") {
+            const blob = await Studio.recordReel(p.spec, o), cv = document.createElement("canvas");
+            await Studio.drawSlide(cv, p.spec, 0, o);
+            const cover = await new Promise((r) => cv.toBlob(r, "image/png"));
+            await saveFiles([new File([blob], `${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`, { type: blob.type }), new File([cover], `${name}-cover.png`, { type: "image/png" })]);
+          }
           else {
             const files = [];
             for (let k = 0; k < (p.spec.slides?.length || 1); k++) { const cv = document.createElement("canvas"); await Studio.drawSlide(cv, p.spec, k, o); files.push(new File([await new Promise((r) => cv.toBlob(r, "image/png"))], `${name}-${k + 1}.png`, { type: "image/png" })); }
@@ -789,8 +796,38 @@
     });
   }
 
+  // The calendar on Week: one row a day, the format and the hook; a made post shows in its row.
+  function drawCalendar(w, first, state) {
+    const making = w.status === "making";
+    const rows = w.plan.map((d, i) => {
+      const k = w.posts.findIndex((p) => p.day === d.day);
+      const thumb = k >= 0 ? `<canvas data-cal="${k}"></canvas>` : making ? `<svg class="hk-pebbles turn" viewBox="0 0 120 120">${PEB}</svg>` : "";
+      return `<button class="cal-row${k >= 0 ? " made" : ""}" ${k >= 0 ? `data-act="openPost" data-i="${k}"` : "disabled"} style="--i:${i}">
+        <div class="cal-day"><span>${DAY[d.day]}</span><b>${dayDate(w.monday, d.day)}</b></div>
+        <div class="cal-body"><small>${KIND_LABEL[d.kind]} · ${esc(d.time)}</small><b>${esc(d.title)}</b><p>${esc(d.idea)}</p></div>
+        <div class="cal-th${thumb ? "" : " none"}">${thumb}</div></button>`;
+    }).join("");
+    main.innerHTML = `${mtop("Week")}<div class="hk-page wk cal-page">
+      <header class="wk-head"><p class="wk-hi">${first ? `${esc(first)}, here's your week` : "Here's your week"}</p><h1>This week</h1>
+        <div class="wk-sub"><span>${weekDates(w.monday)}</span><i class="wk-state ${w.status}">${making ? `<svg viewBox="0 0 120 120">${PEB}</svg>` : ""}${state}</i></div></header>
+      <div class="cal-list">${rows}</div>
+      <div class="wk-dock">${making ? `<button class="hk-pill wk-approve" disabled><span class="t">${w.posts.length} of ${w.plan.length} ready</span></button>` : `<button class="hk-pill wk-approve" data-act="makeWeek"><span class="t">Make the week</span></button><button class="link wk-note-btn" data-act="openWeekChat">Change it in chat</button>`}</div>
+    </div>`;
+    w.posts.forEach((p, k) => { const c = main.querySelector(`canvas[data-cal="${k}"]`); if (c) Studio.drawSlide(c, p.spec, 0, postOpts(p, w.photos)); });
+  }
+
   async function weekAction(act, t) {
-    if (act === "planWeek") { tick(); S.week = await api("/api/week/plan", { body: {} }); drawWeek(); pollWeek(current()); return true; }
+    if (act === "planWeek") { tick(); t.disabled = true; const r = await api("/api/week/start", { body: {} }); S.week = null; location.hash = `#/l/${r.chat}`; return true; }
+    if (act === "openWeekChat") { tick(); location.hash = `#/l/${S.week?.chat?.id || S.current?.listing?.id}`; return true; }
+    if (act === "makeWeek") {
+      tick(); t.disabled = true;
+      const w = await api("/api/week/make", { body: {} });
+      S.week = w;
+      const chatId = S.current?.listing?.week_of && location.hash.startsWith("#/l/") ? S.current.listing.id : null;
+      if (chatId) { const p = await api(`/api/listings/${chatId}`); drawListing(p, true); }
+      else { drawWeek(); pollWeek(current()); }
+      return true;
+    }
     if (act === "openPost") { openPost(S.week.posts, Number(t.dataset.i), S.week.photos, { weekChat: S.week.chat?.id }); return true; }
     if (act === "toDay") { tick(); const c = $("#deck").children[Number(t.dataset.i)]; const dk = $("#deck"); c && dk.scrollTo({ left: matchMedia("(min-width: 981px)").matches ? c.offsetLeft - parseFloat(getComputedStyle(dk).paddingLeft) : c.offsetLeft - (dk.clientWidth - c.offsetWidth) / 2, behavior: "smooth" }); return true; }
     if (act === "approveWeek") {
@@ -1656,18 +1693,30 @@
       if (m.kind === "upgrade") {
         return wrap(`${text}${paid() ? "" : `<div class="acts"><button class="btn" data-upgrade>Upgrade</button></div>`}`);
       }
+      if (m.kind === "calendar") {
+        // The week's plan, laid out; the latest one can be made while it's still the plan.
+        const latestCal = [...p.messages].reverse().find((x) => x.kind === "calendar") === m;
+        const live = latestCal && p.listing.week_status === "proposed";
+        const rows = (m.data?.plan || []).map((d) => `<div class="cal-r"><div class="cal-d"><b>${DAY[d.day]}</b><span>${esc(d.time)}</span></div><div class="cal-t"><small>${KIND_LABEL[d.kind] || ""}</small><b>${esc(d.title)}</b><p>${esc(d.idea)}</p></div></div>`).join("");
+        return wrap(`${text}<div class="cal${live ? "" : " old"}">${rows}</div>${live ? `<div class="acts"><button class="btn" data-act="makeWeek">Make the week</button></div>` : ""}`);
+      }
+      if (m.kind === "weekready") return wrap(`${text}<div class="acts"><a class="btn" href="#/today">Open Week</a></div>`);
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
       if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open Leads</a></div>`);
       if (m.kind === "creation") {
-        // The post, carousel, story or reel itself, drawn by Studio. Only its latest message shows
-        // it live; earlier versions keep their words.
+        // The post, carousel, story or reel itself, drawn by Studio. Every version stays where it was
+        // made, like Claude's: the latest message shows the live one, an earlier message shows the
+        // version it made (kept with the message), so a change never makes the first one vanish.
         const c = (p.creations || []).find((x) => x.id === m.data?.creationId);
         const latest = c && [...p.messages].reverse().find((x) => x.kind === "creation" && x.data?.creationId === c.id) === m;
-        if (!c || !latest) return wrap(text);
+        const spec = !c ? null : latest ? c.spec : m.data?.spec;
+        if (!c || !spec?.slides?.length) return wrap(text);
+        const key = latest ? c.id : `${c.id}@${m.id}`;
+        (S.crKeys || (S.crKeys = {}))[key] = { ...c, spec };
         const reel = c.kind === "reel";
-        const frames = reel ? `<canvas class="cr-reel" data-crr="${c.id}"></canvas>` : c.spec.slides.map((_, k) => `<canvas class="cr-slide${c.kind === "story" ? " tall" : ""}" data-crs="${c.id}:${k}"></canvas>`).join("");
-        return wrap(`${text}<div class="cr"><div class="cr-strip">${frames}</div>
-          <div class="acts"><button class="btn" data-act="crDownload" data-id="${c.id}">${reel ? "Download video" : c.spec.slides.length > 1 ? `Download ${c.spec.slides.length} images` : "Download"}</button>${c.spec.caption ? `<button class="link" data-act="crCopy" data-id="${c.id}">Copy caption</button>` : ""}</div></div>`);
+        const frames = reel ? `<canvas class="cr-reel" data-crr="${key}"></canvas>` : spec.slides.map((_, k) => `<canvas class="cr-slide${c.kind === "story" ? " tall" : ""}" data-crs="${key}:${k}"></canvas>`).join("");
+        return wrap(`${text}<div class="cr${latest ? "" : " old"}"><div class="cr-strip">${frames}</div>
+          <div class="acts"><button class="btn" data-act="crDownload" data-id="${key}">${reel ? "Download video" : spec.slides.length > 1 ? `Download ${spec.slides.length} images` : "Download"}</button>${spec.caption ? `<button class="link" data-act="crCopy" data-id="${key}">Copy caption</button>` : ""}</div></div>`);
       }
       return wrap(text);
     }).join("");
@@ -1698,7 +1747,7 @@
   function drawCreations() {
     (S.players || []).forEach((stop) => stop());
     S.players = [];
-    const find = (id) => (S.current?.creations || []).find((x) => x.id === id);
+    const find = (id) => S.crKeys?.[id] || (S.current?.creations || []).find((x) => x.id === id);
     for (const el of $$("canvas[data-crs]")) {
       const [id, k] = el.dataset.crs.split(":");
       const c = find(id);
@@ -1721,7 +1770,7 @@
     }
   }
   async function downloadCreation(id, btn) {
-    const c = (S.current?.creations || []).find((x) => x.id === id);
+    const c = S.crKeys?.[id] || (S.current?.creations || []).find((x) => x.id === id);
     if (!c) return;
     const name = (c.spec.title || c.kind).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || c.kind;
     const label = btn.textContent;
@@ -1730,7 +1779,11 @@
       if (c.kind === "reel") {
         btn.textContent = "Preparing video";
         const blob = await Studio.recordReel(c.spec, studioOpts(c));
-        await saveFiles([new File([blob], `${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`, { type: blob.type })]);
+        // every reel comes with its cover
+        const cv = document.createElement("canvas");
+        await Studio.drawSlide(cv, c.spec, 0, studioOpts(c));
+        const cover = await new Promise((r) => cv.toBlob(r, "image/png"));
+        await saveFiles([new File([blob], `${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`, { type: blob.type }), new File([cover], `${name}-cover.png`, { type: "image/png" })]);
       } else {
         const files = [];
         for (let k = 0; k < c.spec.slides.length; k++) {
@@ -2394,7 +2447,7 @@
     ["instagram", "Instagram", "text", "yourhandle"], ["business", "Brokerage", "text", "Brokerage name"], ["area", "Where you sell", "text", "Austin, Texas"],
     ["content_style", "Content", "one", [["listings", "Real Estate"], ["personal", "Personal Brand"], ["both", "Both"]]],
     ["post_often", "How often", "one", [["3", "3 times a week"], ["5", "5 times a week"], ["7", "Every day"]]],
-    ["styles", "What to post", "many", ["Just listed", "Open houses", "Just sold", "Coming soon", "Local spots", "Market updates", "Neighbourhood guides", "Events", "Behind the scenes", "Buyer tips", "Seller tips", "Your story", "Client stories"]],
+    ["styles", "What to post", "many", ["Just listed", "Open houses", "Just sold", "Coming soon", "Local spots", "Market updates", "Neighbourhood guides", "Events", "Behind the scenes", "Buyer tips", "Seller tips", "Your story", "Client stories"], 0, 3],
     ["music", "Music", "many", ["Acoustic", "Piano", "Lo-fi", "Jazz", "Soul", "R&B", "Pop", "Indie", "Electronic", "House", "Cinematic", "Ambient", "Hip hop", "Classical"], 3],
   ];
   const chev = '<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>';
@@ -2437,11 +2490,11 @@
       await loadMe(); S.youOpen = null; tick(); viewSettings(); toast("Saved"); return true;
     }
     if (act === "youPick") {
-      const [, , kind, , max] = YOU.find((x) => x[0] === k);
+      const [, , kind, , max, min] = YOU.find((x) => x[0] === k);
       let v = t.dataset.v;
       if (kind === "many") {
         const cur = new Set(String(S.me.workspace.brand[k] || "").split(",").map((x) => x.trim()).filter(Boolean));
-        if (cur.has(v)) cur.delete(v); else if (!max || cur.size < max) cur.add(v); else return true;
+        if (cur.has(v)) { if (min && cur.size <= min) { toast("Pick at least three"); return true; } cur.delete(v); } else if (!max || cur.size < max) cur.add(v); else return true;
         v = [...cur].join(", ");
       }
       tick();
@@ -2797,7 +2850,7 @@
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "metaWaive", "pushOn", "pushOff", "siteSave", "siteRemove"].includes(act)) await settingsAction(act, t);
       else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
       else if (act === "crCopy") {
-        const c = (S.current?.creations || []).find((x) => x.id === t.dataset.id);
+        const c = S.crKeys?.[t.dataset.id] || (S.current?.creations || []).find((x) => x.id === t.dataset.id);
         if (c) { await navigator.clipboard.writeText(c.spec.caption || ""); toast("Copied"); }
       }
       else if (act === "attAct" || act === "attDismiss") {

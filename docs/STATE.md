@@ -1204,3 +1204,10 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   publishing needs App Review). Still to redesign: the chat itself, New chat, the account sheet,
   the appearance step's preview, and the home screen icon (still pink). The demo's chats still
   carry ads from before the pivot.
+* Second pass (2026-11-05, after Ismael's screenshots of the reel chat and the self planning week):
+  planning a week is now the chat flow (questions, calendar, make, approve); every creation version
+  stays in its message and can be brought back; "boring" redoes it in a new look; reels have the
+  @gethopkins motion (`app/web/kinetic.js`); posts and carousels got the boxed word, line icons and
+  a pill on the last slide; the front door's buttons sit under the question. Checked with a stand
+  in model locally (no model keys in the container), so the real model's words still need a look
+  on Render.

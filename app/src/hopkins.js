@@ -1179,7 +1179,7 @@ export function setCreationForTests(f) { creationFake = f; }
 // One post, carousel, story or reel designed from a plain request, nothing saved (src/week.js plans
 // a week with it).
 export async function makeSpec(args) {
-  return creationFake ? cleanCreation(await creationFake(args), args.kind, args.photos || 0, null) : creationAI(args);
+  return creationFake ? cleanCreation(await creationFake(args), args.kind, args.photos || 0, null, args.request) : creationAI(args);
 }
 
 export async function latestCreation(listingId) {
@@ -1196,14 +1196,16 @@ export async function makeCreation(ws, listing, text, kind, previous = null) {
   const photos = await loadPhotos(listing.id);
   const hasProperty = listing.address || listing.price || listing.beds || listing.home_type;
   const agent = [ws.brand.agent_name, ws.brand.business].filter(Boolean).join(", ");
-  const make = creationFake ? async (a) => cleanCreation(await creationFake(a), a.kind, a.photos, a.previous) : creationAI;
+  const make = creationFake ? async (a) => cleanCreation(await creationFake(a), a.kind, a.photos, a.previous, a.request) : creationAI;
   const recentRows = previous ? [] : await all(`SELECT spec FROM creations WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 5`, [ws.id]).catch(() => []);
   const recent = recentRows.map((r) => safeJson(r.spec, {})).map((x) => [x.theme, x.look?.background, x.look?.headingFont, x.look?.align].filter(Boolean).join(" ")).filter(Boolean).join("; ");
-  const spec = await make({ recent, kind, request: text, listing: hasProperty ? { address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal), deal: listing.deal || "sale", beds: listing.beds, baths: listing.baths, sqft: listing.sqft, type: listing.home_type, features: listing.features, description: (listing.description || "").slice(0, 1500) } : null, photos: photos.length, agent, previous: previous?.spec || null });
+  const spec = await make({ recent, kind, request: text, listing: hasProperty ? { address: listing.address, area: listing.area, city: listing.city, price: formatPrice(listing.price, listing.currency, listing.deal), deal: listing.deal || "sale", beds: listing.beds, baths: listing.baths, sqft: listing.sqft, type: listing.home_type, features: listing.features, description: (listing.description || "").slice(0, 1500) } : null, photos: photos.length, agent, area: ws.brand.area || ws.brand.city || "", previous: previous?.spec || null });
   if (!spec) {
     await say(ws, listing.id, "Something went wrong. Please try again.");
     return {};
   }
+  // A week's post keeps its day and time through every change.
+  if (previous?.spec?.plan) spec.plan = previous.spec.plan;
   const now = nowIso();
   let id = previous?.id;
   if (previous) await run(`UPDATE creations SET spec = ?, version = version + 1, updated_at = ? WHERE id = ?`, [JSON.stringify(spec), now, id]);
@@ -1218,9 +1220,26 @@ export async function makeCreation(ws, listing, text, kind, previous = null) {
   const line = polish(plainWords(spec.reply || `Here's your ${KIND_NAME[kind]}.`));
   // Captions and hashtags only when asked (Ismael, 2026-10-31): a new one ends with the question.
   const ask = !previous && !spec.caption ? ` ${CAPTION_ASK}` : "";
-  await say(ws, listing.id, `${line}${note}${ask}`, "creation", { creationId: id, version: previous ? previous.version + 1 : 1 });
+  // Each message keeps the version it made, so the chat still shows the first one after a change.
+  await say(ws, listing.id, `${line}${note}${ask}`, "creation", { creationId: id, version: previous ? previous.version + 1 : 1, spec });
   if (!listing.title && !listing.address && !previous && spec.title) await run(`UPDATE listings SET auto_title = COALESCE(auto_title, ?) WHERE id = ?`, [spec.title, listing.id]);
   return { creation: id };
+}
+
+// An earlier version of the latest creation, put back as a new version (the one it replaces stays in
+// the chat too). "first" or "original" means version 1; otherwise the one before the latest.
+const RESTORE = /\b(undo|restore|revert|bring (it |that |them )?back|bring back|put (it|that) back|go back to|change it back|the (first|old|original|previous|earlier|last) (one|version)( back)?|first version|original version|previous version)\b/i;
+async function restoreCreation(ws, listing, last, text) {
+  const rows = await all(`SELECT data FROM messages WHERE listing_id = ? AND kind = 'creation' ORDER BY created_at`, [listing.id]);
+  const versions = rows.map((r) => safeJson(r.data, {})).filter((d) => d.creationId === last.id && d.spec?.slides?.length);
+  if (versions.length < 2) return null;
+  const want = /\b(first|original)\b/i.test(text) ? versions[0] : versions[versions.length - 2];
+  const spec = { ...want.spec, caption: last.spec?.caption || want.spec.caption || "" };
+  const version = (last.version || versions.length) + 1;
+  await run(`UPDATE creations SET spec = ?, version = ?, updated_at = ? WHERE id = ?`, [JSON.stringify(spec), version, nowIso(), last.id]);
+  const which = want === versions[0] ? "the first version" : "the version before";
+  await say(ws, listing.id, `Here's ${which} back.`, "creation", { creationId: last.id, version, spec });
+  return { creation: last.id };
 }
 
 // Asked once, at the end of a new post, carousel, story or reel.
@@ -1256,6 +1275,12 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
   if (!listing) return null;
   const sent = await postMessage(ws.id, listingId, "agent", "text", text, photoIds.length ? { photos: photoIds } : null);
   await keepUndo(listingId, sent.id);
+  // A week's own chat: the questions, the calendar, go, and changes to a day's post.
+  if (listing.week_of) {
+    const { weekTurn } = await import("./week.js");
+    const w = await weekTurn(ws, listing, text, { makeCreation });
+    if (w) return w;
+  }
   // A post, carousel, story or reel asked for, or a change to the one just made.
   const kind = creationKind(text);
   const last = await latestCreation(listingId);
@@ -1265,6 +1290,11 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     const askedCaption = /\b(caption|hashtags?)\b/i.test(text) && !ASKS_ABOUT.test(text);
     const saidYes = YES.test(text) && prev?.body?.endsWith(CAPTION_ASK);
     if (askedCaption || saidYes) return writeCaption(ws, listing, last, text);
+  }
+  // "bring back the first one", "undo that", "the old one was better": an earlier version comes back.
+  if (last && !kind && RESTORE.test(text) && !ASKS_ABOUT.test(text)) {
+    const back = await restoreCreation(ws, listing, last, text);
+    if (back) return back;
   }
   // "make the carousel shorter" is a change to the carousel there, not a new one.
   if (kind && last) {

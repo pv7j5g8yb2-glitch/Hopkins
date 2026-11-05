@@ -689,6 +689,11 @@ const TITLE_SCHEMA = { type: "object", properties: { title: { type: "string" } }
 // model writes the words and picks the look; the app draws it (web/studio.js).
 const CR_STYLES = ["ivory", "noir", "modern", "bold", "night", "photo"];
 const CR_LAYOUTS = ["cover", "step", "list", "stat", "statement", "close"];
+// The line icons a reel or post can draw (web/kinetic.js has the drawings).
+const CR_ICONS = ["home", "key", "pin", "calendar", "coin", "check", "chat", "heart", "eye", "form", "target", "sun", "tree", "store", "user", "bolt", "alert", "refresh", "plan", "lock", "send", "rocket", "train", "fence", "bookmark", "chart", "tag", "door"];
+const THEME_WORDS = { ivory: "warm ivory", noir: "black", modern: "clean white", bold: "deep green", night: "deep blue", photo: "photo" };
+// "it's boring", "make it more entertaining", "do it again": a new version from the topic up.
+export const REDESIGN = /\b(boring|bland|basic|dull|generic|ugly|hate it|don'?t like it|not (good|great|creative|engaging|fun)|more (creative|entertaining|engaging|fun|interesting|exciting|eye catching|eye-catching|dynamic|viral|catchy|bold)|less boring|redo|re-?do|start over|try again|again from scratch|different (one|version|style|look)|something (else|different|better)|(make it|make this|do) better|way better|spice it up|make it pop|level it up|step it up)\b/i;
 const CREATION_SCHEMA = {
   type: "object",
   properties: {
@@ -708,6 +713,7 @@ const CREATION_SCHEMA = {
           number: { type: "string", description: "For step slides, the step number (\"1\"); for stat slides, the figure (\"3%\", \"20%\"). Empty otherwise" },
           photo: { type: "integer", description: "For theme photo: which listing photo, 1 for the first; 0 for none" },
           background: { type: "string", description: "This slide's own background colour as a hex code, only when asked for (\"make slide 3 black\") or when varying the background slide to slide; empty otherwise" },
+          icon: { type: "string", enum: ["", ...CR_ICONS], description: "One simple line icon that fits the scene (a reel draws it on as the scene plays): coin for money, key for buying, home, calendar for timing, chart for the market, check, alert for a mistake, bookmark to save. Empty for none" },
         },
         required: ["layout", "kicker", "heading", "accent", "body", "points", "number", "photo"],
       },
@@ -735,25 +741,25 @@ const CREATION_SCHEMA = {
   required: ["title", "theme", "slides", "reply"],
 };
 const KIND_RULES = {
-  carousel: "A carousel: 6 to 8 slides. Slide 1 (cover) is only the hook: a kicker naming who it's for and a big, specific headline that makes that person stop and swipe (a numbered promise, a mistake to avoid, a contrarian line). The middle slides give one genuinely useful point each, mixing layouts (steps, a short checklist, one true stat or a strong statement), so it reads as a designed set, not the same slide repeated. The last slide (close) tells them what to do: save it, send it to someone who needs it, or message the agent.",
-  reel: "An animated reel: 6 to 8 scenes, each read in about 3 seconds. Scene 1 (cover) is the hook. One idea per scene, very few words. The last scene (close) tells them what to do.",
+  carousel: "A carousel: 6 to 8 slides. Slide 1 (cover) is only the hook: a kicker naming who it's for and a big, specific headline that makes that person stop and swipe (a numbered promise, a mistake to avoid, a contrarian line). The middle slides give one genuinely useful point each, mixing layouts (steps, a short checklist, one true stat or a strong statement), so it reads as a designed set, not the same slide repeated; give each step an icon that fits. The last slide (close): the heading is what to do (save it, send it to someone who needs it, or message the agent) and the body is the button on it, at most 5 words.",
+  reel: "An animated reel, made the way the best real estate reels on Instagram are made (and the way @gethopkins makes its own): it talks like one agent telling a friend what they actually think, to the buyers, sellers, renters or locals who follow that agent, never to other agents. 7 to 9 scenes; the words on each scene are what would be said out loud, so they come in word by word. Scene 1 (cover) is the hook and has to stop the scroll in the first second: a named mistake (\"Stop waiting for rates to drop\"), a number promise (\"3 things I'd ask before any offer\"), a contrarian line, or the exact question the viewer has, with the city in it when it's known; its kicker names who it's for (\"Austin buyers\"), and its accent is the one word that lands it. The reel pays the hook off; never bait. Then one idea per scene, and mix the layouts so it moves: numbered steps (each with an icon that fits), at most one true, widely known figure (stat), a short checklist (list), a strong line (statement). Headings are spoken lines of 4 to 9 everyday words with contractions; add a body line only when it adds something, at most 12 words. The last scene (close): the heading is the one thing to do (\"Save this for your house hunt\"), the body is the button on screen, at most 5 words (\"Send it to someone buying\", \"DM me AUSTIN\").",
   story: "An Instagram story: 1 to 3 frames, few words, one clear action.",
   post: "A single post: exactly 1 slide (cover or statement), one strong idea.",
 };
-export async function creationAI({ kind, request, listing, photos = 0, agent = "", previous = null, recent = "" }) {
+export async function creationAI({ kind, request, listing, photos = 0, agent = "", previous = null, recent = "", area = "" }) {
   if (!aiEnabled) return null;
   const r = await call({
-    system: `You are Hopkins, making Instagram content for a real estate agent: posts, carousels, stories and reels, drawn in the app. You write like the best real estate content creator on Instagram: content people save and send because they can use it straight away. Be specific and practical, never vague: not "check your credit" but "pull your free credit reports before you talk to a lender". Every slide earns its place. Plain words, no hype, no emojis, no hashtags, no exclamation marks, US spelling. Never use dashes as punctuation. Widely known general facts are fine when stated carefully ("closing costs usually run 2% to 5% of the price"); never invent local numbers, rates, prices or property details. Never use wording about who a property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. Don't write a caption; the agent asks for one separately if they want it. Everything about it is theirs to direct, like asking Claude: wording, order, how many slides, layouts, colours (exact hex in look), any Google Font by name, weight, capitals, alignment, a different background per slide, the name at the top and the footer line. When they ask for a change, make exactly that change and keep everything else as it was. A new one is always designed fresh for what they asked and who it's for: choose the theme and fill in look (colours, fonts, weight, alignment) to suit this topic and audience, so it never comes out as the same template as last time; only match an earlier one when they ask. ${KIND_RULES[kind] || KIND_RULES.post}`,
-    messages: [{ role: "user", content: `${previous ? `The current version:\n${JSON.stringify({ ...previous, caption: undefined })}\n\nChange it as asked, keep everything else:` : "Make this:"} ${request}\n\n${listing ? `The property (use only these facts): ${JSON.stringify(listing)}\nPhotos available: ${photos}\n` : "No property in this chat.\n"}Agent: ${agent || "unknown"}${!previous && recent ? `\nTheir recent ones looked like this, so make this one look different unless they asked to match: ${recent}` : ""}` }],
+    system: `You are Hopkins, making Instagram content for a real estate agent: posts, carousels, stories and reels, drawn in the app. It speaks for the agent to the people who follow them (buyers, sellers, renters, neighbors), never to other agents, in the agent's own plain voice. You write like the best real estate content creator on Instagram: content people save and send because they can use it straight away. Be specific and practical, never vague: not "check your credit" but "pull your free credit reports before you talk to a lender". Every slide earns its place. Plain words, no hype, no emojis, no hashtags, no exclamation marks, US spelling. Never use dashes as punctuation. Widely known general facts are fine when stated carefully ("closing costs usually run 2% to 5% of the price"); never invent local numbers, rates, prices or property details. Never use wording about who a property suits (families, couples, age, religion, disability, nationality): fair housing rules cover posts too. Don't write a caption; the agent asks for one separately if they want it. Everything about it is theirs to direct, like asking Claude: wording, order, how many slides, layouts, colours (exact hex in look), any Google Font by name, weight, capitals, alignment, a different background per slide, the name at the top and the footer line. When they ask for a specific change, make exactly that change and keep everything else as it was. When they say it's boring, bland or not creative, fun or entertaining enough, or ask for it better, different, redone or more engaging, that is not a tweak: make a new version from the topic up, with a sharper hook, a fresh angle, new words on every slide, different layouts and a different theme and look from the current one; keep only the topic, the facts and anything they said to keep. The reply says what you actually changed, never more. A new one is always designed fresh for what they asked and who it's for: choose the theme and fill in look (colours, fonts, weight, alignment) to suit this topic and audience, so it never comes out as the same template as last time; only match an earlier one when they ask. ${KIND_RULES[kind] || KIND_RULES.post}`,
+    messages: [{ role: "user", content: `${previous ? `The current version:\n${JSON.stringify({ ...previous, caption: undefined })}\n\nChange it as asked, keep everything else:` : "Make this:"} ${request}\n\n${listing ? `The property (use only these facts): ${JSON.stringify(listing)}\nPhotos available: ${photos}\n` : "No property in this chat.\n"}Agent: ${agent || "unknown"}${area ? `\nWhere they sell: ${area}` : ""}${!previous && recent ? `\nTheir recent ones looked like this, so make this one look different unless they asked to match: ${recent}` : ""}` }],
     schema: CREATION_SCHEMA,
     effort: "medium",
-    temperature: 0.7,
+    temperature: previous && REDESIGN.test(request) ? 0.95 : 0.7,
   });
-  return cleanCreation(r, kind, photos, previous);
+  return cleanCreation(r, kind, photos, previous, request);
 }
 // What the model sent, kept to what the drawing can show well.
 const hex = (v) => (/^#?[0-9a-f]{6}$/i.test(String(v || "").trim()) ? `#${String(v).trim().replace(/^#/, "").toUpperCase()}` : "");
-export function cleanCreation(r, kind, photos = 0, previous = null) {
+export function cleanCreation(r, kind, photos = 0, previous = null, request = "") {
   if (!r || !Array.isArray(r.slides) || !r.slides.length) return null;
   const max = { carousel: 10, reel: 10, story: 3, post: 1 }[kind] || 1;
   // Ranges read "2 to 5%"; any other dash becomes a comma (no dashes in anything Hopkins writes).
@@ -764,11 +770,18 @@ export function cleanCreation(r, kind, photos = 0, previous = null) {
     let layout = CR_LAYOUTS.includes(x.layout) ? x.layout : i === 0 ? "cover" : i === all.length - 1 && all.length > 1 ? "close" : "statement";
     const points = Array.isArray(x.points) ? x.points.map((p) => str(p, 70)).filter(Boolean).slice(0, 5) : [];
     if (layout === "list" && points.length < 2) layout = "statement";
-    return { layout, kicker: str(x.kicker, 40), heading, accent: accent && heading.toLowerCase().includes(accent.toLowerCase()) ? accent : "", body: str(x.body, 200), points: layout === "list" ? points : [], number: layout === "step" || layout === "stat" ? str(x.number, 8) : "", photo: Math.max(0, Math.min(photos, Number(x.photo) || 0)), ...(hex(x.background) ? { background: hex(x.background) } : {}) };
+    return { layout, kicker: str(x.kicker, 40), heading, accent: accent && heading.toLowerCase().includes(accent.toLowerCase()) ? accent : "", body: str(x.body, 200), points: layout === "list" ? points : [], number: layout === "step" || layout === "stat" ? str(x.number, 10) : "", photo: Math.max(0, Math.min(photos, Number(x.photo) || 0)), ...(hex(x.background) ? { background: hex(x.background) } : {}), ...(CR_ICONS.includes(x.icon) ? { icon: x.icon } : {}) };
   }).filter((x) => x.heading);
   if (!slides.length) return null;
-  const theme = CR_STYLES.includes(r.theme) && (r.theme !== "photo" || photos) ? r.theme : previous?.theme || "ivory";
-  const L = r.look && typeof r.look === "object" ? r.look : previous?.look || {};
+  let theme = CR_STYLES.includes(r.theme) && (r.theme !== "photo" || photos) ? r.theme : previous?.theme || "ivory";
+  let L = r.look && typeof r.look === "object" ? r.look : previous?.look || {};
+  // Asked for something better or less boring: it never comes back in the same look.
+  const redo = previous && REDESIGN.test(request);
+  if (redo && theme === previous.theme) {
+    const others = CR_STYLES.filter((x) => x !== previous.theme && (x !== "photo" || photos));
+    theme = others[(previous.slides?.length || 0) % others.length];
+    L = {};
+  }
   const font = (v) => (/^[A-Za-z0-9][A-Za-z0-9 ]{1,39}$/.test(String(v || "").trim()) ? String(v).trim() : "");
   const look = Object.fromEntries(Object.entries({
     background: hex(L.background), background2: hex(L.background2), text: hex(L.text), accent: hex(L.accent),
@@ -776,7 +789,42 @@ export function cleanCreation(r, kind, photos = 0, previous = null) {
     headingWeight: Number(L.headingWeight) >= 100 && Number(L.headingWeight) <= 900 ? Math.round(Number(L.headingWeight) / 100) * 100 : 0,
     uppercase: L.uppercase === true, align: ["left", "center"].includes(L.align) ? L.align : "", grain: L.grain === false ? false : undefined,
   }).filter(([, v]) => v !== "" && v !== 0 && v !== false && v !== undefined || (v === false && L.grain === false)));
-  return { title: str(r.title, 60), caption: previous?.caption || "", theme, slides, look, handle: r.handle !== undefined ? str(r.handle, 40) : previous?.handle, footer: r.footer !== undefined ? str(r.footer, 50) : previous?.footer, reply: str(r.reply, 300) };
+  // A redo's reply says what really changed, from the result itself.
+  const reply = redo ? `New version: a ${THEME_WORDS[theme]} look, a new hook ("${slides[0].heading}") and ${slides.length} new ${kind === "reel" ? "scenes" : "slides"}.` : str(r.reply, 300);
+  return { title: str(r.title, 60), caption: previous?.caption || "", theme, slides, look, handle: r.handle !== undefined ? str(r.handle, 40) : previous?.handle, footer: r.footer !== undefined ? str(r.footer, 50) : previous?.footer, reply };
+}
+
+// The week's content calendar, from what the agent said about their week (Plan my week asks first).
+const WEEK_SCHEMA = {
+  type: "object",
+  properties: {
+    days: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          day: { type: "integer", description: "0 is Monday, 6 is Sunday" },
+          time: { type: "string", description: "When it posts, 24 hour \"18:30\": evenings and lunchtimes do best" },
+          kind: { type: "string", enum: ["carousel", "post", "reel", "story"] },
+          title: { type: "string", description: "The hook, exactly as it would sit on the post: specific and at most 8 words" },
+          idea: { type: "string", description: "What it covers and the angle, one sentence, at most 22 words" },
+        },
+        required: ["day", "time", "kind", "title", "idea"],
+      },
+    },
+  },
+  required: ["days"],
+};
+export async function weekPlanAI({ answers = "", request = "", previous = null, days = [], brand = {}, week = "" }) {
+  if (!aiEnabled) return null;
+  const DAY = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  return call({
+    system: `You are Hopkins, planning one week of Instagram and Facebook content for a real estate agent, the way the best real estate content strategist would. Plan exactly ${days.length} posts, one on each of these days: ${days.map((d) => `${DAY[d]} (${d})`).join(", ")}. Build the week first from what they told you about this week (a listing to show, an open house, something happening locally, something about them), then fill the rest from what they like to post. Mix the formats so the week has rhythm: at least one reel and one carousel, a story for anything time sensitive (an open house, an event). Every title is the hook as it would sit on the post, written for their buyers, sellers, renters or neighbors, never for other agents: a number promise, a named mistake, a local angle or a question people have, with the place in it when it's known. Each one gives something people can use or want to share. Never invent facts: no prices, numbers, events, places or details they didn't give you, and nothing about a listing beyond what they said. Never wording about who a property suits (fair housing). No dashes. US spelling.`,
+    messages: [{ role: "user", content: `${previous ? `The current plan:\n${JSON.stringify(previous)}\n\nChange it as they ask, keep everything else: ${request}\n\n` : ""}What they said about their week:\n${answers || "(nothing)"}\n\nWhere they sell: ${brand.area || "unknown"}. What they like to post: ${brand.styles || "unknown"}. Their content: ${brand.content_style || "unknown"}. Agent: ${[brand.agent, brand.business].filter(Boolean).join(", ") || "unknown"}. The week: ${week}.` }],
+    schema: WEEK_SCHEMA,
+    effort: "medium",
+    temperature: 0.7,
+  });
 }
 
 // A caption and hashtags, only when the agent asks for them.

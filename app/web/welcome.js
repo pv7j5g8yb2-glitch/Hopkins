@@ -390,9 +390,9 @@
       async next() { saveBrand({ post_often: A.post_often }); return "styles"; },
     },
     styles: {
-      title: "What do you want to post?", sub: "Pick three to plan your first week.<br>You can change it anytime.",
+      title: "What do you want to post?", sub: "Pick at least three.<br>You can change it anytime.",
       body: () => chips("styles", STYLES),
-      valid: () => A.styles.size >= 3, count: () => `${Math.min(A.styles.size, 3)} / 3`,
+      valid: () => A.styles.size >= 3, count: () => (A.styles.size < 3 ? `${A.styles.size} / 3` : ""),
       async next() { saveBrand({ styles: [...A.styles].join(", ") }); return "music"; },
     },
     likes: {
@@ -432,7 +432,7 @@
     },
     ready: {
       title: "", sub: "",
-      body: () => `<div class="making"><svg viewBox="0 0 120 120">${PEBBLES}</svg><p>Setting up your Hopkins</p></div>`,
+      body: () => `<div class="making"><svg viewBox="0 0 120 120">${PEBBLES}</svg><p>Customizing your experience</p></div>`,
       valid: () => false,
       // every answer is saved before Hopkins opens; the pebbles turn while it happens
       async auto() {
@@ -540,6 +540,7 @@
     } else el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, easing: ease });
     goText.textContent = s.label || "Continue";
     $("#fdock").classList.toggle("hide", !!s.field || !!s.auto);
+    requestAnimationFrame(placeDock); setTimeout(placeDock, 380);
     aside.textContent = s.aside || "";
     // Back: never to before the account was made, and never off the first question
     const lockedBefore = A.created ? history.lastIndexOf("name") : -1;
@@ -613,9 +614,20 @@
   backBtn.addEventListener("click", () => { tick(); const prev = history.pop(); if (prev) to(prev, { back: true }); });
   matchMedia("(prefers-color-scheme: light)").addEventListener("change", applyTheme);
 
+  // The button sits a little under what's being answered (the field, the options, the chips), so
+  // the question and its button read as one; a long list or the keyboard keeps it above them.
+  let kbH = 0;
+  function placeDock() {
+    const dock = $("#fdock"); if (!cur || !dock) return;
+    let bottom = 0;
+    cur.querySelectorAll("h2,.sub,input,.opt,.chip,.mode,.phone,.handles .chip").forEach((e) => { const r = e.getBoundingClientRect(); if (r.height) bottom = Math.max(bottom, r.bottom); });
+    const max = innerHeight - kbH - dock.offsetHeight;
+    dock.style.top = `${Math.round(Math.min(bottom + 40, max))}px`;
+  }
+  addEventListener("resize", placeDock);
   // Keep the button just above the keyboard, the way an app does.
   if (window.visualViewport) {
-    const kb = () => { const v = visualViewport; document.documentElement.style.setProperty("--kb", `${Math.max(0, innerHeight - v.height - v.offsetTop)}px`); };
+    const kb = () => { const v = visualViewport; kbH = Math.max(0, innerHeight - v.height - v.offsetTop); document.documentElement.style.setProperty("--kb", `${kbH}px`); placeDock(); };
     visualViewport.addEventListener("resize", kb); visualViewport.addEventListener("scroll", kb);
   }
 

@@ -126,12 +126,39 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
 * **The app redesign (2026-11-05, for the pivot):** tabs are Week, Chats, the + key, Library, You
   (Leads and Report are off the tab bar; their code stays). Week is home: "This week", the posts as a
   deck of cards by day (phones swipe one at a time, laptops show three side by side), a day strip,
-  and one Approve the week pill. A new account's first week plans itself from its answers and fills
-  in card by card. Tapping a post opens it big with Change it (the week's chat) and Download.
+  and one Approve the week pill. Tapping a post opens it big with Change it (the week's chat) and
+  Download.
+* **Planning a week is a conversation (Ismael, 2026-11-05, furious at a week that planned itself:
+  "the content is horror", "I don't want the AI to be planning it like that"):** nothing plans by
+  itself. Plan my week opens the week's chat, where Hopkins asks four short questions (listings to
+  show, what's booked, what's on locally, one thing about them). From the answers it lays out a
+  content calendar (day, time, format, the hook and what it covers) that the agent changes in
+  words ("swap Wednesday for a reel"); only Make the week or a yes makes the posts, and Week fills
+  in row by row, then shows the deck to approve. "Make Thursday about the school fair" changes that
+  day's post. `app/src/week.js` (`startWeek`, `weekTurn`, `makeWeek`), `weekPlanAI` in brain.js.
   Library is everything Hopkins made, filtered by kind. You holds the front door's answers, each
   changeable, and Light, System or Dark. Dark is the default. Type is Instrument Sans. The design
   system is `app/web/hk.css`, loaded after app.css; the tab bar is plain frosted glass (lens.js is
   no longer loaded).
+* **Every version stays in the chat (Ismael, 2026-11-05, furious: the first reel "literally
+  disappears after the second reel comes"):** each message keeps the version it made (`spec` on the
+  message's data), so a change never makes the earlier one vanish, like Claude's artifacts. "Bring
+  back the first one", "undo", "the old one was better" put an earlier version back
+  (`restoreCreation`).
+* **"It's boring" is a redo, never a tweak (Ismael, 2026-11-05: "make it more entertaining" came
+  back with only new words in the same look):** boring, bland, more creative, entertaining or fun,
+  redo, something different (`REDESIGN` in brain.js) make a new version from the topic up: a new
+  hook, new words, new layouts and a different theme. The reply is written from the result.
+* **Reels move like @gethopkins' own (Ismael, 2026-11-05):** an animated or educational reel is
+  made the way `content/reels/` makes ours, but for the agent's buyers, sellers and neighbours, not
+  for agents: the hook slams in word by word with a jolt, a step's number lands tilted in a circle
+  while a line icon draws itself, a figure counts up, a list ticks in, a strong line lights up word
+  by word with its key word boxed (the corner dot box), the last scene lands one call to action on a
+  pill. `app/web/kinetic.js`; posts and carousels share the boxed word, icons and pill. Each reel
+  downloads with its cover.
+* **Front door details (Ismael, 2026-11-05):** the last screen says "Customizing your experience";
+  What to post needs at least three, no cap (same in You); Continue and Skip sit just under the
+  question and centred, never at the very bottom (above the keyboard when it's up).
 * **The cream look (Ismael, 2026-11-04, after Cosmos; replaces the black look and the reeded
   background):** a flat warm off white page (`#F6F3EE`) with no picture, pink glow or stripes behind
   it; solid white cards with a hairline; black text and black pill buttons; the sunset pink only in

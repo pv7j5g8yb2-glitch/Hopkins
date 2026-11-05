@@ -26,7 +26,7 @@
 
   // Lines of words that fit a width. Each word carries its own font, so a heading can set one word
   // in italic serif; each word keeps its x so a reel can bring words in one by one.
-  function layout(ctx, text, fonts, size, maxW, lineH, accent = "") {
+  function layout(ctx, text, fonts, size, maxW, lineH, accent = "", boxed = false) {
     const acc = String(accent || "").toLowerCase().replace(/[^\p{L}\p{N}%$']/gu, "");
     const lines = [];
     let line = [], w = 0;
@@ -35,11 +35,11 @@
       const font = isAcc ? fonts.accent(size) : fonts.main(size);
       ctx.font = font;
       spacing(ctx, isAcc ? 0 : fonts.track(size));
-      const ww = ctx.measureText(word).width;
+      const tw = ctx.measureText(word).width, pad = isAcc && boxed ? size * 0.2 : 0, ww = tw + pad * 2;
       ctx.font = fonts.main(size);
       const space = ctx.measureText(" ").width;
       if (line.length && w + space + ww > maxW) { lines.push(line); line = []; w = 0; }
-      line.push({ word, x: line.length ? w + space : 0, w: ww, font, acc: isAcc });
+      line.push({ word, x: line.length ? w + space : 0, w: ww, tw, pad, font, acc: isAcc, box: isAcc && boxed });
       w = line.length === 1 ? ww : w + space + ww;
     }
     if (line.length) lines.push(line);
@@ -75,10 +75,10 @@
   let BODY = SANS;
   const bodyFonts = (weight = 400) => ({ main: (s) => `${weight} ${s}px ${BODY}`, accent: (s) => `${weight} ${s}px ${BODY}`, track: () => 0 });
   // The biggest heading size that keeps it to a few lines.
-  function fit(ctx, text, th, start, min, maxW, maxLines, accent) {
-    const lh = th.serif ? 1.02 : 0.98;
-    for (let s = start; s >= min; s -= 4) { const L = layout(ctx, text, headFonts(th), s, maxW, lh, accent); if (L.lines.length <= maxLines) return L; }
-    return layout(ctx, text, headFonts(th), min, maxW, lh, accent);
+  function fit(ctx, text, th, start, min, maxW, maxLines, accent, boxed = false) {
+    const lh = th.serif ? 1.02 : boxed ? 1.04 : 0.98;
+    for (let s = start; s >= min; s -= 4) { const L = layout(ctx, text, headFonts(th), s, maxW, lh, accent, boxed); if (L.lines.length <= maxLines) return L; }
+    return layout(ctx, text, headFonts(th), min, maxW, lh, accent, boxed);
   }
 
   function background(ctx, W, H, th, photo, zoom = 1) {
@@ -126,14 +126,33 @@
         ctx.globalAlpha = a * (ctx.__alpha ?? 1);
         ctx.font = w.font;
         spacing(ctx, w.acc ? 0 : L.fonts.track(L.size));
+        const base = y + li * L.lineH + L.size * 0.8 + (1 - a) * 24;
+        if (w.box) {
+          // the key word in a box with a dot at each corner, like a selected layer (the @gethopkins mark)
+          const bx = x + off + w.x, top = base - L.size * 0.8, hgt = L.size * 1.02;
+          ctx.fillStyle = accentColor;
+          roundRect(ctx, bx, top, w.w, hgt, Math.max(6, L.size * 0.08)); ctx.fill();
+          ctx.save(); ctx.strokeStyle = accentColor; ctx.lineWidth = Math.max(3, L.size * 0.03); ctx.fillStyle = ctx.__bg || "#fff";
+          for (const [cx, cy] of [[bx, top], [bx + w.w, top], [bx, top + hgt], [bx + w.w, top + hgt]]) { ctx.beginPath(); ctx.arc(cx, cy, Math.max(7, L.size * 0.07), 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+          ctx.restore();
+          ctx.fillStyle = lum(accentColor.startsWith("#") ? accentColor : "#888888") > 0.55 ? "#111111" : "#FFFFFF";
+          ctx.fillText(w.word, bx + w.pad, base);
+          continue;
+        }
         ctx.fillStyle = w.acc ? accentColor : color;
-        ctx.fillText(w.word, x + off + w.x, y + li * L.lineH + L.size * 0.8 + (1 - a) * 24);
+        ctx.fillText(w.word, x + off + w.x, base);
       }
     });
     spacing(ctx, 0);
     ctx.globalAlpha = ctx.__alpha ?? 1;
     return k;
   }
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  const drawIcon = (...a) => window.Kinetic?.drawIcon(...a);
   function label(ctx, text, x, y, color, size = 24, align = "left") {
     ctx.font = `600 ${size}px ${SANS}`;
     spacing(ctx, size * 0.16);
@@ -175,6 +194,7 @@
     ctx.save();
     spacing(ctx, 0);
     background(ctx, W, H, th, photo, anim ? 1 + 0.05 * clamp(anim.t / 5, 0, 1) : 1);
+    ctx.__bg = photo ? "#0B1430" : th.bg[0];
     if (th.grain) { ctx.fillStyle = grainPattern(ctx); ctx.fillRect(0, 0, W, H); }
     const tall = H > 1500;
     const M = 104, maxW = W - M * 2;
@@ -195,7 +215,10 @@
     let used = 0;
     if (kind === "cover" || kind === "statement") {
       const cover = kind === "cover";
-      const head = fit(ctx, s.heading, th, cover ? (tall ? 156 : 140) : (tall ? 120 : 104), 60, maxW, cover ? 5 : 6, s.accent);
+      const boxed = !th.serif && !th.headFont && Boolean(s.accent);
+      const head = fit(ctx, s.heading, th, cover ? (tall ? 156 : 140) : (tall ? 120 : 104), 60, maxW, cover ? 5 : 6, s.accent, boxed);
+      // a statement can carry one symbol above it
+      if (!cover && s.icon && !photo) { const sz = tall ? 150 : 120; drawIcon(ctx, s.icon, C ? W / 2 : M + sz / 2, top + 70 + sz / 2, sz, th.accent, 1, 1.4); }
       const body = s.body ? layout(ctx, s.body, bodyFonts(), tall ? 44 : 40, maxW * 0.86, 1.4) : null;
       const kick = s.kicker ? 64 : 0;
       const block = kick + head.height + (body ? 48 + body.height : 0);
@@ -230,6 +253,9 @@
       if (s.kicker) { label(ctx, s.kicker, C ? W / 2 : M, y + 4, th.accent, 24, C ? "center" : "left"); y += kick; }
       used = words(ctx, head, M, y, th.ink, th.accent, { appear: wordIn, ...al });
       if (body) { fade(after(used)); words(ctx, body, C ? M + maxW * 0.05 : M, y + head.height + 44, th.soft, th.soft, C ? { align: "center", maxW: maxW * 0.9 } : {}); fade(1); }
+      // the one visual: a big line icon level with the number
+      const sz = Math.min(tall ? 250 : 210, numSize * 0.78);
+      if (s.icon && kind === "step" && !C) drawIcon(ctx, s.icon, W - M - sz / 2, y0 + numSize * 0.42, sz, th.ink, 1, 1.15);
     } else if (kind === "list") {
       const head = fit(ctx, s.heading, th, tall ? 96 : 84, 54, maxW, 3, s.accent);
       const rows = s.points.map((p) => layout(ctx, p, bodyFonts(500), tall ? 42 : 38, maxW - 96, 1.3));
@@ -251,15 +277,25 @@
     } else {
       // The last slide: one symbol, the line, what to do, centred.
       const head = fit(ctx, s.heading, th, tall ? 108 : 96, 56, maxW, 4, s.accent);
-      const body = s.body ? layout(ctx, s.body, bodyFonts(), tall ? 44 : 40, maxW * 0.84, 1.4) : null;
-      const icon = tall ? 120 : 104;
-      const block = icon + 72 + head.height + (body ? 44 + body.height : 0);
+      const pill = s.body && s.body.length <= 34 ? s.body.replace(/[.]$/, "") : "";
+      const body = s.body && !pill ? layout(ctx, s.body, bodyFonts(), tall ? 44 : 40, maxW * 0.84, 1.4) : null;
+      const icon = tall ? 150 : 130, pillH = tall ? 104 : 92;
+      const block = icon + 64 + head.height + (body ? 44 + body.height : 0) + (pill ? 56 + pillH : 0);
       const y0 = Math.round((top + footY) / 2 - block / 2);
       fade(anim ? ease((anim.t - 0.05) / 0.5) : 1);
-      bookmark(ctx, W / 2, y0 + icon / 2, icon, th.accent);
+      if (window.Kinetic) {
+        ctx.fillStyle = th.accent; ctx.beginPath(); ctx.arc(W / 2, y0 + icon / 2, icon / 2, 0, Math.PI * 2); ctx.fill();
+        drawIcon(ctx, s.icon || "bookmark", W / 2, y0 + icon / 2, icon * 0.5, lum(th.accent) > 0.55 ? "#111111" : "#FFFFFF", 1, 2.2);
+      } else bookmark(ctx, W / 2, y0 + icon / 2, icon, th.accent);
       fade(1);
-      used = words(ctx, head, M, y0 + icon + 72, th.ink, th.accent, { align: "center", appear: wordIn, maxW });
-      if (body) { fade(after(used)); words(ctx, body, M + (maxW - maxW * 0.84) / 2, y0 + icon + 72 + head.height + 44, th.soft, th.soft, { align: "center", maxW: maxW * 0.84 }); fade(1); }
+      used = words(ctx, head, M, y0 + icon + 64, th.ink, th.accent, { align: "center", appear: wordIn, maxW });
+      if (body) { fade(after(used)); words(ctx, body, M + (maxW - maxW * 0.84) / 2, y0 + icon + 64 + head.height + 44, th.soft, th.soft, { align: "center", maxW: maxW * 0.84 }); fade(1); }
+      if (pill) {
+        ctx.font = `700 ${tall ? 44 : 40}px ${SANS}`;
+        const pw = Math.min(maxW, ctx.measureText(pill).width + 100), py = y0 + icon + 64 + head.height + 56;
+        ctx.fillStyle = th.ink; roundRect(ctx, W / 2 - pw / 2, py, pw, pillH, pillH / 2); ctx.fill();
+        ctx.fillStyle = th.bg[0].startsWith("#") ? th.bg[0] : "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(pill, W / 2, py + pillH / 2 + 2, maxW - 60); ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      }
     }
 
     // The footer strip: a hairline, the series on the left, the progress on the right.
@@ -315,16 +351,21 @@
     await prepare(spec, o);
     const [W, H] = SIZES[o.kind] || SIZES.post;
     canvas.width = W; canvas.height = H;
+    // a reel's still is its hook, landed, the way it opens
+    if (o.kind === "reel" && window.Kinetic) return window.Kinetic.cover(canvas.getContext("2d"), spec, o, F);
     frame(canvas.getContext("2d"), spec, i, o, null);
   }
 
   // How long each scene holds: long enough to read its words.
   const sceneLen = (s) => clamp(2.4 + (String(s.heading).split(/\s+/).length + String(s.body || "").split(/\s+/).length * 0.6 + (s.points || []).join(" ").split(/\s+/).length * 0.6) * 0.2, 2.8, 6);
   function timeline(spec) { let t = 0; return spec.slides.map((s) => { const d = sceneLen(s); const r = { start: t, dur: d }; t += d; return r; }); }
-  const total = (spec) => timeline(spec).reduce((a, x) => a + x.dur, 0);
+  const total = (spec) => (window.Kinetic ? window.Kinetic.total(spec) : timeline(spec).reduce((a, x) => a + x.dur, 0));
 
-  // A reel at time t (seconds): the scene, crossfading into the next in its last 0.35s.
+  // A reel at time t (seconds). Reels move the way @gethopkins' own do (web/kinetic.js); without
+  // it, the scenes crossfade.
+  const F = { themeFor, headFonts, lum };
   function reelAt(ctx, spec, o, t) {
+    if (window.Kinetic) return window.Kinetic.reelAt(ctx, spec, o, t, F);
     const tl = timeline(spec);
     let i = tl.findIndex((x) => t < x.start + x.dur);
     if (i < 0) i = tl.length - 1;
@@ -391,5 +432,5 @@
     return new Blob(parts, { type: type.split(";")[0] });
   }
 
-  window.Studio = { SIZES, THEMES, drawSlide, playReel, recordReel, total };
+  window.Studio = { SIZES, THEMES, drawSlide, playReel, recordReel, total, __reelAt: reelAt };
 })();

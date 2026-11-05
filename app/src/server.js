@@ -31,7 +31,7 @@ import { mailReady, sendMail, resetEmail } from "./mail.js";
 import { checkWording } from "./fairhousing.js";
 import { wipeWorkspace, freshStart } from "./fresh.js";
 import { pushKeys, savePush, dropPush, pushTo, pushCount } from "./push.js";
-import { mondayOf, weekFor, approveWeek, library, planWeek } from "./week.js";
+import { mondayOf, weekFor, approveWeek, library, startWeek, makeWeekFor } from "./week.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB = join(__dirname, "..", "web");
@@ -41,7 +41,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "welcome.html", "welcome.css", "welcome.js", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "kinetic.js", "welcome.html", "welcome.css", "welcome.js", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { json: "application/json; charset=utf-8", html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -119,7 +119,7 @@ app.get("/healthz", async (request) => {
   return { ok: true, started: STARTED, ai: provider || "none", pinged: seen };
 });
 
-for (const f of ["app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "creative.js", "studio.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
+for (const f of ["app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "creative.js", "studio.js", "kinetic.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
 for (const [path, v] of Object.entries(VENDOR)) {
@@ -998,7 +998,14 @@ app.post("/api/week/approve", async (request, reply) => {
   if (r.error) return reply.code(404).send(r);
   return r;
 });
-app.post("/api/week/plan", async (request) => planWeek(request.ws, mondayOf(new Date(), timeZone(request)), [request.ws.brand?.agent_name || request.user.name, request.ws.brand?.business].filter(Boolean).join(", ")));
+// Plan my week opens the week's chat, where Hopkins asks a few questions first; Make the week (or
+// a yes in that chat) makes the posts from the calendar it then proposes.
+app.post("/api/week/start", async (request) => startWeek(request.ws, mondayOf(new Date(), timeZone(request))));
+app.post("/api/week/make", async (request, reply) => {
+  const r = await makeWeekFor(request.ws, mondayOf(new Date(), timeZone(request)));
+  if (r.error) return reply.code(404).send(r);
+  return r;
+});
 // The Library: everything Hopkins has made, newest first.
 app.get("/api/library", async (request) => ({ items: await library(request.ws) }));
 

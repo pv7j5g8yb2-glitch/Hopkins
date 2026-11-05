@@ -286,7 +286,7 @@ for (const sql of ["ALTER TABLE users ADD COLUMN avatar_id TEXT", "ALTER TABLE w
   "ALTER TABLE launches ADD COLUMN synced_at TEXT", "ALTER TABLE meta_ads ADD COLUMN spend REAL", "ALTER TABLE leads ADD COLUMN replied_at TEXT", "ALTER TABLE meta_ads ADD COLUMN impressions INTEGER", "ALTER TABLE meta_ads ADD COLUMN reach INTEGER", "ALTER TABLE meta_ads ADD COLUMN clicks INTEGER", "ALTER TABLE launches ADD COLUMN meta_spend REAL", "ALTER TABLE workspaces ADD COLUMN site TEXT",
   // The week (2026-11-04): a chat that holds one Monday to Sunday week of posts, its Monday as a
   // plain date, whether the agent approved it and when.
-  "ALTER TABLE listings ADD COLUMN week_of TEXT", "ALTER TABLE listings ADD COLUMN week_status TEXT", "ALTER TABLE listings ADD COLUMN week_approved_at TEXT"]) {
+  "ALTER TABLE listings ADD COLUMN week_of TEXT", "ALTER TABLE listings ADD COLUMN week_status TEXT", "ALTER TABLE listings ADD COLUMN week_approved_at TEXT", "ALTER TABLE listings ADD COLUMN week_plan TEXT"]) {
   // Only "already there" is expected; anything else is logged, not hidden.
   try { await client.execute(sql); } catch (err) { if (!/duplicate column/i.test(err.message)) console.error(`Migration failed (${sql}):`, err.message); }
 }

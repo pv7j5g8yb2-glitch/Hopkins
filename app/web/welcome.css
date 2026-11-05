@@ -120,9 +120,9 @@ body.blue .pill{color:#0A4593}
 .mode.on{background:var(--fchip);color:var(--fink)}
 
 /* the one button, above the keyboard */
-.fdock{position:fixed;left:0;right:0;bottom:var(--kb,0px);display:flex;flex-direction:column;align-items:center;padding:0 22px calc(env(safe-area-inset-bottom,0px) + 14px);pointer-events:none;transition:bottom .25s var(--ease)}
+.fdock{position:fixed;left:0;right:0;top:calc(100% - 90px);display:flex;flex-direction:column;align-items:center;padding:0 22px calc(env(safe-area-inset-bottom,0px) + 14px);pointer-events:none;transition:top .3s var(--ease)}
 .fdock>*{pointer-events:auto}
-.go{position:relative;width:min(100%,476px);height:50px;border-radius:999px;background:var(--fdim);color:var(--fdimInk);font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:background-color .25s var(--ease),color .25s,transform .12s var(--ease)}
+.go{position:relative;width:min(100%,340px);height:50px;border-radius:999px;background:var(--fdim);color:var(--fdimInk);font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:background-color .25s var(--ease),color .25s,transform .12s var(--ease)}
 .go.ready{background:var(--fgo);color:var(--fgoInk)}
 .go:active{transform:scale(.97)}
 .go b{position:absolute;right:26px;font-weight:600}
@@ -150,7 +150,7 @@ body.blue .pill{color:#0A4593}
 .opt.on span{color:color-mix(in srgb,var(--fbg) 70%,transparent)}
 .fdock.hide{opacity:0;pointer-events:none!important}
 .fdock.hide>*{pointer-events:none!important}
-.fdock{transition:bottom .25s var(--ease),opacity .25s}
+.fdock{transition:top .3s var(--ease),opacity .25s}
 /* handles added on the agents question */
 .handles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;min-height:44px;margin:-90px 0 40px;padding:0 10px}
 .handles .chip i svg{width:12px;height:12px}
@@ -159,3 +159,12 @@ body.blue .pill{color:#0A4593}
 .making svg{width:56px;height:56px;fill:var(--fink);animation:turn 1.4s cubic-bezier(.6,.05,.4,.95) infinite}
 .making p{font-size:17px;font-weight:500;color:var(--fink);animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+/* a laptop: the question, its answers and the button sit together in the middle of the screen */
+@media (min-width:700px) and (min-height:700px){
+  .step{justify-content:center;padding-bottom:110px}
+  .field{flex:none;height:150px}
+  .opts{flex:none;padding-bottom:0;margin-top:30px}
+  .chips{flex:none;overflow:visible;-webkit-mask:none;mask:none;padding:22px 4px 0}
+  .preview{flex:none;height:440px}
+  .modes{margin-bottom:0}
+}
