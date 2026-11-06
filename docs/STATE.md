@@ -1211,3 +1211,8 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   a pill on the last slide; the front door's buttons sit under the question. Checked with a stand
   in model locally (no model keys in the container), so the real model's words still need a look
   on Render.
+
+* Competitor research (2026-11-06), after Ismael dropped AI made content: contract to close,
+  seller updates and buyer agreements, every player with prices, AI, good and bad, in
+  `docs/COMPETITORS.md`. Read: all three are crowded; contract to close is the only one where
+  agents already spend hundreds per deal. No direction chosen yet.
