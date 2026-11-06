@@ -1216,3 +1216,12 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   seller updates and buyer agreements, every player with prices, AI, good and bad, in
   `docs/COMPETITORS.md`. Read: all three are crowded; contract to close is the only one where
   agents already spend hundreds per deal. No direction chosen yet.
+
+* Coffee & Contracts launched its new platform (seen 2026-11-06, posted the day before): Beans, a
+  chat and text assistant that fills in their human made templates with the agent's copy, photos
+  and colours (in C&C or the agent's Canva), a Sunday review, Monday plan and daily story idea from
+  Google Calendar, Brand Brain memory, quiz lead magnets and landing pages, link in bio, a leads
+  list with CSV export, Instagram analytics and audit; AutoDMs and scheduling to Instagram coming
+  soon. Slide 14 leads with "Made by humans, not AI". 6,000+ agents in their Facebook group;
+  founding member offer ($20 off, price locked before 24 November). It covers almost all of the
+  organic content plan for Hopkins, with seven years of templates and an audience behind it.
