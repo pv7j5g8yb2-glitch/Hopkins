@@ -17,7 +17,9 @@ test("a request only matches a template made for it", () => {
   assert.equal(matchTemplates("it doesn't have to be your dream house, reassurance for a nervous first home buyer")[0].id, "doesnt-have-to-be");
   assert.equal(matchTemplates("why I chose my brokerage, a recruiting post for agents")[0].id, "why-i-chose-my-brokerage");
   assert.deepEqual(matchTemplates("market update on interest rates for first time buyers"), []);
-  assert.deepEqual(matchTemplates("best coffee spots in my city"), [], "no template for it, so none is forced");
+  assert.equal(matchTemplates("best coffee spots in my city")[0].id, "seasonal-local-guide");
+  assert.equal(matchTemplates("a fall guide with things to do in my city")[0].id, "seasonal-local-guide");
+  assert.deepEqual(matchTemplates("how much house can I afford"), [], "no template for it, so none is forced");
 });
 
 test("every template has a purpose, a cover and a comment slide, and its own id", () => {

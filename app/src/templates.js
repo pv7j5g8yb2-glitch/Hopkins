@@ -264,6 +264,22 @@ export const TEMPLATES = [
     fields: { brokerage: "the agent's own brokerage name", life_situation: "e.g. a busy mom of two, a part time agent, a new agent", benefit_title: "a real benefit of the brokerage", benefit_body: "1 to 3 plain sentences", comment_word: "one word", comment_offer: "what they get" },
     rules: ["Every benefit, fee and perk comes from the agent or the brokerage's own published information and is confirmed by the agent; Hopkins never invents fees, splits or income claims.", "Never earnings promises; brokerage brand names and logos only if the agent is that brokerage's agent and has the right to use them.", "Photos are the agent's own."],
   },
+  {
+    id: "seasonal-local-guide",
+    name: "The [season] guide: things to do in and around [city]",
+    purpose: "A seasonal local guide carousel and the first one that Hopkins researches: a big script and serif cover ('The FALL GUIDE, things to do in + around [city]'), then one category per slide with a list of real local places and a one line reason to go (pumpkin patches and farms, fall food bucket list, date ideas, coffee orders to try, events to add to your calendar with dates, where to go when the leaves turn), a brown footer bar with the comment offer, and an ending with the agent's portrait, 'there's more where that came from' and the free full guide. Works for any season or holiday and for any city.",
+    topics: ["fall guide", "winter guide", "spring guide", "summer guide", "holiday guide", "seasonal guide", "things to do", "things to do this weekend", "things to do in", "local guide", "city guide", "bucket list", "date ideas", "date night", "coffee spots", "best coffee", "coffee shops", "restaurants", "pumpkin patches", "events", "events this month", "kid friendly", "with the kids", "day trips", "weekend getaways", "local spots", "best places", "where to go", "christmas lights", "farmers market"],
+    avoid: ["market update", "interest rate", "first time buyer", "just listed", "just sold", "open house", "bring back", "traffic", "parking", "hills i die on", "bloodline", "unhinged", "not paid to list", "sellers", "brokerage", "doesn't have to be", "lose it"],
+    covers: ["big script 'The' over huge condensed serif season word, sans subtitle, over a photo of the season"],
+    slides: [
+      { kind: "cover", fields: ["season", "city"], photo: "agent supplied or clearly licensed seasonal photo", text: "script 'The', huge condensed serif season word, sans 'things to do in + around [city]'" },
+      { kind: "guide-list", repeat: "4 to 8", fields: ["category_title", "places"], photo: "agent supplied or clearly licensed photo for the category", text: "lowercase serif category title, bold sans place lines, brown footer bar with the comment offer", item: "place name | town, or place name plus a one line reason or order" },
+      { kind: "comment", fields: ["agent_name", "city", "season", "comment_word", "guide_contents"], photo: "agent portrait in a rounded frame on a cream background", note: "Happy [Season]! There's more where that came from. I put together the full [City] [Season] Guide with ... Comment [WORD] and I'll send it to you." },
+    ],
+    fields: { season: "Fall | Winter | Spring | Summer | Holiday", city: "text", category_title: "e.g. pumpkin patches + farms", places: "3 to 6 real local places, each with the town or a one line reason or what to order", event_dates: "real dates for events, from a source", agent_name: "text", comment_word: "one word, e.g. FALL", guide_contents: "what the full guide covers" },
+    research: true,
+    rules: ["Hopkins researches the places, hours, events and dates itself for the agent's city, from sources it can name (the city or tourism site, the venue's own page, local news), and the agent approves the list before anything is made.", "Anything with a date or a menu item is checked against the venue's own page; if it can't be confirmed it is dropped. Closed or moved places are never listed.", "No invented places, dates, prices or menu items.", "Photos are the agent's own or clearly licensed, never a venue's own photos without permission.", "The free full guide is the agent's own lead magnet; Hopkins can write it from the same researched list once the agent approves."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
