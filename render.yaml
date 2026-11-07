@@ -1,0 +1,37 @@
+# Render Blueprint for the Hopkins app (the product in app/). In Render: New, Blueprint,
+# pick this repository and branch, then fill in the values it asks for. The waitlist service
+# is set up separately in the dashboard and isn't touched by this file.
+services:
+  - type: web
+    name: hopkins-app
+    runtime: node
+    plan: free
+    rootDir: app
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECRET
+        generateValue: true
+      # Only what's needed to start. Add INVITE_CODES (to let others sign up), NTFY_TOPIC and
+      # ANTHROPIC_API_KEY (or the free GEMINI_API_KEY and GROQ_API_KEY) later in the service's Environment tab.
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_AUTH_TOKEN
+        sync: false
+      # Meta (Facebook and Instagram ads), docs/META.md. Without them the Meta section stays hidden.
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_CONFIG_ID
+        sync: false
+      # Stripe (self-serve plans), docs/STRIPE.md. Without them Upgrade says payments aren't available.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

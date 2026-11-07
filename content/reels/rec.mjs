@@ -7,11 +7,11 @@ await p.goto("file://"+process.cwd()+"/"+file); await p.waitForTimeout(1000);
 const D=await p.evaluate(()=>window.DURATION), SFX=await p.evaluate(()=>window.SFX||[]); const N=Math.round(D*FPS);
 for(let i=0;i<N;i++){await p.evaluate(t=>render(t),i/FPS);await p.screenshot({path:`${dir}/f${String(i).padStart(5,"0")}.jpg`,type:"jpeg",quality:93});}
 await b.close();
-const FFMPEG="/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2";
+const FFMPEG=existsSync("/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2")?"/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2":"ffmpeg";
 // voiceover from vo.py, levelled for Instagram, if the reel has one
 // sound effects from the reel's R.sfx go under the voice (sfx.py writes rN.mix.wav)
 const reel=file.replace(".html","");let wav=reel+".wav";
-if(SFX.length&&existsSync(wav)){writeFileSync(reel+".sfx.json",JSON.stringify(SFX));execFileSync("python3",["sfx.py",reel],{stdio:"inherit"});wav=reel+".mix.wav"}
+if(SFX.length&&existsSync(wav)){writeFileSync(reel+".sfx.json",JSON.stringify(SFX));execFileSync(process.env.PY||"python3",["sfx.py",reel],{stdio:"inherit"});wav=reel+".mix.wav"}
 const audio=existsSync(wav)?["-i",wav,"-af","loudnorm=I=-14:TP=-1.5:LRA=11","-c:a","aac","-b:a","192k","-ar","48000"]:[];
 execFileSync(FFMPEG,["-hide_banner","-loglevel","error","-y","-framerate","30","-i",`${dir}/f%05d.jpg`,...audio.slice(0,2),"-map","0:v",...(audio.length?["-map","1:a"]:[]),...audio.slice(2),"-c:v","libx264","-pix_fmt","yuv420p","-crf","18","-preset","slow","-movflags","+faststart",out]);
 rmSync(dir,{recursive:true,force:true});
