@@ -14,6 +14,18 @@
 //                     the agent's own photo
 //   fields            what Hopkins fills: city, neighbourhoods, lines, agent name, comment word
 
+// Ismael, 2026-11-07: Hopkins doesn't have comment-for-the-freebie set up yet, so no content it
+// gives a user carries a "Comment X for X" line, footer bar or pill. The templates keep the fields
+// for later; `forUser` is what the chat and renderer use until it's switched on.
+export const COMMENT_OFFERS = false;
+export function forUser(t) {
+  if (COMMENT_OFFERS) return t;
+  const drop = new Set(["comment_word", "comment_offer", "dm_offer"]);
+  const fields = Object.fromEntries(Object.entries(t.fields || {}).filter(([k]) => !drop.has(k)));
+  const slides = t.slides.map((sl) => ({ ...sl, fields: (sl.fields || []).filter((f) => !drop.has(f)), footer: undefined }));
+  return { ...t, fields, slides, noCommentOffer: true };
+}
+
 export const TEMPLATES = [
   {
     id: "notes-app",
@@ -275,6 +287,7 @@ export const TEMPLATES = [
       "brown footer bar look: lowercase serif category title, bold sans list, brown footer bar with the comment offer",
       "dark photo look: serif caps category title (FESTIVITIES, COFFEE, EATS, TREATS, DRINKS, GIFTS) with a thin rule under it, light sans list centred, white pill 'Comment HOLIDAY for the full guide' near the bottom",
     ],
+    third_look: "photo-bottom look: 'steal my [City] [Season] Guide' cover (script italic line over big serif title, sans subtitle 'events + bites + fall must-dos') over a three photo collage; category slides with a bold lowercase sans title and 'Name' then 'Best for: ...' or the street address underneath, left or right aligned over a photo, cream footer bar; ending 'Hi! I'm [Name], your local [City] real estate [broker or advisor]' with a portrait in a rounded frame over a seasonal photo",
     holiday_categories: ["Festivities", "Coffee", "Eats", "Treats", "Drinks", "Gifts"],
     slides: [
       { kind: "cover", fields: ["season", "city"], photo: "agent supplied or clearly licensed seasonal photo", text: "script 'The', huge condensed serif season word, sans 'things to do in + around [city]'" },

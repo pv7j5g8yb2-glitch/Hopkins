@@ -144,6 +144,13 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
   changeable, and Light, System or Dark. Dark is the default. Type is Instrument Sans. The design
   system is `app/web/hk.css`, loaded after app.css; the tab bar is plain frosted glass (lens.js is
   no longer loaded).
+* **No "comment X for X" (Ismael, 2026-11-07):** Hopkins has no comment for the freebie set up yet, so
+  nothing it gives a user carries that line, bar or pill; templates keep the fields for later
+  (`COMMENT_OFFERS` and `forUser` in `app/src/templates.js`).
+* **Templates (Ismael, 2026-11-07):** the content comes from human designed templates in
+  `app/src/templates.js` that Hopkins fills in, never from scratch. 18 saved. Hopkins researches the
+  facts itself (places, dates) with a source for each and the agent approves them first. Layouts are
+  not drawn yet; his designs are in his sets and he can't name the fonts.
 * **Every version stays in the chat (Ismael, 2026-11-05, furious: the first reel "literally
   disappears after the second reel comes"):** each message keeps the version it made (`spec` on the
   message's data), so a change never makes the earlier one vanish, like Claude's artifacts. "Bring

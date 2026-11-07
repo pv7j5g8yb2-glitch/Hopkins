@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TEMPLATES, matchTemplates } from "../src/templates.js";
+import { TEMPLATES, matchTemplates, forUser } from "../src/templates.js";
 
 test("a request only matches a template made for it", () => {
   assert.equal(matchTemplates("a post about what our neighborhoods would have in their notes app")[0].id, "notes-app");
@@ -31,5 +31,13 @@ test("every template has a purpose, a cover and a comment slide, and its own id"
     assert.ok(t.purpose && t.topics.length && t.covers.length);
     if (!t.noCover) assert.equal(t.slides[0].kind, "cover");
     assert.equal(t.slides.at(-1).kind, "comment");
+  }
+});
+
+test("no template gives a user a comment for the freebie offer until that is set up", () => {
+  for (const t of TEMPLATES) {
+    const u = forUser(t);
+    assert.ok(!("comment_word" in u.fields) && !("comment_offer" in u.fields), t.id);
+    for (const sl of u.slides) assert.ok(!sl.fields.includes("comment_word") && !sl.fields.includes("comment_offer"), t.id);
   }
 });
