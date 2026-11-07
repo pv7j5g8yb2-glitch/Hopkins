@@ -92,6 +92,22 @@ export const TEMPLATES = [
     fields: { city: "text", years_experience: "number, only if the agent gives it", headline: "short serif line, e.g. 'I don't just post it and pray.'", body: "1 to 3 plain sentences describing something the agent really does", agent_name: "text", inbox_line: "My inbox is always open." },
     rules: ["Every claim about what the agent does (calls, mailers, social reach, network) must be true for them; Hopkins asks which of them they actually do and drops the rest.", "No invented numbers, years or results.", "The photo is the agent's own, never AI generated."],
   },
+  {
+    id: "never-worry-local",
+    name: "5 things I never worry about as a local",
+    purpose: "A relatable, funny local carousel: five small things locals shrug off (the weather, the humidity, the bugs, the shoes, the seasons), each a short serif title with two or three casual sentences over the agent's own photo. Ends with the agent's portrait and a comment offer for a free guide.",
+    topics: ["never worry", "don't worry about", "things i don't worry", "locals shrug", "as a local", "living in", "life in", "what it's like to live", "weather", "humidity", "seasons", "bugs", "quirks", "local quirks", "five things", "5 things"],
+    avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking", "not paid to list", "not just selling"],
+    covers: ["serif title over skyline with italic city line", "serif title over skyline, plain", "italic 'five things' over landscape", "bold sans over mountains with arrow", "three photo collage"],
+    slides: [
+      { kind: "cover", fields: ["count", "city", "demonym"], photo: "agent supplied or licensed photo of the city" },
+      { kind: "shrug", repeat: "4 to 7", fields: ["title", "body"], photo: "agent supplied photo that fits", text: "serif lowercase title with small sans body, top left, right or bottom right" },
+      { kind: "comment", fields: ["agent_name", "city", "comment_word", "comment_offer"], photo: "agent" },
+    ],
+    fields: { count: "number", city: "text", demonym: "what locals call themselves, e.g. Dallasite, only if the agent confirms", title: "lowercase serif line, e.g. 'lovebug season'", body: "2 to 3 casual first person sentences about a real local thing", agent_name: "text", comment_word: "one word", comment_offer: "the free guide" },
+    research: true,
+    rules: ["Hopkins looks up what is really true about the city (weather, seasons, bugs, quirks) with a source, and the agent approves the lines before they're made.", "Never invent facts, numbers or personal stories; first person lines are drafts the agent confirms are true for them.", "Photos are the agent's own or clearly licensed."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
