@@ -203,6 +203,21 @@ export const TEMPLATES = [
     fields: { finish_the_line: "the funny agent specific ending, from things the agent confirms are true for them", agent_name: "text", city: "text", comment_word: "one word", comment_offer: "what they get" },
     rules: ["Hopkins suggests lines about agent life and the agent picks the ones that are true for them; never invented personal facts.", "Any figure in a line (such as 43,560 square feet in an acre) must be correct and checked.", "The photo is the agent's own or clearly licensed."],
   },
+  {
+    id: "unhinged-to-the-average-person",
+    name: "Things I do as an agent that seem unhinged",
+    purpose: "A funny agent life carousel: the cover says 'things I do as a [City] real estate agent that seem unhinged to the average person', then each slide is one unhinged thing in a lowercase serif title with a small sans punchline under it (cleaning out a stranger's rotten fridge, walking into the creepy basement first, driving to a house just to smell it, showing someone 47 houses with no guarantee of pay). One dark, moody photo per slide. Ends with the agent's portrait and an invitation to message.",
+    topics: ["unhinged", "seem unhinged", "things i do as an agent", "average person", "crazy things i do", "weird things i do", "agent things", "what agents do", "things only agents do", "strange", "wild things"],
+    avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween", "not paid to list", "hills i die on", "bloodline"],
+    covers: ["agent portrait in a kitchen, bold cream sans with one oversized word"],
+    slides: [
+      { kind: "cover", fields: ["city", "oversized_word"], photo: "agent portrait" },
+      { kind: "unhinged", repeat: "5 to 10", fields: ["thing_i_do", "punchline"], photo: "agent supplied photo that fits, dark overlay", text: "lowercase serif title, small sans punchline underneath, left or right aligned" },
+      { kind: "comment", fields: ["agent_name", "city", "invite_line"], photo: "agent portrait", note: "Hi, I'm [Name], your local [City] real estate advisor. Making a move soon? Send me a message." },
+    ],
+    fields: { city: "text", oversized_word: "unhinged", thing_i_do: "an agent task that sounds ridiculous out of context", punchline: "the short reason why it is actually part of the job", agent_name: "text", invite_line: "Making a move soon? Send me a message" },
+    rules: ["The agent confirms each thing is true for them; Hopkins suggests, never invents personal stories or numbers.", "Any figure in a line (such as 47 houses) is the agent's own, never made up.", "Photos are the agent's own or clearly licensed."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
