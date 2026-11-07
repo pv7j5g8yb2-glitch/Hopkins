@@ -348,6 +348,8 @@
   }
 
   async function drawSlide(canvas, spec, i, o) {
+    // a template's post is drawn from the human designed layouts (web/tpl.js), never from the model's look
+    if (spec.template && window.Tpl) return window.Tpl.draw(canvas, spec, i, o);
     await prepare(spec, o);
     const [W, H] = SIZES[o.kind] || SIZES.post;
     canvas.width = W; canvas.height = H;

@@ -12,7 +12,8 @@ import { factProblems, withoutProblems } from "./facts.js";
 import { checkWording, cleanWording, audienceFor } from "./fairhousing.js";
 import { readIntent, readStyle, namedVersions, DESCRIBES } from "./rules.js";
 import { cleanStyle, mergeStyle, sayLook, onlyAsked, keepReadable, colourName, contrast, STYLE_KEYS, COLOUR_WORDS, freshLooks } from "./style.js";
-import { creationAI, cleanCreation, captionAI, siteAnalysisAI } from "./brain.js";
+import { creationAI, cleanCreation, captionAI, siteAnalysisAI, templateFillAI, researchPlacesAI, cleanTemplatePost } from "./brain.js";
+import { matchTemplates, byId, forUser, templateMenu } from "./templates.js";
 import { crawlSite, siteChecks, readSite } from "./site.js";
 import { aiEnabled, provider, readLinkAI, readListingAI, seePhotosAI, writeSetAI, chatTurnAI, newChatAI, takeFailure, titleAI } from "./brain.js";
 
@@ -463,6 +464,8 @@ export async function firstReply(ws, id, tz = "UTC") {
 // question or anything else gets an answer, like any chat.
 async function answerFirst(ws, listing, text, photoIds, tz, { inPlace = false } = {}) {
   let answer = null;
+  // A request that fits a human designed template comes first, even as a chat's first message.
+  if (!photoIds.length && !URL_RE.test(text)) { const t = await templateTurn(ws, listing, text); if (t) return t; }
   if (!photoIds.length && !URL_RE.test(text) && creationKind(text) && !seemsListing(text)) return makeCreation(ws, listing, text, creationKind(text));
   if (!photoIds.length && !URL_RE.test(text)) {
     const history = [{ role: "agent", body: text }];
@@ -1176,6 +1179,8 @@ const WANTS_ADS = /\b(ads?|adverts?|advertis\w*|campaign|boost|promote|run (it|t
 const KIND_NAME = { carousel: "carousel", reel: "reel", story: "story", post: "post" };
 let creationFake = null;
 export function setCreationForTests(f) { creationFake = f; }
+let templateFake = null, researchFake = null;
+export function setTemplateForTests(fill, research) { templateFake = fill; researchFake = research; }
 // One post, carousel, story or reel designed from a plain request, nothing saved (src/week.js plans
 // a week with it).
 export async function makeSpec(args) {
@@ -1189,6 +1194,7 @@ export async function latestCreation(listingId) {
 
 // Makes it (or changes the latest one), keeps it, and puts it in the chat.
 export async function makeCreation(ws, listing, text, kind, previous = null) {
+  if (previous?.spec?.template && byId(previous.spec.template)) return makeTemplatePost(ws, listing, text, byId(previous.spec.template), previous);
   if (!previous && !isPaid(ws) && (await adsMade(ws.id)) >= FREE_AD_LIMIT) {
     await say(ws, listing.id, upgradeText("limit"), "upgrade", { reason: "limit" });
     return { upgrade: true };
@@ -1242,6 +1248,84 @@ async function restoreCreation(ws, listing, last, text) {
   return { creation: last.id };
 }
 
+// ---------- posts from the template library ----------
+// A request that fits one of Ismael's human designed templates is filled into it, never designed.
+// Researched templates (local guides) first show the agent the places and where each came from.
+const GO_WORD = /^\s*(go|go now|make it|make them|looks good|that's right|that works|perfect|great)\b/i;
+const MAKE_WORDS = /\b(make|create|give|build|write|do|post|carousel|guide|want|need|can you|could you|i'd like|id like)\b/i;
+async function templateFill(ws, listing, text, template, previous, facts) {
+  const photos = (await loadPhotos(listing.id)).length;
+  const args = { template, request: text, agent: [ws.brand.agent_name, ws.brand.business].filter(Boolean).join(", "), area: ws.brand.area || ws.brand.city || "", photos, facts, previous: previous?.spec || null };
+  if (templateFake) return cleanTemplatePost(await templateFake(args), template, photos);
+  return templateFillAI(args);
+}
+export async function makeTemplatePost(ws, listing, text, template, previous = null, facts = null) {
+  if (!previous && !isPaid(ws) && (await adsMade(ws.id)) >= FREE_AD_LIMIT) {
+    await say(ws, listing.id, upgradeText("limit"), "upgrade", { reason: "limit" });
+    return { upgrade: true };
+  }
+  const t = forUser(template);
+  const spec = await templateFill(ws, listing, text, t, previous, facts);
+  if (!spec) {
+    await say(ws, listing.id, "Something went wrong. Please try again.");
+    return {};
+  }
+  const { layoutFor } = await import("./templates.js");
+  spec.slides = spec.slides.map((s) => ({ ...s, layout: layoutFor(template, s.kind) }));
+  if (previous?.spec?.plan) spec.plan = previous.spec.plan;
+  const now = nowIso();
+  let id = previous?.id;
+  if (previous) await run(`UPDATE creations SET spec = ?, version = version + 1, updated_at = ? WHERE id = ?`, [JSON.stringify(spec), now, id]);
+  else {
+    id = randomUUID();
+    await run(`INSERT INTO creations (id, workspace_id, listing_id, kind, spec, created_at, updated_at) VALUES (?,?,?,?,?,?,?)`, [id, ws.id, listing.id, "carousel", JSON.stringify(spec), now, now]);
+  }
+  const words = spec.slides.map((x) => [x.title, x.body, x.top, x.bottom, ...(x.lines || [])].join(" ")).join(" ");
+  const issues = checkWording(words);
+  const note = issues.length ? ` Heads up: "${issues[0].term}" can read as who the property suits, which fair housing rules don't allow. Keep it, or change it?` : "";
+  const hasPhotos = (await loadPhotos(listing.id)).length;
+  const line = previous ? "Changed." : `Here's your ${template.name.replace(/\[.*?\]/g, "").trim().toLowerCase()}.`;
+  const tail = previous ? "" : template.research ? " Check each place is still open before you post." : " Check every line is true for you before you post.";
+  const photoAsk = !previous && !hasPhotos ? " Add your own photos to this chat and I'll put them behind it." : "";
+  await say(ws, listing.id, `${line}${tail}${photoAsk}${note}`, "creation", { creationId: id, version: previous ? previous.version + 1 : 1, spec });
+  if (!listing.title && !listing.address && !previous && spec.title) await run(`UPDATE listings SET auto_title = COALESCE(auto_title, ?) WHERE id = ?`, [spec.title, listing.id]);
+  return { creation: id };
+}
+// The first step of a researched template: the places Hopkins found, each with its source, for the
+// agent to check before anything is made.
+async function proposeFacts(ws, listing, text, template, extra = "") {
+  const city = ws.brand.area || ws.brand.city || "";
+  const ask = { city, topic: `${text}${extra ? `. ${extra}` : ""}`, season: "" };
+  const facts = researchFake ? await researchFake(ask) : await researchPlacesAI(ask);
+  if (!facts?.length) {
+    await say(ws, listing.id, `I couldn't look places up just now. Send me the places and dates you want in it, and I'll lay it out.`, "text", { templateId: template.id, request: text, waiting: true });
+    return {};
+  }
+  await say(ws, listing.id, `Here's what I found${city ? ` for ${city.split(",")[0]}` : ""}, each with where it came from. Tell me anything to drop or add, or say go.`, "facts", { templateId: template.id, request: text, facts });
+  return { facts: true };
+}
+export async function templateTurn(ws, listing, text) {
+  const prev = await get(`SELECT kind, body, data FROM messages WHERE listing_id = ? AND role = 'hopkins' ORDER BY created_at DESC LIMIT 1`, [listing.id]);
+  const d = prev?.data ? safeJson(prev.data, null) : null;
+  // the agent answering the list of places: go makes it, anything else changes the list
+  if (d?.templateId && (prev.kind === "facts" || d.waiting)) {
+    const template = byId(d.templateId);
+    if (template && prev.kind === "facts" && (YES.test(text) || GO_WORD.test(text))) return makeTemplatePost(ws, listing, d.request, template, null, d.facts);
+    if (template && prev.kind === "facts") return proposeFacts(ws, listing, d.request, template, text);
+    if (template && d.waiting) return makeTemplatePost(ws, listing, `${d.request}\nPlaces and dates from the agent: ${text}`, template, null, [{ name: "from the agent", detail: text }]);
+  }
+  // a chat that already has ads is about those ads
+  if ((await currentAds(listing)).length) return null;
+  if (!MAKE_WORDS.test(text) || /\?\s*$/.test(text) && !/\b(can you|could you)\b/i.test(text)) return null;
+  const fit = matchTemplates(text);
+  if (!fit.length) return null;
+  const template = fit[0];
+  // a property (an address, a price, beds) is a listing, not a template request
+  const home = parseListingText(text);
+  if (home && (home.price || home.beds || home.address)) return null;
+  return template.research ? proposeFacts(ws, listing, text, template) : makeTemplatePost(ws, listing, text, template);
+}
+
 // Asked once, at the end of a new post, carousel, story or reel.
 const CAPTION_ASK = "Want a caption and hashtags for it?";
 const YES = /^\s*(yes|yeah|yep|yup|sure|ok|okay|please|go on|go for it|do it|go ahead|why not|definitely|absolutely)\b/i;
@@ -1281,6 +1365,9 @@ export async function handleMessage(ws, listingId, text, selected = 1, tz = "UTC
     const w = await weekTurn(ws, listing, text, { makeCreation });
     if (w) return w;
   }
+  // A request that fits one of the human designed templates, or the answer to its list of places.
+  const tpl = await templateTurn(ws, listing, text);
+  if (tpl) return tpl;
   // A post, carousel, story or reel asked for, or a change to the one just made.
   const kind = creationKind(text);
   const last = await latestCreation(listingId);

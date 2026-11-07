@@ -315,8 +315,23 @@ export const TEMPLATES = [
   },
 ];
 
+// Which drawn layout (web/tpl.js) each kind of slide uses.
+const LAYOUTS = {
+  "notes-card": "notes", "when-someone": "small-top", "closed-business": "text-photo", shrug: "text-photo", unhinged: "text-photo",
+  "listing-step": "text-photo", claim: "claim", bloodline: "kinda", "kinda-chic": "kinda", "not-this-but-this": "split-grey", "not-just-pair": "split-two",
+  "guide-list": "list-guide", comment: "portrait-end", question: "title-cover", benefit: "text-photo", "refuse-pair": "split-two", "see-vs-took": "split-two",
+  "sit-vs-fight": "split-two", "hot-take": "text-photo", rule: "text-photo",
+};
+export function layoutFor(template, kind) {
+  if (kind === "cover") return template.id === "seasonal-local-guide" ? "guide-cover" : "title-cover";
+  return LAYOUTS[kind] || "text-photo";
+}
+export const byId = (id) => TEMPLATES.find((t) => t.id === id) || null;
+
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
-const hits = (text, list) => list.filter((t) => ` ${text} `.includes(` ${t.toLowerCase()} `) || text.includes(t.toLowerCase())).length;
+// Whole words and phrases only: "old" is never found inside "gold".
+// A phrase of two or more words counts double: one common word ("sellers", "weather") is never enough.
+const hits = (text, list) => list.reduce((n, t) => { const w = words(t); return n + (` ${text} `.includes(` ${w.join(" ")} `) ? (w.length > 1 ? 2 : 1) : 0); }, 0);
 
 // The templates that fit a request, best first. A template is never offered if the request hits
 // its avoid list harder than its topics, and nothing is offered when nothing really fits.
@@ -324,7 +339,7 @@ export function matchTemplates(request, library = TEMPLATES) {
   const text = words(request).join(" ");
   return library
     .map((t) => ({ t, score: hits(text, t.topics), bad: hits(text, t.avoid) }))
-    .filter((x) => x.score > 0 && x.bad < x.score)
+    .filter((x) => x.score >= 2 && x.bad < x.score)
     .sort((a, b) => b.score - b.bad - (a.score - a.bad))
     .map((x) => x.t);
 }

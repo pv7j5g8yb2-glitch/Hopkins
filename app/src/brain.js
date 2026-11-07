@@ -827,6 +827,82 @@ export async function weekPlanAI({ answers = "", request = "", previous = null, 
   });
 }
 
+// ---------- the template library (src/templates.js) ----------
+// Hopkins never designs a post (Ismael, 2026-11-05); it fills a human designed template: the words, the
+// order and how many slides. The layout is drawn by web/tpl.js from the template's own design.
+const TPL_SCHEMA = {
+  type: "object",
+  properties: {
+    title: { type: "string", description: "A short name for the post, 2 to 5 words" },
+    slides: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          kind: { type: "string", description: "One of the template's slide kinds, exactly" },
+          title: { type: "string", description: "The slide's main line, short" },
+          body: { type: "string", description: "The slide's smaller text, or empty" },
+          lines: { type: "array", items: { type: "string" }, description: "A list (places, notes), each line short; for places 'Name | town or reason'" },
+          top: { type: "string", description: "The top half line of a split slide, or empty" },
+          bottom: { type: "string", description: "The bottom half line of a split slide, or empty" },
+          caption: { type: "string", description: "A one line caption under a card, or empty" },
+          script: { type: "string", description: "The script greeting on the last slide (Happy Fall!), or empty" },
+          photo: { type: "integer", description: "Which of the agent's photos fits this slide, 1 for the first, 0 for any" },
+        },
+        required: ["kind", "title", "body", "lines", "top", "bottom", "caption", "script", "photo"],
+      },
+    },
+    reply: { type: "string", description: "One short line to the agent about what you made" },
+  },
+  required: ["title", "slides", "reply"],
+};
+export async function templateFillAI({ template, request, agent = "", area = "", photos = 0, facts = null, previous = null }) {
+  if (!aiEnabled) return null;
+  const kinds = template.slides.map((s) => `${s.kind}${s.repeat ? ` (${s.repeat} of these)` : s.optional ? " (optional)" : ""}: fields ${(s.fields || []).join(", ")}`).join("\n");
+  const r = await call({
+    system: `You are Hopkins, filling in one of the agent's human designed Instagram carousel templates. You never design anything: the layout, fonts and look are fixed and drawn by the app. You only write the words, in the order and number of slides the template has. The post speaks for the agent to the people who follow them (buyers, sellers, locals), in the agent's own plain voice, never to other agents. Template: "${template.name}". Purpose: ${template.purpose}\nSlide kinds, in order:\n${kinds}\n${(template.rules || []).length ? `Rules: ${template.rules.join(" ")}\n` : ""}Use only facts you were given: the agent's request, and the approved list of facts. Never invent places, dates, numbers, results, prices or personal stories; a first person line is a draft the agent confirms. Never wording about who a property suits (fair housing). Never add a "comment X for Y" line or any call to comment. No dashes as punctuation, no emojis. The last slide is the agent's introduction: script is the greeting (like "Happy Fall!"), title is "I'm [first name], [city] local & real estate [advisor or broker]", body one short line. Keep every line short enough for a phone screen.${previous ? " Change it as asked and keep everything else." : ""}`,
+    messages: [{ role: "user", content: `${previous ? `The current post:\n${JSON.stringify(previous.slides)}\n\nChange: ` : "Make: "}${request}\n\nAgent: ${agent || "unknown"}. Where they sell: ${area || "unknown"}. They have ${photos} photo${photos === 1 ? "" : "s"} to put behind the slides.${facts ? `\nApproved facts (only these places and dates):\n${JSON.stringify(facts)}` : ""}` }],
+    schema: TPL_SCHEMA,
+    effort: "medium",
+    temperature: previous ? 0.5 : 0.7,
+  });
+  return cleanTemplatePost(r, template, photos);
+}
+const tplStr = (v, n) => String(v ?? "").replace(/\s*[\u2013\u2014]\s*/g, ", ").replace(/\s+/g, " ").trim().slice(0, n);
+export function cleanTemplatePost(r, template, photos = 0, layoutFor = null) {
+  if (!r || !Array.isArray(r.slides) || !r.slides.length) return null;
+  const kinds = new Set(template.slides.map((s) => s.kind));
+  const slides = r.slides.filter((s) => kinds.has(s.kind)).slice(0, 12).map((s) => ({
+    kind: s.kind,
+    title: tplStr(s.title, 140), body: tplStr(s.body, 300), caption: tplStr(s.caption, 120), top: tplStr(s.top, 140), bottom: tplStr(s.bottom, 140), script: tplStr(s.script, 40),
+    lines: (Array.isArray(s.lines) ? s.lines : []).map((x) => tplStr(x, 110)).filter(Boolean).slice(0, 8),
+    photo: photos ? Math.max(0, Math.min(photos, Number(s.photo) || 0)) - 1 : -1,
+  })).filter((s) => s.title || s.body || s.lines.length || s.top || s.bottom);
+  if (!slides.length) return null;
+  return { title: tplStr(r.title, 60), template: template.id, theme: "template", slides, look: {}, caption: "", reply: tplStr(r.reply, 300) };
+}
+
+// The places and dates for a researched template, looked up with Google Search through Gemini, each
+// with the page it came from. Null when it can't look anything up, never a guess.
+export async function researchPlacesAI({ city, topic, season = "", count = 20 }) {
+  if (provider !== "gemini") return null;
+  try {
+    const r = await gemini({
+      system: "You research real, current, local places and events for a real estate agent's local guide. Use Google Search. Only list places that exist and are open now, with details you found on a page. Never guess, never list a place you couldn't confirm.",
+      messages: [{ role: "user", content: `Find up to ${count} real places, events or businesses for this local guide: "${topic}"${season ? ` (${season})` : ""} in ${city}. For each give the category (like coffee, pumpkin patches, events, date nights, kid friendly), the name, the town or street, one short true detail (what it's known for, what to order, the event dates), and the web page you found it on. Answer with only a JSON object, nothing before or after it: {"items":[{"category":"","name":"","where":"","detail":"","source":"https://..."}]}` }],
+      temperature: 0.2,
+      tools: [{ google_search: {} }],
+    });
+    if (!r) return null;
+    const out = JSON.parse((r.text.match(/\{[\s\S]*\}/) || ["{}"])[0]);
+    const items = (Array.isArray(out.items) ? out.items : []).map((x) => ({ category: tplStr(x.category, 40), name: tplStr(x.name, 80), where: tplStr(x.where, 80), detail: tplStr(x.detail, 140), source: /^https:\/\//.test(String(x.source || "")) ? String(x.source).slice(0, 300) : "" })).filter((x) => x.name && x.source);
+    return items.length ? items : null;
+  } catch (err) {
+    console.error("Researching places failed:", err.message);
+    return null;
+  }
+}
+
 // A caption and hashtags, only when the agent asks for them.
 const CAPTION_SCHEMA = {
   type: "object",

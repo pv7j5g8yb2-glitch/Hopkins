@@ -41,7 +41,7 @@ if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET is not set");
 
 // Read once at start up; restart to pick up changes (npm run dev does that for you).
 const files = {};
-for (const f of ["app.html", "app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "kinetic.js", "welcome.html", "welcome.css", "welcome.js", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
+for (const f of ["app.html", "app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "sw.js", "creative.js", "studio.js", "kinetic.js", "tpl.js", "welcome.html", "welcome.css", "welcome.js", "lead.html", "privacy.html", "terms.html", "mark.svg"]) files[f] = readFileSync(join(WEB, f), "utf8");
 const TYPES = { json: "application/json; charset=utf-8", html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", svg: "image/svg+xml", png: "image/png", jpg: "image/jpeg", webmanifest: "application/manifest+json" };
 // The home screen icons, the app manifest, and a free licence (Unsplash) sample photo for the
 // brand page preview before the agent has any listings.
@@ -119,7 +119,7 @@ app.get("/healthz", async (request) => {
   return { ok: true, started: STARTED, ai: provider || "none", pinged: seen };
 });
 
-for (const f of ["app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "creative.js", "studio.js", "kinetic.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
+for (const f of ["app.css", "hk.css", "app.js", "glass.js", "lens.js", "splash.js", "creative.js", "studio.js", "kinetic.js", "tpl.js", "mark.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "sample-home.jpg", "field-phone.jpg", "field-desk.jpg", "manifest.webmanifest", "heic-worker.js"]) {
   app.get(`/static/${f}`, async (_, reply) => reply.type(TYPES[f.split(".").pop()]).header("Cache-Control", "no-cache").send(files[f]));
 }
 for (const [path, v] of Object.entries(VENDOR)) {

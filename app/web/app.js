@@ -648,7 +648,7 @@
     return d.getMonth() === end.getMonth() ? `${d.getDate()} to ${end.getDate()} ${m(d)}` : `${d.getDate()} ${m(d)} to ${end.getDate()} ${m(end)}`;
   };
   const dayDate = (monday, day) => { const d = new Date(`${monday}T12:00:00`); d.setDate(d.getDate() + day); return d.getDate(); };
-  const postOpts = (p, photos) => ({ kind: p.kind, photos: (photos || []).map((id) => photoUrl(id)), agent: S.me.workspace.brand.agent_name || S.me.user.name || "", footer: S.me.workspace.brand.business || "" });
+  const postOpts = (p, photos) => ({ kind: p.kind, photos: (photos || []).map((id) => photoUrl(id)), portrait: S.me.user.avatar_id ? photoUrl(S.me.user.avatar_id) : null, agent: S.me.workspace.brand.agent_name || S.me.user.name || "", footer: S.me.workspace.brand.business || "" });
 
   async function viewWeek() {
     const my = current();
@@ -1742,7 +1742,7 @@
   // Posts, carousels, stories and reels in the chat (web/studio.js).
   function studioOpts(c) {
     const b = S.me.workspace.brand;
-    return { kind: c.kind, photos: (S.current?.photos || []).map((p) => photoUrl(p.id)), agent: b.agent_name || S.me.user.name || "", footer: b.business || "" };
+    return { kind: c.kind, photos: (S.current?.photos || []).map((p) => photoUrl(p.id)), portrait: S.me.user.avatar_id ? photoUrl(S.me.user.avatar_id) : null, agent: b.agent_name || S.me.user.name || "", footer: b.business || "" };
   }
   function drawCreations() {
     (S.players || []).forEach((stop) => stop());
