@@ -45,6 +45,21 @@ export const TEMPLATES = [
     fields: { city: "text", series_number: "number", headline: "one punchy line", body: "2 to 3 sentences, only facts the agent confirms", year_closed: "year", agent_name: "text", comment_word: "one word", comment_offer: "what they get" },
     rules: ["The agent supplies the place name, year and photo; Hopkins never invents history.", "Old photos must be ones the agent has the right to use."],
   },
+  {
+    id: "lose-it-local",
+    name: "Things that make me lose it as a local",
+    purpose: "A funny, relatable local pet peeves carousel: one 'When someone...' line per slide over the agent's own photo of a place, food or drink, ending with the agent's portrait and a comment offer. For locals who recognise the traffic, parking and weather jokes.",
+    topics: ["lose it", "pet peeve", "pet peeves", "annoying", "annoys me", "things that annoy", "complain", "traffic", "parking", "weather", "hot take", "hot takes", "only locals", "when someone"],
+    avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "notes app"],
+    covers: ["four photo collage, tag, bold title with italic serif ending", "serif title top over skyline, 'as a local' arrow", "plain sans centred title", "serif centred title 'in [City]'"],
+    slides: [
+      { kind: "cover", fields: ["city", "title_variant"], photo: true },
+      { kind: "when-someone", repeat: "4 to 10", fields: ["joke_line"], photo: "agent supplied photo that fits the joke", text: "small white sans, top left, over a darkened photo" },
+      { kind: "comment", fields: ["agent_name", "city", "comment_word", "comment_offer"], photo: "agent" },
+    ],
+    fields: { city: "text", joke_line: "one or two sentences starting 'When...' about a real local thing the agent confirms: a road, a place, the weather, parking", agent_name: "text", comment_word: "one word, e.g. FALL", comment_offer: "the free guide they get" },
+    rules: ["Every joke names a real local road, place or habit the agent gives; Hopkins never invents local facts, prices or numbers.", "Each slide's photo is the agent's own."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);

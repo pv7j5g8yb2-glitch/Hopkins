@@ -5,6 +5,7 @@ import { TEMPLATES, matchTemplates } from "../src/templates.js";
 test("a request only matches a template made for it", () => {
   assert.equal(matchTemplates("a post about what our neighborhoods would have in their notes app")[0].id, "notes-app");
   assert.equal(matchTemplates("businesses in my city that closed that locals miss")[0].id, "gone-but-never-forgotten");
+  assert.equal(matchTemplates("funny things that make me lose it about traffic and parking")[0].id, "lose-it-local");
   assert.deepEqual(matchTemplates("market update on interest rates for first time buyers"), []);
   assert.deepEqual(matchTemplates("best coffee spots in my city"), [], "no template for it, so none is forced");
 });
