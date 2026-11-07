@@ -50,7 +50,7 @@ export const TEMPLATES = [
     id: "lose-it-local",
     name: "Things that make me lose it as a local",
     purpose: "A funny, relatable local pet peeves carousel: one 'When someone...' line per slide over the agent's own photo of a place, food or drink, ending with the agent's portrait and a comment offer. For locals who recognise the traffic, parking and weather jokes.",
-    topics: ["lose it", "pet peeve", "pet peeves", "annoying", "annoys me", "things that annoy", "complain", "traffic", "parking", "weather", "hot take", "hot takes", "only locals", "when someone"],
+    topics: ["lose it", "pet peeve", "pet peeves", "annoying", "annoys me", "things that annoy", "complain", "traffic", "parking", "weather", "only locals", "when someone"],
     avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "notes app"],
     covers: ["four photo collage, tag, bold title with italic serif ending", "serif title top over skyline, 'as a local' arrow", "plain sans centred title", "serif centred title 'in [City]'"],
     slides: [
@@ -115,7 +115,7 @@ export const TEMPLATES = [
     topics: ["refuse", "things i refuse", "standards", "my rules", "one rule", "won't break", "what it's like to work with me", "work with me", "how i work"],
     avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween"],
     status: "format only: structure and wording style saved as inspiration; layout to be designed by Ismael",
-    covers: [],
+    covers: ["to be designed"],
     slides: [
       { kind: "cover", fields: ["title", "city"], photo: "agent portrait" },
       { kind: "refuse-pair", repeat: "3 to 5", fields: ["i_refuse", "i_do_instead"], photo: "agent" },
@@ -131,7 +131,7 @@ export const TEMPLATES = [
     topics: ["what you see", "what it took", "behind the scenes", "behind the sale", "what i do for my clients", "the work behind", "agents don't realize", "being an agent is easy"],
     avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween"],
     status: "format only: structure and wording style saved as inspiration; layout to be designed by Ismael",
-    covers: [],
+    covers: ["to be designed"],
     slides: [
       { kind: "cover", fields: ["title", "city"], photo: "agent portrait" },
       { kind: "see-vs-took", repeat: "3 to 6", fields: ["what_you_see", "what_it_took"], photo: "agent supplied" },
@@ -147,7 +147,7 @@ export const TEMPLATES = [
     topics: ["listings that sit", "fight over", "sits on the market", "why listings sit", "multiple offers", "tough market", "without dropping the price", "outdated advice"],
     avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween"],
     status: "format only: structure and wording style saved as inspiration; layout to be designed by Ismael",
-    covers: [],
+    covers: ["to be designed"],
     slides: [
       { kind: "cover", fields: ["title", "city"], photo: "agent portrait" },
       { kind: "sit-vs-fight", repeat: "3 to 6", fields: ["what_makes_it_sit", "what_makes_buyers_fight"], photo: "agent supplied" },
@@ -163,7 +163,7 @@ export const TEMPLATES = [
     topics: ["hills i die on", "hot take", "hot takes", "my opinion", "unpopular opinion", "professional opinion", "food for thought", "buy instead of rent"],
     avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween"],
     status: "format only: structure and wording style saved as inspiration; layout to be designed by Ismael",
-    covers: [],
+    covers: ["to be designed"],
     slides: [
       { kind: "cover", fields: ["title", "city"], photo: "agent portrait" },
       { kind: "hot-take", repeat: "3 to 6", fields: ["take", "reason"], photo: "agent supplied" },
@@ -179,7 +179,7 @@ export const TEMPLATES = [
     topics: ["one rule", "rule i won't break", "even if it costs me a sale", "my non negotiable", "non negotiable", "my line in the sand"],
     avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween"],
     status: "format only: structure and wording style saved as inspiration; layout to be designed by Ismael",
-    covers: [],
+    covers: ["to be designed"],
     slides: [
       { kind: "cover", fields: ["title", "city"], photo: "agent portrait" },
       { kind: "rule", repeat: "2 to 4", fields: ["rule", "why", "example"], photo: "agent supplied" },
