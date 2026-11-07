@@ -248,6 +248,22 @@ export const TEMPLATES = [
     fields: { doesnt_have_to: "the pressure buyers feel", just_has_to: "what actually matters", agent_name: "text", city: "text", comment_word: "one word", comment_offer: "what they get" },
     rules: ["Advice only; no promises about rates, prices or approval, and never wording about who a home suits (fair housing).", "Photos are the agent's own or clearly licensed; the grey and colour halves are made from the same photo."],
   },
+  {
+    id: "why-i-chose-my-brokerage",
+    name: "Why I chose my brokerage",
+    purpose: "An agent facing recruiting carousel for the agent's own brokerage: the cover says 'Why I chose [brokerage] as [the agent's life situation]', then one benefit per slide (no monthly fees, learn on your schedule, income beyond transactions, community over competition, get paid faster, mobile friendly everything). Ends with a comment or DM word for more info. Speaks to other agents, not to buyers or sellers.",
+    topics: ["why i chose", "why i joined", "my brokerage", "brokerage", "joined my brokerage", "switching brokerages", "recruiting", "recruit agents", "join my team", "join our team", "why i switched", "brokerage benefits", "no monthly fees", "agent life balance"],
+    avoid: ["market update", "interest rate", "first time buyer", "just listed", "just sold", "open house", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween", "hills i die on", "bloodline", "unhinged", "not paid to list", "sellers"],
+    status: "format only: structure and wording style saved as inspiration; layout to be designed by Ismael",
+    covers: ["to be designed"],
+    slides: [
+      { kind: "cover", fields: ["brokerage", "life_situation"], photo: "agent supplied photo, dark overlay" },
+      { kind: "benefit", repeat: "4 to 8", fields: ["benefit_title", "benefit_body"], photo: "agent supplied photo that fits the benefit", text: "lowercase serif title, small sans body, left aligned" },
+      { kind: "comment", fields: ["brokerage", "comment_word", "comment_offer"], photo: "agent supplied photo, optional", note: "if you're in a similar season of life, comment or DM me [WORD] for more info" },
+    ],
+    fields: { brokerage: "the agent's own brokerage name", life_situation: "e.g. a busy mom of two, a part time agent, a new agent", benefit_title: "a real benefit of the brokerage", benefit_body: "1 to 3 plain sentences", comment_word: "one word", comment_offer: "what they get" },
+    rules: ["Every benefit, fee and perk comes from the agent or the brokerage's own published information and is confirmed by the agent; Hopkins never invents fees, splits or income claims.", "Never earnings promises; brokerage brand names and logos only if the agent is that brokerage's agent and has the right to use them.", "Photos are the agent's own."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
