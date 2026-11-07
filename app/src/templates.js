@@ -188,6 +188,21 @@ export const TEMPLATES = [
     fields: { rule: "the rule", why: "why it matters", example: "a real example the agent gives", agent_name: "text", city: "text", comment_word: "one word", comment_offer: "what they get" },
     rules: ["The example must come from the agent; Hopkins never invents a story."],
   },
+  {
+    id: "first-in-my-bloodline",
+    name: "First in my bloodline to...",
+    purpose: "A funny, relatable agent life carousel: every slide repeats 'first in my bloodline to' and finishes it with something only a real estate agent does (meeting strangers at vacant houses, knowing someone's finances before their middle name, driving 45 minutes for a 10 minute showing). One interior photo behind every slide, one short line in the middle. Highly shareable and gets agents followed.",
+    topics: ["first in my bloodline", "bloodline", "only an agent", "agent life", "being an agent", "real estate agent life", "relatable", "funny agent", "things only agents", "day in the life", "agent humor", "agent humour"],
+    avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween", "not paid to list", "hills i die on"],
+    noCover: true,
+    covers: ["centred bold sans in cream, one interior photo, dark overlay"],
+    slides: [
+      { kind: "bloodline", repeat: "5 to 10", fields: ["finish_the_line"], photo: "the same agent supplied interior photo on every slide", text: "cream bold sans, centred, 3 to 4 lines, 'first in my bloodline to' then the punchline" },
+      { kind: "comment", fields: ["agent_name", "city", "comment_word", "comment_offer"], photo: "agent" },
+    ],
+    fields: { finish_the_line: "the funny agent specific ending, from things the agent confirms are true for them", agent_name: "text", city: "text", comment_word: "one word", comment_offer: "what they get" },
+    rules: ["Hopkins suggests lines about agent life and the agent picks the ones that are true for them; never invented personal facts.", "Any figure in a line (such as 43,560 square feet in an acre) must be correct and checked.", "The photo is the agent's own or clearly licensed."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);

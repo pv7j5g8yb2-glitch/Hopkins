@@ -11,6 +11,7 @@ test("a request only matches a template made for it", () => {
   assert.equal(matchTemplates("5 things I never worry about living in my city, the weather and humidity")[0].id, "never-worry-local");
   assert.equal(matchTemplates("hills I'll die on, my hot takes")[0].id, "hills-i-die-on");
   assert.equal(matchTemplates("things I refuse to do for my clients")[0].id, "refuse-to-do");
+  assert.equal(matchTemplates("first in my bloodline funny agent life")[0].id, "first-in-my-bloodline");
   assert.deepEqual(matchTemplates("market update on interest rates for first time buyers"), []);
   assert.deepEqual(matchTemplates("best coffee spots in my city"), [], "no template for it, so none is forced");
 });
