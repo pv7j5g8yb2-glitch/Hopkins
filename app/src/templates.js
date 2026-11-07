@@ -280,6 +280,21 @@ export const TEMPLATES = [
     research: true,
     rules: ["Hopkins researches the places, hours, events and dates itself for the agent's city, from sources it can name (the city or tourism site, the venue's own page, local news), and the agent approves the list before anything is made.", "Anything with a date or a menu item is checked against the venue's own page; if it can't be confirmed it is dropped. Closed or moved places are never listed.", "No invented places, dates, prices or menu items.", "Photos are the agent's own or clearly licensed, never a venue's own photos without permission.", "The free full guide is the agent's own lead magnet; Hopkins can write it from the same researched list once the agent approves."],
   },
+  {
+    id: "kinda-chic",
+    name: "Kinda chic to...",
+    purpose: "A values and personality carousel: every slide starts 'kinda chic to' and finishes it with something that shows how the agent works and lives (stay so consistent it finally works out, know where the locals actually go, have clients send their friends your way, take the long way home, have a home people love gathering in, love your neighbors, have clients become lifelong friends, be the agent that actually answers their phone, love where you live). One photo per slide, cream bold sans centred. Builds warmth, trust and word of mouth.",
+    topics: ["kinda chic", "chic to", "it's chic to", "values", "what i value", "how i work", "my approach", "love where you live", "answers their phone", "lifelong friends", "client referrals", "clients become friends", "long way home", "love your neighbors", "personality", "brand values"],
+    avoid: ["market update", "interest rate", "first time buyer", "just listed", "just sold", "open house", "bring back", "traffic", "parking", "hills i die on", "bloodline", "unhinged", "not paid to list", "sellers", "brokerage", "doesn't have to be", "lose it", "guide", "things to do"],
+    noCover: true,
+    covers: ["cream bold sans, centred over one photo with a dark overlay"],
+    slides: [
+      { kind: "kinda-chic", repeat: "5 to 10", fields: ["finish_the_line"], photo: "one agent supplied photo per slide that fits the line", text: "cream bold sans, centred, 'kinda chic' then 'to ...' on the next lines" },
+      { kind: "comment", fields: ["agent_name", "city", "comment_word", "comment_offer"], photo: "agent" },
+    ],
+    fields: { finish_the_line: "a value or habit that is true for the agent and finishes 'kinda chic to ...'", agent_name: "text", city: "text", comment_word: "one word", comment_offer: "what they get" },
+    rules: ["Each line must be true for this agent; Hopkins suggests lines from what the agent says about how they work and the agent picks, never invented claims (for example 'answers their phone' only if it is true).", "Photos are the agent's own or clearly licensed."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);

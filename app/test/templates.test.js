@@ -16,6 +16,7 @@ test("a request only matches a template made for it", () => {
   assert.equal(matchTemplates("when I list a home I treat it like it's my own")[0].id, "when-i-list-a-home");
   assert.equal(matchTemplates("it doesn't have to be your dream house, reassurance for a nervous first home buyer")[0].id, "doesnt-have-to-be");
   assert.equal(matchTemplates("why I chose my brokerage, a recruiting post for agents")[0].id, "why-i-chose-my-brokerage");
+  assert.equal(matchTemplates("kinda chic to love where you live, my values")[0].id, "kinda-chic");
   assert.deepEqual(matchTemplates("market update on interest rates for first time buyers"), []);
   assert.equal(matchTemplates("best coffee spots in my city")[0].id, "seasonal-local-guide");
   assert.equal(matchTemplates("a fall guide with things to do in my city")[0].id, "seasonal-local-guide");
