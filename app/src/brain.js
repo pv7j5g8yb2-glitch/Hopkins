@@ -808,6 +808,7 @@ const WEEK_SCHEMA = {
           kind: { type: "string", enum: ["carousel", "post", "reel", "story"] },
           title: { type: "string", description: "The hook, exactly as it would sit on the post: specific and at most 8 words" },
           idea: { type: "string", description: "What it covers and the angle, one sentence, at most 22 words" },
+          template: { type: "string", description: "The id of the template this post is made from, exactly as listed" },
         },
         required: ["day", "time", "kind", "title", "idea"],
       },
@@ -815,11 +816,11 @@ const WEEK_SCHEMA = {
   },
   required: ["days"],
 };
-export async function weekPlanAI({ answers = "", request = "", previous = null, days = [], brand = {}, week = "" }) {
+export async function weekPlanAI({ answers = "", request = "", previous = null, days = [], brand = {}, week = "", templates = [] }) {
   if (!aiEnabled) return null;
   const DAY = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   return call({
-    system: `You are Hopkins, planning one week of Instagram and Facebook content for a real estate agent, the way the best real estate content strategist would. Plan exactly ${days.length} posts, one on each of these days: ${days.map((d) => `${DAY[d]} (${d})`).join(", ")}. Build the week first from what they told you about this week (a listing to show, an open house, something happening locally, something about them), then fill the rest from what they like to post. Mix the formats so the week has rhythm: at least one reel and one carousel, a story for anything time sensitive (an open house, an event). Every title is the hook as it would sit on the post, written for their buyers, sellers, renters or neighbors, never for other agents: a number promise, a named mistake, a local angle or a question people have, with the place in it when it's known. Each one gives something people can use or want to share. Never invent facts: no prices, numbers, events, places or details they didn't give you, and nothing about a listing beyond what they said. Never wording about who a property suits (fair housing). No dashes. US spelling.`,
+    system: `You are Hopkins, planning one week of Instagram and Facebook content for a real estate agent, the way the best real estate content strategist would. Plan exactly ${days.length} posts, one on each of these days: ${days.map((d) => `${DAY[d]} (${d})`).join(", ")}. Build the week first from what they told you about this week (a listing to show, an open house, something happening locally, something about them), then fill the rest from what they like to post. Mix the formats so the week has rhythm: at least one reel and one carousel, a story for anything time sensitive (an open house, an event). Every title is the hook as it would sit on the post, written for their buyers, sellers, renters or neighbors, never for other agents: a number promise, a named mistake, a local angle or a question people have, with the place in it when it's known. Each one gives something people can use or want to share. Never invent facts: no prices, numbers, events, places or details they didn't give you, and nothing about a listing beyond what they said. Never wording about who a property suits (fair housing). No dashes. US spelling. Every post is made from one of the agent's human designed templates, never designed from scratch: set template to the id of the one that fits, and never use the same template twice in a week unless there are fewer templates than posts. Templates:\n${templates.map((t) => `- ${t.id}: ${t.purpose}`).join("\n")}\nUse the template's own format for the hook: the title is the post's topic in that template's style.`,
     messages: [{ role: "user", content: `${previous ? `The current plan:\n${JSON.stringify(previous)}\n\nChange it as they ask, keep everything else: ${request}\n\n` : ""}What they said about their week:\n${answers || "(nothing)"}\n\nWhere they sell: ${brand.area || "unknown"}. What they like to post: ${brand.styles || "unknown"}. Their content: ${brand.content_style || "unknown"}. Agent: ${[brand.agent, brand.business].filter(Boolean).join(", ") || "unknown"}. The week: ${week}.` }],
     schema: WEEK_SCHEMA,
     effort: "medium",

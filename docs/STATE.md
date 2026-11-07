@@ -1235,3 +1235,9 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
 * Templates (2026-11-07): four saved. Ismael corrected the rule: Hopkins researches the places and
   facts itself, each with a source, and the agent approves the facts before anything is made;
   old photos only from clearly licensed sources, else the agent's own.
+
+* The app now makes its content from the template library (2026-11-07): web/tpl.js draws 11 layouts,
+  chat requests and the week fill templates, researched guides show sources first. Checked with a
+  stand in model (no keys here), so the real model's words and Gemini's search still need a look on Render.
+  Not done: just listed, market updates, buyer tips and client story templates; the demo account's
+  week still shows old posts; fonts are lookalikes.

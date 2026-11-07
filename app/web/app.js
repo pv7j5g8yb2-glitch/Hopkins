@@ -1700,6 +1700,13 @@
         const rows = (m.data?.plan || []).map((d) => `<div class="cal-r"><div class="cal-d"><b>${DAY[d.day]}</b><span>${esc(d.time)}</span></div><div class="cal-t"><small>${KIND_LABEL[d.kind] || ""}</small><b>${esc(d.title)}</b><p>${esc(d.idea)}</p></div></div>`).join("");
         return wrap(`${text}<div class="cal${live ? "" : " old"}">${rows}</div>${live ? `<div class="acts"><button class="btn" data-act="makeWeek">Make the week</button></div>` : ""}`);
       }
+      if (m.kind === "facts") {
+        // the places Hopkins found, each with the page it came from, for the agent to check
+        const live = [...p.messages].reverse().find((x) => x.role === "hopkins") === m;
+        const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+        const rows = (m.data?.facts || []).map((f) => `<li><div><b>${esc(f.name)}</b>${f.where ? `<span>${esc(f.where)}</span>` : ""}${f.detail ? `<p>${esc(f.detail)}</p>` : ""}</div>${f.source ? `<a href="${esc(f.source)}" target="_blank" rel="noopener">${esc(host(f.source))}</a>` : ""}</li>`).join("");
+        return wrap(`${text}<ul class="facts${live ? "" : " old"}">${rows}</ul>${live ? `<div class="acts"><button class="btn" data-act="factsGo">Make it</button></div>` : ""}`);
+      }
       if (m.kind === "weekready") return wrap(`${text}<div class="acts"><a class="btn" href="#/today">Open Week</a></div>`);
       if (m.kind === "check") return wrap(`<div class="note-line">${esc(m.body)}<span class="small">A wording check, not legal advice.</span></div>`, false);
       if (m.kind === "lead") return wrap(`${text}<div class="acts"><a class="sec-btn" href="#/leads">${ICON.people}Open Leads</a></div>`);
@@ -2848,6 +2855,7 @@
       }
       if (act === "cancelEdit") { stopEdit(); return $("#ta")?.focus(); }
       if (["saveProfile", "saveBiz", "savePw", "alertsOn", "alertsOff", "testAlert", "avRemove", "deleteAsk", "deleteYes", "crmSave", "crmOff", "crmTest", "crmSkip", "metaWaive", "pushOn", "pushOff", "siteSave", "siteRemove"].includes(act)) await settingsAction(act, t);
+      else if (act === "factsGo") { const ta = $("#ta"); ta.value = "go"; ta.dispatchEvent(new Event("input", { bubbles: true })); $("#comp").requestSubmit(); }
       else if (act === "crDownload") await downloadCreation(t.dataset.id, t);
       else if (act === "crCopy") {
         const c = S.crKeys?.[t.dataset.id] || (S.current?.creations || []).find((x) => x.id === t.dataset.id);

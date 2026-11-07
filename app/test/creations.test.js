@@ -14,6 +14,12 @@ hopkins.setCreationForTests(async (req) => {
   return { title: "First time buyers", caption: "Save this for later.", theme: "night", slides, reply: req.previous ? "Shorter now." : `Here's your ${req.kind}.` };
 });
 
+const filled = [];
+hopkins.setTemplateForTests(async (a) => {
+  filled.push(a);
+  return { title: "Week post", slides: a.template.slides.map((x, i) => ({ kind: x.kind, title: x.kind === "comment" ? "I'm Sam, Austin local" : `Line ${i}`, body: "A line.", lines: [], top: "", bottom: "", caption: "", script: "", photo: 0 })), reply: "" };
+}, async () => [{ category: "coffee", name: "Cafe One", where: "Austin", detail: "cold brew", source: "https://example.com/one" }]);
+
 async function signup(email) {
   const c = client(app);
   await c("POST", "/api/signup", { email, password: "password123", invite: "EARLY1", name: "Sam Ellery" });
@@ -170,7 +176,8 @@ test("Plan my week asks first, then lays out a calendar to change in words, and 
   for (let i = 0; i < 80; i++) { w = (await c("GET", "/api/week")).json; if (w.status === "ready") break; await new Promise((r) => setTimeout(r, 25)); }
   assert.equal(w.status, "ready");
   assert.deepEqual(w.posts.map((p) => p.day), [0, 2, 4]);
-  assert.ok(asked.some((r) => /Austin, Texas/.test(r.request) && /school fair/.test(r.request)), "their city and what they said about the week");
+  assert.ok(w.posts.every((p) => p.spec.template && p.spec.slides.every((x) => x.layout)), "every post is filled into a template and has its drawn layout");
+  assert.ok(filled.some((r) => /Austin, Texas/.test(r.request) && /school fair/.test(r.request)), "their city and what they said about the week");
   chat = (await c("GET", `/api/listings/${start.chat}`)).json;
   assert.equal(chat.messages.at(-1).kind, "weekready");
   assert.equal((await c("POST", "/api/week/start", {})).json.chat, start.chat, "the same week opens again");

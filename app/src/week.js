@@ -11,7 +11,8 @@
 // approved, failed.
 import { all, get, run, nowIso } from "./db.js";
 import { randomUUID, randomBytes } from "node:crypto";
-import { weekRange, makeSpec, say } from "./hopkins.js";
+import { weekRange, makeSpec, makeTemplateSpec, say } from "./hopkins.js";
+import { TEMPLATES, byId } from "./templates.js";
 import { weekPlanAI } from "./brain.js";
 
 const safeJson = (s, fallback) => { try { return JSON.parse(s); } catch { return fallback; } };
@@ -83,6 +84,7 @@ export async function startWeek(ws, monday) {
 2. Open houses or anything else booked?
 3. Anything going on${area ? ` in ${area.split(",")[0]}` : " locally"} worth posting about?
 4. One thing you'd like people to know about you this week?
+5. Add some of your own photos (places, you, your listings) to this chat. I'll put them behind the posts.
 
 Answer in one message, as short as you like.`, "text", { weekAsk: true });
   return { chat: id, status: "asking" };
@@ -115,7 +117,9 @@ export function fallbackPlan(ws) {
   const days = DAYS[Number(b.post_often)] || DAYS[5];
   const picked = String(b.styles || "").split(",").map((x) => x.trim()).filter((x) => TOPICS[x]);
   const topics = picked.length ? picked : ["Buyer tips", "Local spots", "Seller tips"];
-  return days.map((day, i) => { const [title, idea] = TOPICS[topics[i % topics.length]]; return { day, time: TIMES[i % TIMES.length], kind: KINDS[i % KINDS.length], title, idea }; });
+  const TPL_FOR = { "Local spots": "seasonal-local-guide", "Events": "seasonal-local-guide", "Neighbourhood guides": "notes-app", "Seller tips": "not-paid-to-list", "Buyer tips": "doesnt-have-to-be", "Behind the scenes": "unhinged-to-the-average-person", "Your story": "kinda-chic", "Just listed": "when-i-list-a-home", "Client stories": "not-just-selling" };
+  const ids = ["kinda-chic", "seasonal-local-guide", "not-paid-to-list", "notes-app", "doesnt-have-to-be", "unhinged-to-the-average-person", "lose-it-local"];
+  return days.map((day, i) => { const [title, idea] = TOPICS[topics[i % topics.length]]; return { day, time: TIMES[i % TIMES.length], kind: "carousel", title, idea, template: TPL_FOR[topics[i % topics.length]] || ids[i % ids.length] }; });
 }
 // The plan as the model gave it, fitted to the days they post and the formats the app can make.
 function fitPlan(ws, days) {
@@ -127,7 +131,8 @@ function fitPlan(ws, days) {
     const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(d.time || "")) ? d.time : fb[i].time;
     const kind = ["carousel", "post", "reel", "story"].includes(d.kind) ? d.kind : fb[i].kind;
     const s = (v, n) => String(v || "").replace(/\s*[–—]\s*/g, ", ").replace(/(\w)\s-\s(\w)/g, "$1, $2").trim().slice(0, n);
-    return { day, time, kind, title: s(d.title, 70) || fb[i].title, idea: s(d.idea, 200) || fb[i].idea };
+    const template = byId(d.template) ? d.template : fb[i].template;
+    return { day, time, kind, title: s(d.title, 70) || fb[i].title, idea: s(d.idea, 200) || fb[i].idea, template };
   });
 }
 
@@ -145,7 +150,7 @@ export async function weekTurn(ws, listing, text, { makeCreation } = {}) {
     if (/\?\s*$/.test(text) && status === "proposed") return null;
     const previous = status === "proposed" ? safeJson(listing.week_plan, null) : null;
     const b = ws.brand || {};
-    const r = await weekPlanAI({ answers: await answers(listing.id), request: previous ? text : "", previous, days: DAYS[Number(b.post_often)] || DAYS[5], brand: { area: b.area || b.city || "", styles: b.styles || "", content_style: STYLE_WORDS[b.content_style] || "", agent: b.agent_name || "", business: b.business || "" }, week: dates(listing.week_of) });
+    const r = await weekPlanAI({ answers: await answers(listing.id), request: previous ? text : "", previous, days: DAYS[Number(b.post_often)] || DAYS[5], brand: { area: b.area || b.city || "", styles: b.styles || "", content_style: STYLE_WORDS[b.content_style] || "", agent: b.agent_name || "", business: b.business || "" }, week: dates(listing.week_of), templates: TEMPLATES.filter((t) => !t.status) });
     const plan = fitPlan(ws, r?.days || (previous || fallbackPlan(ws)));
     await run(`UPDATE listings SET week_status = 'proposed', week_plan = ?, updated_at = ? WHERE id = ?`, [JSON.stringify(plan), nowIso(), listing.id]);
     const line = previous ? "Here's the week with that change." : "Here's your week.";
@@ -187,7 +192,9 @@ export async function makeWeek(ws, listing) {
         const voice = b.content_style === "personal" ? " In the agent's own voice, personal." : "";
         const request = `A ${item.kind} titled "${item.title}": ${item.idea}.${area ? ` For people in ${area}.` : ""}${voice}${notes ? `\nWhat the agent said about this week (use only what fits this post): ${notes}` : ""}`;
         try {
-          const spec = await makeSpec({ kind: item.kind, request, listing: null, photos: 0, agent, area });
+          // the post is filled into one of the human designed templates; a plan item without one is skipped
+          const template = byId(item.template);
+          const spec = template ? await makeTemplateSpec(ws, listing, request, template) : null;
           if (!spec) continue;
           spec.plan = { day: item.day, time: item.time };
           const t = nowIso();

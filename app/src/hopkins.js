@@ -1291,6 +1291,19 @@ export async function makeTemplatePost(ws, listing, text, template, previous = n
   if (!listing.title && !listing.address && !previous && spec.title) await run(`UPDATE listings SET auto_title = COALESCE(auto_title, ?) WHERE id = ?`, [spec.title, listing.id]);
   return { creation: id };
 }
+// A template's post as a spec only, nothing saved (the week makes its posts this way).
+export async function makeTemplateSpec(ws, listing, text, template) {
+  let facts = null;
+  if (template.research) {
+    const ask = { city: ws.brand.area || ws.brand.city || "", topic: text, season: "" };
+    facts = researchFake ? await researchFake(ask) : await researchPlacesAI(ask);
+  }
+  const spec = await templateFill(ws, listing, text, forUser(template), null, facts);
+  if (!spec) return null;
+  const { layoutFor } = await import("./templates.js");
+  spec.slides = spec.slides.map((s) => ({ ...s, layout: layoutFor(template, s.kind) }));
+  return spec;
+}
 // The first step of a researched template: the places Hopkins found, each with its source, for the
 // agent to check before anything is made.
 async function proposeFacts(ws, listing, text, template, extra = "") {

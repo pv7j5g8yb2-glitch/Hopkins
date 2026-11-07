@@ -150,7 +150,11 @@ not bought yet; the waitlist runs on waitlist.kirmistudio.com until sign ups pro
 * **Templates (Ismael, 2026-11-07):** the content comes from human designed templates in
   `app/src/templates.js` that Hopkins fills in, never from scratch. 18 saved. Hopkins researches the
   facts itself (places, dates) with a source for each and the agent approves them first. Layouts are
-  not drawn yet; his designs are in his sets and he can't name the fonts.
+  drawn in code by `app/web/tpl.js` from his designs (fonts are free lookalikes; he can't name his).
+  A request that fits a template (`matchTemplates`: whole words, a phrase counts double, at least 2)
+  is filled by `makeTemplatePost`; researched ones show the places with their sources first
+  (`proposeFacts`, Gemini with Google Search) and "go" makes it. The week is made from templates
+  too. The agent's own photos go behind every slide; with none, a dark ground. Never AI design.
 * **Every version stays in the chat (Ismael, 2026-11-05, furious: the first reel "literally
   disappears after the second reel comes"):** each message keeps the version it made (`spec` on the
   message's data), so a change never makes the earlier one vanish, like Claude's artifacts. "Bring
