@@ -77,6 +77,21 @@ export const TEMPLATES = [
     fields: { job_task: "'I'm not just ...' and a real agent task (writing contracts, scheduling inspections, handing over keys)", family_moment: "'I'm ...' and the home moment it protects in the chosen season", agent_name: "text", city: "text", dm_offer: "DM me whenever you're ready for an agent who's on your side" },
     rules: ["Moments are about family and home life only, never about who a property suits (fair housing).", "Season comes from the agent's request or the calendar."],
   },
+  {
+    id: "not-paid-to-list",
+    name: "I'm not paid to list houses",
+    purpose: "A seller-facing authority carousel: what the agent really does beyond putting a house on the MLS (marketing it, negotiating offers, protecting the price to closing). One portrait of the agent behind every slide. Wins listing conversations.",
+    topics: ["not paid to list", "list houses", "listing", "sellers", "seller", "why hire me", "what i do for sellers", "marketing plan", "mls is not marketing", "listing presentation", "negotiate", "negotiating offers", "top dollar", "marketing your home", "marketing a house"],
+    avoid: ["market update", "interest rate", "first time buyer", "mortgage", "open house", "closed", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween"],
+    covers: ["serif italic over portrait, arrow", "bold sans with italic serif ending", "split big sans top and bottom right", "serif with years of experience line"],
+    slides: [
+      { kind: "cover", fields: ["city", "title_variant", "years_experience"], photo: "agent portrait" },
+      { kind: "claim", repeat: "4 to 7", fields: ["headline", "body"], photo: "same agent portrait on every slide", text: "serif headline over small bold sans body, bottom left, arrow bottom right" },
+      { kind: "comment", fields: ["agent_name", "city", "inbox_line"], photo: "agent portrait" },
+    ],
+    fields: { city: "text", years_experience: "number, only if the agent gives it", headline: "short serif line, e.g. 'I don't just post it and pray.'", body: "1 to 3 plain sentences describing something the agent really does", agent_name: "text", inbox_line: "My inbox is always open." },
+    rules: ["Every claim about what the agent does (calls, mailers, social reach, network) must be true for them; Hopkins asks which of them they actually do and drops the rest.", "No invented numbers, years or results.", "The photo is the agent's own, never AI generated."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);

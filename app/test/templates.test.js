@@ -7,6 +7,7 @@ test("a request only matches a template made for it", () => {
   assert.equal(matchTemplates("businesses in my city that closed that locals miss")[0].id, "gone-but-never-forgotten");
   assert.equal(matchTemplates("funny things that make me lose it about traffic and parking")[0].id, "lose-it-local");
   assert.equal(matchTemplates("a thanksgiving post about what I really do, not just selling a house")[0].id, "not-just-selling");
+  assert.equal(matchTemplates("why sellers should hire me, a marketing plan not just listing on the MLS")[0].id, "not-paid-to-list");
   assert.deepEqual(matchTemplates("market update on interest rates for first time buyers"), []);
   assert.deepEqual(matchTemplates("best coffee spots in my city"), [], "no template for it, so none is forced");
 });
