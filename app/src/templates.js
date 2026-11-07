@@ -43,7 +43,8 @@ export const TEMPLATES = [
       { kind: "comment", fields: ["agent_name", "city", "comment_word", "comment_offer"], photo: "agent" },
     ],
     fields: { city: "text", series_number: "number", headline: "one punchy line", body: "2 to 3 sentences, only facts the agent confirms", year_closed: "year", agent_name: "text", comment_word: "one word", comment_offer: "what they get" },
-    rules: ["The agent supplies the place name, year and photo; Hopkins never invents history.", "Old photos must be ones the agent has the right to use."],
+    research: true,
+    rules: ["Hopkins researches the places, years and stories itself, and every fact carries a source.", "The agent approves the list of facts before anything is made; a fact with no source is dropped.", "Old photos only from clearly licensed sources (for example Wikimedia Commons, credited), otherwise the agent's own photo."],
   },
   {
     id: "lose-it-local",
@@ -58,7 +59,23 @@ export const TEMPLATES = [
       { kind: "comment", fields: ["agent_name", "city", "comment_word", "comment_offer"], photo: "agent" },
     ],
     fields: { city: "text", joke_line: "one or two sentences starting 'When...' about a real local thing the agent confirms: a road, a place, the weather, parking", agent_name: "text", comment_word: "one word, e.g. FALL", comment_offer: "the free guide they get" },
-    rules: ["Every joke names a real local road, place or habit the agent gives; Hopkins never invents local facts, prices or numbers.", "Each slide's photo is the agent's own."],
+    research: true,
+    rules: ["Hopkins looks up the real local roads, places and habits itself, with a source for each, and the agent approves the lines before they're made.", "Never invented local facts, prices or numbers.", "Each slide's photo is the agent's own or clearly licensed."],
+  },
+  {
+    id: "not-just-selling",
+    name: "I'm not just selling a house",
+    purpose: "A warm seasonal carousel for buyers and sellers: each slide pairs what the agent does ('I'm not just writing contracts.') with the family moment it protects ('I'm securing the front yard where they'll rake leaf piles just to jump in them.'). Built around a season or holiday: fall, Halloween, Thanksgiving, Christmas, New Year.",
+    topics: ["not just", "more than a house", "more than selling", "what i really do", "what i actually do", "why i do this", "holiday", "thanksgiving", "christmas", "halloween", "new year", "season", "seasonal", "fall", "winter", "family moments", "memories"],
+    avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "closed", "bring back", "traffic", "parking"],
+    noCover: true,
+    covers: ["split photo, two lines", "full photo, two lines"],
+    slides: [
+      { kind: "not-just-pair", repeat: "4 to 8", fields: ["job_task", "family_moment"], photo: "two photos per slide: the task or room, then the moment; season matched", text: "white sans, centred, one line over each half" },
+      { kind: "comment", fields: ["agent_name", "city", "dm_offer"], photo: "agent", note: "script signature, city local & real estate advisor, and a DM offer" },
+    ],
+    fields: { job_task: "'I'm not just ...' and a real agent task (writing contracts, scheduling inspections, handing over keys)", family_moment: "'I'm ...' and the home moment it protects in the chosen season", agent_name: "text", city: "text", dm_offer: "DM me whenever you're ready for an agent who's on your side" },
+    rules: ["Moments are about family and home life only, never about who a property suits (fair housing).", "Season comes from the agent's request or the calendar."],
   },
 ];
 

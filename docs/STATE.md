@@ -1231,3 +1231,7 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   (coffee spots never gets a market update). Two so far: notes app neighbourhoods, gone but never
   forgotten. Not built yet: the renderer that draws each exact layout with the agent's city and
   photos. Third party photos in his source files (old business photos, stock city shots) stay out.
+
+* Templates (2026-11-07): four saved. Ismael corrected the rule: Hopkins researches the places and
+  facts itself, each with a source, and the agent approves the facts before anything is made;
+  old photos only from clearly licensed sources, else the agent's own.
