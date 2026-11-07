@@ -1225,3 +1225,9 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   soon. Slide 14 leads with "Made by humans, not AI". 6,000+ agents in their Facebook group;
   founding member offer ($20 off, price locked before 24 November). It covers almost all of the
   organic content plan for Hopkins, with seven years of templates and an audience behind it.
+
+* Template library started (2026-11-07): `app/src/templates.js` holds Ismael's own human designed templates,
+  each with a purpose, topic and avoid words so a request only matches a template made for it
+  (coffee spots never gets a market update). Two so far: notes app neighbourhoods, gone but never
+  forgotten. Not built yet: the renderer that draws each exact layout with the agent's city and
+  photos. Third party photos in his source files (old business photos, stock city shots) stay out.
