@@ -233,6 +233,21 @@ export const TEMPLATES = [
     fields: { city: "text", title: "When I list a home in [City], I treat it like it's my own", step_title: "'I ...' and a real thing the agent does", step_body: "1 to 3 plain sentences saying why it matters to the seller", agent_name: "text", invite_line: "send me a message" },
     rules: ["Hopkins asks which steps the agent really does (pro photographer, broker outreach, buyer database, showing feedback) and only uses true ones.", "No invented numbers, results or guarantees; 'data' claims need the agent's real data.", "Photos are the agent's own listing or interior photos."],
   },
+  {
+    id: "doesnt-have-to-be",
+    name: "It doesn't have to be... it just has to be...",
+    purpose: "A reassuring buyer carousel built on one repeated move: each slide is a split photo, grey on top with 'it doesn't have to be [what people think]', full colour underneath with 'it just has to be [what really matters]'. For first time buyers and hesitant buyers (your dream house, the top of your budget, impress everyone, check every box, look like Pinterest, have it all figured out, wait until you're ready).",
+    topics: ["doesn't have to be", "it just has to be", "first home", "starter home", "dream house", "top of your budget", "ready to buy", "not ready", "hesitant", "nervous buyer", "first time buyer reassurance", "you don't have to", "buying your first home", "scared to buy"],
+    avoid: ["market update", "interest rate", "just listed", "just sold", "open house", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween", "hills i die on", "bloodline", "unhinged", "closed", "not paid to list"],
+    noCover: true,
+    covers: ["split photo: grey top half, colour bottom half, cream bold sans"],
+    slides: [
+      { kind: "not-this-but-this", repeat: "5 to 8", fields: ["doesnt_have_to", "just_has_to"], photo: "one agent supplied photo per slide, shown grey in the top half and in colour in the bottom half", text: "cream bold sans, centred in each half" },
+      { kind: "comment", fields: ["agent_name", "city", "comment_word", "comment_offer"], photo: "agent" },
+    ],
+    fields: { doesnt_have_to: "the pressure buyers feel", just_has_to: "what actually matters", agent_name: "text", city: "text", comment_word: "one word", comment_offer: "what they get" },
+    rules: ["Advice only; no promises about rates, prices or approval, and never wording about who a home suits (fair housing).", "Photos are the agent's own or clearly licensed; the grey and colour halves are made from the same photo."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
