@@ -218,6 +218,21 @@ export const TEMPLATES = [
     fields: { city: "text", oversized_word: "unhinged", thing_i_do: "an agent task that sounds ridiculous out of context", punchline: "the short reason why it is actually part of the job", agent_name: "text", invite_line: "Making a move soon? Send me a message" },
     rules: ["The agent confirms each thing is true for them; Hopkins suggests, never invents personal stories or numbers.", "Any figure in a line (such as 47 houses) is the agent's own, never made up.", "Photos are the agent's own or clearly licensed."],
   },
+  {
+    id: "when-i-list-a-home",
+    name: "When I list a home, I treat it like it's my own",
+    purpose: "A seller-facing listing process carousel: what the agent does for every listing, one step per slide, each a serif headline with a short sans explanation over a darkened interior photo (walk through with a buyer's eyes, marketing starts before we go live, hire a pro photographer, price on data not emotion, tell the truth after every showing, stay involved through closing, negotiate every line of the offer). Ends with the agent's portrait and an invitation to message if they're thinking of listing.",
+    topics: ["when i list a home", "treat it like it's my own", "like it's my own", "my listing process", "how i sell your home", "how i market a listing", "listing process", "what happens when you list with me", "sellers", "pro photographer", "price based on data", "negotiate every line", "stay involved through closing", "if i were selling my own home"],
+    avoid: ["market update", "interest rate", "first time buyer", "mortgage", "just listed", "just sold", "open house", "bring back", "traffic", "parking", "thanksgiving", "christmas", "halloween", "hills i die on", "bloodline", "unhinged", "closed"],
+    covers: ["four photo collage with the agent portrait, serif title with italic second line and caps subtitle"],
+    slides: [
+      { kind: "cover", fields: ["city", "title"], photo: "four photo collage including the agent portrait" },
+      { kind: "listing-step", repeat: "5 to 9", fields: ["step_title", "step_body"], photo: "agent supplied interior photo, dark overlay", text: "serif headline, small sans body, centred" },
+      { kind: "comment", fields: ["agent_name", "city", "invite_line"], photo: "agent portrait in a small frame over an interior photo", note: "This is how I show up for every listing. If you're thinking about listing in [City] this year, send me a message." },
+    ],
+    fields: { city: "text", title: "When I list a home in [City], I treat it like it's my own", step_title: "'I ...' and a real thing the agent does", step_body: "1 to 3 plain sentences saying why it matters to the seller", agent_name: "text", invite_line: "send me a message" },
+    rules: ["Hopkins asks which steps the agent really does (pro photographer, broker outreach, buyer database, showing feedback) and only uses true ones.", "No invented numbers, results or guarantees; 'data' claims need the agent's real data.", "Photos are the agent's own listing or interior photos."],
+  },
 ];
 
 const words = (s) => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
