@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Covered</title>
+<style>
+:root { --bg:#F6F4EF; --card:#fff; --ink:#111; --mute:#6b6b66; --line:#e6e2da; --ok:#1f9d63; --soon:#d98a00; --bad:#d6453d; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0e0e0f; --card:#17171a; --ink:#f3f1ec; --mute:#9a9a94; --line:#2a2a2e; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.4 -apple-system, "Inter", system-ui, sans-serif; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 80px; }
+h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; letter-spacing: -.01em; }
+.top { display:flex; align-items:center; justify-content:space-between; margin-bottom: 18px; }
+.brand { font-weight: 700; letter-spacing: -.02em; }
+input, select { width:100%; font:inherit; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); }
+label { display:block; font-size:13px; color:var(--mute); margin: 12px 0 6px; }
+button { font:inherit; border:0; border-radius:999px; padding:12px 20px; background:var(--ink); color:var(--bg); font-weight:600; cursor:pointer; touch-action:manipulation; }
+button:active { transform: scale(.97); opacity:.85; }
+button.quiet { background:transparent; color:var(--ink); border:1px solid var(--line); }
+button.link { background:none; color:var(--mute); padding:6px 8px; font-weight:500; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding: 16px; margin-bottom: 12px; }
+.row { display:flex; align-items:center; gap:12px; padding:14px 0; border-top:1px solid var(--line); cursor:pointer; }
+.row:first-child { border-top:0; }
+.dot { width:12px; height:12px; border-radius:50%; flex:none; background:var(--line); }
+.dot.ok { background:var(--ok); } .dot.soon { background:var(--soon); } .dot.bad { background:var(--bad); }
+.grow { flex:1; min-width:0; }
+.name { font-weight:600; } .sub { color:var(--mute); font-size:14px; }
+.pill { font-size:13px; padding:3px 10px; border-radius:999px; border:1px solid var(--line); color:var(--mute); }
+.pill.ok { color:var(--ok); border-color:var(--ok); } .pill.soon { color:var(--soon); border-color:var(--soon); } .pill.bad { color:var(--bad); border-color:var(--bad); }
+.err { color:var(--bad); font-size:14px; min-height:20px; margin-top:8px; }
+.stats { display:flex; gap:10px; margin: 14px 0; }
+.stat { flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
+.stat b { display:block; font-size:24px; font-weight:600; }
+.stat span { font-size:13px; color:var(--mute); }
+.two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+input[type=date] { min-height: 46px; }
+.hide { display:none; }
+.fab { position:fixed; left:0; right:0; margin:0 auto; width:max-content; bottom: max(20px, env(safe-area-inset-bottom)); box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; color: var(--mute); }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const app = $("#app");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const api = async (method, url, body) => {
+  const r = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.error || "Something went wrong. Please try again."), { status: r.status });
+  return j;
+};
+const words = { ok: "Cleared", soon: "Expiring soon", bad: "Not cleared" };
+const itemWords = (i) => i.state === "missing" ? "Missing" : i.state === "expired" ? `Expired ${-i.days} day${i.days === -1 ? "" : "s"} ago` : i.days === 0 ? "Expires today" : `${i.days} day${i.days === 1 ? "" : "s"} left`;
+
+function authView(mode = "signup") {
+  const up = mode === "signup";
+  app.innerHTML = `
+    <div class="top"><span class="brand">Covered</span></div>
+    <h1>${up ? "Create your account" : "Sign in"}</h1>
+    <form id="f">
+      ${up ? `<label>Your name</label><input name="name" autocomplete="name" required><label>Company</label><input name="company" autocomplete="organization">` : ""}
+      <label>Email</label><input name="email" type="email" autocomplete="email" required>
+      <label>Password</label><input name="password" type="password" autocomplete="${up ? "new-password" : "current-password"}" required>
+      <div class="err" id="e"></div>
+      <button style="width:100%;margin-top:6px">${up ? "Continue" : "Sign in"}</button>
+    </form>
+    <p style="text-align:center"><button class="link" id="sw">${up ? "Sign in instead" : "Create an account"}</button></p>`;
+  $("#sw").onclick = () => authView(up ? "login" : "signup");
+  $("#f").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const d = Object.fromEntries(new FormData(ev.target));
+    try { await api("POST", up ? "/api/signup" : "/api/login", d); home(); } catch (e) { $("#e").textContent = e.message; }
+  };
+}
+
+async function home() {
+  let data, me;
+  try { [me, data] = await Promise.all([api("GET", "/api/me"), api("GET", "/api/subs")]); } catch (e) { return authView("signup"); }
+  const subs = data.subs;
+  const n = (s) => subs.filter((x) => x.status.overall === s).length;
+  const order = { bad: 0, soon: 1, ok: 2 };
+  subs.sort((a, b) => order[a.status.overall] - order[b.status.overall] || a.name.localeCompare(b.name));
+  app.innerHTML = `
+    <div class="top"><span class="brand">Covered</span><button class="link" id="out">Sign out</button></div>
+    <h1>${esc(me.user.company || "Your subcontractors")}</h1>
+    <div class="sub">${subs.length ? "Who can work on site today." : "Add the trades you use."}</div>
+    ${subs.length ? `<div class="stats"><div class="stat"><b>${n("ok")}</b><span>Cleared</span></div><div class="stat"><b>${n("soon")}</b><span>Expiring soon</span></div><div class="stat"><b>${n("bad")}</b><span>Not cleared</span></div></div>` : ""}
+    <div class="card" id="list">${subs.map((s) => `
+      <div class="row" data-id="${s.id}">
+        <span class="dot ${s.status.overall}"></span>
+        <div class="grow"><div class="name">${esc(s.name)}</div><div class="sub">${esc(s.trade || "No trade")}${s.status.overall !== "ok" ? " · " + s.status.items.filter((i) => i.state !== "ok").map((i) => esc(i.label) + ": " + itemWords(i).toLowerCase()).join(", ") : ""}</div></div>
+        <span class="pill ${s.status.overall}">${words[s.status.overall]}</span>
+      </div>`).join("") || `<div class="sub" style="padding:8px 0">No subcontractors yet.</div>`}</div>
+    <button class="fab" id="add">Add subcontractor</button>`;
+  $("#out").onclick = async () => { await api("POST", "/api/logout"); authView("login"); };
+  $("#add").onclick = addView;
+  document.querySelectorAll(".row").forEach((r) => (r.onclick = () => detail(Number(r.dataset.id))));
+}
+
+function addView() {
+  app.innerHTML = `
+    <div class="top"><button class="link" id="back">Back</button></div>
+    <h1>Add subcontractor</h1>
+    <form id="f">
+      <label>Name</label><input name="name" required>
+      <label>Trade</label><input name="trade" placeholder="Electrician">
+      <label>Email</label><input name="email" type="email" placeholder="They get a link to upload their certificates">
+      <label>Phone</label><input name="phone" type="tel">
+      <div class="err" id="e"></div>
+      <button style="width:100%;margin-top:6px">Add</button>
+    </form>`;
+  $("#back").onclick = home;
+  $("#f").onsubmit = async (ev) => {
+    ev.preventDefault();
+    try { const r = await api("POST", "/api/subs", Object.fromEntries(new FormData(ev.target))); detail(r.sub.id); } catch (e) { $("#e").textContent = e.message; }
+  };
+}
+
+async function detail(id) {
+  const { sub, certs, link } = await api("GET", "/api/subs/" + id);
+  const url = `${link}/s/${sub.token}`;
+  app.innerHTML = `
+    <div class="top"><button class="link" id="back">Back</button><button class="link" id="del">Remove</button></div>
+    <h1>${esc(sub.name)}</h1>
+    <div class="sub">${esc(sub.trade || "")}${sub.email ? " · " + esc(sub.email) : ""}${sub.phone ? " · " + esc(sub.phone) : ""}</div>
+    <div class="card" style="margin-top:14px">${sub.status.items.map((i) => `
+      <div class="row" style="cursor:default"><span class="dot ${i.state === "ok" ? "ok" : i.state === "soon" ? "soon" : "bad"}"></span>
+        <div class="grow"><div class="name">${esc(i.label)}</div><div class="sub">${i.expires ? "Expires " + esc(i.expires) + (i.carrier ? " · " + esc(i.carrier) : "") : "Nothing on file"}</div></div>
+        <span class="pill ${i.state === "ok" ? "ok" : i.state === "soon" ? "soon" : "bad"}">${itemWords(i)}</span>
+        ${i.file ? `<a class="pill" href="/api/certs/${i.certId}/file" target="_blank">View</a>` : ""}</div>`).join("")}</div>
+    <div class="card"><div class="name">Upload link</div><div class="mono" id="u">${esc(url)}</div>
+      <p style="margin:10px 0 0"><button class="quiet" id="copy">Copy link</button></p></div>
+    <div class="card"><div class="name">Add a certificate</div>
+      <form id="f">
+        <label>Type</label><select name="kind"><option value="gl">General liability</option><option value="wc">Workers compensation</option></select>
+        <label>Expires</label><input name="expires" type="date" required>
+        <div class="two"><div><label>Carrier</label><input name="carrier"></div><div><label>Policy number</label><input name="policy_no"></div></div>
+        <label>File</label><input name="file" type="file" accept="application/pdf,image/png,image/jpeg">
+        <div class="err" id="e"></div>
+        <button style="width:100%;margin-top:6px">Save</button>
+      </form></div>`;
+  $("#back").onclick = home;
+  $("#del").onclick = async () => { if (confirm("Remove " + sub.name + "?")) { await api("DELETE", "/api/subs/" + id); home(); } };
+  $("#copy").onclick = async () => { try { await navigator.clipboard.writeText(url); $("#copy").textContent = "Copied"; } catch { $("#copy").textContent = "Select the link above"; } };
+  $("#f").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const fd = new FormData(ev.target);
+    const body = { kind: fd.get("kind"), expires: fd.get("expires"), carrier: fd.get("carrier"), policy_no: fd.get("policy_no") };
+    const file = fd.get("file");
+    try {
+      if (file && file.size) {
+        const buf = new Uint8Array(await file.arrayBuffer()); let s = ""; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+        Object.assign(body, { data: btoa(s), mime: file.type, name: file.name });
+      }
+      await api("POST", `/api/subs/${id}/cert`, body); detail(id);
+    } catch (e) { $("#e").textContent = e.message; }
+  };
+}
+
+home();
+</script>
+</body>
+</html>

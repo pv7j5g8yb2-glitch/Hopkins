@@ -1241,3 +1241,22 @@ App Secret only ever goes into Render). Next: META_APP_ID, META_APP_SECRET, META
   stand in model (no keys here), so the real model's words and Gemini's search still need a look on Render.
   Not done: just listed, market updates, buyer tips and client story templates; the demo account's
   week still shows old posts; fonts are lookalikes.
+
+## Covered (started 2026-11-08, `covered/`)
+
+Ismael's new direction, set aside from Hopkins (which is untouched): self serve software for
+builders and contractors that keeps every subcontractor's insurance certificates (general
+liability, workers comp) on file, shows who is cleared to work today, and chases expiring or
+missing ones by email before they lapse. Target buyer: owner operated builders and specialty
+contractors, reached by cold DM on Instagram and LinkedIn. Goal he set: 335 users at $299 a month
+($100k MRR) by his 20th birthday. Nothing about demand is proven yet: the first proof is a builder
+using it on real subcontractors and paying.
+
+* Built so far: sign up and sign in, add subcontractors, a private upload link per sub (no account
+  for them), certificates with expiry, cleared / expiring soon / not cleared status, reminder
+  engine (30, 14, 7, 0 days, expired, and a first request), every email kept in an outbox. Node
+  built in `node:sqlite`, no dependencies. `cd covered && npm start` (port 3300), `npm test`.
+* Not built: texts (needs Twilio), reading the certificate with a model, payments, a landing
+  page, a daily summary email, a custom domain. Mail only really sends with `RESEND_API_KEY` and
+  `MAIL_FROM`; without them it stays in the outbox.
+* Price is untested. $299 is his target; small builders may only pay less.
