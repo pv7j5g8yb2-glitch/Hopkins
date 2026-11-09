@@ -3,7 +3,7 @@
 Last updated 2026-11-09. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.
 
-## What Hopkins is now
+## What Lincoln is now
 
 An AI workspace for immigration lawyers in the US. Self serve, per seat, working price about $300
 a month (untested). Like Claude or ChatGPT set up for immigration practice: any time consuming
@@ -24,12 +24,12 @@ from the repo the same day. History is in git up to commit `341cf65`.
   connections. Employment based cases first (O-1, EB-1, H-1B, L-1, green cards), end to end from
   intake to packet.
 * Goal: $100k a month profit by age 20 (about November 2031). Profit, not revenue.
-* Working name Hopkins. Logo files kept in `brand/` until the name is final.
+* Name: Lincoln (decided 2026-11-09). Domain uselincoln.com, to be bought by a parent or guardian. lincoln.ai is for sale, left for later. Trademark search for LINCOLN still to do. The old Hopkins logo files are in `archive/hopkins-logo/`.
 * Hard limits and writing rules are in `CLAUDE.md`.
 
 ## Not decided
 
-* The final name (Hopkins, Suits, Albert or something else) and the logo and fonts.
+* The Lincoln logo, fonts and look, and the trademark result.
 * The exact first workflow, and whether the first release is one case type end to end or wider.
 * Price, and per seat or per case.
 * Who the parent or guardian owner is, and how payments and contracts are held.

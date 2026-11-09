@@ -54,10 +54,15 @@ from here in public copy.
 
 ## Names
 
-* Suits.ai exists (Miami, Gartner listing, listed as 2 to 10 people). Mike Ross in the show
-  practised without a licence, a bad story for a legal product.
-* "Hopkins" will compete with Johns Hopkins in search. It also sounds like a law firm name.
-* "Albert" is unchecked and likely used by others.
+* Chosen on 2026-11-09: Lincoln (see `docs/LAUNCH.md`). One search found no legal AI product with
+  that name. Not a trademark clearance.
+* Taken or poor: Suits.ai exists (Miami, Gartner listing). Walter AI was bought by Legora in
+  March 2026 (Vancouver, agents in Word and Outlook). Atticus AI (askatticus.ai) and The Atticus
+  Project exist. Gideon Legal and a Gideon app in Clio's directory exist. Hopkins collides with
+  Johns Hopkins in search.
+* Domain check on 2026-11-09 (basic DNS only): askhopkins.com and .ai, tryhopkins.com,
+  usehopkins.com, hopkinslegal.com, hopkinsai.com and hopkins.ai were registered. uselincoln.com
+  was found free by Ismael. lincoln.ai is for sale.
 
 ## Ideas that were checked and dropped
 

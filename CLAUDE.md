@@ -1,7 +1,8 @@
-# Hopkins
+# Lincoln
 
-Hopkins is now an AI workspace for immigration lawyers (decided 2026-11-09, Ismael). The earlier
-real estate content product, the Covered certificate tracker and everything around them were
+Lincoln is an AI workspace for immigration lawyers (decided 2026-11-09, Ismael). It was called
+Hopkins until that day, and the repo and its GitHub name still say Hopkins. The earlier real
+estate content product, the Covered certificate tracker and everything around them were
 removed from this repo on 2026-11-09. They are still in git history up to commit `341cf65` if
 anything is ever needed. The clinic agency model is dropped for good. Do not suggest it.
 
@@ -59,10 +60,14 @@ a straight answer first, then the reason. When he decides something, do it.
   packet. Family cases, forms, deadlines and billing come later.
 * **Goal (Ismael, 2026-11-09):** $100k a month profit by age 20, about November 2031. Roughly
   445 seats at $300 if about 75 percent of revenue is profit (both figures are assumptions).
-* **Name:** Hopkins stays as the working name until lawyers have reacted to the product. Other
-  names considered: Suits (Suits.ai exists, and Mike Ross practised without a licence, a bad
-  story for a legal product), Albert (unchecked, likely used by others). Check trademark and
-  domains before any final choice.
+* **Name (Ismael, 2026-11-09): Lincoln**, after Abraham Lincoln the lawyer. Domain: uselincoln.com
+  (found free, to be bought by a parent or guardian, used only as the web address). lincoln.ai
+  is for sale and is left for later when there is money and users, do not overpay early. Ruled
+  out: Walter (Legora owns Walter AI), Atticus, Gideon (both used in legal tech), Suits
+  (Suits.ai exists, and Mike Ross practised without a licence), Hopkins (clashes with Johns
+  Hopkins in search). Still to do: a US trademark search for LINCOLN in software and legal
+  services, and a look at what a search for "Lincoln AI" shows. Lincoln is a big brand in other
+  industries (Lincoln Financial, Lincoln Motor, Lincoln Electric).
 * **Honest odds:** low single digits to about ten percent for the goal, a guess. Every funded
   competitor (Harvey, Legora, Clio, Spellbook, CoCounsel, Parley, CaseBlink, Docketwise and
   others) is already selling. See `docs/RESEARCH.md`.

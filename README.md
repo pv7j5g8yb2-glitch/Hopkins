@@ -1,8 +1,9 @@
-# Hopkins
+# Lincoln
 
-An AI workspace for immigration lawyers. In planning, nothing is built yet.
+An AI workspace for immigration lawyers. In planning, nothing is built yet. (Called Hopkins until
+2026-11-09, so this repository still carries that name.)
 
-Hopkins is meant to work like Claude or ChatGPT set up for immigration practice: it takes the
+Lincoln is meant to work like Claude or ChatGPT set up for immigration practice: it takes the
 time consuming work, returns a finished file, and connects to the tools a firm already uses. A
 licensed attorney reviews everything it produces.
 
@@ -11,4 +12,4 @@ licensed attorney reviews everything it produces.
 * The first three weeks: `docs/TEST-PLAN.md`
 * The LinkedIn launch video and naming notes: `docs/LAUNCH.md`
 * How to work on this repo: `CLAUDE.md`
-* Logo files (kept until the name is decided): `brand/`
+* The old Hopkins logo files, kept only in case: `archive/hopkins-logo/`
