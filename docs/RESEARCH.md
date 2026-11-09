@@ -91,3 +91,22 @@ from here in public copy.
   mention of GPT-4o and Claude 3.5 Sonnet (out of date), "the market is wide open".
 * Decision: ask lawyers in the test what they would pay per person per month. Do not set the price
   from an AI summary.
+
+## Immigration AI platforms found (2026-11-09, from searches, not a complete or verified list)
+
+Built for immigration lawyers: Parley (support letters, RFE analyser, forms, Word add-in),
+CaseBlink (Studio drafting, $2M pre-seed Mar 2025), Visalaw.ai (research and drafting, $1.6M seed
+Feb 2025, co-founded by Greg Siskind), Drafty AI, Immigration Copilot, US Immigration AI, HAQQ
+(general legal AI with an immigration page).
+Case management with AI: Docketwise (IQ add-on, about $69 to $129 a seat), LegistAI ($50 to $60),
+Imagility (RFE Response Builder, no public price), INSZoom by Mitratech (AI integrations with
+Visalaw AI, Lawfully and Candle AI shown at AILA June 2026), Cerenade eimmigration ($55, no AI
+found), CaseONE immiONE (RFE Copilot), Prolexis, BCOS, MigraTrack, Filevine ImmigrationAI (2023),
+LollyLaw (AI unconfirmed), Lawyaw (forms, one blog), Instafill (forms).
+AI first firms and services: Alma (law firm, $17M Series A), Casium (licensed firm model, $5M seed
+Oct 2025), Gale (YC W25, about $2.7M seed, H-1B).
+Self filer tools: VisaWorker.ai (free to start, $249 to unlock), QuickFiling, USVisaStack.ai.
+General legal AI with immigration customers possible: Harvey, Legora, CoCounsel, Clio, Spellbook,
+Claude and ChatGPT (no immigration features confirmed).
+Not found: any Series A for a pure software vendor in this space. Check next: the AILA conference
+exhibitor list.
