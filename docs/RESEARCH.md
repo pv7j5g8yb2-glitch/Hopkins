@@ -74,3 +74,20 @@ from here in public copy.
 * Verification only (a citation checker): too thin on its own.
 * Realtor content, subcontractor certificates, roofing supplements, tariff refunds: see git
   history and earlier notes.
+
+## Pricing thread (Google AI summaries, 2026-11-09, unverified)
+
+* Claimed: immigration firms are flat fee and paralegal heavy, so per seat price multiplies, and
+  $299 a seat is too high for self serve. Suggested $49 to $150 a seat, or a low base plus a fee
+  per generated packet, or an attorney seat at a premium with cheap paralegal seats.
+* Matches reported competitor prices (Docketwise $69 to $119, LegistAI $50 to $80). Visalaw AI
+  ($220 to $480) goes the other way. No immigration firm has been asked yet.
+* Seat maths for $100k a month profit at about 75 percent margin (about $133k revenue): $79 a
+  seat needs about 1,690 seats, $149 about 895, $300 about 445. Margin is a guess.
+* Useful product ideas from it: an RFE analyst (read the USCIS letter, say what is claimed, list
+  the evidence to collect), form to letter consistency checks, a Visa Bulletin alert, every fact
+  linked to its source page, integrate with Docketwise or similar instead of replacing them.
+* Not to rely on: itemising an AI fee on a client's bill (check bar rules), "Lenora AI",
+  mention of GPT-4o and Claude 3.5 Sonnet (out of date), "the market is wide open".
+* Decision: ask lawyers in the test what they would pay per person per month. Do not set the price
+  from an AI summary.
