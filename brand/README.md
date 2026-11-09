@@ -24,6 +24,11 @@ is ever shipped.
 * `lincoln-icon-black.svg/.png` and `lincoln-icon-paper.svg/.png`: serif L monogram in a rounded
   square, for the app icon and profile pictures (an option, not yet decided)
 
+* `lincoln-banner-company-cream.png` and `lincoln-banner-company-dark.png`: LinkedIn company
+  page cover, 2256 by 382 (1128 by 191 at 2x). Check the current size on LinkedIn before uploading.
+* `lincoln-banner-profile-cream.png` and `lincoln-banner-profile-dark.png`: LinkedIn personal
+  profile cover, 3168 by 792 (1584 by 396 at 2x), for the founder profile at 16.
+
 ## Type for the product
 
 * Headlines: Literata, weights 500 to 700
