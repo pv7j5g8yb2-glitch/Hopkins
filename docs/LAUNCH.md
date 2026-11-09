@@ -40,6 +40,10 @@ lawyer, the same idea as Harvey, and it needs no explaining.
   (Mike Ross faked being a lawyer), Walter (Legora bought Walter AI in March 2026), Atticus
   (Atticus AI sells contract review), Gideon (two legal tech products use it), Albert (unchecked,
   common).
+* Instagram: **@lincoln.app** (found by Ismael, 2026-11-09). A basic DNS check the same day found
+  no address for lincoln.app, uselincoln.app, uselincoln.ai or uselincoln.com. That means nothing
+  is hosted there, not that they are free. A parent or guardian should run a registrar search,
+  and lincoln.app is worth checking because it matches the handle exactly.
 * Still to do before any public use: a US trademark search for LINCOLN in software and legal
   services (Lincoln is a large name elsewhere: Lincoln Financial, Lincoln Motor, Lincoln
   Electric), a look at what a search for "Lincoln AI" and "Lincoln legal" shows, and checking
