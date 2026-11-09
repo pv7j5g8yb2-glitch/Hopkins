@@ -29,6 +29,10 @@ is ever shipped.
 * `lincoln-banner-profile-cream.png` and `lincoln-banner-profile-dark.png`: LinkedIn personal
   profile cover, 3168 by 792 (1584 by 396 at 2x), for the founder profile at 16.
 
+* `lincoln-instagram-pfp-dark.png` and `lincoln-instagram-pfp-cream.png`: Instagram profile
+  picture, 1080 by 1080, full square (Instagram crops it to a circle), L centred at 40 percent
+  of the height so it stays inside the circle.
+
 ## Type for the product
 
 * Headlines: Literata, weights 500 to 700
