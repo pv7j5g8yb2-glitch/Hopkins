@@ -1,14 +1,14 @@
 # Lincoln brand files (2026-11-09)
 
-Wordmark: "Lincoln" in Source Serif 4 Medium (500), outlined, tracking slightly tight. Chosen
-because it is the closest free typeface to the heavier, sturdy serif style of Claude's wordmark.
-Harvey's wordmark is lighter and more classical, so the two are not the same typeface. Newsreader
-500 and Libre Caslon Text 400 were the lighter alternatives. These are our own letters in a similar
-style, not a copy of either logo.
+Wordmark: "Lincoln" in Literata SemiBold (600), outlined, tracking slightly tight. Chosen by
+Ismael on 2026-11-09 over Source Serif 4 (500), which was the closest match to the sturdy style of
+Claude's wordmark. Harvey's wordmark is lighter and more classical, so the two are not the same
+typeface. Newsreader 500 and Libre Caslon Text 400 were the lighter alternatives. These are
+Lincoln's own letters in a similar style, not a copy of either logo.
 
-Licence: Source Serif 4 is free under the SIL Open Font License 1.1 (via Fontsource, Google
-Fonts). Logo files made from it may be used commercially. Keep the licence note if the font file
-itself is ever shipped.
+Licence: Literata is free under the SIL Open Font License 1.1 (via Fontsource, Google Fonts).
+Logo files made from it may be used commercially. Keep the licence note if the font file itself
+is ever shipped.
 
 ## Colours
 
@@ -26,7 +26,7 @@ itself is ever shipped.
 
 ## Type for the product
 
-* Headlines: Source Serif 4, weights 500 to 600
+* Headlines: Literata, weights 500 to 700
 * Interface and body: a plain sans, Inter or Instrument Sans
 * Do not use the Claude orange or any spiky symbol, and do not copy Harvey's mark.
 

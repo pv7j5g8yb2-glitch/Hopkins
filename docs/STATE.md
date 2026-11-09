@@ -25,7 +25,7 @@ from the repo the same day. History is in git up to commit `341cf65`.
   intake to packet.
 * Goal: $100k a month profit by age 20 (about November 2031). Profit, not revenue.
 * Name: Lincoln (decided 2026-11-09). Domain uselincoln.com, to be bought by a parent or guardian. lincoln.ai is for sale, left for later. Trademark search for LINCOLN still to do. The old Hopkins logo files are in `archive/hopkins-logo/`.
-* Look (2026-11-09): wordmark in Source Serif 4 Medium, black ink `#161614` on warm paper `#F2F0ED` or white on black, no accent colour. Files and notes in `brand/`.
+* Look (2026-11-09): wordmark in Literata SemiBold (600), black ink `#161614` on warm paper `#F2F0ED` or white on black, no accent colour. Files and notes in `brand/`.
 * Hard limits and writing rules are in `CLAUDE.md`.
 
 ## Not decided
