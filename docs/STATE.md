@@ -28,6 +28,10 @@ Week 1 result (2026-11-10): Lincoln v0.1 and plain Claude tied (averages 96.25 a
 across a Claude judge and a ChatGPT judge); plain ChatGPT 93.25. Lincoln did not clearly win.
 Details in `demo/o1-varga/results.md`.
 
+Final round started (2026-11-10): case 2 in `demo/o1-halasz/` (52 page messy bundle plus salary
+spreadsheet, answer key committed before Lincoln v0.2). Pass bar: Lincoln beats plain Claude by at
+least 5 points with BOTH judges, otherwise Lincoln stops.
+
 ## Ruled out (2026-11-10)
 
 Shopify App Store product: rejected by Ismael. Do not suggest again.
