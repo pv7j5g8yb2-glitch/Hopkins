@@ -286,3 +286,63 @@ arrive: the second paste was the same 53 company LegalTech page again.
   product managers. Their win came from the founder's internship at Cohere.
 * Crowded is not a reason to quit if you can actually deliver (Giggl in customer support).
   Taking about a year to find the right idea is normal.
+
+## Research: new model abilities x new forced work (2026-11-10)
+
+Question from Ismael: what can the newest models do that they could not a few months ago, and
+where does that meet work businesses are forced or already paying to do. Sources are mostly
+secondary (trackers, law firm alerts, vendor pages). Check primary sources before relying on any
+figure.
+
+### What changed in the models
+* Claude Fable 5 (reported 9 June 2026, "Mythos class"): runs for days in an agent harness,
+  plans in stages, uses sub agents, checks its own work; 1M token context. Fable 5.1 adds
+  document, spreadsheet and slide work. Opus 5.5 (22 Sept 2026) is near Fable 5.1 at lower cost.
+  OpenAI's current family is GPT-5.6 (July 2026); GPT-6 not confirmed.
+* METR time horizon: top model about 16 hours or more at 50 percent success (May to Aug 2026),
+  doubling about every 4.3 months; METR says above 16 hours is unreliable to measure.
+* Computer use: frontier agents above the human baseline on OSWorld Verified (85 percent plus,
+  July 2026 paper), but only 20.6 percent full completion on OSWorld 2.0 (long professional
+  workflows, median 1.6 human hours).
+* AWS WorkSpaces for AI agents (preview May 2026) lets agents drive old desktop software. Horizontal
+  players already there: Cyberdesk, Minicor, Coasty, plus AWS and Microsoft.
+* Read: short tasks are solved; the new frontier is whole multi day deliverables. Most AI tools
+  sold in each niche were built in 2024 and 2025 as step assistants, not finished deliverables.
+
+### Forced work with dates (as reported)
+* ADA Title II web and document accessibility (WCAG 2.1 AA): public entities of 50k+ by
+  26 April 2027, smaller ones and special districts by 26 April 2028 (DOJ interim rule, April
+  2026, being challenged in court).
+* HHS Section 504 web rule for recipients of HHS money: 15+ employees by 11 May 2027, fewer than
+  15 by 10 May 2028 (interim rule, 7 May 2026). Same WCAG 2.1 AA standard.
+* PDF remediation is priced at roughly $5 to $25 a page by hand; automated checkers catch only
+  20 to 30 percent of PDF issues. Vendors: Allyant, AbleDocs, CommonLook, Equidox, Foxit
+  partners, overlays (AudioEye, UserWay, accessiBe).
+* EU AI Act high risk (Annex III) moved to 2 December 2027, Annex I to 2 August 2028 (Digital
+  Omnibus, reported in force July 2026).
+* EU CBAM first annual declaration for 2026 imports due 30 September 2027; importers under 50
+  tonnes exempt (about 90 percent of importers). Pain point: emissions data from non EU suppliers.
+* EU MDR legacy devices: Class III and implantable IIb by 31 December 2027, others by
+  31 December 2028; notified body capacity is the bottleneck.
+* CMMC Phase 2 (third party Level 2 for defence contractors) was due 10 November 2026; one source
+  says it was suspended in July 2026. 1,042 of about 76,598 organisations certified by Feb 2026.
+* IEEPA tariff refunds: Supreme Court ruling 20 Feb 2026; CBP's CAPE portal had accepted about
+  $136.6B by 2 Oct 2026. Older "finally liquidated" entries mostly limited to importers who sued.
+* CFPB 1071 small business lending data: tiers from July 2026 to October 2027 (may change).
+* CMS prior authorisation APIs for payers by 1 January 2027 (payers, not small practices).
+
+### Niches checked and who is already there
+* Duty drawback: Flexport, Zollback, LightSource and others; drawback ranked "best of" lists.
+* Phase I environmental site assessments: Ama Earth Group, Vestige, V7, VEMLogic, EnviroForge.
+* FDA 510(k): Cruxi, Complizen, RegDesk; consultant retainers reported around $60k.
+* Cost segregation: Segtax, KBKG Cost Seg Pro, CostSegregation.com.
+* Back office work most exposed: data entry, claims, document review, invoice matching (BPO).
+
+### Conclusion given to Ismael
+* Being first in a niche is mostly gone: every obvious one checked has at least a few startups.
+* The opening that looks like Harvey in 2023: a product built on days long agents that delivers
+  the whole finished project, where today's tools in that niche are 2024 style assistants.
+  Harvey was not the first legal AI either (Casetext had CoCounsel at the same time).
+* Strongest fits for that: the 2027 and 2028 accessibility deadlines (huge number of forced
+  buyers, priced by the page today), and EU MDR technical files (high value, Ireland has a large
+  medtech cluster, but sales led).
