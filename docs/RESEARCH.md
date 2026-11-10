@@ -378,3 +378,21 @@ figure.
 * Read: a no demo, instant trial product for solos is a real difference from Visalaw's demo gate.
   Still crowded and price pressured (LegistAI at $60). The existing three week test plan already
   works without calls and would settle it.
+
+## Review of a pasted Google AI thread on fastest companies and bootstrapping (2026-11-10)
+
+* Higgsfield: company says it crossed a $1B annualised run rate on 24 Sept 2026 (latest four
+  weeks x 13), about 18 months after a March 2025 product launch; about 70 percent enterprise.
+  Self reported. It is AI video, so the thread's "training data contracts" explanation is wrong.
+  A source the thread itself cites says Higgsfield is not the fastest.
+* Cursor: SpaceX agreed to buy Anysphere for about $60B in stock (16 June 2026); closing status
+  unclear in sources.
+* Harvey: Series B Dec 2023 at a publicly reported $715M; unicorn at the July 2024 Series C
+  ($1.5B), about two years after founding, not 18 to 20 months.
+* Bootstrapped "proof" partly wrong: Veed bootstrapped to about $7M ARR, then took $35M from
+  Sequoia (2022); Clay is venture funded (Sequoia, Meritech, $500M valuation in 2024). Midjourney,
+  Mailchimp and Pieter Levels are real bootstrapped cases. Slack and Shopify timelines to $1B
+  revenue are off.
+* Useful part: ways to get customers without cold outreach: free single purpose tools (HubSpot
+  Website Grader), search pages for very specific questions (Zapier integration pages),
+  marketplaces, building in public (Pieter Levels).
