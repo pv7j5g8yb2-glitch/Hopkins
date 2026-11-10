@@ -440,3 +440,16 @@ figure.
   legal one for contract review, NDA triage and compliance; Thomson Reuters fell about 18 percent
   and RELX had its worst day since 1988 (early Feb 2026). The lab itself now ships general legal
   skills; immigration specific work is narrower.
+
+## r/legaltech "the 4 things I actually use AI for every week" (pasted 2026-11-10)
+
+* Works: first drafts of letters and emails, timelines from long records with page references,
+  cleanup, quick orientation. Stopped: research needing real citations (fake cases), anything
+  filed without close reading. Several lawyers trust only Westlaw or Lexis for research.
+* Some lawyers build their own tools with Claude Code or Lovable. Big companies have internal GPT
+  platforms plus Legora; small firms do not.
+* Hourly billers resist ("I bill hourly, give me my hour back"); flat fee lawyers gain most.
+* Immigration petitions are mostly flat fee (sources: Manifest Law, Lighthouse, Beyond Border):
+  H-1B new petition about $2,500 to $5,500, O-1 about $3,000 to $15,000 by source. On flat fees
+  every hour saved is the lawyer's own profit, a strong reason to pay.
+* Verification eats into time saved; the fix lawyers suggest is several agents checking each other.
