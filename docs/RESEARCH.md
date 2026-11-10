@@ -250,8 +250,10 @@ arrive: the second paste was the same 53 company LegalTech page again.
 
 * Recorded about 13 months after W24, around the $80M Series B. 10 people after YC, 100 at
   recording. The intro says $675M valuation then (the YC directory now says $5.6B Series D).
-* Selling, in his words: bottom up is "impossible" in legal because firms buy through procurement,
-  IT, security and data privacy checks. Big firms buy through innovation teams. At mid size firms
+* Selling: the line is "it's impossible to do a bottom-up motion in our industry because you don't
+  procure software individually. You take it through procurement and you take it through IT", plus
+  security and data privacy checks. It is about law firms, not AI software in general, it never
+  says "self serve", and the transcript labels it Host (labels are jumbled, context suggests Max). Big firms buy through innovation teams. At mid size firms
   the partners decide and it is hard to get the whole partnership in, so start with one partner
   and their team, make them "rock stars", then expand. This matches why Lincoln closed.
 * No legal background, but he interviewed 100 lawyers first (LinkedIn messages offering to pay
