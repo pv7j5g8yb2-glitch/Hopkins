@@ -18,6 +18,13 @@ Next: pick one new direction and commit to it for 90 days without restarting.
 
 Shopify App Store product: rejected by Ismael. Do not suggest again.
 
+## What Ismael has said he likes (2026-11-10)
+
+* Building something like Claude trained for one specific group (he knows the wrapper and
+  crowding problems).
+* Browsing property and car listings. As a child he sketched new car designs for BMW and Audi.
+* Football, the gym, YouTube. Nothing on the YC batch list stood out to him.
+
 ## What Lincoln was
 
 An AI workspace for immigration lawyers in the US. Self serve, per seat, working price about $300
