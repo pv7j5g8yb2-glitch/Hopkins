@@ -24,6 +24,10 @@ is not clearly best, stop. Known weakness: the same author wrote the traps and t
 case written separately should confirm any win. No Anthropic API key yet (an API account needs an
 adult, so a parent must open it).
 
+Week 1 result (2026-11-10): Lincoln v0.1 and plain Claude tied (averages 96.25 and 96.5 of 100
+across a Claude judge and a ChatGPT judge); plain ChatGPT 93.25. Lincoln did not clearly win.
+Details in `demo/o1-varga/results.md`.
+
 ## Ruled out (2026-11-10)
 
 Shopify App Store product: rejected by Ismael. Do not suggest again.
