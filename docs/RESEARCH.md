@@ -110,3 +110,49 @@ General legal AI with immigration customers possible: Harvey, Legora, CoCounsel,
 Claude and ChatGPT (no immigration features confirmed).
 Not found: any Series A for a pure software vendor in this space. Check next: the AILA conference
 exhibitor list.
+
+## Competitor homepages, batch 1 of 2 (read 2026-11-10 from saved pages Ismael sent)
+
+Homepage text only, so every number is the company's own claim.
+
+* Parley (parley.so): no longer immigration only. "The Legal Agent that works": self building
+  database from email and calendar, turns templates and past samples into skills, works in
+  Outlook and Word, Drive, Box, Dropbox. 100+ legal teams, SOC 2 Type II, free trial.
+* CaseBlink: a full immigration system of record with agents: intake that asks only what is
+  missing, letters and RFE responses from the firm's prior filings with every claim cited, forms
+  with provenance per field, tabbed packets, deadlines, time, billing, translations. 100+ firms
+  on the logo wall (Dorsey and Whitney, Dickinson Wright and others). SOC 2 Type II, zero model
+  retention. Founder came through F-1, H-1B, O-1A and a green card. This is the Lincoln pitch.
+* Visalaw AI: research and drafting with exclusive AILA and AILALink content, endorsed by a past
+  AILA president. SOC 2 Type II. Claims 10+ hours and $60k a year saved.
+* LegistAI: all in one immigration case management with agents, forms from intake, RFE workflow,
+  client portal in four languages, research, WhatsApp. From $60 a user a month.
+* Docketwise (owned by 8am, with MyCase and LawPay): forms, case management, CRM, billing, 8am IQ
+  AI. From $69 a user a month. Homepage showed a "Notice of Security Incident" banner.
+* eImmigration (Cerenade): 17,000+ legal professionals, "AI Workmates", from $55 a user.
+* Alma: AI native immigration law firm for businesses and individuals. Claims 98% approvals,
+  about 2 week preparation, 86 NPS, named in an a16z top 50 AI spend report.
+* Casium: licensed law firm plus platform, 90 countries, claims 99% approvals, 14.5% RFE rate,
+  18 days to file. SOC 2.
+* Gale (YC): not a law firm, software plus independent attorneys. H-1B petitions for $999,
+  1,500+ cases filed, 98% first attempt approvals.
+* VisaWorker.ai: open source drafting agent for O-1A, EB-1A and NIW. Free with your own
+  Anthropic key, $249 a case hosted, per case pricing for firms. Pitched against $8k to $15k
+  attorney fees.
+* Smokeball: practice management, 34,000+ users, Archie AI in every matter. ISO 27001.
+* LEAP Ireland: 550+ Irish firms, 3,000 firms in Ireland and the UK, 78,000+ users worldwide,
+  over 15 million euro a year on R&D, Matter AI and Prompts built in.
+* Andri (Amsterdam, has an Irish page): agentic legal AI for Europe, house style drafting, case
+  timelines, court simulation, ISO 27001, EU data centres, free trial.
+* AI.Law: litigation operating system, one case free, SOC 2 Type II, a patent, founded by a
+  litigator.
+* CoCounsel (Thomson Reuters): spans legal, tax, audit, accounting and trade, grounded in Westlaw
+  and Practical Law. Has small firm plans.
+* Mitratech: owns INSZoom (immigration case management) inside a large legal, GRC and HR suite.
+
+Patterns: every product now sells the same thing (system of record, agents, the firm's own
+templates, Word and Outlook, finished files, attorney review, cited sources). The trust stack is
+identical (SOC 2 or ISO 27001, no training, zero retention). Three models: software for lawyers,
+AI native firms that sell the outcome to the end client and take the fee, and cheap self filer
+tools. Moats seen: exclusive content (AILA, Westlaw), installed base (Docketwise, eImmigration,
+LEAP, Smokeball), and owning the client relationship (Alma, Casium, Gale).
