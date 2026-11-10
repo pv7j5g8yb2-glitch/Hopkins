@@ -266,3 +266,23 @@ arrive: the second paste was the same 53 company LegalTech page again.
   only chance. Fixed reliability until they could onboard 1,000 lawyers a day.
 * Advice to vertical AI founders: do not compete with the AI labs, do not lock into one model
   provider, find a narrow category the models will not reach, or use them in a way others have not.
+
+## YC Light Cone episode on finding startup ideas (pasted 2026-11-11, recorded 2025)
+
+* Two routes: look within (your own expertise, jobs, internships) or "get out of the house" into
+  real businesses. Weekend or hackathon ideas and ideas copied from X are the default bad ones.
+* Access through family: Ess Health's founder spent a day in his mother's dental office and found
+  insurance admin to automate. "Access is all you need." Many YC billion dollar companies trace to
+  a parent, uncle, cousin or old roommate.
+* Going undercover: a founder took a real remote job as a medical biller (two to four weeks of
+  training) to learn the work. Tip: search Indeed for remote analyst or clerk jobs. Or shadow a
+  friend with a boring job (Sweet Spot: a friend refreshing the government contracts site all day,
+  now an AI platform for government contracting).
+* Signals: work outsourced to low wage countries (Lilac Labs, drive thru orders), and products
+  that need expensive consultants to work (Automat versus UiPath).
+* Replacing a person paid $60k to $80k a year makes small niches (one dentist office, car loan
+  lenders) big enough now.
+* DataCurve: 19 year olds whose "AI for product managers" failed because they had never been
+  product managers. Their win came from the founder's internship at Cohere.
+* Crowded is not a reason to quit if you can actually deliver (Giggl in customer support).
+  Taking about a year to find the right idea is normal.
