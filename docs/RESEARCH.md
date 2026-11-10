@@ -467,3 +467,17 @@ figure.
   three useful answers. Law firms are seen as slow adopters; in house teams adopt faster.
 * For Lincoln: every statement in a packet should point to the exact page of evidence, with a
   plain list of what is missing or unverified, and true zero retention terms.
+
+## r/startups "$10M ARR in 13 years, rant on fail fast and YC" (pasted 2026-11-10, post 8 months old)
+
+* Anonymous founder (claim unverified; a commenter doubts it): marketing SaaS, failed first
+  company, broke through only after pairing with a cofounder who could sell; survived years on
+  consultancy and deals. Hardest lesson as a developer: tech is secondary.
+* Argument: VC and YC need a few 100x outcomes, so their advice favours big risky bets; a slow
+  profitable company is fine for the founder but useless to them. Counter comments: YC loses its
+  $500k, support lowers failure rates, raising $300k+ links to survival (selection bias noted).
+* Comment worth keeping: "half the founders i know use [fail fast] as an excuse to bail on stuff
+  after 6 weeks. thats not pivoting thats just not committing."
+* For Ismael: $1M a year profit is about an eighth of this founder's $10M ARR, and his rules
+  (bootstrapped, no investors) put him on this slow path, where selling and staying power matter
+  more than the idea.
