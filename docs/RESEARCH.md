@@ -244,3 +244,4 @@ arrive: the second paste was the same 53 company LegalTech page again.
 * No reliable national count of public adjusters found. Licensed in 45 states plus DC (2020 trade
   article). Florida had 2,914 in 2009 (state audit). Market size is the open question.
 * Business valuation analysts also checked: already served by Equitest, ValuBot, AIVI and others.
+* Ruled out by Ismael (2026-11-11): public adjusters. Do not suggest again.
