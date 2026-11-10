@@ -1,9 +1,19 @@
 # Where things stand (read this at the start of every session)
 
-Last updated 2026-11-09. `CLAUDE.md` holds the rules, this file holds the state. Update it when
+Last updated 2026-11-11. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.
 
-## What Lincoln is now
+## Closed (2026-11-11)
+
+Lincoln, legal AI for law firms and immigration firms, is closed. A review of 21 competitor
+homepages (Harvey, Legora, CaseBlink, Parley, Visalaw, LegistAI, Docketwise, eImmigration, LEAP,
+Smokeball, Filevine LOIS, CoCounsel and others) plus two r/legaltech threads found no reason a firm
+would choose it, and the advantages that win in that market (data, certifications, licensed
+lawyers, installed base, funding) are out of reach for now. Findings are in `docs/RESEARCH.md`.
+The name, logo and brand files stay in `brand/` in case they are useful for something else.
+Next: pick one new direction and commit to it for 90 days without restarting.
+
+## What Lincoln was
 
 An AI workspace for immigration lawyers in the US. Self serve, per seat, working price about $300
 a month (untested). Like Claude or ChatGPT set up for immigration practice: any time consuming
