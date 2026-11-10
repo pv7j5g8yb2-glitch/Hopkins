@@ -245,3 +245,22 @@ arrive: the second paste was the same 53 company LegalTech page again.
   article). Florida had 2,914 in 2009 (state audit). Market size is the open question.
 * Business valuation analysts also checked: already served by Equitest, ValuBot, AIVI and others.
 * Ruled out by Ismael (2026-11-11): public adjusters. Do not suggest again.
+
+## Legora interview, Max Junestrand with Gustaf Alstromer at YC (pasted 2026-11-11, from 2025)
+
+* Recorded about 13 months after W24, around the $80M Series B. 10 people after YC, 100 at
+  recording. The intro says $675M valuation then (the YC directory now says $5.6B Series D).
+* Selling, in his words: bottom up is "impossible" in legal because firms buy through procurement,
+  IT, security and data privacy checks. Big firms buy through innovation teams. At mid size firms
+  the partners decide and it is hard to get the whole partnership in, so start with one partner
+  and their team, make them "rock stars", then expand. This matches why Lincoln closed.
+* No legal background, but he interviewed 100 lawyers first (LinkedIn messages offering to pay
+  their hourly rate for lunch, none accepted the money), and kept daily feedback with early firms.
+* Before Legora: programmer, esports betting models, Norrsken (transcript says "Norhen"), a short
+  spell at McKinsey, stints at other startups. Rejected by YC once, accepted the second time.
+* Early wedge: EU data rules (EU hosting, no training, no retention) that general tools did not
+  meet. Then tabular review (grid of documents by questions) and a Word add in with playbooks.
+* Paused new sales for four to five months after raising, because a lawyer's first login is the
+  only chance. Fixed reliability until they could onboard 1,000 lawyers a day.
+* Advice to vertical AI founders: do not compete with the AI labs, do not lock into one model
+  provider, find a narrow category the models will not reach, or use them in a way others have not.
