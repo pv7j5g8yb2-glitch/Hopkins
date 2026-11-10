@@ -365,3 +365,16 @@ figure.
   proper partnerships or APIs, never scraping. Dealers may prefer phone, which clashes with his
   no calls rule: to be tested.
 * Ruled out by Ismael (2026-11-10): AI for independent car dealers ("essentially a CRM", doubts managers would pay). Do not suggest again.
+
+## Lincoln rechecked with the new rules (2026-11-10: selling in writing allowed, no calls)
+
+* Visalaw AI: Core $220 and Pro $480 a month per licence, free trial only after booking a demo.
+  Parley: Starter reported $500 a month for up to 10 seats, free trial. CaseBlink: reported $100
+  to $300 a seat. LegistAI: reported $60 a user. Several are quote based (demo call).
+* AILA: 18,000+ US lawyers. Share in solo or small firms not found.
+* Clio: 71 percent of solos and 75 percent of small firms use AI for legal work (2025 or 2026
+  report, year unclear). So small firms are already buying AI, which weakens the earlier
+  judgement that they will not sign up on their own. That judgement was never tested.
+* Read: a no demo, instant trial product for solos is a real difference from Visalaw's demo gate.
+  Still crowded and price pressured (LegistAI at $60). The existing three week test plan already
+  works without calls and would settle it.
