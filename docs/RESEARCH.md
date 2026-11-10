@@ -453,3 +453,17 @@ figure.
   H-1B new petition about $2,500 to $5,500, O-1 about $3,000 to $15,000 by source. On flat fees
   every hour saved is the lawyer's own profit, a strong reason to pay.
 * Verification eats into time saved; the fix lawyers suggest is several agents checking each other.
+
+## r/legaltech "what would you need to trust AI contract extraction?" (pasted 2026-11-10)
+
+* Trust design lawyers asked for: several passes (extract, check, correct), a table of sources,
+  confidence and a list of what could not be verified, readable not technical. Amendments and
+  redefined terms override the base text. "Fewer fields you can stand behind": a "not found" is
+  forgiven faster than a confident wrong answer.
+* A lawyer: "absolute certainty that inputs are not used for anything and immediately destroyed.
+  Unlimited liability... Do that and you will cash checks." Privacy is a buying trigger. Unlimited
+  liability is not something a parent owned startup can offer.
+* Hostility again to "vibe code me a business I know nothing about", but the thread still got
+  three useful answers. Law firms are seen as slow adopters; in house teams adopt faster.
+* For Lincoln: every statement in a packet should point to the exact page of evidence, with a
+  plain list of what is missing or unverified, and true zero retention terms.
