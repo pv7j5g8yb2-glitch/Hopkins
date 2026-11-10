@@ -50,6 +50,9 @@ from the repo the same day. History is in git up to commit `341cf65`.
 * Look (2026-11-09): wordmark in Literata SemiBold (600), black ink `#161614` on warm paper `#F2F0ED` or white on black, no accent colour. Files and notes in `brand/`.
 * Hard limits and writing rules are in `CLAUDE.md`.
 
+* Quality bar (Ismael, 2026-11-10): the work Lincoln does should match a top immigration lawyer's
+  work product. It never presents itself as a lawyer; a licensed lawyer reviews and signs.
+
 ## Not decided
 
 * Whether the L monogram becomes the icon, or the wordmark stands alone, and the trademark result.
