@@ -1,5 +1,3 @@
-O-1A Petition – Lena Varga / Tidewell Labs, Inc.
-Nov 10, 2026
 Drafting notes
 Bottom line: claim five criteria: awards (1), published material (3), judging (4), original contributions (5) and scholarly articles (6). Four are strong. Published material is moderate because it rests on one article. Do not claim membership (2), critical role (7) or high salary (8) on this record.
 Do not file yet. Four gaps block filing: the advisory opinion, Ms Varga's current immigration status, the full signed employment contract and a dated itinerary (Part 4, items 1 to 4). The main merits risk is showing which parts of the co-authored work are hers (item 5).
@@ -73,21 +71,6 @@ Sam Whitlock
 Chief Executive Officer, Tidewell Labs, Inc.
 Part 2: Criteria map
 Claim five criteria: 1, 3, 4, 5 and 6. Four are strong, and criterion 3 is moderate because it rests on one article. Do not claim criteria 2, 7 or 8 on the current record. No award here is a major, internationally recognized award, so do not argue the one-time-achievement route in 8 C.F.R. § 214.2(o)(3)(iii)(A). Meeting three criteria is only the first step: USCIS then weighs the whole record for sustained acclaim and top-of-field standing.
-Part 3: Exhibit index
-File in this order: the forms, the support letter, then the exhibits below. Case-file exhibits keep their letters A to M, so the letter's cites stay valid. Documents still to be obtained get letters N to S. Five case-file items are not filed (listed below the table).
-Forms (front of the package): cover letter; Form G-28; Form I-129 with the O and P Classifications Supplement; filing fee. [Not in the case file; to prepare.]
-Not filed: Builder of the Quarter certificate (Ex. D), Austin Ledger article (Ex. F), BatteryBytes blog post (Ex. G), Texas Climate Founders Pitch Night listing (Ex. H, p. 2) and Society of Power Engineers membership (Ex. K). Part 4, items 22 to 26 give the reasons.
-Part 4: Gaps, risks and inconsistencies
-Four gaps block filing (items 1 to 4). The biggest merits risk is showing which parts of the co-authored work are Ms Varga's (item 5). The point most likely to draw a Request for Evidence is the 37 percent figure that appears twice (item 6).
-A. Filing blockers
-B. Merits risks to fix before filing
-C. Discrepancies that are explained (keep them consistent)
-D. Criteria not claimed, and what it would take
-E. Evidence to leave out
-Sources
-8 C.F.R. § 214.2, paragraph (o) (Cornell LII): checked 10 November 2026
-USCIS Policy Alert PA-2025-02, Evidentiary Requirements for O-1 Nonimmigrants (8 January 2025)
-USCIS draft O-1A RFE template (consultation requirement)
 # | Criterion (8 C.F.R. § 214.2(o)(3)(iii)(B)) | Claim? | Evidence | Strength | Main weakness / fix
 1 | Nationally or internationally recognized prizes or awards | Yes | National Energy Innovation Prize 2025 (Ex. C, pp. 1–2); trade press report (Ex. E, p. 2) | Strong | The press release is from the Council itself. Add the prize rules, past-winner list and independent coverage (Part 4, item 11). Do not use Builder of the Quarter (Ex. D).
 2 | Membership in associations requiring outstanding achievement | No | Society of Power Engineers (Ex. K) | Fails | Member grade is open to anyone with a degree in engineering or a related field, or three years of professional experience in the power industry, for USD 140 in dues (Ex. K, p. 2). The ICESA committee is service, not membership.
@@ -97,6 +80,9 @@ USCIS draft O-1A RFE template (consultation requirement)
 6 | Authorship of scholarly articles | Yes | Two first-author peer-reviewed articles in a journal with a 6.8 impact factor (Ex. I, pp. 1–2) | Strong | File the full articles, plus a source for the impact factor (item 10).
 7 | Critical or essential capacity for organizations with a distinguished reputation | No: develop | Northfield letter (Ex. L, p. 3); Whitlock letter (Ex. J, p. 3); Series A records (Ex. L, pp. 1–2) | Role shown; reputation not shown | Her roles are documented, but nothing shows that Northfield or Tidewell has a distinguished reputation, and Tidewell is under three years old. Claim only with objective reputation evidence (item 19).
 8 | High salary or remuneration | No: develop | Employment terms: USD 210,000 base salary plus options over 4.0 percent (Ex. B, p. 1) | Unsupported | No comparative wage data and no option valuation (item 20).
+Part 3: Exhibit index
+File in this order: the forms, the support letter, then the exhibits below. Case-file exhibits keep their letters A to M, so the letter's cites stay valid. Documents still to be obtained get letters N to S. Five case-file items are not filed (listed below the table).
+Forms (front of the package): cover letter; Form G-28; Form I-129 with the O and P Classifications Supplement; filing fee. [Not in the case file; to prepare.]
 Order | Exhibit | Document | Pages | Supports | Status
 1 | None | Petition support letter from Tidewell Labs | This doc, Part 1 | All criteria | Draft; finalize after the blockers are cleared
 2 | N | Written advisory opinion | None yet | 8 C.F.R. § 214.2(o)(5) | Obtain (Part 4, item 1)
@@ -114,11 +100,16 @@ Order | Exhibit | Document | Pages | Supports | Status
 14 | R | Co-author contribution statements (Brandt, Osei) | None yet | Criterion 5 | Obtain (item 5)
 15 | S | Cascade Valley outage data behind the Tanaka figures | None yet | Criterion 5 | Obtain (item 6)
 16 | M | Published patent application 18/552,904 | p. 1 | Criterion 5 (originality only) | Ready; add filing date and assignment record (item 9)
+Not filed: Builder of the Quarter certificate (Ex. D), Austin Ledger article (Ex. F), BatteryBytes blog post (Ex. G), Texas Climate Founders Pitch Night listing (Ex. H, p. 2) and Society of Power Engineers membership (Ex. K). Part 4, items 22 to 26 give the reasons.
+Part 4: Gaps, risks and inconsistencies
+Four gaps block filing (items 1 to 4). The biggest merits risk is showing which parts of the co-authored work are Ms Varga's (item 5). The point most likely to draw a Request for Evidence is the 37 percent figure that appears twice (item 6).
+A. Filing blockers
 # | Issue | What the file shows | Action
 1 | No written advisory opinion | No consultation in the file. One is required (8 C.F.R. § 214.2(o)(2)(ii)(D), (o)(5)). | Request one from a peer group of practitioners in her field, or from a person with expertise (8 C.F.R. § 214.2(o)(5)(i)). It must describe her ability and achievements, describe the duties and state whether the position requires extraordinary ability (8 C.F.R. § 214.2(o)(5)(ii)(A)). If no appropriate peer group exists, document that (8 C.F.R. § 214.2(o)(5)(i)(G)). The ICESA letter is not a consultation. File as Ex. N.
 2 | Current immigration status unknown | She lives in Austin and has been Tidewell's CTO since January 2024 (Ex. A, p. 1). The file says nothing about her status or work authorization. | Get her passport, visas, I-94 and status history (Ex. O). Her status decides between change of status and consular notification. Check for any unauthorized employment before filing.
 3 | Only a summary of the contract | Ex. B, p. 1 is a “summary of key terms” of a written agreement, signed for the company by Sam Whitlock on 2 November 2026. No signature by Ms Varga is shown. Where a written contract exists, the regulation requires a copy (8 C.F.R. § 214.2(o)(2)(ii)(B)). | File the full agreement, signed by both parties, in place of Ex. B, p. 1. Make sure its salary, dates and duties match the I-129 and the letter.
 4 | Itinerary has no dates or addresses | Ex. B, p. 2 lists recurring activities and the customers' states, but no dates, site addresses or conference venues. A petition for work in more than one location must include an itinerary with dates and locations (8 C.F.R. § 214.2(o)(2)(iv)(A)). | Get a dated itinerary for March 2027 to February 2030, with each customer site's address, visit dates or date ranges, and ICESA dates and venues. File it in place of Ex. B, p. 2, and update the letter's Section I. Attach customer agreements if available.
+B. Merits risks to fix before filing
 # | Issue | What the file shows | Action
 5 | Which parts of the work are hers | The 2023 paper is co-authored with Klaus Brandt, and the 2024 paper with Patience Osei and Brandt (Ex. I, pp. 1–2). The patent application names Varga and Brandt as inventors (Ex. M, p. 1). Nothing in the file says which parts of the model, the field study or the product are her own work. | Get signed statements from Brandt and Osei describing her specific contributions, backed by records such as design documents, code history and patent files (Ex. R). Fill the placeholder in the letter's criterion 5. Never present joint work as hers alone.
 6 | Same 37 percent figure in two settings | The paper reports 37 percent across 19 sites over 26 months (Ex. I, p. 2). Tanaka reports 37 percent at 41 Cascade Valley sites over 18 months (Ex. J, p. 2). The file does not say whether the two overlap. The USD 4.3 million estimate has no stated basis (Ex. J, p. 2). | Ask Tanaka how the figure was calculated, whether his sites overlap the paper's, and what the USD 4.3 million is based on. Get the underlying outage data (Ex. S). Revise his letter to state the basis. Never add the two results together.
@@ -130,18 +121,25 @@ Order | Exhibit | Document | Pages | Supports | Status
 12 | Only one published-material article | Grid Systems Weekly is the only qualifying article, and its circulation figures come from its own media kit (Ex. E, p. 2). | Find other trade or major-media coverage about her. Get independent circulation data if available.
 13 | Letters lack specifics | Calloway does not name the three research groups or her course (Ex. J, p. 1). Whitlock's letter is short and from an interested party (Ex. J, p. 3). No CVs are attached. | Have Calloway name the groups and the course, and attach her CV. Have Whitlock describe concrete technical decisions, the products built on the model and her team.
 14 | Control of a co-founder's employment | The file gives only her option grant (Ex. B, p. 1), not the board's make-up or who owns the company. | Show that Tidewell, through its board, controls her hiring, pay and dismissal: board composition, cap table and any board resolution approving her contract (Ex. Q).
+C. Discrepancies that are explained (keep them consistent)
 # | Issue | What the file shows | Action
 15 | Series A amount | The term sheet of 25 July 2025 (Ex. L, p. 1) and the press on 3 August 2025 (Ex. F, p. 1) both said USD 12,000,000. Solace Energy Fund withdrew, and the round closed on 30 September 2025 at USD 11,500,000; the board minutes note the earlier press figure (Ex. L, p. 2). | Use USD 11,500,000 everywhere (the letter does). File the term sheet only together with the minutes. Do not file Ex. F.
 16 | Headcount | 18 employees reported on 3 August 2025 (Ex. F, p. 1); 31 as of 30 September 2025 (Ex. L, p. 2). The dates differ, so this is not a contradiction. | Use a current, dated headcount from company records at filing.
 17 | “More than 60” sites versus 41 | The article reports more than 60 utility battery sites across three states (Ex. E, p. 1). Tanaka reports 41 Cascade Valley sites (Ex. J, p. 2). The 41 may be part of the 60, but the article is the only source for the larger number. | Do not rely on “more than 60” (the letter does not). If a deployment figure is wanted, get a company site list.
 18 | Unattributed claim in the article | “Industry analysts say” the approach could save millions (Ex. E, p. 2). | Do not quote it (the letter does not).
+D. Criteria not claimed, and what it would take
 # | Criterion | Why not now | What would make it claimable
 19 | 7: critical role for distinguished organizations | Her roles are documented (Ex. L, p. 3; Ex. J, p. 3), but nothing shows that Northfield or Tidewell has a distinguished reputation. Tidewell is under three years old. | Independent evidence of reputation: industry rankings, major contracts, awards to the company, press coverage of the company, investor profiles. Also a detailed letter from a Northfield executive, since the HR letter is generic.
 20 | 8: high salary | USD 210,000 base salary plus options over 4.0 percent (Ex. B, p. 1), with no comparison data. | Survey or OEWS wage data for CTOs and engineering leaders in Austin, and an independent valuation of the option grant (the term sheet's USD 38,000,000 pre-money valuation, Ex. L, p. 1, is a starting point).
 21 | 2: membership | The Society of Power Engineers is open to anyone with a degree in engineering or a related field, or three years of professional experience in the power industry (Ex. K, p. 2). | Membership in a body that requires outstanding achievement, judged by recognized experts. None is in the file.
+E. Evidence to leave out
 # | Exhibit | Why | Action
 22 | Builder of the Quarter (Ex. D) | An internal award voted by the Tidewell team, for shipping the utility dashboard two weeks ahead of schedule (Ex. D, p. 1). Filing it invites the question of why it was offered. | Do not file it. Leaving it on the CV is accurate and harmless.
 23 | BatteryBytes (Ex. G) | A personal hobby blog with “no editors” (Ex. G, p. 1). It talks about home batteries, not grid storage. | Do not file it.
 24 | Austin Ledger (Ex. F) | It is about the company's funding, mentions her only in passing, gives no circulation data and has outdated figures (items 15, 16). | Do not file it.
 25 | Texas Climate Founders Pitch Night (Ex. H, p. 2) | A local USD 5,000 pitch event at a co-working space. The exhibit only lists the judges. | Omit it. ICESA alone satisfies criterion 4.
 26 | Society of Power Engineers (Ex. K) | Open membership; applications are normally approved within five working days (Ex. K, p. 2). | Do not file it (item 21).
+Sources
+8 C.F.R. § 214.2, paragraph (o) (Cornell LII): checked 10 November 2026
+USCIS Policy Alert PA-2025-02, Evidentiary Requirements for O-1 Nonimmigrants (8 January 2025)
+USCIS draft O-1A RFE template (consultation requirement)

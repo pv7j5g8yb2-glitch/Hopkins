@@ -1,11 +1,11 @@
-# 01_O1A_Petition_Support_Letter_Lena_Varga.docx
-
 O-1A PETITION SUPPORT LETTER
 Petitioner’s letter to U.S. Citizenship and Immigration Services
 Lena Varga  |  Tidewell Labs, Inc.
+COUNSEL REVIEW DRAFT — NOT READY FOR FILING
 Prepared 10 November 2026
 Prepared solely from the supplied fictional case file (Exhibits A–M).
 
+FILING CLEARANCE REQUIRED: The supplied file contains only an employment-agreement summary signed for Tidewell, not a complete beneficiary-signed agreement; the itinerary does not provide specific service dates or full work locations; and no written O-1 advisory opinion is included. The letter below is a corrected merits draft, but it must not be signed or filed until counsel resolves those items and verifies the final filing package.
 
 [FILING DATE]
 U.S. Citizenship and Immigration Services
@@ -58,17 +58,15 @@ ________________________________________
 Sam Whitlock
 Chief Executive Officer, Tidewell Labs, Inc. (Ex. B, p. 1.)
 Date: ____________________
-COUNSEL REVIEW DRAFT — NOT READY FOR FILING
-FILING CLEARANCE REQUIRED: The supplied file contains only an employment-agreement summary signed for Tidewell, not a complete beneficiary-signed agreement; the itinerary does not provide specific service dates or full work locations; and no written O-1 advisory opinion is included. The letter below is a corrected merits draft, but it must not be signed or filed until counsel resolves those items and verifies the final filing package.
-
-# 02_O1A_Eight_Criteria_Map_Lena_Varga.docx
 
 O-1A CRITERIA MAP
 Assessment of all eight O-1A evidentiary criteria
 Lena Varga  |  Tidewell Labs, Inc.
+COUNSEL REVIEW DRAFT — NOT READY FOR FILING
 Prepared 10 November 2026
 Prepared solely from the supplied fictional case file (Exhibits A–M).
 
+Recommended filing position: claim five criteria — awards; published material about the beneficiary; judging; original contributions of major significance; and scholarly authorship. Do not count criterion 7 on the present record. Do not claim criteria 2 or 8. The threshold of three criteria is not the ultimate O-1A test; the totality must still establish sustained national or international acclaim and top-of-field expertise.
 
 Assessment is based only on the supplied Exhibits A–M. Strength describes the evidence for the individual criterion, not a prediction of approval or a substitute for the overall merits analysis.
 1. Receipt of nationally or internationally recognized prizes or awards for excellence
@@ -106,30 +104,17 @@ Assessment: The file provides no reliable comparator data for similar CTO/engine
 Recommended claims and overall view
 Claim criteria 1, 3, 4, 5, and 6. Do not count criterion 7 on the present record; do not claim criteria 2 or 8.
 Final merits remain a separate question: the totality must show sustained national or international acclaim and top-of-field expertise. The central vulnerability is attributing the co-authored and co-invented work specifically to Ms. Varga and independently corroborating adoption.
-COUNSEL REVIEW DRAFT — NOT READY FOR FILING
-Recommended filing position: claim five criteria — awards; published material about the beneficiary; judging; original contributions of major significance; and scholarly authorship. Do not count criterion 7 on the present record. Do not claim criteria 2 or 8. The threshold of three criteria is not the ultimate O-1A test; the totality must still establish sustained national or international acclaim and top-of-field expertise.
-
-# 03_O1A_Exhibit_Index_Lena_Varga.docx
 
 O-1A EXHIBIT INDEX
 Recommended filing order and treatment of supplied exhibits
 Lena Varga  |  Tidewell Labs, Inc.
+COUNSEL REVIEW DRAFT — NOT READY FOR FILING
 Prepared 10 November 2026
 Prepared solely from the supplied fictional case file (Exhibits A–M).
 
+Indexing principle: preserve the supplied exhibit letters (A–M) so citations remain stable. The tab order below is the recommended assembly order, not a renumbering of the exhibits. Items marked “obtain/replace” are missing or incomplete in the supplied file and must be addressed before filing.
 
 Preliminary filing components (not assigned exhibit letters): current Form I-129 and O supplement; petitioner and attorney filing components as applicable; fee evidence; and the written O-1 advisory opinion/consultation. The supplied case file does not contain these filing components or the advisory opinion.
-
-Do not include in the core filing set
-Exhibit D — Builder of the Quarter (p. 1): internal Tidewell award voted by the team for shipping the utility dashboard two weeks early. It is not evidence of a nationally or internationally recognized award; omit as a qualifying award.
-Exhibit G — BatteryBytes blog (p. 1): personal blog by a battery hobbyist, described as having no ads and no editors. It is not persuasive evidence of professional or major trade publication coverage; omit.
-Exhibit K — Society of Power Engineers membership (pp. 1–2): membership is open based on a degree or three years of experience, with routine application approval. It does not meet the outstanding-achievement membership criterion; omit as qualifying evidence.
-Exhibit H, p. 2 — Texas Climate Founders Pitch Night: lists Ms. Varga as a judge but gives no description of her judging tasks or the relevance of the startups to her battery analytics field. Omit unless further field-relevance and judging evidence is obtained.
-Assembly and citation checks
-Keep exhibit labels A–M consistent with the support letter and criteria map. Place each exhibit cover sheet before the relevant source pages. Include complete, legible copies; do not omit pages of a source that are needed to understand its date, author, publication information, or context. If Exhibit F is included, place it with Exhibit L and do not state that USD 12m was the final amount raised.
-Before filing, reconcile the support letter’s citations against the final scanned tabs after assembly. Page numbering in the final assembled PDF should not replace the source-page pin cites used here; use the original exhibit page numbers in the letter.
-COUNSEL REVIEW DRAFT — NOT READY FOR FILING
-Indexing principle: preserve the supplied exhibit letters (A–M) so citations remain stable. The tab order below is the recommended assembly order, not a renumbering of the exhibits. Items marked “obtain/replace” are missing or incomplete in the supplied file and must be addressed before filing.
 Tab | Exhibit / document | Pages | Treatment | Index note
 Tab 1 | Written advisory opinion / consultation | Not supplied | OBTAIN BEFORE FILING | The O-1A consultation/advisory opinion is not in the case file. Obtain it from the appropriate peer group or expert. If the petitioner contends that no appropriate peer group exists, document that basis under 8 C.F.R. § 214.2(o)(5)(i)(G).
 Tab 2 | Exhibit B — Tidewell employment agreement summary and itinerary | pp. 1–2 | REPLACE / SUPPLEMENT | Current source is a summary of key terms signed for Tidewell by CEO Sam Whitlock only (p. 1). Obtain a complete written agreement signed by the parties, or otherwise clearly document the actual agreement. Expand the itinerary with actual dates and full work locations for customer-site visits and conference presentations; present version lists recurring activities and states but not specific dates or full locations.
@@ -143,14 +128,23 @@ Tab 9 | Exhibit L — Tidewell and Northfield company records | pp. 1–3 | INCL
 Tab 10 | Exhibit M — Published U.S. patent application | p. 1 | INCLUDE — CORROBORATIVE ONLY | Identifies Varga and Brandt as inventors, Tidewell as applicant, publication date Feb. 6, 2025, and status as pending examination. Do not describe it as a granted patent or as sole inventorship.
 Tab 11 (optional) | Exhibit F — Austin Ledger business article | p. 1 | OPTIONAL COMPANY CONTEXT | The article is principally about Tidewell’s financing and mentions Varga as co-founder/CTO; it is not the principal evidence for published material about Varga. If filed, place next to Ex. L and explain the chronology: the article reported an earlier USD 12m raise and 18 employees; later board minutes state the final close was USD 11.5m and headcount was 31 as of Sept. 30, 2025.
 
-# 04_O1A_Gaps_Risks_Memorandum_Lena_Varga.docx
+Do not include in the core filing set
+Exhibit D — Builder of the Quarter (p. 1): internal Tidewell award voted by the team for shipping the utility dashboard two weeks early. It is not evidence of a nationally or internationally recognized award; omit as a qualifying award.
+Exhibit G — BatteryBytes blog (p. 1): personal blog by a battery hobbyist, described as having no ads and no editors. It is not persuasive evidence of professional or major trade publication coverage; omit.
+Exhibit K — Society of Power Engineers membership (pp. 1–2): membership is open based on a degree or three years of experience, with routine application approval. It does not meet the outstanding-achievement membership criterion; omit as qualifying evidence.
+Exhibit H, p. 2 — Texas Climate Founders Pitch Night: lists Ms. Varga as a judge but gives no description of her judging tasks or the relevance of the startups to her battery analytics field. Omit unless further field-relevance and judging evidence is obtained.
+Assembly and citation checks
+Keep exhibit labels A–M consistent with the support letter and criteria map. Place each exhibit cover sheet before the relevant source pages. Include complete, legible copies; do not omit pages of a source that are needed to understand its date, author, publication information, or context. If Exhibit F is included, place it with Exhibit L and do not state that USD 12m was the final amount raised.
+Before filing, reconcile the support letter’s citations against the final scanned tabs after assembly. Page numbering in the final assembled PDF should not replace the source-page pin cites used here; use the original exhibit page numbers in the letter.
 
 O-1A GAPS, RISKS & EVIDENCE PLAN
 Counsel memorandum for final case development
 Lena Varga  |  Tidewell Labs, Inc.
+COUNSEL REVIEW DRAFT — NOT READY FOR FILING
 Prepared 10 November 2026
 Prepared solely from the supplied fictional case file (Exhibits A–M).
 
+Bottom line: the supplied file supports five plausible evidentiary criteria, but the petition is not filing-ready. The two clearest filing blockers are the missing written advisory opinion and the incomplete agreement/itinerary record. The principal merits risk is whether the evidence proves Ms. Varga’s individual contribution and the major significance of that work, rather than only the success of co-authored research or Tidewell’s platform.
 
 A. Filing blockers and procedural completeness
 1. Written advisory opinion / consultation — HIGH PRIORITY
@@ -215,5 +209,3 @@ E. Overall assessment
 The five proposed criteria are supported by identifiable evidence: the award (Ex. C), professional feature (Ex. E), completed peer review (Ex. H, p. 1), contribution evidence (Ex. I, Ex. J, Ex. L, and Ex. M), and scholarly authorship (Ex. I). The strongest direct criterion evidence is for judging and authorship; the award and publication evidence are also persuasive on their face. The most contested issue is likely the major-significance and final-merits analysis, particularly attribution, field context for citations, and independently documented adoption.
 Do not present the petition as filing-ready until the advisory opinion, contract, and itinerary are addressed. Do not count criterion 7 or 8 on the supplied record. Keep the award as a nationally recognized prize claim, not the one-time major internationally recognized award route. Keep co-authorship, co-inventorship, the two 37 percent figures, and the funding/headcount chronology accurately qualified.
 Principal authorities: 8 C.F.R. § 214.2(o)(2)(ii)(B)–(D), (o)(2)(iv)(A), (o)(3)(ii)–(iii), (o)(5)(i)–(ii), and (o)(6)(iii)(A). The eCFR version consulted for this draft displayed Title 8 as up to date through November 6, 2026 (last amended October 14, 2026).
-COUNSEL REVIEW DRAFT — NOT READY FOR FILING
-Bottom line: the supplied file supports five plausible evidentiary criteria, but the petition is not filing-ready. The two clearest filing blockers are the missing written advisory opinion and the incomplete agreement/itinerary record. The principal merits risk is whether the evidence proves Ms. Varga’s individual contribution and the major significance of that work, rather than only the success of co-authored research or Tidewell’s platform.
