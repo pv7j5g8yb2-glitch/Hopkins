@@ -348,3 +348,19 @@ figure.
   medtech cluster, but sales led).
 * Ruled out by Ismael (2026-11-10): accessibility compliance platform (ADA Title II, HHS 504). Do not suggest again.
 * Ruled out by Ismael (2026-11-10): Shopify App Store product. Do not suggest again.
+
+## Property, cars and "Claude for one group" (2026-11-10)
+
+* Property investors and syndicators: AI underwriting already crowded (Titleman, Archer, Apers,
+  CashflowPortal parsing, V7, Docsumo lists). Developers and land: TestFit, Zenerate, Dwellci,
+  Algoma ($2.3M), ArchiWise, Acres.com.
+* Franchised car dealers: heavily funded AI (Impel about $126M to $130M, Numa about $48M and
+  1,300+ dealers, Toma about $17.5M with a16z and YC, Actively reported $45M, Swirl).
+* Independent used car dealers: NIADA 2025 about 53,000 active (117,000 licensed), 9.8M vehicles
+  retailed in 2025. A vendor study (AutoAcquire) says 14 percent of independents used AI
+  acquisition tools in 2025 against 24 percent of franchise dealers, and independents turn stock
+  in 52 days against 38 overall. Tools there: Carketa, AutoAcquire, Van, ACV Auctions.
+* Read given to Ismael: the overlap of all three interests is a Claude for independent car
+  dealers that does the buying and selling work end to end. Data access must come through
+  proper partnerships or APIs, never scraping. Dealers may prefer phone, which clashes with his
+  no calls rule: to be tested.
