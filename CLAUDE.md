@@ -41,6 +41,10 @@ than anywhere: lawyers check, and a false claim ends the company.
 
 **Don't repeat what an earlier message in the thread already said.**
 
+**Examples read as suggestions.** Never use a dated or basic idea (AI receptionists, chatbots) or
+one he has ruled out as an example, even to show a method. If an example is not something worth
+building in 2026, leave it out.
+
 **One ask, and make it answerable.**
 
 **Don't pad, don't act superior, don't pile on options.** Ismael gets angry at long lists, at
