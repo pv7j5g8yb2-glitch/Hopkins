@@ -364,3 +364,4 @@ figure.
   dealers that does the buying and selling work end to end. Data access must come through
   proper partnerships or APIs, never scraping. Dealers may prefer phone, which clashes with his
   no calls rule: to be tested.
+* Ruled out by Ismael (2026-11-10): AI for independent car dealers ("essentially a CRM", doubts managers would pay). Do not suggest again.
