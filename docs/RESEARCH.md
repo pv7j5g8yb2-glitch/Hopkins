@@ -230,3 +230,17 @@ arrive: the second paste was the same 53 company LegalTech page again.
   LinkLane (freight brokerage), Adside.ai (ads agency), Cardinal Square (schools).
 * Legal tagged: Elithia, Praxis, Neomatter (in house legal), Wingman Law, Tire Swing. Immigration
   adjacent: Veeza AI (consumer tourist visa agent for weak passports). Adalat AI (courts, India).
+
+## "Legora for X" question and public adjusters (2026-11-11)
+
+* Advice given: not a "Legora for X" platform. Harvey, Legora and the YC "Legora for X" teams
+  (Gradon, Covera) sell to firms through sales teams, and the reason Lincoln closed (small firms
+  will not adopt a whole new AI platform self serve) applies to every profession.
+* Suggested instead: one money blocking document job for a solo or small owner who decides alone.
+  Example given: public adjusters (paid a share of each settlement, commonly 10 to 20 percent).
+* Existing AI tools for public adjusters found (all small, unverified vendor pages): Clayem
+  (policy analysis, demand letters), Restoria (Florida, estimate discrepancy reports, Xactimate
+  formats), Claim Navigator AI, Claim Mosaic.
+* No reliable national count of public adjusters found. Licensed in 45 states plus DC (2020 trade
+  article). Florida had 2,914 in 2009 (state audit). Market size is the open question.
+* Business valuation analysts also checked: already served by Equitest, ValuBot, AIVI and others.
