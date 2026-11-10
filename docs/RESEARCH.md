@@ -346,3 +346,4 @@ figure.
 * Strongest fits for that: the 2027 and 2028 accessibility deadlines (huge number of forced
   buyers, priced by the page today), and EU MDR technical files (high value, Ireland has a large
   medtech cluster, but sales led).
+* Ruled out by Ismael (2026-11-10): accessibility compliance platform (ADA Title II, HHS 504). Do not suggest again.
