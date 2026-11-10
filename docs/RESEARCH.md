@@ -436,3 +436,7 @@ figure.
 * Read for Lincoln: model quality is not the edge. The edge is per matter memory, checkable
   sources, done for you immigration skills and setup, and true privacy terms. One option is to
   build Lincoln on top of Claude (skills and connectors) rather than as a separate chat app.
+* Anthropic released open source Claude Cowork plugins (announced 30 Jan 2026), including a
+  legal one for contract review, NDA triage and compliance; Thomson Reuters fell about 18 percent
+  and RELX had its worst day since 1988 (early Feb 2026). The lab itself now ships general legal
+  skills; immigration specific work is narrower.
