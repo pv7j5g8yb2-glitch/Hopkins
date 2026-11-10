@@ -209,3 +209,24 @@ arrive: the second paste was the same 53 company LegalTech page again.
 * Older consumer legal tools were acquired: Willing (by MetLife), SimpleCitizen, Clerky.
 * Legora's YC entry: $200M+ ARR, 900 staff, $5.6B Series D (other sources say $8.8B later).
 * YC offers free Startup School and Co-Founder Matching.
+
+## YC companies F2026 to S2027, all industries (pasted 2026-11-11, 236 companies)
+
+* Batches: 225 Fall 2026, 10 Winter 2027, 1 Summer 2027 (Memorable). Sectors as YC tags them:
+  119 B2B, 53 industrials, 21 consumer, 19 fintech, 15 healthcare, 4 real estate and
+  construction, 4 government, 1 education. 64 of the 236 taglines mention agents.
+* Most of the B2B is tooling for AI agents sold to developers (sandboxes, VMs, inference, testing,
+  memory). Most industrials are hardware (robots, drones, defence, energy) that needs capital.
+* "Legora for X" is being funded right now: Gradon ("Legora for AEC firms"), Covera (AI native OS
+  for insurance brokers), Constor (construction), Ordo Labs (regulated labs), Plek (PE firms).
+  This weakens the earlier point that only Harvey and Thomson Reuters can do it.
+* One role in a small business, done by AI: Kairos Health (front desk for dental practices),
+  Fleety (dispatcher for plumbing and HVAC), Rezora IO (voice agents for home services and real
+  estate), Rote (insurance department for auto body shops), Asakana (admin for food
+  distributors), Lark (workflows for distributors). Priced against a wage, not against software.
+  Their prices and sales model are not known from the list.
+* AI native service firms, selling the result: ClaimKit (tax), Wingman Law (injury), Obia
+  (commercial real estate brokerage), Ignition Benefits, Veltha (TPA), TrueMile (trucking),
+  LinkLane (freight brokerage), Adside.ai (ads agency), Cardinal Square (schools).
+* Legal tagged: Elithia, Praxis, Neomatter (in house legal), Wingman Law, Tire Swing. Immigration
+  adjacent: Veeza AI (consumer tourist visa agent for weak passports). Adalat AI (courts, India).
