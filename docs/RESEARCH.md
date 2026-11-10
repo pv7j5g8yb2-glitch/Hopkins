@@ -186,10 +186,17 @@ LEAP, Smokeball), and owning the client relationship (Alma, Casium, Gale).
 * What keeps the winners winning: data (Filevine 40M matters, Westlaw, AILA content), an installed
   base (LEAP, Smokeball, Docketwise, eImmigration), certifications (SOC 2, ISO 27001, ISO 42001,
   HIPAA), licensed lawyers, and hundreds of millions in funding.
-* Verdict given to Ismael: do not build Lincoln as planned. No reason found for a firm to choose
-  it over CaseBlink, LegistAI or the AI in software it already pays for.
+* Verdict given to Ismael: do not build Lincoln as planned. The deciding reason (corrected by
+  Ismael, 2026-11-11): funded incumbents were never the problem, he knew about them. The problem
+  is that even narrowed to immigration, getting small and mid sized immigration firms to sign up
+  to a self serve legal AI platform would be very hard, close to impossible. No reason was found
+  for a firm to choose it over CaseBlink, LegistAI or the AI in software it already pays for.
 
-## YC LegalTech directory (pasted 2026-11-11, 53 companies)
+## YC LegalTech directory (pasted 2026-11-11, 53 companies, all YC batches since the start)
+
+The second list Ismael meant to send (236 companies from all industries, F2026 to S2027) did not
+arrive: the second paste was the same 53 company LegalTech page again.
+
 
 * Newest batches (2025 to F2026) are tiny teams (1 to 3 people) doing one money blocking job end
   to end: Elithia (medical record review for injury claims, sold to expert witnesses), Andco and

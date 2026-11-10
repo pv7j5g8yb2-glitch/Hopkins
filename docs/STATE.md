@@ -5,11 +5,12 @@ anything here changes. The repo is public: never put passwords, keys or personal
 
 ## Closed (2026-11-11)
 
-Lincoln, legal AI for law firms and immigration firms, is closed. A review of 21 competitor
-homepages (Harvey, Legora, CaseBlink, Parley, Visalaw, LegistAI, Docketwise, eImmigration, LEAP,
-Smokeball, Filevine LOIS, CoCounsel and others) plus two r/legaltech threads found no reason a firm
-would choose it, and the advantages that win in that market (data, certifications, licensed
-lawyers, installed base, funding) are out of reach for now. Findings are in `docs/RESEARCH.md`.
+Lincoln, legal AI for law firms and immigration firms, is closed. The reason (Ismael's
+correction): not the funded incumbents, which he already knew about, but that even narrowed to
+immigration, getting small and mid sized firms to sign up to a self serve legal AI platform would
+be very hard, close to impossible. Based on a review of 21 competitor homepages (Harvey, Legora,
+CaseBlink, Parley, Visalaw, LegistAI, Docketwise, eImmigration, LEAP, Smokeball, Filevine LOIS,
+CoCounsel and others) plus two r/legaltech threads. Findings are in `docs/RESEARCH.md`.
 The name, logo and brand files stay in `brand/` in case they are useful for something else.
 Next: pick one new direction and commit to it for 90 days without restarting.
 
