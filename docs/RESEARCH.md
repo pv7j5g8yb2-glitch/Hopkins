@@ -188,3 +188,17 @@ LEAP, Smokeball), and owning the client relationship (Alma, Casium, Gale).
   HIPAA), licensed lawyers, and hundreds of millions in funding.
 * Verdict given to Ismael: do not build Lincoln as planned. No reason found for a firm to choose
   it over CaseBlink, LegistAI or the AI in software it already pays for.
+
+## YC LegalTech directory (pasted 2026-11-11, 53 companies)
+
+* Newest batches (2025 to F2026) are tiny teams (1 to 3 people) doing one money blocking job end
+  to end: Elithia (medical record review for injury claims, sold to expert witnesses), Andco and
+  Codes Health (record retrieval, Codes Health has 45 staff), Praxis (law firm admin agents),
+  OpenIntake (intake calls), Mimos (lead gen and intake for injury firms), Tarifflo (customs
+  filing API with MCP), Patent Watch (infringement finding), Mayflower (immigration screening
+  inside HR tools). Plus AI native law firms: Wingman Law, Erinys, Blueshoe.
+* Each pitch ties to a dollar figure: claims payouts, lost clients ($10k each), overpaid duties,
+  patents turned into revenue.
+* Older consumer legal tools were acquired: Willing (by MetLife), SimpleCitizen, Clerky.
+* Legora's YC entry: $200M+ ARR, 900 staff, $5.6B Series D (other sources say $8.8B later).
+* YC offers free Startup School and Co-Founder Matching.
