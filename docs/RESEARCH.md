@@ -420,3 +420,19 @@ figure.
   client data goes into AI (unverified). Lawyers use local AI for confidential documents.
 * For Lincoln: employment based immigration is mostly filings with USCIS, an agency, not court
   work, so it sits on the side lawyers say AI already does well. Confidentiality is a must.
+
+## r/LawFirm "moved from Claude or ChatGPT to legal specific AI?" (pasted 2026-11-10)
+
+* Several lawyers moved the other way, from legal tools (EvenUp, Supio) to plain Claude, because
+  Claude's quality is better once skills are set up. "The setup is where people stall" (the
+  founder of North, which "engineers Claude for law firms").
+* What lawyers say legal tools add: matter memory across months, linked citations they can check
+  in the same place (OpenCase, Irys Cite Check, Harvey Vaults), organised documents, and the
+  "plumbing" (OCR, de duplication, page cites, a BAA). Medrecords AI co founder: "at 3,000 pages
+  from 12 providers, the plumbing is the product".
+* Lawyers already connect Claude to Clio through MCP and keep matters in Claude projects.
+* Privacy questions lawyers ask vendors: training on data, retention, add on connectors, who can
+  read data versus where it sits.
+* Read for Lincoln: model quality is not the edge. The edge is per matter memory, checkable
+  sources, done for you immigration skills and setup, and true privacy terms. One option is to
+  build Lincoln on top of Claude (skills and connectors) rather than as a separate chat app.
