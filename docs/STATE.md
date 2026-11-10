@@ -14,6 +14,16 @@ CoCounsel and others) plus two r/legaltech threads. Findings are in `docs/RESEAR
 The name, logo and brand files stay in `brand/` in case they are useful for something else.
 Next: pick one new direction and commit to it for 90 days without restarting.
 
+## Reopened for a test (2026-11-10)
+
+Ismael said go on the three week Lincoln test. Week 1 started: a made up O-1A case is in
+`demo/o1-varga/` (all invented, with deliberate traps listed in `answer-key.md`). Three runs: plain
+Claude and plain ChatGPT with `plain-run-paste.txt`, and Lincoln's four step method in a fresh
+Claude chat (`lincoln/message-1..4-paste.txt`). Then blind scoring against `rubric.md`. If Lincoln
+is not clearly best, stop. Known weakness: the same author wrote the traps and the method; a second
+case written separately should confirm any win. No Anthropic API key yet (an API account needs an
+adult, so a parent must open it).
+
 ## Ruled out (2026-11-10)
 
 Shopify App Store product: rejected by Ismael. Do not suggest again.
