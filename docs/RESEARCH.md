@@ -481,3 +481,23 @@ figure.
 * For Ismael: $1M a year profit is about an eighth of this founder's $10M ARR, and his rules
   (bootstrapped, no investors) put him on this slow path, where selling and staying power matter
   more than the idea.
+
+## Legora LinkedIn post "Legora now connects to Claude for Legal" (screenshots, 2026-11-10, post about a week old)
+
+* Legora says it is part of Anthropic's "Claude for Legal" launch: lawyers put Legora's agent to work
+  on jurisdiction specific research and their own matters from inside Claude. 1,475 reactions.
+* Top comment (lawyer and investor, 69 likes): "A wrapper saying he is connected to what he is
+  wrapped around." Others joke about "recursive legal tech". A Dentons associate defends it as
+  convenience. An Eversheds partner asks whether Legora is still model agnostic.
+* Serious comments: a compliance adviser says Claude becomes "the place where the lawyer starts and
+  receives the answer" and specialist providers may end up competing with the platforms they made
+  indispensable; others ask for independent verification of conclusions, a tamper proof record of
+  what a source said on the day it was relied on, and security for privileged data.
+* Read: mockery on LinkedIn has not stopped Legora selling. The bigger signal is that the work is
+  moving inside Claude itself, which supports building Lincoln as immigration skills and a
+  connector inside Claude rather than a separate chat app.
+* API notes (Claude API skill, prices cached 2026-11-03): one account gives every model, chosen per
+  request; pay per token only. Opus 5.5 $4 / $20 per million tokens in / out, Sonnet 5.5 $2 / $10,
+  Haiku 5.5 $0.10 / $0.50, Fable 5.2 $8 / $40. Fable 5.2 is not available under zero data retention
+  unless Anthropic authorises it, which matters for a privacy promise to lawyers. Opus 5.5 effort
+  defaults to medium on the API, so set it explicitly.
