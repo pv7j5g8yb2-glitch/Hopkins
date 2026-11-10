@@ -156,3 +156,35 @@ identical (SOC 2 or ISO 27001, no training, zero retention). Three models: softw
 AI native firms that sell the outcome to the end client and take the fee, and cheap self filer
 tools. Moats seen: exclusive content (AILA, Westlaw), installed base (Docketwise, eImmigration,
 LEAP, Smokeball), and owning the client relationship (Alma, Casium, Gale).
+
+## Competitor homepages, batch 2 of 2 (read 2026-11-10)
+
+* Harvey: "AI software for legal and professional services". Banner: raised $550M at $15.5B.
+  3,500+ legal organisations. Agents, Vault, research including tax, shared workspaces with
+  ethical walls, memory, legal work orchestration, contract review, regulatory tracking, intake,
+  facts and chronologies, MCP connectors, Word. Industry pages now include healthcare and life
+  sciences, and media. Customers named: Reed Smith, CMS, Burges Salmon, Repsol, Dentsu, Adecco.
+* Legora: "the agentic operating system for legal work" (aOS). Agent plans, executes, reviews and
+  delivers. Monitors, Lists, Portal, tax analysis. SOC 2 Type II, ISO 27001, ISO 42001, GDPR, HIPAA.
+* LOIS by Filevine: "Legal Operating Intelligence System", agents across every matter, built on
+  40M+ matters in Filevine's legal graph. Free trial, no card. Ad film stars Sarah Rafferty (Donna
+  in Suits).
+* LEGALFLY: legal operating system for corporates, intake, playbook review, drafting in Word,
+  agents triggered from email, Slack and Teams, regulatory radar, 130+ jurisdictions, Gartner
+  named key vendor. Says it is built for enterprise teams, not law firm productivity.
+* LawVu: LegalOS for in-house teams: intake front door, matters, contracts, spend, knowledge,
+  agents. Customers include Dentsu (also a Harvey customer).
+
+## Overall read of all 21 (2026-11-10)
+
+* Everyone now sells "the operating system" with agents: Legora aOS, Filevine LOIS, LawVu LegalOS,
+  LEGALFLY, CaseBlink, Parley, AI.Law. Lincoln's pitch is the standard pitch.
+* The biggest are already moving into other professions: Harvey into professional services,
+  healthcare and media, Legora and Harvey into tax, CoCounsel into tax, audit, accounting and
+  trade, Parley from immigration to all legal. "Harvey for another profession" is what Harvey
+  and Thomson Reuters are doing themselves.
+* What keeps the winners winning: data (Filevine 40M matters, Westlaw, AILA content), an installed
+  base (LEAP, Smokeball, Docketwise, eImmigration), certifications (SOC 2, ISO 27001, ISO 42001,
+  HIPAA), licensed lawyers, and hundreds of millions in funding.
+* Verdict given to Ismael: do not build Lincoln as planned. No reason found for a firm to choose
+  it over CaseBlink, LegistAI or the AI in software it already pays for.
