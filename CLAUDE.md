@@ -80,6 +80,10 @@ a straight answer first, then the reason. When he decides something, do it.
 
 * The only goal: about $100k a month profit (about $1M a year) by age 20. Price, self serve and
   seat counts are not rules in themselves.
+* Never suggest asking buyers or strangers about their problems, pain or how they work (posts,
+  DMs, "20 minutes of your time"). Professionals mock it (r/Ask_Lawyers reply: "weed out
+  questions from kids spamming forums for shitty business ideas"). Learn by reading what they
+  already wrote; approach them only with finished work they can judge.
 * No video or phone calls with buyers. Selling and talking to customers in writing is fine (email,
   DMs, LinkedIn), as long as it is a normal human conversation, not template pitching.
 

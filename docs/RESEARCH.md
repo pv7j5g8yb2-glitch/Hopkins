@@ -407,3 +407,16 @@ figure.
 * Its main claim, that VCs will not fund small niches, is contradicted by the YC F2026 list he
   sent: Fleety (plumbing and HVAC dispatch), Rote (auto body shops), Kairos Health (dental).
 * It never names a niche. Like every source so far, it ends by asking which industry he knows.
+
+## r/AskReddit "Lawyers, how are you using AI" (pasted 2026-11-10, thread about a month old)
+
+* A 1,000+ lawyer firm (commenters guess Kirkland & Ellis) reportedly spent eight figures on its
+  own AI on its own documents, self hosted, and cut first and second year hiring. Big firms build
+  their own; small firms cannot.
+* A corporate benefits lawyer's clients dried up in a year (anecdote).
+* A practising lawyer: AI is very good at research, basic drafting, reviewing large volumes and
+  paralegal admin, which can be automated end to end "with a little bit of foundation work".
+  Courts now require AI disclosure and sanction errors; some say privilege can be at risk when
+  client data goes into AI (unverified). Lawyers use local AI for confidential documents.
+* For Lincoln: employment based immigration is mostly filings with USCIS, an agency, not court
+  work, so it sits on the side lawyers say AI already does well. Confidentiality is a must.
