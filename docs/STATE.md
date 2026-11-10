@@ -14,14 +14,9 @@ CoCounsel and others) plus two r/legaltech threads. Findings are in `docs/RESEAR
 The name, logo and brand files stay in `brand/` in case they are useful for something else.
 Next: pick one new direction and commit to it for 90 days without restarting.
 
-## Proposed (2026-11-10, waiting for Ismael's yes)
+## Ruled out (2026-11-10)
 
-An AI product sold through the Shopify App Store, with a parent or guardian as the account holder
-(Shopify accounts need 18 or over). Chosen because merchants find, install and pay inside the
-store, and support is by chat and email, so no calls are needed. Shopify reports $1.3B paid to
-developers in 2025, and the reduced revenue share plan exempts the first $1M of app revenue.
-90 day test: pick a category from public app store reviews where merchants pay and complain,
-build, launch, aim for the first paying stores. Category not chosen yet.
+Shopify App Store product: rejected by Ismael. Do not suggest again.
 
 ## What Lincoln was
 

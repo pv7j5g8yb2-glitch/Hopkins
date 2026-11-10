@@ -347,3 +347,4 @@ figure.
   buyers, priced by the page today), and EU MDR technical files (high value, Ireland has a large
   medtech cluster, but sales led).
 * Ruled out by Ismael (2026-11-10): accessibility compliance platform (ADA Title II, HHS 504). Do not suggest again.
+* Ruled out by Ismael (2026-11-10): Shopify App Store product. Do not suggest again.
