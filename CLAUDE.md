@@ -76,6 +76,13 @@ a straight answer first, then the reason. When he decides something, do it.
   competitor (Harvey, Legora, Clio, Spellbook, CoCounsel, Parley, CaseBlink, Docketwise and
   others) is already selling. See `docs/RESEARCH.md`.
 
+## Ismael's real requirements (2026-11-10)
+
+* The only goal: about $100k a month profit (about $1M a year) by age 20. Price, self serve and
+  seat counts are not rules in themselves.
+* No video or phone calls with buyers. Selling and talking to customers in writing is fine (email,
+  DMs, LinkedIn), as long as it is a normal human conversation, not template pitching.
+
 ## Hard limits (do not break these)
 
 * **Ismael is 15.** A parent or guardian must be the legal owner of the company and the account
