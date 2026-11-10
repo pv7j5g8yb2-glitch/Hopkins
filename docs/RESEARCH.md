@@ -396,3 +396,14 @@ figure.
 * Useful part: ways to get customers without cold outreach: free single purpose tools (HubSpot
   Website Grader), search pages for very specific questions (Zapier integration pages),
   marketplaces, building in public (Pieter Levels).
+
+## Review of a second pasted Google AI thread on bootstrapping to $100M (2026-11-10)
+
+* It reverses itself after pushback: first Zapier and Mailchimp prove the path, then they are
+  "obsolete". "Mathematically proven" and "statistically realistic" with no statistics given.
+* Facts: Midjourney about $200M a year with no VC (widely reported); Mailchimp bootstrapped,
+  about $800M revenue, sold to Intuit for $12B; Zapier took a $1.3M seed and in 2021 Sequoia and
+  Steadfast bought shares from early holders at a $5B valuation (so "never touched VC" is loose).
+* Its main claim, that VCs will not fund small niches, is contradicted by the YC F2026 list he
+  sent: Fleety (plumbing and HVAC dispatch), Rote (auto body shops), Kairos Health (dental).
+* It never names a niche. Like every source so far, it ends by asking which industry he knows.
