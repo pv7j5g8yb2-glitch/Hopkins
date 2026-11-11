@@ -536,3 +536,18 @@ figure.
 * Read: what small firms pay for is someone else doing the setup and the upkeep, not better drafting.
   In immigration, case management tools (Docketwise, LawLogix, INSZoom, eImmigration) already hold that
   role and are adding AI.
+
+## Pasted Google AI thread: "Harvey for accounting" and "best vertical for the Harvey model" (2026-11-11)
+
+* Accounting: the thread's own harsh answer holds. Fixed fees and the CPA shortage are real, but the work
+  is spreadsheets and ledgers, incumbents (Thomson Reuters, Wolters Kluwer, Intuit) and funded startups
+  (Blue J, Fieldguide, Numeric, Trullion, Basis) are there, Harvey works with PwC on tax, and busy
+  season blocks selling for months.
+* Its pick, commercial insurance underwriting and claims, is already crowded with funded companies:
+  Sixfold ($30M Series B, Jan 2026, "AI Underwriter"), Federato ($100M Series D, Nov 2025, submission
+  triage for carriers and MGAs), and YC F2026 alone has Covera, Hesper AI, Veltha, Ignition Benefits,
+  Risklytics and Rote. Selling needs SOC 2, security reviews and enterprise sales, which clash with
+  Ismael's no calls rule and his age.
+* Its "sell completed work, not chat" advice is what Lincoln did; plain Claude matched it on a
+  document heavy job. Read 300 pages and draft a memo is exactly what general models now do well.
+* Unverified claims in the thread: Harvey "80% of Am Law 100", "$1,000+ per seat", "MGAs decide in weeks".
