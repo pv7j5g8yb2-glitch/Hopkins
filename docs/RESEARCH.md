@@ -580,3 +580,12 @@ mergers, price hikes), because forced switching is the moment buyers look at alt
 * Insurance agency management: sticky (migrating files, carrier downloads); Big I cites two hours a day
   of manual data entry for independent agents.
 * Ruled out by Ismael (2026-11-11): youth sports club software, QuickBooks Desktop alternatives, dental, fitness studio and insurance agency software. Do not suggest again.
+
+## Cal AI: teen founders, consumer AI app, grown by creator content (checked 2026-11-11)
+
+* Photo calorie tracker launched May 2024, built by teenagers (Zach Yadegari, Henry Langmack and others).
+  TechCrunch reported over $2M revenue in one month early on; later accounts say 15M downloads and over
+  $30M a year before MyFitnessPal bought it (announced December 2025). Figures are founder reported.
+* Growth came from paying about 250 creators a fixed monthly fee to post on TikTok and Instagram; the
+  first traction came from one paid story by a creator documenting weight loss. Brand and creator
+  content, not the founders' faces, and no cold outreach.

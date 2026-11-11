@@ -84,6 +84,10 @@ a straight answer first, then the reason. When he decides something, do it.
   DMs, "20 minutes of your time"). Professionals mock it (r/Ask_Lawyers reply: "weed out
   questions from kids spamming forums for shitty business ideas"). Learn by reading what they
   already wrote; approach them only with finished work they can judge.
+* Reaching buyers (Ismael, 2026-11-11): company content is fine (a brand account posting like any software
+  company), but nothing about him, his face, his story or his life. No cold outreach of any kind, not even
+  "just asking for feedback". Ideas must be ones where buyers can find the product through company
+  content, search or a marketplace and sign up on their own.
 * No video or phone calls with buyers. Selling and talking to customers in writing is fine (email,
   DMs, LinkedIn), as long as it is a normal human conversation, not template pitching.
 
