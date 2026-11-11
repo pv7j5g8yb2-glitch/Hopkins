@@ -579,3 +579,4 @@ mergers, price hikes), because forced switching is the moment buyers look at alt
   Glofox, Gymdesk, Vibefam).
 * Insurance agency management: sticky (migrating files, carrier downloads); Big I cites two hours a day
   of manual data entry for independent agents.
+* Ruled out by Ismael (2026-11-11): youth sports club software, QuickBooks Desktop alternatives, dental, fitness studio and insurance agency software. Do not suggest again.
