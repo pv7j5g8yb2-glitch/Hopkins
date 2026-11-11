@@ -524,3 +524,15 @@ figure.
 * Read against our test: plain Claude already drafts at about the level of a legal tool; what Harvey
   sells on top is security, compliance, integrations and service, which a parent owned startup run by a
   15 year old cannot credibly offer to firms.
+
+## r/legaltech "How will Eve / Supio / EvenUp / Harvey survive when lawyers build their own?" (pasted 2026-11-11)
+
+* Main answers: lawyers do not want to become workflow engineers; building is fun, upkeep "goes on
+  literally forever"; solos and small shops "will always pay"; many lawyers still struggle with email;
+  one builder spent tens of thousands of euros of tokens and says the detail and deployment are immense.
+* Risks to wrappers: they rely on frontier models and are not profitable, so prices may rise or they may
+  close when venture money dries up; the labs may package role specific tools into enterprise plans
+  ("very little reason to use a 3rd party"); some may escape by moving to cheaper open weight models.
+* Read: what small firms pay for is someone else doing the setup and the upkeep, not better drafting.
+  In immigration, case management tools (Docketwise, LawLogix, INSZoom, eImmigration) already hold that
+  role and are adding AI.
