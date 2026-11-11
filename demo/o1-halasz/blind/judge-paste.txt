@@ -1697,7 +1697,7 @@ Page 7 of 7
 # Output Z
 
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  1
+[header removed] O-1A CASE PREPARATION  |  1
 O-1A PETITION SUPPORT LETTER
 Corvane Therapeutics, Inc. | Beneficiary: Dr. Réka Halász | Proposed field: Computational Biology / Structural 
 Protein Informatics
@@ -1742,7 +1742,7 @@ Principal Research Scientist, Structure Prediction, and the October 29 company r
 January 2027. The petition should use a title chronology confirmed by updated HR evidence before signature. (Client PDF, 
 pp. 1, 7, 10, 13, 48.)
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  2
+[header removed] O-1A CASE PREPARATION  |  2
 II. Beneficiary’s field and qualifications
 The record identifies the Beneficiary as a computational biologist whose work concerns protein binding-pocket motion and 
 methods for modelling that motion in drug-discovery research. Her Ph.D. diploma, accompanied by an English translation 
@@ -1794,7 +1794,7 @@ The Petitioner does not rely on the separate International Journal of Advanced R
 packet does not substantiate the nature or number of reviews and the accompanying invitation describes a journal that 
 welcomes reviewers from every discipline and charges accepted authors an article-processing fee. (Client PDF, pp. 1, 26.)
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  3
+[header removed] O-1A CASE PREPARATION  |  3
 E. Original scientific or scholarly contributions of major significance
 The Beneficiary conceived FoldSight and wrote the software, according to the author-contribution statement in the 2022 peer-
 reviewed FoldSight paper. That paper describes a graph neural network trained on 14,000 molecular-dynamics trajectories 
@@ -1849,7 +1849,7 @@ Corvane’s September 2026 investor profile describes two oncology programmes in
 research collaboration with Northgate Pharma signed in 2025. It reports $9 million in seed funding, $24 million in Series A 
 funding, and $60 million in Series B funding in May 2025. A September 2026 financing slide states that Corvane had raised 
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  4
+[header removed] O-1A CASE PREPARATION  |  4
 $93 million to date. Biotech Ledger’s February 3, 2026 article included Corvane among “Ten AI drug discovery startups to 
 watch.” (Client PDF, pp. 12, 49.)
 Northgate’s letter provides evidence of FoldSight use outside Corvane: its team began using the tool in 2023, before the 2025 
@@ -1897,7 +1897,7 @@ USCIS Policy Manual, Vol. 2, Part M, Chapter 4 (O-1 adjudication; criteria revie
 manual/volume-2-part-m-chapter-4
 
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  1
+[header removed] O-1A CASE PREPARATION  |  1
 O-1A EVIDENTIARY CRITERIA MAP
 Dr. Réka Halász | Source-grounded assessment of all eight regulatory criteria
 BOTTOM LINE  Recommend claiming criteria 1-7, with criteria 3 and 7 presented as more vulnerable. Do not claim 
@@ -1939,7 +1939,7 @@ Evidence: The Boston Life Sciences Review published a profile article about Hal�
 media kit reports weekly publication since 1994, audited 2025 print circulation of 38,500, 410,000 online monthly unique 
 visitors, 31 full-time journalists, and a life-sciences readership. (p. 24.)
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  2
+[header removed] O-1A CASE PREPARATION  |  2
 Assessment: The article is plainly about the beneficiary and her work, with title/date/byline. The media kit supplies relevant 
 scale and audience information. It is the clearest evidence for this criterion.
 Cautions / exclusions: Only one strong item is clearly established. The Scientist Weekly piece is authored by Halász, not 
@@ -1983,7 +1983,7 @@ Cautions / exclusions: Do not count the Scientist Weekly opinion article as a sc
 publication count does not reconcile to its four displayed entries and five unspecified additional papers; the older CV’s 7 items 
 include a thesis summary and MSc project report. (pp. 3-4.)
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  3
+[header removed] O-1A CASE PREPARATION  |  3
 7. Critical or essential capacity for distinguished organizations
 CLAIM - MODERATE
 Evidence: Corvane’s HR letter states Halász has been full-time since Feb. 6, 2023, leads the Structure Prediction group, 
@@ -2031,7 +2031,7 @@ Salary_survey_BioComp_2026.xlsx. All metrics should be refreshed immediately bef
 scholarly-profile exhibits are dated snapshots.
 
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  1
+[header removed] O-1A CASE PREPARATION  |  1
 PROPOSED O-1A EXHIBIT INDEX
 Corvane Therapeutics, Inc. | Dr. Réka Halász | Filing sequence and treatment of source documents
 FILING NOTE  This index is a recommended order, not a representation that every listed item is filing-ready. The Brenner 
@@ -2090,7 +2090,7 @@ unnecessary personal identifiers in working
 copies and do not repeat document numbers 
 in the support narrative.
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  2
+[header removed] O-1A CASE PREPARATION  |  2
 Tab Exhibit / document Client-file source and filing treatment
 H Academic credential Pannonia University Ph.D. diploma and 
 certified English translation, Client PDF p. 22. 
@@ -2154,7 +2154,7 @@ nominated. Do not use as a prize or independent media item.
 Client PDF p. 14 - Corvane Spark Award Award is for code-review culture, chosen by colleague vote; it does not 
 establish scientific distinction at national or international level.
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  3
+[header removed] O-1A CASE PREPARATION  |  3
 Source Reason to omit / restricted use
 Client PDF p. 21 - North American Protein Society membership Open membership upon payment; does not require outstanding 
 achievements.
@@ -2190,7 +2190,7 @@ require more than one location. Section 214.2(o)(5)(ii)(A) addresses O-1 extraor
 language documents submitted to USCIS require a full certified English translation under 8 C.F.R. § 103.2(b)(3).
 
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  1
+[header removed] O-1A CASE PREPARATION  |  1
 O-1A GAPS, RISKS & EVIDENCE-CORRECTION 
 MEMORANDUM
 Dr. Réka Halász | Case-file audit | Priority-ranked prefiling action list
@@ -2236,7 +2236,7 @@ Risk: The packet does not explain whether “Toth” is a former surname, anothe
 should match the passport and official immigration record, while publications and scholarly citations may use a different 
 byline form.
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  2
+[header removed] O-1A CASE PREPARATION  |  2
 Action: Ask the Beneficiary to confirm the legal history of the Toth name and obtain supporting name-change or identity 
 evidence if applicable. Use passport spelling in forms and explain publication bylines only where needed. Do not assume the 
 reason for the suffix.
@@ -2286,7 +2286,7 @@ PDF, pp. 1, 3.) The repository snapshot printed November 1, 2026 reports 4,812 s
 commits by “rhalasz” (71%), and 182,000 package downloads during the last 12 months. (p. 31.) The profile snapshot printed 
 November 1, 2026 reports 1,418 citations, h-index 14, i10-index 16, and 612 citations to the FoldSight paper. (p. 32.)
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  3
+[header removed] O-1A CASE PREPARATION  |  3
 Risk: The headline “over 5,000 stars” and “over 1,500 citations” are not corroborated by the dated snapshots in the same 
 packet. The unsigned Ferrante draft also claims more than 2,000 citations, but it is not signed and is not consistent with the 
 current snapshot. (p. 1.)
@@ -2336,7 +2336,7 @@ count IJARS review activity. The client email reports two reviews, but the attac
 recruitment and the certificate is generic; the packet does not verify the claimed two reviews with specific assignments or 
 editorial evidence. (pp. 1, 26.)
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  4
+[header removed] O-1A CASE PREPARATION  |  4
 3.5 Original contributions
 This is the case’s strongest category when framed around beneficiary-specific evidence and adoption outside Corvane: the 
 FoldSight article’s contribution statement; external use at Ferrante’s group; use at Northgate predating its commercial 
@@ -2388,7 +2388,7 @@ requires services of an individual of extraordinary ability.
 8 C.F.R. § 103.2(b)(3): any foreign-language document submitted to USCIS must include a full English translation certified as 
 complete and accurate, together with the translator’s certification of competence.
 CONFIDENTIAL | ATTORNEY WORK PRODUCT
-KIRM / O-1A CASE PREPARATION  |  5
+[header removed] O-1A CASE PREPARATION  |  5
 USCIS Policy Manual, Vol. 2, Part M, Chapter 4 (O-1 criteria review and totality assessment): https://www.uscis.gov/policy-
 manual/volume-2-part-m-chapter-4
 Official eCFR references (current text accessed November 10, 2026): 

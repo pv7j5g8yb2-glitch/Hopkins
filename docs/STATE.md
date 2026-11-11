@@ -32,6 +32,10 @@ Final round started (2026-11-10): case 2 in `demo/o1-halasz/` (52 page messy bun
 spreadsheet, answer key committed before Lincoln v0.2). Pass bar: Lincoln beats plain Claude by at
 least 5 points with BOTH judges, otherwise Lincoln stops.
 
+Final round result (2026-11-11): Lincoln v0.2 averaged 96.55, plain Claude 91.2, plain ChatGPT 94.75,
+but the Claude judge gave Lincoln only +1.7 over plain Claude, so the pass bar (+5 with both judges)
+was not met. By the rule agreed before the test, Lincoln stops. Details: `demo/o1-halasz/results.md`.
+
 ## Ruled out (2026-11-10)
 
 Shopify App Store product: rejected by Ismael. Do not suggest again.
