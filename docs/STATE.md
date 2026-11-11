@@ -7,6 +7,14 @@ Claude or ChatGPT does the job about as well, drop the idea.
 Last updated 2026-11-11. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.
 
+## Proposed next (2026-11-11, waiting for Ismael)
+
+Build an audience first, product second: post the true story of building and testing ideas (starting
+with the Lincoln blind test) on platforms open at 15 (X, YouTube, TikTok, Instagram; not LinkedIn
+until 16), with a parent aware. Reason: every idea so far died on distribution or on plain Claude
+matching it; an audience is an edge models cannot copy. Product ideas still go through the one day
+blind test. Only true claims, no personal details.
+
 ## Closed (2026-11-11)
 
 Lincoln, legal AI for law firms and immigration firms, is closed. The reason (Ismael's
