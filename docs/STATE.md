@@ -70,7 +70,10 @@ from the repo the same day. History is in git up to commit `341cf65`.
 
 * Product requirement (2026-11-11): the four passes run automatically and the lawyer always gets every
   deliverable back as separate Word files in one go (support letter, criteria map, exhibit index,
-  gaps and risks). No manual exporting, no tabs to hunt for.
+  gaps and risks). No manual exporting, no tabs to hunt for. Lawyers can ask in the chat for any other
+  format: one combined file, a zip, PDF, Word, one at a time. Default to editable Word (lawyers on
+  Reddit say they finish everything in Word), with a download all button; check the default with the
+  first real lawyers rather than guessing.
 * Quality bar (Ismael, 2026-11-10): the work Lincoln does should match a top immigration lawyer's
   work product. It never presents itself as a lawyer; a licensed lawyer reviews and signs.
 
