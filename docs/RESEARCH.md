@@ -551,3 +551,31 @@ figure.
 * Its "sell completed work, not chat" advice is what Lincoln did; plain Claude matched it on a
   document heavy job. Read 300 pages and draft a memo is exactly what general models now do well.
 * Unverified claims in the thread: Harvey "80% of Am Law 100", "$1,000+ per seat", "MGAs decide in weeks".
+
+## Remodel an old category: research (2026-11-11)
+
+Method: look for big categories where the incumbent is forcing customers to move anyway (sunsets,
+mergers, price hikes), because forced switching is the moment buyers look at alternatives.
+
+* Youth sports club and league software (strongest find):
+  - Stack Sports merged with PlayMetrics in June 2025; PlayMetrics closed its purchase of SportsEngine
+    from Versant on 1 May 2026 (SportsEngine: over 16 million athletes, 1.2 million teams, 45,000
+    organisations, per its site; reported valuation $400M to $500M).
+  - The combined company is retiring products: Goalline and Pointstreak shut in May 2026; Sports Connect
+    (Little League's official provider since 2016) sunsets in 2027; AYSO is moving to PlayMetrics.
+  - So one company now controls a large share and is forcing many leagues to migrate within about a
+    year. Other players: LeagueApps, TeamSnap, Jersey Watch, TeamLinkt, GotSport, Crossbar, Demosphere.
+  - One market report puts US youth sports tech at about $2.1B (2025); estimates vary widely.
+  - Not a document job, so plain Claude does not replace it: the value is registration, payments,
+    scheduling, communication and records. Revenue in this category usually comes from a cut of the
+    registration fees processed. Risks: children's data (COPPA under 13), payments need an adult owner,
+    governing bodies (AYSO, Little League) choose centrally for their members, crowded challengers.
+* QuickBooks Desktop: versions retired every May (2023 version on 31 May 2026), Desktop price rises from
+  Feb 2026, QuickBooks Online rises from Aug 2026; users angry. But alternatives are many and strong
+  (Xero, Zoho Books, FreshBooks, Wave, Sage) and accounting was already judged crowded.
+* Dental practice software: Eaglesoft moving to subscriptions, standard Dentrix still on local servers;
+  cloud challengers (Curve, Dentally, CareStack) already there; HIPAA and sales calls.
+* Fitness studio software: Mindbody price creep complaints; many challengers (Momence, WellnessLiving,
+  Glofox, Gymdesk, Vibefam).
+* Insurance agency management: sticky (migrating files, carrier downloads); Big I cites two hours a day
+  of manual data entry for independent agents.
