@@ -91,6 +91,9 @@ a straight answer first, then the reason. When he decides something, do it.
   company), but nothing about him, his face, his story or his life. No cold outreach of any kind, not even
   "just asking for feedback". Ideas must be ones where buyers can find the product through company
   content, search or a marketplace and sign up on their own.
+* Funding (Ismael, 2026-11-11): do not pitch VC firms until the product has real paying users or revenue.
+  Build proof first on a small budget (about $50 a month now). Open question: free applications such
+  as YC's are allowed or not (suggested exception, not decided).
 * No video or phone calls with buyers. Selling and talking to customers in writing is fine (email,
   DMs, LinkedIn), as long as it is a normal human conversation, not template pitching.
 
