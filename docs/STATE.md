@@ -68,6 +68,9 @@ from the repo the same day. History is in git up to commit `341cf65`.
 * Look (2026-11-09): wordmark in Literata SemiBold (600), black ink `#161614` on warm paper `#F2F0ED` or white on black, no accent colour. Files and notes in `brand/`.
 * Hard limits and writing rules are in `CLAUDE.md`.
 
+* Product requirement (2026-11-11): the four passes run automatically and the lawyer always gets every
+  deliverable back as separate Word files in one go (support letter, criteria map, exhibit index,
+  gaps and risks). No manual exporting, no tabs to hunt for.
 * Quality bar (Ismael, 2026-11-10): the work Lincoln does should match a top immigration lawyer's
   work product. It never presents itself as a lawyer; a licensed lawyer reviews and signs.
 
