@@ -1,5 +1,9 @@
 # Where things stand (read this at the start of every session)
 
+**Lincoln stopped (2026-11-11).** It failed the pass bar agreed before the final test. Do not reopen it
+unless Ismael asks. Use the blind test method (`demo/`) as a one day filter for any next idea: if plain
+Claude or ChatGPT does the job about as well, drop the idea.
+
 Last updated 2026-11-11. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.
 

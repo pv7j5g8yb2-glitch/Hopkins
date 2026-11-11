@@ -501,3 +501,26 @@ figure.
   Haiku 5.5 $0.10 / $0.50, Fable 5.2 $8 / $40. Fable 5.2 is not available under zero data retention
   unless Anthropic authorises it, which matters for a privacy promise to lawyers. Opus 5.5 effort
   defaults to medium on the API, so set it explicitly.
+
+## Harvey founders' AMA on r/legaltech (pasted 2026-11-11, about six months old)
+
+* Early days: "Linkedin messaged everyone. tbh [no] one really responded until A&OS press." First
+  customer intro came from an investor. Best demo: take something a litigator filed in court and have
+  Harvey argue against it live, "People REALLY paid attention if it was their own work." Seed from
+  OpenAI with no revenue; not profitable. About $300M ARR at the time (May 2026); 1T tokens in January
+  to 12T+ in May after moving to cloud agents.
+* Their case against plain Claude ("Claude for Legal", Cowork): law firms cannot use desktop apps with
+  client data; they need ethical walls, retention, governance, audit, multi model routing, DMS
+  integrations (iManage, NetDocs), client collaboration, 24/7 support and training. In short: enterprise
+  infrastructure and service, not better drafting.
+* Lawyer pushback: "Why should a 20-lawyer firm pay you guys $100k a year when they can do similar
+  things with a $20/month/user Claude account?" (no answer). A firm librarian: results unreliable, every
+  answer has to be verified, so work is done twice. A European firm: output too American.
+* Small firms and solos feel ignored: an in-house team never got a demo reply; a solo asks whether Harvey
+  will ever serve solos; Harvey says "hope to support small teams and solos very soon". A three person
+  firm did get flexible terms at a premium price.
+* Harvey's view of where vertical companies win: making review of AI output easy in their domain, and
+  domain benchmarks and evals.
+* Read against our test: plain Claude already drafts at about the level of a legal tool; what Harvey
+  sells on top is security, compliance, integrations and service, which a parent owned startup run by a
+  15 year old cannot credibly offer to firms.
