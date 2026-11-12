@@ -755,3 +755,18 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   supports: New Frontiers allows only one feasibility style support, and earlier feasibility money for
   the same project only keeps the stipend if it moves the project to a new stage.
 * Best use if ever taken: paying an immigration lawyer to review outputs, and an outside security review.
+
+## Small, non VC money open to Ismael now (checked 2026-11-12)
+* Emergent Ventures (Mercatus, Tyler Cowen): grants, no equity, applicants 13 or older, global, one
+  online form, reply in about a week (per a guide), amount not published and project specific. Teen
+  grantees aged 16 and 17 in the 58th cohort (Aug 2026).
+* 1517 Fund Medici grant: $1,000, no strings, for high school students, college students and
+  dropouts on ambitious projects; rolling applications by email.
+* Patch (Dublin, ages 16 to 21): summer programme early July to mid August, full time, accommodation,
+  meals and a needs based stipend; 2027 applications likely close early March; grants open all year
+  (amounts not found).
+* Running cost credits: Anthropic's Claude for Startups page says the cohort is full and closed to new
+  applications (as of 30 Oct 2026). AWS Activate Founders gives $1,000 to self funded companies with a
+  website; whether it covers Claude on Bedrock is not confirmed.
+* None of these is VC, so the "no VC before revenue" rule does not block them. Grants to a minor
+  would likely be paid through a parent. They cover building and running costs, not real ad budgets.
