@@ -842,3 +842,15 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
 * Price gap: Lincoln at $199 to $299 a user is about 2 to 4 times Docketwise and far above ICM Desk.
   At the BLS median legal services paralegal wage ($61,770, about $29.70 an hour), $249 a user equals
   about 8.4 paralegal hours a month: the minimum saving per user Lincoln must prove.
+
+## Filevine and "autonomous software" (LinkedIn post 30 Oct 2026, pasted by Ismael; checked 2026-11-12)
+* CEO Ryan Anderson at LEX Summit: "2027 will be the year of autonomous software." "Agents wait for
+  you to ask, to prompt, but autonomous agents notice." LOIS reads a motion arriving in Outlook (via a
+  Filevine Outlook MCP), LOIS for Word drafts the opposition from the firm's past cases in its own
+  pleading format, and a task waits in Filevine for review. "Work that starts before you ask, built on
+  the structured case data your firm already runs on."
+* Filevine: $400M financing in Sept 2025 including a $260M Series E, valuation about $3B (aggregators,
+  disputed). Has an immigration product, "ImmigrationAI"; immigration workflows billed on usage
+  (Sacra). Acquired Pincites in Jan 2026 for LOIS for Word.
+* Read for Lincoln: "starts before you ask" is becoming standard in 2027, not a differentiator; it also
+  confirms that the autonomy is built on owning the firm's case data.

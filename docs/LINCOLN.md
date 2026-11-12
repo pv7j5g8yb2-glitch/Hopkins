@@ -225,6 +225,13 @@ works with LexisNexis; CoCounsel is Thomson Reuters). Immigration law is mostly 
 USCIS Policy Manual, AAO and BIA decisions), so the database gap is small now and matters when
 expanding into litigation heavy areas.
 
+## Importing from other software (Ismael decided 2026-11-12)
+Docketwise lives inside Lincoln, never Lincoln inside Docketwise. Importing is a switching tool in
+setup and settings, not a connector on the main screens (like the optional CRM step in old Hopkins).
+Sources: Docketwise through its API (access granted on request, so it can be refused or withdrawn),
+plus LollyLaw, INSZoom, eImmigration and Clio through their exports or a CSV, and plain folders of
+documents. Optional: keep the old system in sync for a few weeks so a firm can move case by case.
+
 ## Working together on a case (proposed 2026-11-12)
 
 How others do it (their own pages): Harvey "Shared Spaces" (March 2026) share Vaults, workflows and
