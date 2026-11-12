@@ -17,11 +17,11 @@ says 2027 is the year of autonomous software. Lincoln wins on these together:
 1. **It runs the case.** It notices what each case needs and acts within rules the firm sets.
 2. **It goes deep where cheap tools are shallow.** Evidence heavy cases first (O-1, EB-1A, NIW): it
    checks whether each piece of evidence really supports each claim and catches contradictions.
-3. **It shows the time it saves (estimate, method shown).** Every action Lincoln completes (a document
-   chased, an email filed, a letter drafted, a packet assembled) is counted and multiplied by minutes
-   per task that the firm sets once, with sensible defaults. Plus time from case opened to filed,
-   against the firm's own earlier cases. Always labelled an estimate. $249 a user is about 8.4
-   paralegal hours a month at the US median wage.
+3. **It shows the time it saves, quietly.** Every action Lincoln completes is multiplied by a
+   standard time for that task, set by us, never asked of the firm. The standard times come from
+   published research where it exists, then the immigration lawyer adviser's estimates, then Lincoln's
+   own measurements once firms use it. Always labelled an estimate. Shown only in a "Lincoln report"
+   in the menu, like Apple's Screen Time, plus an optional weekly summary; never in replies.
 4. **It connects to the tools the firm already uses** (integrations directory below).
 
 Accuracy (Ismael, 2026-11-12): not a selling badge and never a "this case is inaccurate" label in the
@@ -29,6 +29,15 @@ product. Inside the product, Lincoln only shows the lawyer what needs checking. 
 often facts, citations and flags were right on made up test cases with answer keys) is a release gate
 and proof for VCs and for firms that ask. Lawyers do care: courts have sanctioned lawyers for filing
 AI invented citations (Mata v. Avianca, S.D.N.Y. 2023, $5,000).
+
+## Onboarding (Ismael, 2026-11-12): no questions to answer
+
+Sign in with the work Microsoft or Google account, invite colleagues, open a case. Nothing else.
+* Lincoln starts with safe default rules: it prepares everything, chases documents with standard
+  reminders, and sends nothing legal or nothing to a client or referee without approval.
+* It learns from approvals instead of asking: after a user approves the same kind of message a few
+  times, Lincoln offers once, "Send these automatically from now on?", one tap to accept.
+* Every rule can be changed later in settings. Nobody has to set times, rules or templates to start.
 
 ## Integrations directory (Ismael, 2026-11-12)
 
