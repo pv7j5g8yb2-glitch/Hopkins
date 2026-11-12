@@ -54,6 +54,43 @@ The chat box exists for questions, but Lincoln's core work never needs a prompt.
 Note: reading Gmail at scale needs Google's security assessment and Outlook needs Microsoft
 verification; a small pilot can run before that.
 
+## Who works on what (proposed 2026-11-12)
+
+Lincoln builds each person's "My work" on its own, from signals it already has:
+* who the case is assigned to in Lincoln, and who is attorney of record on the G-28;
+* whose inbox the client, referees and USCIS write to, and who is copied;
+* whose calendar has the consultation or interview;
+* who opened, edited or approved the case's work most recently.
+When the signals disagree, it asks once ("Is this Maria's case?") with one tap. Each person sees only
+their cases and their next actions; the managing attorney sees everyone's.
+
+## Approvals: few, and fast to review (proposed 2026-11-12)
+
+Only these ever need a person: anything signed, filed or sent to USCIS, a court or a consulate; legal
+strategy and eligibility conclusions; anything that is legal advice to a client; fee agreements;
+responses to RFEs and notices; conflicts Lincoln could not resolve. Everything else runs on its own:
+reminders, document requests, filing mail, scheduling, status updates from approved wording, forms
+filled from approved facts.
+
+Notifications: approvals collect in one queue with a daily summary; a phone notification only when a
+deadline is close.
+
+Review in minutes, not a re-read:
+* **Decide, don't proofread.** Before writing a long letter, Lincoln turns every judgement into a short
+  question with the evidence attached ("Claim the Protein Innovators Prize under awards? 612
+  nominations from 41 countries, panel of 12. Yes, no or change"). The lawyer answers the questions;
+  Lincoln writes from the answers, so the finished letter holds no unseen judgement calls.
+* **Colour by risk.** Facts checked against their source page are green, arguments and judgement are
+  amber, conflicts and missing evidence are red. The lawyer reads amber and red; green is checked by a
+  second, separate pass.
+* **Source in place.** Hovering a fact shows the cropped piece of the page it came from. No opening
+  PDFs.
+* **Only what changed.** For repeat documents, Lincoln shows only the differences from the last
+  approved version or the firm's template.
+* **One screen first.** Every approval opens on a brief: the decision in one sentence, what Lincoln is
+  least sure of, and what happens if it is wrong.
+The attorney still owns the result (ABA Formal Opinion 512); the aim is less reading, not less care.
+
 ## Integrations directory (Ismael, 2026-11-12)
 
 A directory page inside Lincoln, like Harvey's connector library (Harvey lists Word and Outlook
