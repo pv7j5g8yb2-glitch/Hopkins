@@ -22,6 +22,16 @@ Ismael's requirements so far:
 Unsolved: how firms find it without cold outreach, calls or personal content. Proposed first step,
 waiting for his yes: a demo on the made up Halasz case with fake email and a fake USCIS feed.
 
+Honest assessment (2026-11-12, Claude): as things stand, Lincoln autopilot is unlikely to reach
+$100k a month profit by about November 2031; about 5 percent, a guess. The deciding factor is reaching
+firms, not the product. Main reasons against: no way to reach small firms under the current rules,
+funded incumbents moving the same way (Clio Work agents, Harvey and Legora, Parley, Visalaw, AI native
+immigration firms such as Manifest and LegalOS), better general AI with connectors eating the gap, and
+trust in a hidden teenage founder with no lawyer behind it. For it: a real market of small firms that
+Harvey and Legora price out, the per case AI model already proven in personal injury (EvenUp, Eve),
+low AI cost per case, and little cost of failing at 15. What would change the odds most: an adult
+immigration lawyer as co-founder or partner, and a demo that clearly beats plain Claude plus Clio.
+
 ## Ruled out (2026-11-11)
 
 Audience first (posting the story of building and testing ideas): rejected by Ismael. Do not suggest again.
