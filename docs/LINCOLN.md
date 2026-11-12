@@ -106,6 +106,21 @@ salesperson and a stand at the AILA conference.
   about 31 such firms would reach the roughly $133k a month revenue behind $100k profit (at 75 percent margin), against about 445 seats
   at $300. Case volume per firm is unknown.
 
+### Who pays and margin (2026-11-12)
+* Buyer: the firm, never an individual lawyer or paralegal inside it. Lincoln uses the firm's email,
+  case software and client data, so only the firm can authorise it and sign the data agreement. A
+  solo lawyer is the firm. (Ismael noted earlier, from the Legora interview, that selling to lawyers
+  one by one does not work in legal.)
+* The firm pays a monthly fee plus a fee per case run to filing.
+* Margin target (Ismael): at least 70 percent. Estimate, not measured: one O-1 case like Halasz
+  (52 pages) through four passes on Claude Opus 5.5 ($4 input, $20 output per million tokens, cache
+  reads $0.20) is roughly $5 of model cost; the whole case life (uploads, chasing, RFE, status checks
+  on Claude Haiku 5.5 at $0.10 and $0.50) roughly $10 to $25. Against $150 to $300 a case that is a
+  gross margin around 85 to 95 percent on cases. Risk: a flat monthly fee with unlimited heavy use
+  would eat margin, which is why the per case part stays. Measure real token use on the Halasz demo
+  before trusting any of this. Gross margin is not profit: salaries, security audits and sales come
+  out after it.
+
 ## Not decided
 
 * Price figures (structure proposed above).
