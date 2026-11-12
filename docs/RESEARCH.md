@@ -697,3 +697,31 @@ prompted, so no one can call it a wrapper. Findings:
   decisions; 4,549 EB-1A, 286 O-1A); a community dataset exists on Hugging Face.
 * Not found anywhere: a tool that contacts third parties itself (referees for letter sign off,
   translators) and runs a case over months from signed retainer to decision. Unverified that none does.
+
+## Everything a US immigration firm does (reference map, 2026-11-12, from general knowledge of the field)
+Firms usually specialise: business immigration (employers pay, higher fees, deadline heavy) or
+family, humanitarian and removal defence (individuals pay, lower fees, higher volume). Many small
+firms mix the second group.
+* Temporary work visas: H-1B (cap registration, petitions, extensions, transfers, amendments), L-1A
+  and L-1B (including blanket L), O-1A and O-1B, TN, E-1, E-2, E-3, H-1B1, H-2A and H-2B, P, R-1,
+  J-1 and its waivers, advice on F-1 OPT and STEM OPT.
+* Employment green cards: PERM labour certification (prevailing wage, recruitment, ETA-9089), I-140
+  (EB-1A, EB-1B, EB-1C, EB-2, EB-2 NIW, EB-3), I-485 or consular processing, work permit and advance
+  parole, Visa Bulletin priority date tracking, job portability. EB-5 investor petitions.
+* Employer compliance: LCAs and public access files, I-9 and E-Verify audits, site visits, layoffs
+  and grace periods, mergers and acquisitions due diligence, tracking every employee's expiry dates.
+* Family: I-130, K-1 fiancé visas, adjustment of status with I-864, removal of conditions (I-751),
+  consular processing, waivers (I-601, I-601A, I-212), VAWA.
+* Citizenship and green card upkeep: N-400, N-600, I-90, re-entry permits.
+* Humanitarian: asylum (affirmative and in court), withholding and CAT, I-730, TPS, DACA renewals,
+  U visas, T visas, SIJS.
+* Court and appeals: removal defence in immigration court (hearings, cancellation of removal, bond),
+  motions to reopen, BIA appeals, federal court (petitions for review, habeas, mandamus suits for
+  delayed cases), AAO appeals and I-290B motions, RFE and NOID responses, FOIA requests for a
+  client's record, advice to criminal defence lawyers on immigration consequences.
+* Running the practice: consultations and intake, conflict checks, engagement letters, flat fee
+  billing and trust accounting, multilingual client updates, translations, document collection,
+  forms, fees and filing, receipts, biometrics and interview prep, case status, policy changes.
+Read for Lincoln: the legal content differs by case type, but the engine (intake, chasing documents
+and third parties, translations, forms, dates, USCIS status, RFEs) is shared by nearly all of them.
+Court appearances need a lawyer in the room; Lincoln could only prepare for them.
