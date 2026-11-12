@@ -94,32 +94,23 @@ salesperson and a stand at the AILA conference.
   priced for a small firm. Risk: any of them can add this. The defence is focus, a tested library for
   every case type, connections to immigration software and outcome data that grows with use.
 
-## Pricing (Claude's call 2026-11-12, Ismael to confirm; figures untested)
+## Pricing (Ismael decided 2026-11-12: one fixed monthly fee, unlimited use, no per case fee)
 
-* Sell to the firm. A solo lawyer is a firm of one. No separate plan for individual lawyers.
-* Not per seat. Everyone at the firm uses Lincoln free (lawyers, paralegals, assistants), because the
-  engine works across the whole firm and seat pricing charges less the more work Lincoln removes.
-* A monthly firm fee for the engine on every case, the assistant and dates, plus a fee per case that
-  Lincoln runs to filing. Immigration firms charge clients a flat fee per case, so a per case cost is
-  easy for them to price in. Working guesses to test: $299 a month and $150 to $300 a case.
-* Illustration only: a firm running 20 cases a month at $200 a case pays about $4,300 a month, so
-  about 31 such firms would reach the roughly $133k a month revenue behind $100k profit (at 75 percent margin), against about 445 seats
-  at $300. Case volume per firm is unknown.
-
-### Who pays and margin (2026-11-12)
-* Buyer: the firm, never an individual lawyer or paralegal inside it. Lincoln uses the firm's email,
-  case software and client data, so only the firm can authorise it and sign the data agreement. A
-  solo lawyer is the firm. (Ismael noted earlier, from the Legora interview, that selling to lawyers
-  one by one does not work in legal.)
-* The firm pays a monthly fee plus a fee per case run to filing.
+* Buyer: the firm, never an individual inside it. Lincoln uses the firm's email, case software and
+  client data, so only the firm can authorise it and sign the data agreement. A solo lawyer is the
+  firm. (Ismael, from the Legora interview: selling to lawyers one by one does not work in legal.)
+* One fixed monthly fee, unlimited cases and unlimited use. No per case fee: charging for each case
+  feels like paying extra for Lincoln doing its job.
+* Proposed: the fee is per lawyer at the firm, with paralegals and staff free, because a firm's case
+  load grows with its number of lawyers. Working figure $299 per lawyer a month (untested).
 * Margin target (Ismael): at least 70 percent. Estimate, not measured: one O-1 case like Halasz
   (52 pages) through four passes on Claude Opus 5.5 ($4 input, $20 output per million tokens, cache
-  reads $0.20) is roughly $5 of model cost; the whole case life (uploads, chasing, RFE, status checks
-  on Claude Haiku 5.5 at $0.10 and $0.50) roughly $10 to $25. Against $150 to $300 a case that is a
-  gross margin around 85 to 95 percent on cases. Risk: a flat monthly fee with unlimited heavy use
-  would eat margin, which is why the per case part stays. Measure real token use on the Halasz demo
-  before trusting any of this. Gross margin is not profit: salaries, security audits and sales come
-  out after it.
+  reads $0.20) is roughly $5 of model cost; a whole case life (uploads, chasing, RFE, status checks on
+  Claude Haiku 5.5) roughly $10 to $25. At $299 per lawyer, 70 percent margin holds while a lawyer's
+  cases cost under about $90 a month, so about 4 to 9 cases a month at those estimates, more if the
+  real cost is lower. Cases per lawyer per month is unknown. Measure real token use on the Halasz
+  demo; if heavy users break the margin, raise the price or add a fair use limit, not a per case fee.
+* Gross margin is not profit: salaries, security audits and sales come out after it.
 
 ## Not decided
 
