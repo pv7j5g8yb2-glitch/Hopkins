@@ -854,3 +854,17 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   (Sacra). Acquired Pincites in Jan 2026 for LOIS for Word.
 * Read for Lincoln: "starts before you ask" is becoming standard in 2027, not a differentiator; it also
   confirms that the autonomy is built on owning the firm's case data.
+
+## How legal software got firms to switch (checked 2026-11-12)
+* Harvey: Allen & Overy trialled it in beta from Nov 2022; about 3,500 lawyers asked around 40,000
+  queries; firm wide rollout across 43 offices announced Feb 2023. Harvey did not replace any system:
+  it sat beside Word and the document system. Onboarding is staffed by former lawyers ("legal
+  engineers") and forward deployed engineers who run training and adoption; Sacra estimates about 10
+  percent of staff are ex lawyers (unverified).
+* Legora: pilots then firm wide rollouts (Mishcon de Reya); projects link to iManage matters.
+* Clio (a real switch of case software): free data migration for many common systems, including
+  spreadsheets and paper; past "Break Free" offer of up to 6 months free to cover a firm's remaining
+  contract with its old vendor (ended 30 June 2024). Paralegals warn to check documents are included.
+* Read for Lincoln: Harvey and Legora were additions, not switches. Lincoln asks for a switch, so it
+  needs Clio style help: done for you migration, documents included, new cases first, old contract
+  covered.

@@ -231,6 +231,9 @@ setup and settings, not a connector on the main screens (like the optional CRM s
 Sources: Docketwise through its API (access granted on request, so it can be refused or withdrawn),
 plus LollyLaw, INSZoom, eImmigration and Clio through their exports or a CSV, and plain folders of
 documents. Optional: keep the old system in sync for a few weeks so a firm can move case by case.
+Proposed switch plan (from how Clio does it): Lincoln does the migration for the firm, documents
+included; new cases start in Lincoln while old ones finish where they are; months free to cover the
+firm's remaining contract with its old vendor; a person runs onboarding and training.
 
 ## Working together on a case (proposed 2026-11-12)
 
