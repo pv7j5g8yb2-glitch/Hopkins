@@ -88,7 +88,7 @@ marked by effort:
 * **Three pricing tiers, enterprise options, extra channels, other practice areas:** after the raise.
 * **Sitting with firms to observe them:** against Ismael's rules. Lawyers judge finished work instead.
 
-## Build order for the demo (made up cases only)
+## Build order for the demo (built and tested on made up cases)
 
 1. **Case and evidence core.** Load the Halasz bundle (52 pages, scans, spreadsheet): document list,
    facts with source pages, conflicts as issues, evidence graded against each O-1A criterion, filing
@@ -102,7 +102,8 @@ marked by effort:
 4. **The numbers.** Run Varga and Halasz plus one new made up case through Lincoln and through plain
    Claude, judged blind as before: error rate by type, time, and AI cost per case.
 5. **Ready for one lawyer to try.** Logins, roles, each firm's data separate and encrypted, the
-   action record. The lawyer runs Lincoln on made up cases and gives written feedback.
+   action record, the integrations marked "Now", and the security minimum below. The lawyer uses
+   Lincoln on real cases and gives written feedback.
 
 Real cases (Ismael, 2026-11-12): the trial lawyer is encouraged to use Lincoln on real cases, once
 this security minimum is in place:
