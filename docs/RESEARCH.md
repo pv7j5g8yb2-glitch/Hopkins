@@ -770,3 +770,17 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   website; whether it covers Claude on Bedrock is not confirmed.
 * None of these is VC, so the "no VC before revenue" rule does not block them. Grants to a minor
   would likely be paid through a parent. They cover building and running costs, not real ad budgets.
+
+## Pasted Google AI list of no equity grants, checked 2026-11-12 (each site fetched)
+* Fit Lincoln now: Solo Grants ($100 to $1,000 sized to a budget, any age, anywhere, no equity;
+  merge.club redirects to it), Bagel Fund (501(c)3, $100 to $500, reply within 48 hours), Inflection
+  Grants (Edge City with Long Journey Ventures, $2,000, under 25), 1517 Medici ($1,000), Magnificent
+  Grants ($10,000+ over two years, under 25, rolling, about one grantee a month, written application
+  then in person interviews, no equity, no product needed), plus Emergent Ventures (above).
+* Bigger: Thiel Fellowship is now $250,000 over two years, 22 or under with no degree, no minimum age
+  stated, no equity, but fellows must leave school if selected. O'Shaughnessy (OSV) Fellowships up to
+  $100,000 equity free, 2026 applications closed 30 April; site says "open to adults" but mentions a
+  13 year old applicant.
+* Not for Lincoln: 776 Fellowship (climate, 18 plus), Unitary Fund (quantum), Impetus (longevity),
+  NLnet (open source internet), ACX and Manifund (public goods, AI safety), Awesome Foundation
+  (community ideas).
