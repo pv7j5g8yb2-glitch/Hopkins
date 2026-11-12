@@ -112,6 +112,40 @@ salesperson and a stand at the AILA conference.
   demo; if heavy users break the margin, raise the price or add a fair use limit, not a per case fee.
 * Gross margin is not profit: salaries, security audits and sales come out after it.
 
+## How to explain Lincoln to a lawyer (draft 2026-11-12; only say it once every line is true)
+
+**What it is.** Lincoln runs your immigration cases from the day the client signs to the day USCIS
+decides. You review and sign. Lincoln does the rest.
+
+**What happens on a case.** You open the case. Lincoln emails your client, in their language and in
+your firm's name, with a checklist for their case type, reads every document as it comes in and tells
+them straight away what is missing or unusable. It drafts the referee letters, sends them out to edit
+and sign, and follows up until they are back. It arranges translations. It checks the evidence against
+the rules for that case type and tells you what it would claim, what it left out and why. It drafts the
+forms, the letter, the exhibit index and a list of risks, as Word files. You review, change what you
+want, and approve. After filing it watches USCIS, and the day an RFE arrives you already have a draft
+response and the client already has a list of what is needed. It watches every date on every case.
+
+**Why you would care.** Your time goes on the legal judgement, not on chasing people and assembling
+paper. Nothing slips because a date was missed. You can take on more cases without hiring.
+
+**Why you can trust it.**
+* Nothing goes out in your name without your approval or rules you set.
+* Every fact in a draft cites the page it came from, so you can check any line in seconds.
+* It shows what it left out and why: a paid award, an unsigned draft letter, a figure that conflicts
+  with a dated document.
+* Before we say Lincoln handles a case type, it has passed a blind test against an answer key, and
+  the results are published.
+* Your data is walled off from every other firm, encrypted, never used for training, and deleted
+  when you say.
+* It is not a lawyer and never says it is. You are the lawyer.
+
+**Price.** One monthly fee per lawyer, staff free, unlimited cases.
+
+**Must be true before any of this is said:** the product built and working; each case type that is
+named passed its blind test; the security measures actually in place; a written data agreement the
+firm can sign.
+
 ## Not decided
 
 * Price figures (structure proposed above).
