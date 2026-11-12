@@ -868,3 +868,16 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
 * Read for Lincoln: Harvey and Legora were additions, not switches. Lincoln asks for a switch, so it
   needs Clio style help: done for you migration, documents included, new cases first, old contract
   covered.
+
+## Fundraising facts for the plan (checked 2026-11-12)
+* Sean Ellis test: ask active users how they would feel if they could no longer use the product;
+  40 percent or more "very disappointed" is the usual product market fit benchmark (secondhand,
+  correlation only; pair with retention). Superhuman went from 22 percent to 58 percent.
+* YC: Paul Graham (via Fortune, Sept 2025) said YC typically does not consider anyone under 18 who
+  cannot legally enter contracts. YC also has Early Decision for students.
+* a16z speedrun: up to $1M (reported $500k up front plus $500k follow on), no board seats, solo
+  founders can apply but teams preferred; SR007 closed 17 May 2026, SR008 deadline 1 Nov 2026.
+* Carta: solo founders were about 36 percent of new startups in 2025 but about 17 to 20 percent of
+  VC backed companies or rounds; solo led companies got 14.7 percent of priced round cash (2024).
+* Legal tech funding: record $4.6B in 2025 (Crunchbase); about $2.3B in Q1 2026, of which about 63
+  percent went to Relativity, Legora and Harvey (Legalcomplex).

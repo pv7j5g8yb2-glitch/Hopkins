@@ -42,6 +42,12 @@ cited claims and attorney approval at $6 to $16 a seat plus $80 a case, so "AI t
 immigration case" is not new. What is left as a possible edge: measured, published reliability (blind
 tests with answer keys) and execution quality. Details in `docs/RESEARCH.md`.
 
+Ismael's plan (2026-11-12): build the MVP with Claude Code; give it free to lawyers and paralegals;
+after 2 to 4 weeks ask how they would feel if it stopped; then apply to legal tech VCs and
+accelerators; grants if lucky. Claude's notes: never switch users off mid case (run the Sean Ellis
+question while it keeps running); finding the free users is the unsolved step; free use is not the
+revenue his own VC rule requires; YC typically will not take under 18s who cannot contract.
+
 ## Ruled out (2026-11-11)
 
 Audience first (posting the story of building and testing ideas): rejected by Ismael. Do not suggest again.
