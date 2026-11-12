@@ -15,8 +15,10 @@ Doing the work on its own is no longer enough: ICM Desk sells it for $6 to $16 a
 says 2027 is the year of autonomous software. Lincoln wins on these together:
 
 1. **It runs the case.** It notices what each case needs and acts within rules the firm sets.
-2. **It goes deep where cheap tools are shallow.** Evidence heavy cases first (O-1, EB-1A, NIW): it
-   checks whether each piece of evidence really supports each claim and catches contradictions.
+2. **It goes deep on every case type a firm takes** (Ismael, 2026-11-12: never only O-1, which is far
+   too small a market): family, employment, humanitarian, naturalisation, waivers and court work
+   preparation. It checks whether each piece of evidence supports each claim and catches
+   contradictions.
 3. **It shows the time it saves, quietly.** Every action Lincoln completes is multiplied by a
    standard time for that task, set by us, never asked of the firm. The standard times come from
    published research where it exists, then the immigration lawyer adviser's estimates, then Lincoln's
@@ -87,7 +89,7 @@ marked by effort:
   did, what needs a person today.
 * **The right models for each job:** the strongest model for legal reasoning and drafting, a cheap one
   for sorting and reminders. Keeps the cost per case low.
-* **First customers:** employment immigration firms of about 3 to 30 people.
+* **First customers:** immigration firms of about 3 to 30 people, whatever mix of cases they take.
 
 ## Kept from Claude's version, and why
 
@@ -111,6 +113,13 @@ marked by effort:
 * **Sitting with firms to observe them:** against Ismael's rules. Lawyers judge finished work instead.
 
 ## Build order for the demo (built and tested on made up cases)
+
+The engine (inbox, intake, chasing, documents, dates, USCIS, drafts, approvals) works for every case
+type from the start. Each case type also needs its own entry (forms, evidence, rules, deadlines from
+USCIS form instructions, the regulations and the Policy Manual), written for all the common types
+before any firm uses it. The demo video follows one case from start to finish because a video needs
+one story, not because Lincoln only does one kind of case.
+
 
 1. **Case and evidence core.** Load the Halasz bundle (52 pages, scans, spreadsheet): document list,
    facts with source pages, conflicts as issues, evidence graded against each O-1A criterion, filing

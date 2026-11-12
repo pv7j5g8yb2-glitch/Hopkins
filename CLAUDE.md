@@ -54,6 +54,13 @@ building in 2026, leave it out.
 being asked what he already answered, and at being told to talk to people without a reason. Give
 a straight answer first, then the reason. When he decides something, do it.
 
+**Lincoln facts not to get wrong again (Ismael, 2026-11-12).** Lincoln handles every immigration case
+type a firm takes; never propose an O-1 only product. Only call the market crowded or Lincoln's price
+high against a competitor that does at least 80 percent of what Lincoln does for less; compare price
+with the work saved, not with case software. Never assume most firms use Docketwise (its share is
+unknown). Never present a co-founder as an easy fix: it costs equity, a minor cannot hire, and the role
+is unclear.
+
 ## The project
 
 * **What it is:** a self serve AI workspace for immigration lawyers in the US (the law is federal,
