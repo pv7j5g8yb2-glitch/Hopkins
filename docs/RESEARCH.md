@@ -611,3 +611,30 @@ mergers, price hikes), because forced switching is the moment buyers look at alt
   speed, timing, the Thiel network and selling to a handful of labs. Expert data and RL environments
   are now crowded (Scale, Surge, Turing, Handshake, micro1, and YC F2026: Perit.AI, The Agentic Data Co.,
   Epsilab, Reific, SE3 Labs, Evident Machines). Buyers are a few labs, sold to by enterprise sales.
+
+## Toby Brown and Beem (researched 2026-11-12, from a pasted Google AI thread)
+
+* UK, from Twickenham, London. Coding from about 7 (Raspberry Pi, YouTube). Youngest member of Hack
+  Club's leadership team at 13 (Tech Funding News). Says he was an "average" student; left school
+  before his GCSEs and has no diploma (Business Insider essay, Oct 2025, syndicated on AOL).
+* Beem: described as an "AI native computer" that "handles all the boring stuff" (email, calendar,
+  files, travel). In the BI essay he says he "can't share too much" about it. No public launch, users
+  or revenue found in any source as of this research. SPC once listed Marc Porat (General Magic) next
+  to him on a Beem page that now returns 404; the relationship is not confirmed.
+* The "$1M raise" is South Park Commons' standard Founder Fellowship deal, not a negotiated round:
+  $400k upfront for 7 percent on a SAFE, plus $600k only when an outside investor leads his next
+  round (SPC blog, every cohort 2023 to 2026). He pitched London VCs in person in summer 2024, then US
+  VCs on Zoom; SPC over Zoom in November 2024. VC interest came from posting his progress on X (about
+  8,000 followers).
+* Moved to San Francisco in June 2025 on an O-1 after waiting months (BI says it verified the visa).
+  The thread's "youngest O-1A holder, at 15" is not confirmed by any source found; by the dates he
+  was 16 when approved.
+* Corrections to the thread: seed funding does not "automatically" meet the critical role criterion
+  (the role and the organisation's distinguished reputation must both be shown); "chief of staff AI"
+  is the thread's wording, not his.
+* Sigil Wen: 2025 Thiel Fellow from Toronto, built Extraordinary, an O-1 filing startup. No source
+  found on what he did for Toby beyond his own posts.
+* Read for Ismael: Toby's route was a personal audience (posting himself and his building on X) and
+  a fellowship application before any product or revenue. Both are outside Ismael's current rules
+  (nothing about him; no VC before revenue). SPC's fellowship is an application, so it falls under
+  the same open question as YC's.
