@@ -638,3 +638,20 @@ mergers, price hikes), because forced switching is the moment buyers look at alt
   a fellowship application before any product or revenue. Both are outside Ismael's current rules
   (nothing about him; no VC before revenue). SPC's fellowship is an application, so it falls under
   the same open question as YC's.
+
+## Pasted Google AI plan: "move to the US at 16 on an O-1" (2026-11-12), checked
+* Sound in outline: stay in school, get paying customers from home first, move only with money in the
+  bank and a visa approved, live inside a community (programme or founder house), not alone.
+* Wrong or risky for Ismael: it assumes legal AI at $199 to $299 a seat, which Lincoln's blind tests
+  stopped; "reach out to solicitors on LinkedIn" is cold outreach (ruled out); "SOC 2 readiness" is a
+  claim rule; youth awards, youth hackathon judging and Patch are weak O-1 evidence because USCIS
+  compares with the whole field, not with teenagers; O-1 criterion (B)(3) needs press about the
+  person, which clashes with the rule of nothing about him; there is no legal O-1 salary floor
+  (salary only matters for the high salary criterion and for living costs); Stanford Online High
+  School is selective and costly, not "easy".
+* Checked: the exhibition is now the Stripe Young Scientist & Technology Exhibition (Stripe took over
+  from BT in 2025, five year deal). California: education compulsory to 18, but a 16 or 17 year old
+  can be exempt with the CHSPE certificate and parental approval (Education Code 48410(e)). O-1 grace
+  period after the job ends: up to 60 days or until the validity ends, whichever is shorter
+  (8 CFR 214.1(l)(2)). Ireland: education is compulsory to 16 or three years of second level,
+  whichever is later (Education (Welfare) Act 2000).
