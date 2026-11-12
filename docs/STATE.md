@@ -31,6 +31,9 @@ trust in a hidden teenage founder with no lawyer behind it. For it: a real marke
 Harvey and Legora price out, the per case AI model already proven in personal injury (EvenUp, Eve),
 low AI cost per case, and little cost of failing at 15. What would change the odds most: an adult
 immigration lawyer as co-founder or partner, and a demo that clearly beats plain Claude plus Clio.
+If funded now (about $1.5M, sales team and ads): about 15 to 20 percent, a guess; reaching firms
+becomes solvable, while competition, small contracts, switching cost and AI labs remain. Peak funded
+version and timeline in `docs/LINCOLN.md`.
 
 ## Ruled out (2026-11-11)
 

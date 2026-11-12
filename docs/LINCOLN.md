@@ -123,6 +123,31 @@ salesperson and a stand at the AILA conference.
 * Every person has their own login, role (admin, lawyer, paralegal, assistant) and two step login.
   No shared logins: the record of who opened what only works per person, and firms need that record.
 
+## Peak version if funded now (proposed 2026-11-12, Ismael asked to assume the money exists today)
+
+Purpose sharpened: Lincoln becomes the immigration firm's case software itself (where every case,
+client, document, form, date and invoice lives) with the autopilot built in, instead of a layer on
+top of Docketwise, LollyLaw or Clio. Owning the system of record is what stops it being a wrapper and
+stops the case software companies from cutting it off. Firms switch by importing from their current
+software automatically. Drafting quality is not the point; everything around it is.
+
+Timeline assuming about $1.5M raised now (guesses):
+* Months 0 to 3: two or three engineers (one strong on security), a paid immigration lawyer adviser,
+  the engine and library entries for O-1, EB-1A, NIW and H-1B, the security basics, the demo.
+* Months 3 to 6: five to ten firms using it on real cases under a signed data agreement, measuring
+  time saved per case and errors against the lawyer's corrections. Start SOC 2.
+* Months 6 to 12: paid launch. One salesperson from legal software answering inbound demo requests,
+  Google search ads on what firms search for, LinkedIn ads by job title, the AILA annual conference.
+  Import from Docketwise and LollyLaw. Family cases next.
+* Months 12 to 24: most case types, SOC 2 report, outcome data, client portal; aim at the revenue a
+  Series A needs (often quoted at $1M a year or more, higher for AI companies).
+
+Hard maths: small firms mean small contracts (three users at $299 is about $10,800 a year), and a
+salesperson costs far more than that per year, so sales must come mostly from search, ads,
+the conference and referrals, with salespeople handling firms that ask for a demo. Firms of 5 to 25
+users are worth targeting first. About 450 users (for example 90 firms of 5) is the revenue level
+behind the goal.
+
 ## Working together on a case (proposed 2026-11-12)
 
 How others do it (their own pages): Harvey "Shared Spaces" (March 2026) share Vaults, workflows and
