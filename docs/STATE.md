@@ -4,8 +4,21 @@
 unless Ismael asks. Use the blind test method (`demo/`) as a one day filter for any next idea: if plain
 Claude or ChatGPT does the job about as well, drop the idea.
 
-Last updated 2026-11-11. `CLAUDE.md` holds the rules, this file holds the state. Update it when
+Last updated 2026-11-12. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.
+
+## Being explored: Lincoln autopilot (2026-11-12, not decided, nothing built)
+
+Idea: Lincoln runs each immigration case for the firm from signed engagement to decision (intake,
+chasing client documents, referee letters and translations, forms, petition, USCIS status, RFE
+responses, dates), sold to firms, everything sent in the firm's name, a lawyer reviews and signs.
+Ismael's requirements so far:
+* Sold to firms and lawyers, never finding clients ourselves (an AI law firm was rejected: trust).
+* Positioned as part of the firm, so it must work on every immigration case type the firm takes,
+  not a short list of visas (a narrow list reads as "not for us").
+* Extremely secure and private to each firm.
+Unsolved: how firms find it without cold outreach, calls or personal content. Proposed first step,
+waiting for his yes: a demo on the made up Halasz case with fake email and a fake USCIS feed.
 
 ## Ruled out (2026-11-11)
 
