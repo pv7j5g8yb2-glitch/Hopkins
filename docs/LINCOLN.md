@@ -123,6 +123,27 @@ salesperson and a stand at the AILA conference.
 * Every person has their own login, role (admin, lawyer, paralegal, assistant) and two step login.
   No shared logins: the record of who opened what only works per person, and firms need that record.
 
+## Working together on a case (proposed 2026-11-12)
+
+How others do it (their own pages): Harvey "Shared Spaces" (March 2026) share Vaults, workflows and
+work product with colleagues, clients and outside counsel, with guest accounts, scoped permissions
+and a log of every access. Legora shares projects with teammates (documents and tabular reviews;
+chat threads stay private), lets several people work in one tabular review (mark as reviewed, lock
+cells), and "Portal" gives clients a branded workspace with no licence and per item permissions.
+Docketwise and LollyLaw have tasks, messaging and client questionnaires.
+
+For Lincoln the unit is the case, not a project or a chat:
+* Everyone assigned to a case sees the same case: documents, drafts, what is waiting on whom, what
+  Lincoln did. Sensitive cases (asylum, VAWA, U and T visas) can be locked to named people.
+* Lincoln assigns each review step to the right person (paralegal checks documents, lawyer approves
+  the letter) and shows who owns what.
+* Comments and mentions on a draft, a page or an exhibit; edits in Word with tracked changes, since
+  lawyers finish in Word. No own document editor.
+* A case chat with Lincoln that the case team can see, plus private chats for anything else.
+* A secure, firm branded upload and signing page for clients and referees, opened from a link with a
+  check code, no account and no fee. Safer than passports as email attachments.
+* Not now: Harvey style shared spaces with outside counsel or company legal teams (big firm work).
+
 ## How to explain Lincoln to a lawyer (draft 2026-11-12; only say it once every line is true)
 
 **What it is.** Lincoln runs your immigration cases from the day the client signs to the day USCIS
