@@ -655,3 +655,32 @@ mergers, price hikes), because forced switching is the moment buyers look at alt
   period after the job ends: up to 60 days or until the validity ends, whichever is shorter
   (8 CFR 214.1(l)(2)). Ireland: education is compulsory to 16 or three years of second level,
   whichever is later (Education (Welfare) Act 2000).
+
+## "Proactive Lincoln with VC money": who already does it (researched 2026-11-12)
+Ismael's idea: an AI that knows when a lawyer gets a new case and does the whole job without being
+prompted, so no one can call it a wrapper. Findings:
+* Harvey and Legora both launched products called "Intake" in October 2026 (Legal Cheek, 14 Oct
+  2026). Both are for in house legal teams: an employee's request (Slack, email, Jira) triggers an
+  agent that chases missing information, routes the work and prepares it for a lawyer. Triggered by a
+  request, not by a new case at a law firm.
+* Clio Work (small and mid firms): synced to live matter data in Clio Manage, "proactively" surfaces
+  risks from notes, correspondence and court dates (Jan 2026); agentic "skills" that run multi step
+  tasks (Apr 2026); court eFiling from the matter (ClioCon 2026, rolling out Nov 2026). Company claims.
+  This is the closest thing to "acts on the case without a prompt".
+* Plaintiff side already works case file in, finished work out: EvenUp ($150M recurring revenue under
+  contract, company figure, Nov 2026; demand letters now under a quarter of it), Eve ($1B, Sept 2025,
+  about 2,000 firms), Supio (agentic platform and intake suite, May 2026).
+* Immigration: Parley has an RFE response builder (on request). Docketwise has "Docketwise IQ"
+  writing help; LollyLaw's site does not mention AI. No proactive immigration case agent found.
+* The bigger move: AI native law firms that sell the finished legal work, not seats. Manifest OS
+  ($60M Series A at $750M, April 2026, Menlo, Kleiner, First Round, Quiet; runs "Manifest Law" under
+  Arizona's ABS, focused on business immigration; fixed fee and outcome based pricing). LegalOS (YC,
+  launched Feb 2026; O-1, EB-1A, NIW, H-1B, L-1, TN; 24 agents, attorney reviews every filing;
+  "filing ready in 48 hours"; self reported 100 percent approvals "so far"). Others: Eudia (Arizona
+  ABS), Lawhive ($60M Series B, consumer), Justpoint (mass tort, Arizona ABS), Garfield (SRA, UK),
+  Superlegal (Utah sandbox), Crosby, Norm Law, Blackletter Legal ($6M seed, Nov 2026, through an MSO).
+* Read for Ismael: proactivity alone is not a moat (Clio ships it; Harvey and Legora can add a trigger).
+  What escapes "wrapper" is owning the system of record (Clio), outcome data (EvenUp) or the outcome
+  itself (AI native firm). The proactive version of Lincoln for business immigration already exists as
+  funded AI native firms. Selling the outcome to founders and companies also fits his reach rule
+  (buyers search and buy themselves), but needs licensed lawyers and an ABS or MSO structure.
