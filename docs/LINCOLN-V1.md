@@ -30,14 +30,27 @@ often facts, citations and flags were right on made up test cases with answer ke
 and proof for VCs and for firms that ask. Lawyers do care: courts have sanctioned lawyers for filing
 AI invented citations (Mata v. Avianca, S.D.N.Y. 2023, $5,000).
 
-## Onboarding (Ismael, 2026-11-12): no questions to answer
+## Onboarding and how Lincoln is proactive (Ismael, 2026-11-12): no questions to answer
 
-Sign in with the work Microsoft or Google account, invite colleagues, open a case. Nothing else.
-* Lincoln starts with safe default rules: it prepares everything, chases documents with standard
-  reminders, and sends nothing legal or nothing to a client or referee without approval.
-* It learns from approvals instead of asking: after a user approves the same kind of message a few
-  times, Lincoln offers once, "Send these automatically from now on?", one tap to accept.
-* Every rule can be changed later in settings. Nobody has to set times, rules or templates to start.
+1. Sign in with the work Microsoft or Google account and approve one permission screen (mail,
+   calendar, files). That single consent is what lets Lincoln watch instead of wait.
+2. Lincoln reads recent case related mail and files, or a Docketwise import, and shows the cases it
+   found ("14 active cases"). One tap to confirm.
+3. From then on it acts on events, not prompts:
+   * a new enquiry email: drafts the reply and booking;
+   * a signed engagement letter: opens the case, drafts the questionnaire and checklist;
+   * documents arriving: reads, files, sends back bad scans, flags conflicts;
+   * a referee silent for days: drafts the reminder;
+   * a USCIS notice scanned or emailed: sets every date;
+   * a Request for Evidence: draft response and client checklist ready the same day;
+   * every morning: the report of what moved, what is stuck and what needs a person.
+4. Safe defaults: nothing legal and nothing to a client or referee goes out without approval. After
+   a user approves the same kind of message a few times, Lincoln offers once to send those
+   automatically. Every rule can be changed later in settings; nobody has to set anything to start.
+
+The chat box exists for questions, but Lincoln's core work never needs a prompt.
+Note: reading Gmail at scale needs Google's security assessment and Outlook needs Microsoft
+verification; a small pilot can run before that.
 
 ## Integrations directory (Ismael, 2026-11-12)
 
