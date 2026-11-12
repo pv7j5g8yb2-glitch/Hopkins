@@ -68,9 +68,47 @@ USCIS decides, so the lawyer only reviews and signs. (Decided in substance, word
   two step login, a log of who opened what, no training on client data, real deletion, no client
   data in logs, data stored in the US. Made up cases only until security is reviewed.
 
+## The funded version (proposed 2026-11-12)
+
+What VC money buys, in order: the engine and case library for every immigration case type, each
+passing its blind test; connections to the firm's tools (Docketwise, LollyLaw, Clio, Outlook, Gmail,
+e-signing, a translation provider, the USCIS case status API); an outside security audit and SOC 2;
+the outcomes loop (which evidence wins, which draws RFEs, with each firm's permission); one adult
+salesperson and a stand at the AILA conference.
+
+## Why a firm picks Lincoln (proposed 2026-11-12, competitor facts from third party sources)
+
+* **Harvey and Legora:** built for big firms and in house teams; Harvey reportedly needs about 20
+  seats at about $1,200 a seat a month (unofficial). Their "Intake" products handle in house requests,
+  not immigration cases. Most immigration lawyers are solos or in firms of 2 to 5 (about 35 percent and
+  26 percent of AILA members, 2026 media kit).
+* **CoCounsel:** research and drafting tied to Westlaw, about $637 to $784 per user a month for firms
+  up to 10 attorneys (aggregators). Works when asked.
+* **Clio Work:** the closest on acting without a prompt, but general across all practice areas and
+  needs Clio Manage. Not built around USCIS, petitions and evidence.
+* **LegalFly:** in house corporate legal (contracts, due diligence); not immigration firms.
+* **Visalaw.ai and Parley:** immigration drafting on request (Visalaw about $220 a licence, $480
+  with 10 drafts a month; Parley a team licence reported from $500 a month). The lawyer still runs the
+  case: collects evidence, chases people, watches USCIS.
+* **Lincoln:** the only one found that runs the whole case (people, documents, USCIS, dates) and is
+  priced for a small firm. Risk: any of them can add this. The defence is focus, a tested library for
+  every case type, connections to immigration software and outcome data that grows with use.
+
+## Pricing (Claude's call 2026-11-12, Ismael to confirm; figures untested)
+
+* Sell to the firm. A solo lawyer is a firm of one. No separate plan for individual lawyers.
+* Not per seat. Everyone at the firm uses Lincoln free (lawyers, paralegals, assistants), because the
+  engine works across the whole firm and seat pricing charges less the more work Lincoln removes.
+* A monthly firm fee for the engine on every case, the assistant and dates, plus a fee per case that
+  Lincoln runs to filing. Immigration firms charge clients a flat fee per case, so a per case cost is
+  easy for them to price in. Working guesses to test: $299 a month and $150 to $300 a case.
+* Illustration only: a firm running 20 cases a month at $200 a case pays about $4,300 a month, so
+  about 40 such firms would reach the revenue behind $100k a month profit, against about 445 seats
+  at $300. Case volume per firm is unknown.
+
 ## Not decided
 
-* Price, and per case or per seat ($199 to $300 a seat mentioned earlier).
+* Price figures (structure proposed above).
 * How firms find Lincoln without cold outreach, calls or personal content. The biggest open problem.
 * Which parent or guardian owns the company; which immigration lawyer advises.
 * Model provider and data agreements.
