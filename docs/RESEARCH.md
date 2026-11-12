@@ -802,3 +802,9 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
 * Protections: standard documents (YC post money SAFE, NVCA models), the company's own startup lawyer,
   references from an investor's other founders, a parent involved, no signing under time pressure.
   A minor's shares are usually held by a custodian until 18; set up so they are legally his.
+
+## Free places lawyers look for software (checked 2026-11-12)
+* Legaltech Hub: free Basic listing, vendor account, reviewed by their curation team, live within
+  about 5 days; paid enhanced listings add screenshots and video.
+* LawNext Legal Technology Directory: basic listings free.
+* Stanford CodeX Tech Index lists legal tech companies (Visalaw and Parley are there).

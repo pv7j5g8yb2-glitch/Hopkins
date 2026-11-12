@@ -54,3 +54,10 @@ Delta Partners, NDRC (Dublin accelerator).
 
 No single list holds every VC. Free databases that filter by sector and stage: OpenVC and Signal by
 NFX. Crunchbase has the most data but is mostly paid.
+
+## Pre-seed programmes with an application form (checked 2026-11-12)
+* Conviction Embed (Sarah Guo's fund; Harvey's first customer intro came through her): about eight
+  weeks, roughly twice a year, solo founders allowed; $150k or $250k on an uncapped MFN SAFE plus
+  credits (sources disagree); the 6th cohort closed 23 Feb 2026, next window not found. Takes equity,
+  so the "no VC before revenue" rule applies.
+* YC ($500k) and South Park Commons ($400k plus $600k) as above.
