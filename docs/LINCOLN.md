@@ -103,7 +103,7 @@ salesperson and a stand at the AILA conference.
   Lincoln runs to filing. Immigration firms charge clients a flat fee per case, so a per case cost is
   easy for them to price in. Working guesses to test: $299 a month and $150 to $300 a case.
 * Illustration only: a firm running 20 cases a month at $200 a case pays about $4,300 a month, so
-  about 40 such firms would reach the revenue behind $100k a month profit, against about 445 seats
+  about 31 such firms would reach the roughly $133k a month revenue behind $100k profit (at 75 percent margin), against about 445 seats
   at $300. Case volume per firm is unknown.
 
 ## Not decided
