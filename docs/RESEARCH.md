@@ -822,3 +822,23 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   and May firm wide on Harvey; Hogan Lovells Cadwalader on Harvey. Many firms contract with both.
 * Immigration specialists: BAL markets its own immigration AI platform; nothing found on Fragomen using
   Harvey or Legora.
+
+## Direct immigration competitors to the autopilot (checked 2026-11-12, after a pasted outside review)
+* ICM Desk (ACFC Global LLC, Boynton Beach, Florida; icmdesk.com): "Case Agents" that work each step
+  with autonomy the firm sets (Suggest, With approval, Safe steps only), read and classify each upload,
+  draft from "playbooks written per visa type", "Every claim cites the source it came from", judgement
+  calls go to attorneys. Price: $6 to $16 a seat a month, one time per case fee from $80, AI at cost.
+  Vendor claims only; no independent reviews found. Closest thing to Lincoln found so far.
+* Docketwise (owned by MyCase, part of 8am): $80, $100, $120 a user a month yearly ($90, $120, $140
+  monthly); Pro and Advanced include "DocketWise IQ" AI writing and document assistance. Open API since
+  2020 (OAuth, access by request to dev@docketwise.com).
+* LegistAI: about $60 Standard, $70 Premium a user a month (aggregators, Sept to Oct 2026); USCIS form
+  automation, RFEs, client portal, billing; daily AI usage caps.
+* Prima.Law: core licence $49 yearly, $54 monthly a user; AI add ons priced separately.
+* INSZoom (Mitratech): Capterra lists from $250 a user a month (unverified).
+* AILA: "18,000+ U.S. lawyers" on its site; its 2026 media kit says 16,000.
+* Harvey (25 Mar 2026): over 25,000 custom agents, "most of the Am Law 100"; the "80 percent" figure
+  in the pasted review was not found.
+* Price gap: Lincoln at $199 to $299 a user is about 2 to 4 times Docketwise and far above ICM Desk.
+  At the BLS median legal services paralegal wage ($61,770, about $29.70 an hour), $249 a user equals
+  about 8.4 paralegal hours a month: the minimum saving per user Lincoln must prove.

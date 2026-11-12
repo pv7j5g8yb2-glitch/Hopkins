@@ -35,6 +35,12 @@ If funded now (about $1.5M, sales team and ads): about 15 to 20 percent, a guess
 becomes solvable, while competition, small contracts, switching cost and AI labs remain. Peak funded
 version and timeline in `docs/LINCOLN.md`.
 
+Outside review (2026-11-12, pasted from another AI, checked): rated the autopilot 3/10 for a VC and
+6/10 for a firm; Claude agrees. ICM Desk is confirmed to sell per visa playbooks, autonomy levels,
+cited claims and attorney approval at $6 to $16 a seat plus $80 a case, so "AI that runs the
+immigration case" is not new. What is left as a possible edge: measured, published reliability (blind
+tests with answer keys) and execution quality. Details in `docs/RESEARCH.md`.
+
 ## Ruled out (2026-11-11)
 
 Audience first (posting the story of building and testing ideas): rejected by Ismael. Do not suggest again.
