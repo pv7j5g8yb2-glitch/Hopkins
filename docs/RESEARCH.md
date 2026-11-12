@@ -784,3 +784,9 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
 * Not for Lincoln: 776 Fellowship (climate, 18 plus), Unitary Fund (quantum), Impetus (longevity),
   NLnet (open source internet), ACX and Manifund (public goods, AI safety), Awesome Foundation
   (community ideas).
+
+## Emergent Ventures application rule (official page, pasted 2026-11-12)
+* "Emergent Ventures no longer accepts AI-written applications. We will test all submissions and
+  reject those using AI for anything other than proofreading." Ismael must write it himself; Claude
+  may only proofread. One application per applicant and project. No feedback or status updates.
+* Focus: "zero to one" ideas that "meaningfully improve society"; minimum age 13.
