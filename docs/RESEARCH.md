@@ -589,3 +589,25 @@ mergers, price hikes), because forced switching is the moment buyers look at alt
 * Growth came from paying about 250 creators a fixed monthly fee to post on TikTok and Instagram; the
   first traction came from one paid story by a creator documenting weight loss. Brand and creator
   content, not the founders' faces, and no cold outreach.
+
+## Mercor (researched 2026-11-12)
+
+* Founders: Brendan Foody (CEO), Adarsh Hiremath (CTO), Surya Midha; school friends and debate team
+  partners at Bellarmine College Preparatory, San Jose, California. All three Thiel Fellows who left
+  college. Founded 2023 (some say 2022).
+* Started as a marketplace placing software engineers in India with US companies; built an AI
+  interviewer (about 20 minute structured video interviews) when manual matching could not scale;
+  then moved into supplying domain experts (engineers, doctors, lawyers and others) to AI labs for
+  training data and evaluations as lab demand surged.
+* Funding: seed about $3.6M led by General Catalyst (announced Jan 2024, some say 2023); Series A about
+  $30M to $32M led by Benchmark at about $250M (Sept 2024; Thiel, Dorsey, Summers named as angels in
+  some sources); Series B $100M led by Felicis at $2B (Feb 2025); Series C $350M led by Felicis at $10B
+  (Oct 2025, with Benchmark, General Catalyst, Robinhood Ventures); Series D $750M at $20B (announced
+  10 Nov 2026; Benchmark, Apollo funds, General Catalyst, NVIDIA, Salesforce, Zoom). Forbes: about
+  22 percent each, youngest self made billionaires at 22 (Oct 2025).
+* Revenue (gross, before 60 to 75 percent paid to experts): $100M run rate Mar 2025, $500M Sept 2025,
+  $1B early 2026, $2B June 2026 (company figures). About 91 percent from foundation model makers.
+* Read for Ismael: Mercor rode a sudden wave (labs needing expert data) with a marketplace; edge was
+  speed, timing, the Thiel network and selling to a handful of labs. Expert data and RL environments
+  are now crowded (Scale, Surge, Turing, Handshake, micro1, and YC F2026: Perit.AI, The Agentic Data Co.,
+  Epsilab, Reific, SE3 Labs, Evident Machines). Buyers are a few labs, sold to by enterprise sales.
