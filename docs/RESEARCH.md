@@ -790,3 +790,15 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   reject those using AI for anything other than proofreading." Ismael must write it himself; Claude
   may only proofread. One application per applicant and project. No feedback or status updates.
 * Focus: "zero to one" ideas that "meaningfully improve society"; minimum age 13.
+
+## Founder equity and control across rounds (2026-11-12, rules of thumb, not legal advice)
+* Typical dilution: YC about 7 percent plus its $375k SAFE converting later; employee option pool
+  about 10 percent; seed about 15 to 20 percent; Series A about 20 percent. A solo founder often holds
+  about half after Series A.
+* Control sits in the board and investor veto rights, not only share count; a board can replace the
+  CEO. Standard terms to expect: 1x non participating liquidation preference, four year founder vesting
+  with a one year cliff. Terms to refuse or question: more than 1x or participating preferences, full
+  ratchet anti dilution, investor board control at seed.
+* Protections: standard documents (YC post money SAFE, NVCA models), the company's own startup lawyer,
+  references from an investor's other founders, a parent involved, no signing under time pressure.
+  A minor's shares are usually held by a custodian until 18; set up so they are legally his.
