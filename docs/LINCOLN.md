@@ -101,16 +101,27 @@ salesperson and a stand at the AILA conference.
   firm. (Ismael, from the Legora interview: selling to lawyers one by one does not work in legal.)
 * One fixed monthly fee, unlimited cases and unlimited use. No per case fee: charging for each case
   feels like paying extra for Lincoln doing its job.
-* Proposed: the fee is per lawyer at the firm, with paralegals and staff free, because a firm's case
-  load grows with its number of lawyers. Working figure $299 per lawyer a month (untested).
+* The fee is per user (Ismael, 2026-11-12): everyone at the firm who uses Lincoln pays, lawyer or
+  not. Working figure $299 per user a month (untested).
 * Margin target (Ismael): at least 70 percent. Estimate, not measured: one O-1 case like Halasz
   (52 pages) through four passes on Claude Opus 5.5 ($4 input, $20 output per million tokens, cache
   reads $0.20) is roughly $5 of model cost; a whole case life (uploads, chasing, RFE, status checks on
-  Claude Haiku 5.5) roughly $10 to $25. At $299 per lawyer, 70 percent margin holds while a lawyer's
-  cases cost under about $90 a month, so about 4 to 9 cases a month at those estimates, more if the
-  real cost is lower. Cases per lawyer per month is unknown. Measure real token use on the Halasz
+  Claude Haiku 5.5) roughly $10 to $25. At $299 per user, 70 percent margin holds while the cases
+  each user works on cost under about $90 a month, so about 4 to 9 cases a month per user at those
+  estimates, more if the real cost is lower. Cases per user per month is unknown. Measure real token use on the Halasz
   demo; if heavy users break the margin, raise the price or add a fair use limit, not a per case fee.
 * Gross margin is not profit: salaries, security audits and sales come out after it.
+
+### Adding users (proposed 2026-11-12)
+* The person who signs the firm up does it with their work Microsoft or Google account (most firms
+  run on one of the two). Lincoln then offers to invite colleagues on the same firm email domain; they
+  join in one click with their own work account, and the admin approves each one.
+* Invite by email as the fallback for anyone without a work Microsoft or Google account.
+* Larger firms: single sign on (Okta, Microsoft Entra) and automatic adding and removing of users,
+  so a leaver loses access the day they leave.
+* Billing follows users: adding someone adds a seat for the rest of the month, removing them stops it.
+* Every person has their own login, role (admin, lawyer, paralegal, assistant) and two step login.
+  No shared logins: the record of who opened what only works per person, and firms need that record.
 
 ## How to explain Lincoln to a lawyer (draft 2026-11-12; only say it once every line is true)
 
@@ -140,7 +151,7 @@ paper. Nothing slips because a date was missed. You can take on more cases witho
   when you say.
 * It is not a lawyer and never says it is. You are the lawyer.
 
-**Price.** One monthly fee per lawyer, staff free, unlimited cases.
+**Price.** One monthly fee per person using Lincoln, unlimited cases.
 
 **Must be true before any of this is said:** the product built and working; each case type that is
 named passed its blind test; the security measures actually in place; a written data agreement the
