@@ -808,3 +808,17 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   about 5 days; paid enhanced listings add screenshots and video.
 * LawNext Legal Technology Directory: basic listings free.
 * Stanford CodeX Tech Index lists legal tech companies (Visalaw and Parley are there).
+
+## Harvey and Legora funding rounds (checked 2026-11-12; aggregator figures, some disputed)
+* Harvey: seed $5M led by OpenAI Startup Fund (Nov 2022); about $21M to $23M (Apr 2023); $80M at $715M
+  (Dec 2023, Elad Gil and Kleiner Perkins); $100M at $1.5B (Jul 2024); $300M at $3B (Feb 2025); $300M
+  at $5B (Jun 2025, Kleiner and Coatue); €50M from EQT (Oct 2025); $160M at $8B (Dec 2025, a16z);
+  $200M at $11B (Mar 2026, GIC and Sequoia); $550M at $15.5B (Sep 2026, Diffusion and Lightspeed).
+* Legora: seed about $10.5M (Benchmark, 2023 to 2024); Series A $25M (Jul 2024); B $80M at $675M
+  (May 2025, ICONIQ and General Catalyst); C $150M at $1.8B (Oct 2025, Bessemer); D $550M at $5.55B
+  (10 Mar 2026, Accel) plus $50M (Apr 2026); E $550M at $8.8B (21 Oct 2026, Atreides). Legora
+  reportedly $100M ARR in April 2026 (Sacra estimate).
+* Big Law adoption 2026: Baker McKenzie rolling out Legora; HSF Kramer uses Legora and Harvey; Slaughter
+  and May firm wide on Harvey; Hogan Lovells Cadwalader on Harvey. Many firms contract with both.
+* Immigration specialists: BAL markets its own immigration AI platform; nothing found on Fragomen using
+  Harvey or Legora.

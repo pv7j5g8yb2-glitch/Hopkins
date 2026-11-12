@@ -218,8 +218,12 @@ not name competitors in public posts; say "general legal AI" if needed.
 
 Never say until true: better writing than Harvey or Legora; "review in minutes" before it is
 measured; any security certificate; any number of firms, cases or approvals.
-Where Harvey and Legora stay stronger: research across all law, brand, security certificates, money.
-Lincoln does not compete there.
+Where Harvey and Legora are ahead today, and how Lincoln closes it: security certificates (SOC 2
+after the first raise; Type II needs months of observed operation), money (they started small too:
+Harvey $5M seed in 2022, Legora about $10.5M), brand (built later), and paid legal databases (Harvey
+works with LexisNexis; CoCounsel is Thomson Reuters). Immigration law is mostly public (INA, 8 CFR,
+USCIS Policy Manual, AAO and BIA decisions), so the database gap is small now and matters when
+expanding into litigation heavy areas.
 
 ## Working together on a case (proposed 2026-11-12)
 
