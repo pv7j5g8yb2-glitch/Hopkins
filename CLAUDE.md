@@ -104,7 +104,9 @@ a straight answer first, then the reason. When he decides something, do it.
   16 (verify): do not set up an account that pretends to be someone else.
 * **No fake identity, no fake founder, no fake lawyer.** The product is not a lawyer and never
   claims to be. Every output is for a licensed attorney to review. Say so plainly.
-* **No client files in testing.** Test only on public documents and made up cases.
+* **Client files (Ismael, 2026-11-12).** Lawyers testing Lincoln are encouraged to use it on real cases,
+  but only once the security minimum in `docs/LINCOLN-V1.md` is in place. Claude and Ismael build and
+  test on public documents and made up cases only.
 * **Security claims only if true.** No SOC 2, ISO or HIPAA badges until they exist. What can be
   said honestly: no training on customer data, a zero retention agreement with the model
   provider (only if actually signed), where data is stored, how to delete it.
