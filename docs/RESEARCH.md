@@ -743,3 +743,15 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   adult co-founder could apply for the company.
 * Taking it rules out some other state supports (PSSF cancels the allowance; only one of several
   feasibility style supports at a time); total funding over €100,000 removes the allowance.
+
+## Local Enterprise Office Feasibility Grant (pasted and checked 2026-11-12)
+* Up to 50 percent of eligible costs (60 percent in the BMW region), at most €15,000. So €15,000
+  needs €30,000 of spending in Dublin. Eligible headings: market research, consultancy, technical
+  development or prototype, salary or own labour, miscellaneous.
+* Business must be registered and operating in that LEO's area, at most 10 employees, manufacturing
+  or internationally traded services (software sold to US firms should fit), and must "demonstrate a
+  market". No age rule on the page; directors must be 18, so a parent's company would apply.
+* Payment method not stated on the page (check with the LEO). Taking it counts against later state
+  supports: New Frontiers allows only one feasibility style support, and earlier feasibility money for
+  the same project only keeps the stipend if it moves the project to a new stage.
+* Best use if ever taken: paying an immigration lawyer to review outputs, and an outside security review.
