@@ -9,7 +9,8 @@ anything here changes. The repo is public: never put passwords, keys or personal
 
 ## Being explored: Lincoln autopilot (2026-11-12, not decided, nothing built)
 
-Full draft definition: `docs/LINCOLN.md`.
+Full draft definition: `docs/LINCOLN.md`. The version to build now (demo, free pilot, first raise):
+`docs/LINCOLN-V1.md`.
 
 Idea: Lincoln runs each immigration case for the firm from signed engagement to decision (intake,
 chasing client documents, referee letters and translations, forms, petition, USCIS status, RFE

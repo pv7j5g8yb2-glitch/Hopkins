@@ -1,5 +1,8 @@
 # What Lincoln is (draft, 2026-11-12)
 
+**The plan being built now is `docs/LINCOLN-V1.md`; it wins where the two differ.** This file is the
+background and the longer term version.
+
 Nothing here is built. "Decided" means Ismael said it in conversation; "proposed" means Claude
 suggested it and he has not agreed yet. Update this file when either changes.
 
