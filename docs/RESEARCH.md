@@ -725,3 +725,11 @@ firms mix the second group.
 Read for Lincoln: the legal content differs by case type, but the engine (intake, chasing documents
 and third parties, translations, forms, dates, USCIS status, RFEs) is shared by nearly all of them.
 Court appearances need a lawyer in the room; Lincoln could only prepare for them.
+
+## Pre-seed money sizes (checked 2026-11-12)
+* US pre-seed (Carta, Q2 2026): $3.19B across over 11,500 SAFEs and notes; common round bands are
+  $250k to $1M and $1M to $2.5M; caps around $10M to $15M (2025 figures cited in 2026 guides).
+* Enterprise Ireland Competitive Start Fund: up to €50,000 equity per company (2026 rounds of €1m
+  each, All Sectors and Women Entrepreneurs); 10 percent equity per a third party listing, unverified.
+* YC standard deal: $500k ($125k for 7 percent plus $375k on an uncapped MFN SAFE). W27 deadline was
+  2 November 2026.
