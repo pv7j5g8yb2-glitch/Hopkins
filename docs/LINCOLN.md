@@ -185,6 +185,42 @@ the conference and referrals, with salespeople handling firms that ask for a dem
 users are worth targeting first. About 450 users (for example 90 firms of 5) is the revenue level
 behind the goal.
 
+## Positioning against Harvey and Legora (draft 2026-11-12; every line must be true before use)
+
+One line: Harvey and Legora help lawyers with legal work across every practice area. Lincoln runs
+immigration cases.
+
+The contrast, all checkable:
+* Built for: Harvey and Legora for large firms and in house legal teams, across every practice area.
+  Lincoln only for US immigration firms, which are mostly solos and firms of 2 to 5 lawyers (about 35
+  and 26 percent of AILA members, 2026 media kit).
+* How it works: Harvey and Legora mostly work when asked (assistant, document review, workflows;
+  their October 2026 "Intake" products route in house requests). Lincoln starts when a case is
+  assigned and runs it: clients, referees, translations, forms, USCIS, dates.
+* Where the hours go: in an immigration case most hours are chasing documents and people, forms and
+  deadlines, mostly paralegal work. General legal AI helps with the writing; Lincoln takes the rest.
+* Price and buying: Harvey reportedly needs about 20 seats at about $1,200 a seat a month (unofficial,
+  not published); Legora reportedly a 10 seat minimum. Lincoln: one monthly fee per user, no minimum,
+  sign up without a sales process.
+
+For firms (what they get): cases that move without anyone chasing; no missed dates; drafts that
+cite every page so review takes minutes; a price a three person firm can pay; built only for
+immigration.
+
+For VCs: Harvey and Legora are moving up market (big firms, in house teams). Thousands of small
+immigration firms are left with general tools or drafting add ons. Lincoln owns the case (it is the
+firm's case software with the work built in), which general tools do not, and the same model already
+worked for small personal injury firms (EvenUp, Eve). Why now: AI can act over weeks and the cost per
+case is a few dollars.
+
+For content: show, do not compare. A made up case running from signed client to filed petition. Do
+not name competitors in public posts; say "general legal AI" if needed.
+
+Never say until true: better writing than Harvey or Legora; "review in minutes" before it is
+measured; any security certificate; any number of firms, cases or approvals.
+Where Harvey and Legora stay stronger: research across all law, brand, security certificates, money.
+Lincoln does not compete there.
+
 ## Working together on a case (proposed 2026-11-12)
 
 How others do it (their own pages): Harvey "Shared Spaces" (March 2026) share Vaults, workflows and
