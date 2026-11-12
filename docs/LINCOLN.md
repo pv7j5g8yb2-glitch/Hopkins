@@ -25,6 +25,43 @@ USCIS decides, so the lawyer only reviews and signs. (Decided in substance, word
 * Not a wrapper: it acts over months, keeps the state of each case, works with other people and
   government systems, and learns from outcomes. Plain Claude cannot do that.
 
+## End to end: how a case really runs in a firm, and what Lincoln does (2026-11-12)
+
+Decided (Ismael): Lincoln is its own platform, not a layer on Clio or anyone else. It connects to each
+user's email and calendar. A one time import from the firm's old software is only for switching.
+
+| Step | In a firm today | Who | Lincoln |
+|---|---|---|---|
+| 1 Enquiry | Web form, referral, email or call | Intake staff | Logs it, drafts the reply and consultation booking for approval |
+| 2 Consultation | Eligibility talk, notes | Attorney | Prepares a one page brief beforehand, turns notes into a case plan |
+| 3 Engagement | Fee agreement signed, first payment | Attorney, admin | Drafts the agreement from the firm's template, sends it to sign |
+| 4 Case opened | Case created, attorney and paralegal assigned | Managing attorney | The moment it is opened or assigned, Lincoln starts. Each assignee is notified |
+| 5 Questionnaire and documents | Questionnaire and checklist sent; documents chased for weeks | Paralegal | Sends them in the client's language, reads each upload, sends back bad scans, chases on a schedule |
+| 6 Third parties | Referee and employer letters drafted, sent, chased; translations ordered | Paralegal | Drafts each letter, sends to edit and sign, chases, orders translations |
+| 7 Strategy | Which criteria to claim, what to leave out | Attorney | Proposes it with reasons and cited pages; attorney decides |
+| 8 Drafting | Forms, support letter, exhibit index | Paralegal, attorney | Drafts everything as Word files |
+| 9 Review and signatures | Attorney reviews; petitioner and client sign forms | Attorney, client | Review in summary form (below); collects signatures |
+| 10 Filing | Packet assembled, fees, mailed or filed online | Paralegal | Assembles the packet and the filing checklist |
+| 11 After filing | Receipt notice, case status, biometrics, RFE or NOID, approval | Paralegal, attorney | Reads notices as they arrive (scanned or online), tracks status, drafts the RFE response the same day |
+| 12 Next steps | Visa stamping abroad, extensions, green card steps | Attorney | Starts the next case and sets every future date |
+
+Email: Lincoln reads each user's inbox only for case related mail (client replies, documents, referee
+replies, USCIS emails), files it to the right case, and drafts replies. Users choose what it can see.
+
+Making review fast (lawyers on Reddit said reviewing AI can take as long as doing the work):
+* One approval card per decision: what Lincoln wants to do, why, and the source, with approve, edit
+  or reject in one tap.
+* Three levels: routine actions run on rules the firm sets once (reminders, chasing); outgoing
+  messages to referees and clients are approved in a batch; legal judgement and anything filed gets
+  the attorney's full review.
+* Facts are checked automatically against the documents (a second, separate check), and each one
+  links to the highlighted page. Drafts mark which sentences are judgement calls, so the attorney
+  reads those closely and spot checks the rest.
+* Changes between versions are shown side by side.
+* Notifications in the app, by email and on the phone, plus a daily summary.
+* Trust is measured, not claimed: Lincoln records how often lawyers change its drafts and shows the
+  firm that rate over time.
+
 ## What Lincoln does on a case (proposed)
 
 1. **New case.** Starts on its own when the firm opens a case in its case software, forwards a
@@ -71,8 +108,8 @@ USCIS decides, so the lawyer only reviews and signs. (Decided in substance, word
 ## The funded version (proposed 2026-11-12)
 
 What VC money buys, in order: the engine and case library for every immigration case type, each
-passing its blind test; connections to the firm's tools (Docketwise, LollyLaw, Clio, Outlook, Gmail,
-e-signing, a translation provider, the USCIS case status API); an outside security audit and SOC 2;
+passing its blind test; connections Lincoln itself needs (Outlook, Gmail, calendars, e-signing, a translation provider,
+the USCIS case status API) and a one time import from the firm's old case software; an outside security audit and SOC 2;
 the outcomes loop (which evidence wins, which draws RFEs, with each firm's permission); one adult
 salesperson and a stand at the AILA conference.
 
@@ -138,7 +175,7 @@ Timeline assuming about $1.5M raised now (guesses):
   time saved per case and errors against the lawyer's corrections. Start SOC 2.
 * Months 6 to 12: paid launch. One salesperson from legal software answering inbound demo requests,
   Google search ads on what firms search for, LinkedIn ads by job title, the AILA annual conference.
-  Import from Docketwise and LollyLaw. Family cases next.
+  One time import from Docketwise and LollyLaw for firms switching. Family cases next.
 * Months 12 to 24: most case types, SOC 2 report, outcome data, client portal; aim at the revenue a
   Series A needs (often quoted at $1M a year or more, higher for AI companies).
 
