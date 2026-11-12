@@ -684,3 +684,16 @@ prompted, so no one can call it a wrapper. Findings:
   itself (AI native firm). The proactive version of Lincoln for business immigration already exists as
   funded AI native firms. Selling the outcome to founders and companies also fits his reach rule
   (buyers search and buy themselves), but needs licensed lawyers and an ABS or MSO structure.
+
+## Immigration AI tools and data sources (checked 2026-11-12, for the "Lincoln autopilot" idea)
+* Drafting and case tools already selling to immigration firms: Parley (RFE response builder, receipt
+  tracking, a USCIS case status product in beta), Visalaw.ai (petition and recommendation letter drafts),
+  Inception, Lexfill, Neutrinet (missing evidence lists), Imagility (OCR to forms), US Immigration AI
+  (client portal with upload reminders), Docketwise IQ. Mostly vendor claims.
+* USCIS runs an official developer platform (Torch, developer.uscis.gov) with a Case Status API: OAuth
+  client credentials, sandbox first, production access requested separately. Eligibility for law
+  firm products not published.
+* AAO non precedent decisions are public on uscis.gov. MeritDraft already indexes them (says 25,777
+  decisions; 4,549 EB-1A, 286 O-1A); a community dataset exists on Hugging Face.
+* Not found anywhere: a tool that contacts third parties itself (referees for letter sign off,
+  translators) and runs a case over months from signed retainer to decision. Unverified that none does.
