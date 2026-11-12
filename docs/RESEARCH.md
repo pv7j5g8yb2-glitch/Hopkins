@@ -733,3 +733,13 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   each, All Sectors and Women Entrepreneurs); 10 percent equity per a third party listing, unverified.
 * YC standard deal: $500k ($125k for 7 percent plus $375k on an uncapped MFN SAFE). W27 deadline was
   2 November 2026.
+
+## Enterprise Ireland New Frontiers (pasted 2026-11-12)
+* Equity free programme run by technological universities in 18 locations. Phase 1 part time; Phase 2
+  full time for six months with a €15,000 tax free stipend, competitive entry; support valued at over
+  €40,000.
+* Applicants must be over 18 and based in Ireland. Ismael is not eligible until 18. A parent applying
+  in his place would be a fake founder (hard limit). Only one co-founder can take part, so a genuine
+  adult co-founder could apply for the company.
+* Taking it rules out some other state supports (PSSF cancels the allowance; only one of several
+  feasibility style supports at a time); total funding over €100,000 removes the allowance.
