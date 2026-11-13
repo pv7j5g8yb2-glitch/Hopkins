@@ -61,3 +61,16 @@ LLM_API_KEY=...
 LLM_BASE_URL=...   # the provider's OpenAI style address
 LLM_MODEL=...
 ```
+
+## Deploy on Render
+
+`../render.yaml` describes the service (name `lincoln`, so the address is `lincoln.onrender.com` if the
+name is free). Steps for the account holder (a parent or guardian):
+
+1. Create a Render account, then New, Blueprint, and connect the GitHub repository (branch
+   `claude/amazing-noether-92ry61`, or merge it to main first).
+2. When asked for `LLM_API_KEY`, paste the model key there. It is never stored in git.
+3. Deploy. The Starter plan and its 1 GB disk keep accounts and decisions between restarts.
+4. Sample pages ship in `seed/pages` (made up documents), so no extra build step is needed.
+
+Do not put real client files on this service until the security minimum in `../docs/LINCOLN-V1.md` is met.

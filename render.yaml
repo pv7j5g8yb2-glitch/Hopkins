@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: lincoln
+    runtime: node
+    rootDir: lincoln
+    plan: starter            # the free plan wipes the disk on every restart; Starter keeps it
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /signin
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DATA_DIR
+        value: /var/data
+      - key: LLM_BASE_URL
+        value: https://api.llmsrelay.com/v1
+      - key: LLM_MODEL
+        value: claude-opus-5-5
+      - key: LLM_API_KEY
+        sync: false          # entered in the Render dashboard, never in git
+    disk:
+      name: lincoln-data
+      mountPath: /var/data
+      sizeGB: 1

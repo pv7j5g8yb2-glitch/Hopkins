@@ -56,12 +56,15 @@ CREATE INDEX IF NOT EXISTS i_msg_firm ON messages(firm_id, at);
 
 const TABLES = ["sessions", "kv", "chat", "drafts", "messages", "approvals", "activity", "dates", "issues", "criteria", "documents", "cases", "users", "firms"];
 
+/** Where the database lives. On Render this is the persistent disk (DATA_DIR=/var/data). */
+export const dataDir = () => process.env.DATA_DIR || path.join(process.cwd(), "data");
+
 type G = typeof globalThis & { __lincolnDb?: Database.Database };
 
 export function db(): Database.Database {
   const g = globalThis as G;
   if (g.__lincolnDb) return g.__lincolnDb;
-  const dir = path.join(process.cwd(), "data");
+  const dir = dataDir();
   fs.mkdirSync(dir, { recursive: true });
   const d = new Database(path.join(dir, "lincoln.db"));
   d.pragma("journal_mode = WAL");
