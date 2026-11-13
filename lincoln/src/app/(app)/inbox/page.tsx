@@ -17,7 +17,7 @@ export default async function InboxPage() {
               <div className="flex flex-wrap items-baseline gap-x-2 text-[12.5px]">
                 <span className="font-medium">{m.direction === "in" ? m.party : `To ${m.party}`}</span>
                 {m.case_id && <Link href={`/cases/${m.case_id}?tab=messages`} className="text-muted hover:text-ink hover:underline">{m.client}</Link>}
-                <span className="ml-auto text-faint">{m.state === "needs_approval" ? <Link href="/approvals" className="font-medium text-ink">Awaiting approval</Link> : m.direction === "in" ? "Received" : "Sent"} · {ago(m.at)}</span>
+                <span className="ml-auto text-faint">{m.state === "needs_approval" ? <Link href="/approvals" className="font-medium text-ink">Awaiting approval</Link> : m.direction === "in" ? (m.state === "reading" ? "Reading" : "Received") : m.state === "approved" ? "Approved, not sent" : "Sent"} · {ago(m.at)}</span>
               </div>
               <div className="mt-1 text-[13.5px]">{m.subject}</div>
               <p className="mt-0.5 line-clamp-2 max-w-[760px] text-[13px] leading-relaxed text-muted">{m.body}</p>

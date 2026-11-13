@@ -13,6 +13,7 @@ import { EVENTS } from "./demo-events";
 import type { Question } from "./halasz";
 import { LIBRARY } from "./library";
 import { draftForCase, processCase } from "./intake";
+import { deliver } from "./agent";
 
 const now = () => new Date().toISOString();
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
@@ -162,6 +163,8 @@ export async function decideApproval(approvalId: string, decision: "approved" | 
           JSON.stringify({ draftId }), user.id, now(), day(3));
         d.prepare("UPDATE cases SET stage = 'Review', summary = ?, waiting_on = ? WHERE firm_id = ? AND id = ?").run(`Support letter written from ${user.name.split(" ")[0]}'s decisions and waiting for review. The consultation and the passport renewal are still open.`, `${user.name}: review the letter`, F, a.case_id);
       }
+    } else if (a.kind === "message" && decision === "approved" && !firm.demo) {
+      log(F, a.case_id, user.name, "decide", `Approved: ${a.title}.`);
     } else if (a.kind === "message" && decision === "approved") {
       const m = messageById(F, payload.messageId);
       if (m) {
@@ -192,6 +195,7 @@ export async function decideApproval(approvalId: string, decision: "approved" | 
     d.prepare("UPDATE cases SET state = ? WHERE firm_id = ? AND id = ?").run(left.n > 0 ? "needs_you" : "moving", F, a.case_id);
   });
   tx();
+  if (a.kind === "message" && decision === "approved" && !firm.demo && payload.messageId) await deliver(F, payload.messageId, { id: user.id, name: user.name });
   revalidatePath("/", "layout");
 }
 
@@ -302,4 +306,33 @@ export async function updateFirm(form: FormData) {
 export async function clearChat(caseId: string | null) {
   const { user, firm } = await requireUser();
   db().prepare("DELETE FROM chat WHERE firm_id = ? AND user_id = ? AND case_id IS ?").run(firm.id, user.id, caseId);
+}
+
+export async function disconnectMailbox() {
+  const { user, firm } = await requireUser();
+  db().prepare("DELETE FROM mailboxes WHERE firm_id = ? AND user_id = ?").run(firm.id, user.id);
+  revalidatePath("/settings");
+}
+
+/** Issues a new secret forwarding address for the firm. The old one stops working. */
+export async function newInboundAddress() {
+  const { user, firm } = await requireUser();
+  if (!/admin|managing/i.test(user.role)) return;
+  const token = newToken();
+  setKv(firm.id, "inbound_hash", sha(token));
+  redirect(`/settings?tab=integrations&inbound=${token}`);
+}
+
+export async function addFile(caseId: string, form: FormData) {
+  const { user, firm } = await requireUser();
+  const c = db().prepare("SELECT processing FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { processing: number } | undefined;
+  const file = form.get("file");
+  if (!c || c.processing || !(file instanceof File) || file.size === 0 || file.size > 25 * 1024 * 1024) redirect(`/cases/${caseId}?tab=documents`);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) redirect(`/cases/${caseId}?tab=documents`);
+  db().prepare("UPDATE cases SET processing = 1, note = NULL WHERE firm_id = ? AND id = ?").run(firm.id, caseId);
+  log(firm.id, caseId, user.name, "file", `Added ${file.name}.`);
+  void processCase(firm.id, caseId, bytes, { append: true });
+  revalidatePath("/", "layout");
+  redirect(`/cases/${caseId}`);
 }

@@ -13,6 +13,7 @@ export async function chat(messages: Msg[], opts: { maxTokens?: number } = {}): 
     body: JSON.stringify({ model: process.env.LLM_MODEL, messages, max_tokens: opts.maxTokens ?? 1500 }),
     signal: AbortSignal.timeout(90_000),
   });
+  if (res.status === 402) throw new Error("The model account is out of credit.");
   if (!res.ok) throw new Error(`The model service replied ${res.status}.`);
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const text = data.choices?.[0]?.message?.content;
@@ -60,7 +61,8 @@ async function readPagesOnce(system: string, pages: { n: number; jpeg: Buffer }[
   });
   if (!res.ok || !res.body) {
     const detail = await res.text().catch(() => "");
-    const msg = /"message"\s*:\s*"([^"]{1,200})"/.exec(detail)?.[1];
+    if (res.status === 402) throw new Error("The model account is out of credit.");
+    const msg = /"message"\s*:\s*"([^"]{1,400})"/.exec(detail)?.[1]?.slice(0, 200);
     throw new Error(`The model service replied ${res.status}${msg ? `: ${msg}` : ""}.`);
   }
   const reader = res.body.getReader();
@@ -94,4 +96,47 @@ export function parseJson<T>(text: string): T {
   const a = text.indexOf("{"), b = text.lastIndexOf("}");
   if (a < 0 || b <= a) throw new Error("The model reply was not in the expected format.");
   return JSON.parse(text.slice(a, b + 1)) as T;
+}
+
+export type Tool = { name: string; description: string; input_schema: Record<string, unknown> };
+type Turn = { role: "user" | "assistant"; content: unknown };
+
+/**
+ * One agent turn with tools over the Messages API. Calls run until the model answers in text,
+ * at most eight steps. The handler executes each tool call against the firm's own data.
+ */
+export async function runAgent(system: string, history: Turn[], tools: Tool[], handle: (name: string, input: Record<string, unknown>) => Promise<string>): Promise<string> {
+  if (!llmConfigured()) throw new Error("No model is connected.");
+  const base = process.env.LLM_BASE_URL!.replace(/\/$/, "").replace(/\/v1$/, "");
+  const msgs = [...history];
+  for (let step = 0; step < 8; step++) {
+    const res = await fetch(`${base}/v1/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": process.env.LLM_API_KEY!, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: process.env.LLM_MODEL, max_tokens: 2000, system, tools, messages: msgs }),
+      signal: AbortSignal.timeout(120_000),
+    });
+    if (res.status === 402) throw new Error("The model account is out of credit.");
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`The model service replied ${res.status}${/"message"\s*:\s*"([^"]{1,160})"/.exec(detail)?.[1] ? `: ${/"message"\s*:\s*"([^"]{1,160})"/.exec(detail)![1]}` : ""}.`);
+    }
+    const data = (await res.json()) as { content: ({ type: "text"; text: string } | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> })[]; stop_reason: string };
+    const calls = data.content.filter((b) => b.type === "tool_use") as { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }[];
+    const text = data.content.filter((b) => b.type === "text").map((b) => (b as { text: string }).text).join("\n").trim();
+    if (!calls.length) return text || "Done.";
+    msgs.push({ role: "assistant", content: data.content });
+    const results = [];
+    for (const c of calls) {
+      let out: string;
+      try {
+        out = await handle(c.name, c.input ?? {});
+      } catch (e) {
+        out = `Error: ${e instanceof Error ? e.message : "failed"}`;
+      }
+      results.push({ type: "tool_result", tool_use_id: c.id, content: out.slice(0, 20000) });
+    }
+    msgs.push({ role: "user", content: results });
+  }
+  return "Stopped after eight steps. The work so far is saved on the case.";
 }

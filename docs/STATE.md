@@ -25,6 +25,19 @@ any kind can be requested on a case. A personal login is created from the Render
 SEED_USER_EMAIL, SEED_USER_PASSWORD and SEED_USER_NAME (never in git). The relay account had about
 160 credits left on 2026-11-13; a full 52 page read needs more than that, so it needs a top up.
 
+Fourth pass (2026-11-13, "it is just a copy of Harvey"): the autonomous core is built. Gmail connects
+through Google's own sign in (tokens encrypted at rest); every two minutes new mail is read, matched to a
+case or opened as a new one, PDF attachments are read into the record, and a reply is drafted for approval.
+Approved mail is sent from the attorney's own mailbox; without a mailbox it says "Approved, not sent". Clients
+who do not reply in 3 days get a reminder; dates within 14 days become issues. Firms on other mail systems can
+use a secret forwarding address (Postmark inbound format). The Assistant is now an agent with tools (find and
+read cases, open cases, draft documents, prepare emails for approval, add dates, resolve issues) and describes
+Lincoln truthfully. The personal account from SEED_USER_* is now its own blank firm. Tested locally: an email
+with a PDF opened the right O-1A case and drafted a reply with no one touching the app; the PDF read itself
+was refused because the relay account is out of credit. Gmail needs a Google Cloud OAuth client
+(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APP_URL); untested against Google until that exists. On Render's free
+plan the server sleeps after 15 minutes, which stops the mailbox checks.
+
 Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
 name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
 provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in

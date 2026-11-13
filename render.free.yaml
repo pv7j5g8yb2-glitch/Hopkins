@@ -25,5 +25,15 @@ services:
         sync: false
       - key: SEED_USER_NAME
         sync: false
+      - key: SEED_USER_FIRM
+        sync: false
+      - key: APP_URL             # the public address, used for the Google sign in return link
+        value: https://lincoln-qm5g.onrender.com
+      - key: GOOGLE_CLIENT_ID    # from Google Cloud, OAuth client for a web application
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: LINCOLN_SECRET      # encrypts mailbox tokens at rest
+        generateValue: true
       - key: LLM_API_KEY
         sync: false

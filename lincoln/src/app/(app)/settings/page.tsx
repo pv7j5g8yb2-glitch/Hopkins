@@ -2,20 +2,21 @@ import Link from "next/link";
 import clsx from "clsx";
 import AvatarField from "@/components/AvatarField";
 import { Avatar, PageHead, btn, field, label } from "@/components/ui";
-import { changePassword, updateFirm, updateProfile } from "@/lib/actions";
+import { changePassword, disconnectMailbox, newInboundAddress, updateFirm, updateProfile } from "@/lib/actions";
+import { firmMailbox, googleConfigured } from "@/lib/gmail";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { activitySince, people } from "@/lib/queries";
-import { hours } from "@/lib/format";
+import { ago, hours } from "@/lib/format";
 
 const TABS: [string, string][] = [["profile", "Profile"], ["security", "Security"], ["firm", "Firm"], ["automation", "Automation"], ["integrations", "Integrations"], ["usage", "Usage"]];
 
 const RULES: [string, string, boolean][] = [
-  ["Reminders for missing documents", "Day 3, day 7, then weekly", true],
+  ["Reminders when a client has not replied", "After 3 days", true],
   ["Filing case mail and attachments", "Always", true],
-  ["Returning unreadable scans", "Always", true],
-  ["Receipt notice updates to clients", "Firm standard wording", true],
-  ["USCIS case status checks", "Weekly, every filed case", true],
+  ["Reading incoming case mail and attachments", "Every two minutes, connected mailbox", true],
+  ["Opening cases from new client enquiries", "Always", true],
+  ["Approaching deadlines raised as issues", "14 days before", true],
   ["Other messages to clients or third parties", "Attorney approval", false],
   ["Legal strategy and eligibility", "Attorney decision", false],
   ["Anything signed, filed or sent to USCIS or a court", "Attorney approval", false],
@@ -31,7 +32,7 @@ const CONTROLS: [string, boolean][] = [
   ["Zero retention agreement with the model provider", false],
 ];
 const INTEGRATIONS: [string, [string, string][]][] = [
-  ["Mail and documents", [["Outlook", "Case mail"], ["Gmail", "Case mail"], ["Microsoft Word", "Add in"], ["Google Drive", "Files"], ["OneDrive and SharePoint", "Files"], ["Dropbox", "Files"]]],
+  ["Documents", [["Microsoft Word", "Add in"], ["Google Drive", "Files"], ["OneDrive and SharePoint", "Files"], ["Dropbox", "Files"]]],
   ["Calendars and signatures", [["Outlook Calendar", "Dates"], ["Google Calendar", "Dates"], ["DocuSign", "Signatures"], ["Microsoft Teams", "Notifications"], ["Slack", "Notifications"]]],
   ["Migration", [["Docketwise", "Cases and documents"], ["LollyLaw", "Cases and documents"], ["INSZoom", "Cases and documents"], ["Clio", "Matters and documents"], ["Folders or spreadsheet", "Anything else"]]],
   ["Government and finance", [["USCIS case status", "Status"], ["LawPay", "Payments"], ["QuickBooks", "Accounts"], ["iManage", "Documents"], ["NetDocuments", "Documents"]]],
@@ -49,9 +50,11 @@ function Row({ children, className }: { children: React.ReactNode; className?: s
   return <div className={clsx("flex items-center gap-4 border-b border-line py-3", className)}>{children}</div>;
 }
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string; saved?: string; error?: string }> }) {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string; saved?: string; error?: string; connected?: string; inbound?: string }> }) {
   const { user, firm } = await requireUser();
-  const { tab = "profile", saved, error } = await searchParams;
+  const { tab = "profile", saved, error, connected, inbound } = await searchParams;
+  const mailbox = firmMailbox(firm.id, user.id);
+  const integrationError = tab === "integrations" && error ? ({ google: "Gmail is not configured on this server.", state: "The connection expired. Try again.", connect: "Google did not complete the connection." } as Record<string, string>)[error] : null;
   const hasPassword = Boolean((db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null }).password_hash);
   const admin = /admin|managing/i.test(user.role);
   const err = error ? MSG[tab]?.[error] : null;
@@ -130,20 +133,68 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             </div>
           )}
 
-          {tab === "integrations" && INTEGRATIONS.map(([group, items]) => (
-            <section key={group} className="mb-8">
-              <h2 className="mb-1 text-[13px] font-medium">{group}</h2>
-              <div className="border-t border-line">
-                {items.map(([name, what]) => (
-                  <Row key={name}>
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-[12px] font-medium text-muted">{name[0]}</span>
-                    <span className="min-w-0 flex-1"><span className="block text-[13px]">{name}</span><span className="block text-[12px] text-faint">{what}</span></span>
+          {tab === "integrations" && (
+            <>
+              <section className="mb-10">
+                <h2 className="mb-1 text-[13px] font-medium">Mailbox</h2>
+                <div className="border-t border-line">
+                  <Row>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-[12px] font-medium text-muted">G</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px]">Gmail</span>
+                      <span className="block truncate text-[12px] text-faint">{mailbox ? `${mailbox.email}${mailbox.last_check ? ` · checked ${ago(mailbox.last_check)}` : ""}${mailbox.last_error ? ` · ${mailbox.last_error}` : ""}` : "Reads incoming case mail and sends approved replies"}</span>
+                    </span>
+                    {mailbox ? (
+                      <form action={disconnectMailbox}><button className={btn.ghost}>Disconnect</button></form>
+                    ) : googleConfigured() ? (
+                      <a href="/api/connect/google" className={btn.primary}>Connect</a>
+                    ) : (
+                      <span className="text-[12px] text-faint">Not configured</span>
+                    )}
+                  </Row>
+                  <Row>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-[12px] font-medium text-muted">O</span>
+                    <span className="min-w-0 flex-1"><span className="block text-[13px]">Outlook</span><span className="block text-[12px] text-faint">Microsoft 365</span></span>
                     <span className="text-[12px] text-faint">Planned</span>
                   </Row>
-                ))}
-              </div>
-            </section>
-          ))}
+                </div>
+                {connected && <p className="mt-3 text-[13px] text-muted">Connected. Mail from now on is read automatically.</p>}
+                {integrationError && <p className="mt-3 text-[13px] text-risk">{integrationError}</p>}
+              </section>
+              {admin && (
+                <section className="mb-10">
+                  <h2 className="mb-1 text-[13px] font-medium">Forwarding address</h2>
+                  <div className="border-t border-line py-3">
+                    {inbound ? (
+                      <>
+                        <p className="mb-2 break-all rounded-lg bg-side px-3 py-2 font-mono text-[12px]">{`${process.env.APP_URL ?? ""}/api/inbound/${inbound}`}</p>
+                        <p className="text-[12px] text-faint">Shown once. Point a forwarding service at it (Postmark inbound format). Any mail system can then route case mail to Lincoln.</p>
+                      </>
+                    ) : (
+                      <form action={newInboundAddress} className="flex items-center justify-between gap-4">
+                        <span className="text-[12.5px] text-muted">For firms on any mail system. Issuing a new address disables the previous one.</span>
+                        <button className={btn.secondary}>Issue address</button>
+                      </form>
+                    )}
+                  </div>
+                </section>
+              )}
+              {INTEGRATIONS.map(([group, items]) => (
+                <section key={group} className="mb-8">
+                  <h2 className="mb-1 text-[13px] font-medium">{group}</h2>
+                  <div className="border-t border-line">
+                    {items.map(([name, what]) => (
+                      <Row key={name}>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-[12px] font-medium text-muted">{name[0]}</span>
+                        <span className="min-w-0 flex-1"><span className="block text-[13px]">{name}</span><span className="block text-[12px] text-faint">{what}</span></span>
+                        <span className="text-[12px] text-faint">Planned</span>
+                      </Row>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </>
+          )}
 
           {tab === "usage" && (() => {
             const acts = activitySince(firm.id, new Date(Date.now() - 7 * 86400000).toISOString());

@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useRef, useState, useTransition } from "react";
-import { ArrowUp, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
+import Composer from "./Composer";
 import { clearChat } from "@/lib/actions";
 
 type M = { role: string; content: string };
 
 /** Minimal rendering for model replies: paragraphs, bullet and numbered lines, bold. */
 function Rich({ text }: { text: string }) {
-  const bold = (s: string) => s.split(/\*\*(.+?)\*\*/g).map((p, i) => (i % 2 ? <strong key={i} className="font-semibold">{p}</strong> : <Fragment key={i}>{p.replace(/^#+\s*/, "")}</Fragment>));
+  const links = (s: string, k: number) => s.split(/(\/cases\/[\w?=&-]+)/g).map((p, i) => (i % 2 ? <Link key={`${k}-${i}`} href={p} className="underline underline-offset-4">Open</Link> : <Fragment key={`${k}-${i}`}>{p}</Fragment>));
+  const bold = (s: string) => s.split(/\*\*(.+?)\*\*/g).map((p, i) => (i % 2 ? <strong key={i} className="font-semibold">{p}</strong> : <Fragment key={i}>{links(p.replace(/^#+\s*/, ""), i)}</Fragment>));
   const blocks = text.trim().split(/\n{2,}/);
   return (
     <div className="flex flex-col gap-3">
@@ -48,6 +50,7 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setMsgs((m) => [...m, { role: "assistant", content: data.reply }]);
+      if (data.changed) router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "The request failed.");
     } finally {
@@ -64,15 +67,7 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const box = (
-    <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="rounded-2xl border border-line bg-white p-3 shadow-[0_2px_10px_-6px_rgba(22,22,20,0.18)] transition focus-within:border-[#c9c5bd]">
-      <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }} rows={2} placeholder={scope ? `Ask about ${scope.name}` : "Ask about a case, a document or a deadline"} className="block w-full resize-none bg-transparent px-1.5 pt-1 text-[15px] leading-relaxed outline-none placeholder:text-faint" />
-      <div className="flex items-center justify-between">
-        <span className="px-1.5 text-[12px] text-faint">{connected ? "" : "Assistant not enabled"}</span>
-        <button disabled={busy || !text.trim()} aria-label="Send" className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white transition hover:bg-black disabled:opacity-25"><ArrowUp size={16} /></button>
-      </div>
-    </form>
-  );
+  const box = <Composer value={text} onChange={setText} onSend={() => send(text)} busy={busy} placeholder={scope ? `Ask about ${scope.name}` : "Ask Lincoln anything"} autoFocus />;
 
   const head = (
     <div className="mb-6 flex items-center justify-between gap-3">
@@ -98,7 +93,7 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
   return (
     <div className="mx-auto max-w-[720px]">
       {head}
-      <div className="flex flex-col gap-7 pb-8">
+      <div className="flex flex-col gap-7 pb-36">
         {msgs.map((m, i) => m.role === "user"
           ? <div key={i} className="ml-auto max-w-[85%] whitespace-pre-line rounded-2xl bg-panel px-4 py-2.5 text-[14.5px] leading-relaxed">{m.content}</div>
           : <div key={i} className="text-[14.5px] leading-[1.7]"><Rich text={m.content} /></div>)}
@@ -106,7 +101,9 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
         {error && <p className="text-[13px] text-risk">{error}</p>}
         <div ref={end} />
       </div>
-      <div className="sticky bottom-4">{box}</div>
+      <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white from-70% to-transparent px-4 pb-5 pt-8 md:left-[248px] md:px-12">
+        <div className="mx-auto max-w-[720px]">{box}</div>
+      </div>
     </div>
   );
 }

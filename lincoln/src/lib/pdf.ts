@@ -4,13 +4,13 @@ import path from "node:path";
 export const MAX_PAGES = 90;
 
 /** Renders each page of a PDF to a JPEG in outDir (p-01.jpg ...). Pure JavaScript, no system tools. */
-export async function renderPdf(data: Uint8Array, outDir: string): Promise<number> {
+export async function renderPdf(data: Uint8Array, outDir: string, start = 1): Promise<number> {
   const { createCanvas } = await import("@napi-rs/canvas");
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const task = pdfjs.getDocument({ data, useSystemFonts: true, isEvalSupported: false } as any);
   const doc = await task.promise;
-  const n = Math.min(doc.numPages, MAX_PAGES);
+  const n = Math.max(0, Math.min(doc.numPages, MAX_PAGES - (start - 1)));
   fs.mkdirSync(outDir, { recursive: true });
   for (let i = 1; i <= n; i++) {
     const page = await doc.getPage(i);
@@ -23,7 +23,7 @@ export async function renderPdf(data: Uint8Array, outDir: string): Promise<numbe
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await page.render({ canvasContext: ctx as any, viewport: vp, canvas: canvas as any }).promise;
-    fs.writeFileSync(path.join(outDir, `p-${String(i).padStart(2, "0")}.jpg`), canvas.toBuffer("image/jpeg", 70));
+    fs.writeFileSync(path.join(outDir, `p-${String(start + i - 1).padStart(2, "0")}.jpg`), canvas.toBuffer("image/jpeg", 70));
     page.cleanup();
   }
   await task.destroy();

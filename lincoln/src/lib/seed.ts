@@ -1,6 +1,5 @@
 import type Database from "better-sqlite3";
 import { HALASZ_CRITERIA, HALASZ_DOCS, HALASZ_ISSUES, HALASZ_QUESTIONS } from "./halasz";
-import { hashPassword } from "./passwords";
 
 // The sample workspace. Every firm, person, client, company and case here is made up.
 
@@ -38,14 +37,6 @@ export function seed(d: Database.Database) {
   insUser.run("u_james", F, "James Whitaker", "james@kestrel.example", "Attorney", "JW", null, iso(0));
   insUser.run("u_daniel", F, "Daniel Kim", "daniel@kestrel.example", "Paralegal", "DK", null, iso(0));
   insUser.run("u_aisha", F, "Aisha Rahman", "aisha@kestrel.example", "Paralegal", "AR", null, iso(0));
-  // A personal login for the sample workspace, set through environment variables so that no
-  // email address or password is ever written into the repository.
-  const email = (process.env.SEED_USER_EMAIL ?? "").trim().toLowerCase();
-  const pass = process.env.SEED_USER_PASSWORD ?? "";
-  if (email && pass.length >= 10 && !d.prepare("SELECT 1 FROM users WHERE email = ?").get(email)) {
-    const name = (process.env.SEED_USER_NAME ?? "").trim() || "Workspace owner";
-    insUser.run("u_owner", F, name, email, "Administrator", name.split(/\s+/).map((w) => w[0]?.toUpperCase() ?? "").slice(0, 2).join("") || "U", hashPassword(pass), iso(0));
-  }
 
   const insCase = d.prepare(`INSERT INTO cases (id, firm_id, ref, client, counterpart, type_code, type_name, family, stage, state, waiting_on, summary, attorney_id, paralegal_id, opened_at, next_date, next_date_label, sensitive, pages)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);

@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { seed } from "./seed";
+import { hashPassword } from "./passwords";
 
 // One SQLite file for this first version. Every table carries firm_id and every query in
 // queries.ts filters on it. Before any real client data: Postgres with row level security and a
@@ -47,6 +48,8 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, case_id TEXT NOT NULL, title TEXT NOT NULL, kind TEXT NOT NULL, status TEXT NOT NULL, version INTEGER NOT NULL, content TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS chat (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, user_id TEXT NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS kv (firm_id TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (firm_id, key));
+CREATE TABLE IF NOT EXISTS mailboxes (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, user_id TEXT NOT NULL, provider TEXT NOT NULL, email TEXT NOT NULL, refresh_enc TEXT NOT NULL, access_enc TEXT, expires_at INTEGER, last_check TEXT, last_error TEXT, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS inbound_seen (mailbox_id TEXT NOT NULL, msg_id TEXT NOT NULL, PRIMARY KEY (mailbox_id, msg_id));
 CREATE INDEX IF NOT EXISTS i_cases_firm ON cases(firm_id);
 CREATE INDEX IF NOT EXISTS i_docs_case ON documents(firm_id, case_id);
 CREATE INDEX IF NOT EXISTS i_act_firm ON activity(firm_id, at);
@@ -54,7 +57,7 @@ CREATE INDEX IF NOT EXISTS i_appr_firm ON approvals(firm_id, status);
 CREATE INDEX IF NOT EXISTS i_msg_firm ON messages(firm_id, at);
 `;
 
-const TABLES = ["sessions", "kv", "chat", "drafts", "messages", "approvals", "activity", "dates", "issues", "criteria", "documents", "cases", "users", "firms"];
+const TABLES = ["mailboxes", "sessions", "kv", "chat", "drafts", "messages", "approvals", "activity", "dates", "issues", "criteria", "documents", "cases", "users", "firms"];
 
 /** Where the database lives. On Render this is the persistent disk (DATA_DIR=/var/data). */
 export const dataDir = () => process.env.DATA_DIR || path.join(process.cwd(), "data");
@@ -70,7 +73,7 @@ export function db(): Database.Database {
   d.pragma("journal_mode = WAL");
   d.pragma("foreign_keys = ON");
   d.exec(SCHEMA);
-  for (const [table, col, type] of [["users", "avatar", "TEXT"], ["cases", "processing", "INTEGER NOT NULL DEFAULT 0"], ["cases", "note", "TEXT"], ["chat", "case_id", "TEXT"]]) {
+  for (const [table, col, type] of [["users", "avatar", "TEXT"], ["cases", "processing", "INTEGER NOT NULL DEFAULT 0"], ["cases", "note", "TEXT"], ["chat", "case_id", "TEXT"], ["cases", "client_email", "TEXT"], ["messages", "email", "TEXT"], ["messages", "thread_id", "TEXT"], ["messages", "mailbox_id", "TEXT"]]) {
     const cols = d.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
     if (!cols.some((c) => c.name === col)) d.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
   }
@@ -78,6 +81,7 @@ export function db(): Database.Database {
   d.exec("UPDATE cases SET processing = 0, note = 'Reading was interrupted. Upload the file again.' WHERE processing = 1");
   const n = d.prepare("SELECT COUNT(*) AS n FROM firms").get() as { n: number };
   if (n.n === 0) seed(d);
+  ensureOwner(d);
   g.__lincolnDb = d;
   return d;
 }
@@ -96,6 +100,25 @@ export function resetDemo(firmId: string) {
     seed(d);
   });
   tx();
+}
+
+/**
+ * A personal account from SEED_USER_EMAIL and SEED_USER_PASSWORD, in its own empty firm like any new
+ * sign up. Nothing personal is written into the repository.
+ */
+function ensureOwner(d: Database.Database) {
+  const email = (process.env.SEED_USER_EMAIL ?? "").trim().toLowerCase();
+  const pass = process.env.SEED_USER_PASSWORD ?? "";
+  if (!email || pass.length < 10) return;
+  const existing = d.prepare("SELECT id, firm_id FROM users WHERE email = ?").get(email) as { id: string; firm_id: string } | undefined;
+  if (existing && existing.firm_id !== "f_demo") return;
+  const name = (process.env.SEED_USER_NAME ?? "").trim() || "Administrator";
+  const initials = name.split(/\s+/).map((w) => w[0]?.toUpperCase() ?? "").slice(0, 2).join("") || "A";
+  d.transaction(() => {
+    if (existing) d.prepare("DELETE FROM users WHERE id = ?").run(existing.id);
+    d.prepare("INSERT OR IGNORE INTO firms (id, name, demo) VALUES ('f_owner', ?, 0)").run((process.env.SEED_USER_FIRM ?? "").trim() || "New firm");
+    d.prepare("INSERT INTO users (id, firm_id, name, email, role, initials, password_hash, created_at) VALUES ('u_owner', 'f_owner', ?, ?, 'Administrator', ?, ?, ?)").run(name, email, initials, hashPassword(pass), new Date().toISOString());
+  })();
 }
 
 export const uid = () => crypto.randomUUID().replace(/-/g, "").slice(0, 16);

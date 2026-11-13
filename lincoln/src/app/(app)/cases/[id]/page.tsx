@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import DraftView from "@/components/DraftView";
 import Refresher from "@/components/Refresher";
 import { Avatar, Empty, StageBar, btn, field } from "@/components/ui";
-import { requestDraft } from "@/lib/actions";
+import { addFile, requestDraft } from "@/lib/actions";
+import FileDrop from "@/components/FileDrop";
 import { requireUser } from "@/lib/session";
 import { caseActivity, caseApprovals, caseById, caseDates, caseDrafts, caseMessages, criteria, documents, issues, people } from "@/lib/queries";
 import { ago, inDays, longDate } from "@/lib/format";
@@ -160,6 +161,12 @@ export default async function CasePage({ params, searchParams }: { params: Promi
         </div>
       )}
 
+      {tab === "documents" && llmConfigured() && (
+        <form action={addFile.bind(null, id)} className="mb-6 flex max-w-[640px] items-start gap-2">
+          <div className="flex-1"><FileDrop /></div>
+          <button className={btn.secondary}>Add file</button>
+        </form>
+      )}
       {tab === "documents" && (docs.length === 0 ? none : (
         <>
           <p className="mb-3 text-[12.5px] text-faint">{c.pages} pages · {docs.length} documents{docs.some((d) => d.is_scan) ? ` · ${docs.filter((d) => d.is_scan).length} scanned` : ""}</p>
@@ -260,7 +267,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
               <div className="flex flex-wrap items-baseline gap-x-2 text-[12.5px]">
                 <span className="font-medium">{m.direction === "in" ? m.party : `To ${m.party}`}</span>
                 <span className="text-faint">{m.party_role}</span>
-                <span className="ml-auto text-faint">{m.direction === "in" ? "Received" : m.state === "needs_approval" ? "Awaiting approval" : "Sent"} · {ago(m.at)}</span>
+                <span className="ml-auto text-faint">{m.direction === "in" ? "Received" : m.state === "needs_approval" ? "Awaiting approval" : m.state === "approved" ? "Approved, not sent" : "Sent"} · {ago(m.at)}</span>
               </div>
               <div className="mt-1 text-[13.5px]">{m.subject}</div>
               <p className="mt-1 line-clamp-3 max-w-[720px] whitespace-pre-line text-[13px] leading-relaxed text-muted">{m.body}</p>

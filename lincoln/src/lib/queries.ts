@@ -2,14 +2,14 @@ import { db } from "./db";
 
 // Every function takes the firm id first. There is no query in the app without it.
 
-export type Case = { id: string; ref: string; client: string; counterpart: string | null; type_code: string; type_name: string; family: string; stage: string; state: string; waiting_on: string | null; summary: string; attorney_id: string; paralegal_id: string; opened_at: string; next_date: string | null; next_date_label: string | null; sensitive: number; pages: number; processing: number; note: string | null };
+export type Case = { id: string; ref: string; client: string; counterpart: string | null; type_code: string; type_name: string; family: string; stage: string; state: string; waiting_on: string | null; summary: string; attorney_id: string; paralegal_id: string; opened_at: string; next_date: string | null; next_date_label: string | null; sensitive: number; pages: number; processing: number; note: string | null; client_email: string | null };
 export type Doc = { id: string; case_id: string; n: number; title: string; kind: string; page_from: number | null; page_to: number | null; doc_date: string | null; source: string; language: string; is_scan: number; status: string; note: string | null; received_at: string };
 export type Criterion = { id: string; n: number; code: string; name: string; citation: string; recommendation: string; strength: string; summary: string; weakness: string; evidence: string };
 export type Issue = { id: string; case_id: string; kind: string; severity: string; title: string; detail: string; sources: string; status: string; resolution: string | null; created_at: string; resolved_at: string | null };
 export type DateRow = { id: string; case_id: string; label: string; date: string; kind: string; source: string | null; client?: string };
 export type Activity = { id: string; case_id: string | null; at: string; actor: string; kind: string; text: string; minutes: number; client?: string | null };
 export type Approval = { id: string; case_id: string; kind: string; title: string; brief: string; least_sure: string | null; if_wrong: string | null; payload: string; status: string; assignee_id: string; created_at: string; decided_at: string | null; decided_by: string | null; due: string | null; client?: string; type_code?: string };
-export type Message = { id: string; case_id: string | null; direction: string; party: string; party_role: string | null; subject: string; body: string; at: string; state: string; lincoln_note: string | null; client?: string | null };
+export type Message = { id: string; case_id: string | null; direction: string; party: string; party_role: string | null; subject: string; body: string; at: string; state: string; lincoln_note: string | null; email?: string | null; client?: string | null };
 export type Draft = { id: string; case_id: string; title: string; kind: string; status: string; version: number; content: string; updated_at: string };
 export type Person = { id: string; name: string; email: string; role: string; initials: string; avatar: string | null };
 

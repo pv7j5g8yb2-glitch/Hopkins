@@ -62,6 +62,12 @@ with the work saved, not with case software. Never assume most firms use Docketw
 unknown). Never present a co-founder as an easy fix: it costs equity, a minor cannot hire, and the role
 is unclear.
 
+**Lincoln's edge is autonomy (Ismael, 2026-11-13).** Lincoln works without being prompted: it reads the firm's
+mail, opens and works cases, chases and prepares the next step, and asks only for decisions. Never present an
+upload or chat feature as the product; that is what Harvey and Legora already do. New accounts always start
+completely blank. The chat must behave like Claude and ChatGPT (one line box, Enter sends, box pinned at the
+bottom, "Ask Lincoln anything") and must answer honestly about what Lincoln can and cannot do.
+
 **Lincoln's interface copy (Ismael, 2026-11-13).** Write the product like a billion dollar company
 would. Keep screens minimal: no explanatory sentences for things the user can see for themselves. Never
 address the user in the second person inside the product (no "you", "your", "Needs you"); use neutral
