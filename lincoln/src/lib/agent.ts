@@ -16,6 +16,7 @@ const log = (firm: string, caseId: string | null, kind: string, text: string, mi
 
 type Triage = {
   kind: "new_case" | "case_update" | "government" | "other";
+  certain: boolean;
   case_id: string | null;
   new_case: { client: string; counterpart: string | null; type_code: string } | null;
   summary: string;
@@ -77,7 +78,8 @@ ${mail.text.slice(0, 6000)}
 
 Decide what this email is and reply with one JSON object only:
 {"kind": "new_case | case_update | government | other",
- "case_id": "id of the matching open case, or null",
+ "certain": true or false: true only if there is no reasonable doubt about kind and case,
+ "case_id": "id of the matching open case, or null if none or if more than one could match",
  "new_case": {"client": "full name of the person the case is for", "counterpart": "employer or petitioner, or null", "type_code": "one code from the list"} or null,
  "summary": "one sentence for the case log",
  "dates": [{"label": "", "date": "YYYY-MM-DD"}],
@@ -85,9 +87,14 @@ Decide what this email is and reply with one JSON object only:
 Rules: new_case only when someone asks the firm to take on an immigration matter or sends documents for a matter the firm has not opened. case_update when it concerns an open case (match by sender address, name or reference). government for USCIS, DOL or State Department notices. other for anything not about a case, with no reply. Dates only for deadlines, expiries, appointments or interviews stated in the email.`;
     const t = parseJson<Triage>(await chat([{ role: "system", content: "You are Lincoln, case software in a US immigration law firm. You sort incoming mail for the attorneys. You never give legal advice to the public and never invent facts. Reply with JSON only." }, { role: "user", content: prompt }], { maxTokens: 1500 }));
 
-    if (t.kind === "other" && !unverified) {
-      // Not work: nothing about it is kept.
+    if (t.kind === "other" && t.certain === true && !unverified) {
+      // Clearly not work: nothing about it is kept.
       d.prepare("DELETE FROM messages WHERE id = ?").run(msgId);
+      return;
+    }
+    if (t.kind === "other") {
+      // Possibly work: kept in the Inbox for a person to glance at, never silently dropped.
+      d.prepare("UPDATE messages SET state = 'unsure', lincoln_note = ? WHERE id = ?").run(`Not clearly case work, so nothing was done. ${t.summary ?? ""}`.trim().slice(0, 400), msgId);
       return;
     }
     if (t.kind === "other" || (t.kind !== "new_case" && !open.some((c) => c.id === t.case_id))) {
