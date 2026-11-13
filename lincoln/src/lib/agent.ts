@@ -97,8 +97,9 @@ Rules: new_case only when someone asks the firm to take on an immigration matter
       d.prepare("UPDATE messages SET state = 'unsure', lincoln_note = ? WHERE id = ?").run(`Not clearly case work, so nothing was done. ${t.summary ?? ""}`.trim().slice(0, 400), msgId);
       return;
     }
-    if (t.kind === "other" || (t.kind !== "new_case" && !open.some((c) => c.id === t.case_id))) {
-      d.prepare("UPDATE messages SET state = 'filed', lincoln_note = ? WHERE id = ?").run(t.kind === "other" ? `Not case mail. ${t.summary ?? ""}`.trim() : `No matching case. ${t.summary ?? ""}`.trim(), msgId);
+    if (t.kind !== "new_case" && !open.some((c) => c.id === t.case_id)) {
+      // Case work, but the case could not be matched with certainty: left for a person, not guessed.
+      d.prepare("UPDATE messages SET state = 'unsure', lincoln_note = ? WHERE id = ?").run(`No case matched with certainty, so nothing was done. ${t.summary ?? ""}`.trim().slice(0, 400), msgId);
       return;
     }
 
