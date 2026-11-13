@@ -62,6 +62,11 @@ with the work saved, not with case software. Never assume most firms use Docketw
 unknown). Never present a co-founder as an easy fix: it costs equity, a minor cannot hire, and the role
 is unclear.
 
+**Lincoln's interface copy (Ismael, 2026-11-13).** Write the product like a billion dollar company
+would. Keep screens minimal: no explanatory sentences for things the user can see for themselves. Never
+address the user in the second person inside the product (no "you", "your", "Needs you"); use neutral
+labels such as "For review" and "Awaiting approval". Emails Lincoln drafts to clients are the exception.
+
 ## The project
 
 * **What it is:** a self serve AI workspace for immigration lawyers in the US (the law is federal,

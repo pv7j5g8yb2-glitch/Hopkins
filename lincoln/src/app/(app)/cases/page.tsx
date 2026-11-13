@@ -3,7 +3,7 @@ import { Lock, Plus } from "lucide-react";
 import { Avatar, Chip, Dot, PageHead, btn, stateLabel } from "@/components/ui";
 import { requireUser } from "@/lib/session";
 import { cases, people } from "@/lib/queries";
-import { inDays, shortDate } from "@/lib/format";
+import { shortDate } from "@/lib/format";
 
 export default async function Cases() {
   const { firm } = await requireUser();
@@ -15,10 +15,10 @@ export default async function Cases() {
     <div className="rise">
       <PageHead
         title="Cases"
-        sub={`${all.length} open across ${new Set(all.map((c) => c.family)).size} kinds of immigration work`}
-        right={<Link href="/cases/new" className={btn.primary}><Plus size={14} /> New case</Link>}
+                right={<Link href="/cases/new" className={btn.primary}><Plus size={14} /> New case</Link>}
       />
-      <div className="overflow-x-auto rounded-xl border border-line bg-white">
+      {all.length === 0 && <div className="rounded-xl border border-line bg-white px-4 py-14 text-center text-[14px] text-muted">No open cases</div>}
+      <div className={all.length === 0 ? "hidden" : "overflow-x-auto rounded-xl border border-line bg-white"}>
         <table className="w-full min-w-[820px] border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-line text-left text-[11.5px] font-medium text-faint">
@@ -49,9 +49,9 @@ export default async function Cases() {
                   </td>
                   <td className="whitespace-nowrap px-3"><Chip>{c.type_code}</Chip> <span className="ml-1 hidden text-muted xl:inline">{c.type_name}</span></td>
                   <td className="px-3 text-muted">{c.stage}</td>
-                  <td className="max-w-[220px] truncate px-3 text-muted">{c.waiting_on ?? <span className="text-faint">Nobody. Lincoln is working</span>}</td>
+                  <td className="max-w-[220px] truncate px-3 text-muted">{c.waiting_on ?? <span className="text-faint">·</span>}</td>
                   <td className="whitespace-nowrap px-3 text-muted">
-                    {c.next_date ? <><span className="text-ink">{shortDate(c.next_date)}</span> <span className="text-faint">· {c.next_date_label}, {inDays(c.next_date)}</span></> : <span className="text-faint">None set</span>}
+                    {c.next_date ? <><span className="text-ink">{shortDate(c.next_date)}</span> <span className="text-faint">· {c.next_date_label}</span></> : <span className="text-faint">·</span>}
                   </td>
                   <td className="py-2.5 pl-3 pr-4">
                     <div className="flex gap-1">

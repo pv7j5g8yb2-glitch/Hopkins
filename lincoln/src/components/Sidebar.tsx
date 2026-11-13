@@ -75,19 +75,19 @@ export default function Sidebar({ firm, user, approvals, recent, demo }: Props) 
       <div className="mt-auto flex flex-col gap-[2px] pt-4">
         {demo && (
           <div className="mb-2 rounded-xl border border-dashed border-[#d6d2cb] bg-white p-2.5">
-            <div className="mb-1 text-[10.5px] font-medium uppercase tracking-[0.07em] text-faint">Demo world</div>
+            <div className="mb-1 text-[10.5px] font-medium uppercase tracking-[0.07em] text-faint">Simulation</div>
             {demo.next ? (
               <>
-                <p className="mb-2 text-[12px] leading-snug text-muted">Next: {demo.next}</p>
+                <p className="mb-2 text-[12px] leading-snug text-muted">{demo.next}</p>
                 <button disabled={pending} onClick={() => start(() => advanceDemo())} className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md bg-ink text-[12px] font-medium text-canvas transition active:scale-[0.98] disabled:opacity-50">
-                  <Play size={11} fill="currentColor" /> {pending ? "Happening…" : "Make it happen"}
+                  <Play size={11} fill="currentColor" /> {pending ? "Running" : "Run event"}
                 </button>
               </>
             ) : (
-              <p className="mb-2 text-[12px] leading-snug text-muted">Every scripted event has played.</p>
+              <p className="mb-1 text-[12px] leading-snug text-muted">All events run</p>
             )}
             <button disabled={pending} onClick={() => start(() => resetDemoAction())} className="mt-1.5 flex h-6 w-full items-center justify-center gap-1.5 rounded-md text-[11.5px] text-faint transition hover:text-ink">
-              <RotateCcw size={11} /> Reset the demo
+              <RotateCcw size={11} /> Reset
             </button>
           </div>
         )}

@@ -33,7 +33,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
   const deep = docs.length > 0;
   const team = Array.from(new Set([c.attorney_id, c.paralegal_id]));
   const tabs: [string, string, number?][] = [["overview", "Overview"], ["documents", "Documents", docs.length], ["evidence", "Evidence"], ["drafts", "Drafts", drafts.length], ["messages", "Messages", msgs.length], ["activity", "Activity"]];
-  const thin = <Card className="px-4 py-8 text-center text-[13px] text-muted">This demo case carries summary data only. Open <Link href="/cases/c_halasz" className="font-medium text-ink underline underline-offset-2">Dr. Réka Halász</Link> to see a full case.</Card>;
+  const thin = <Card className="px-4 py-8 text-center text-[13px] text-muted">{firm.demo ? <>Summary data only. The complete sample is <Link href="/cases/c_halasz" className="font-medium text-ink underline underline-offset-2">Dr. Réka Halász</Link>.</> : "Nothing here yet"}</Card>;
 
   return (
     <div className="rise">
@@ -58,15 +58,15 @@ export default async function CasePage({ params, searchParams }: { params: Promi
       <div className="mb-5"><StageBar stage={c.stage} /></div>
 
       <Card className="mb-3 px-4 py-3.5">
-        <div className="mb-1 text-[11.5px] font-medium uppercase tracking-[0.06em] text-faint">Where it stands</div>
+        <div className="mb-1 text-[11.5px] font-medium uppercase tracking-[0.06em] text-faint">Status</div>
         <p className="max-w-[760px] text-[14px] leading-relaxed">{c.summary}</p>
-        <p className="mt-1.5 text-[12.5px] text-muted">{c.waiting_on ? <>Waiting on: <span className="text-ink">{c.waiting_on}</span></> : "Waiting on nobody. Lincoln is working."}</p>
+        {c.waiting_on && <p className="mt-1.5 text-[12.5px] text-muted">Waiting on <span className="text-ink">{c.waiting_on}</span></p>}
       </Card>
       {pending.length > 0 && (
         <Card className="divide-y divide-line overflow-hidden border-ink/80">
           {pending.map((a) => (
             <Link key={a.id} href={`/approvals?id=${a.id}`} className="group flex items-center gap-3 px-4 py-2.5 transition hover:bg-canvas">
-              <Chip tone="ink">Needs you</Chip>
+              <Chip tone="ink">For review</Chip>
               <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{a.title}</span>
               <ArrowRight size={15} className="text-faint transition group-hover:translate-x-0.5 group-hover:text-ink" />
             </Link>
@@ -86,7 +86,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
         <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
           <section>
             <SectionTitle right={<span className="text-[12px] text-faint">{iss.length - open.length} resolved</span>}>Open issues · {open.length}</SectionTitle>
-            {!deep ? thin : open.length === 0 ? <Card className="px-4 py-6 text-[13px] text-muted">No open issues.</Card> : (
+            {!deep ? thin : open.length === 0 ? <Card className="px-4 py-6 text-[13px] text-muted">No open issues</Card> : (
               <Card className="divide-y divide-line">
                 {open.map((i) => (
                   <div key={i.id} className="px-4 py-3">
@@ -136,10 +136,10 @@ export default async function CasePage({ params, searchParams }: { params: Promi
 
       {tab === "documents" && (!deep ? thin : (
         <>
-          <p className="mb-3 text-[13px] text-muted">Lincoln read all {c.pages} pages, including {docs.filter((d) => d.is_scan).length} scans, and split them into {docs.length} documents.</p>
+          <p className="mb-3 text-[12.5px] text-faint">{c.pages} pages · {docs.length} documents · {docs.filter((d) => d.is_scan).length} scans</p>
           <div className="overflow-x-auto rounded-xl border border-line bg-white">
             <table className="w-full min-w-[760px] text-[13px]">
-              <thead><tr className="border-b border-line text-left text-[11.5px] text-faint"><th className="w-10 py-2.5 pl-4 font-medium">#</th><th className="px-3 font-medium">Document</th><th className="px-3 font-medium">Pages</th><th className="px-3 font-medium">From</th><th className="py-2.5 pl-3 pr-4 font-medium">Lincoln's reading</th></tr></thead>
+              <thead><tr className="border-b border-line text-left text-[11.5px] text-faint"><th className="w-10 py-2.5 pl-4 font-medium">#</th><th className="px-3 font-medium">Document</th><th className="px-3 font-medium">Pages</th><th className="px-3 font-medium">From</th><th className="py-2.5 pl-3 pr-4 font-medium">Assessment</th></tr></thead>
               <tbody>
                 {docs.map((d) => {
                   const [label, tone] = DOC_STATUS[d.status] ?? [d.status, "neutral"];
@@ -166,7 +166,6 @@ export default async function CasePage({ params, searchParams }: { params: Promi
 
       {tab === "evidence" && (!deep ? thin : (
         <div className="flex flex-col gap-3">
-          <p className="text-[13px] text-muted">Each document is graded against each criterion in five steps. A document mentioning something is not the same as proving it.</p>
           {criteria(firm.id, id).map((k) => {
             const [rl, rt] = REC[k.recommendation];
             const ev = JSON.parse(k.evidence) as { doc: number; page: number; grade: number; note?: string }[];
@@ -203,7 +202,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
 
       {tab === "drafts" && (drafts.length === 0 ? (
         <Card className="px-4 py-8 text-center text-[13px] text-muted">
-          {pending.some((a) => a.kind === "decisions") ? <>Lincoln writes the support letter as soon as you have answered the strategy decisions. <Link href={`/approvals?id=${pending.find((a) => a.kind === "decisions")!.id}`} className="font-medium text-ink underline underline-offset-2">Answer them now</Link>.</> : deep ? "No drafts yet." : "This demo case carries summary data only."}
+          {pending.some((a) => a.kind === "decisions") ? <>The support letter is drafted once the strategy decisions are recorded. <Link href={`/approvals?id=${pending.find((a) => a.kind === "decisions")!.id}`} className="font-medium text-ink underline underline-offset-2">Open decisions</Link></> : "No drafts yet"}
         </Card>
       ) : (() => {
         const dr = drafts[0];
@@ -211,12 +210,12 @@ export default async function CasePage({ params, searchParams }: { params: Promi
         return <DraftView caseId={id} draftId={dr.id} title={dr.title} sections={L.sections} facts={L.facts} calls={L.calls} notes={L.notes} status={dr.status} />;
       })())}
 
-      {tab === "messages" && (msgs.length === 0 ? <Card className="px-4 py-8 text-center text-[13px] text-muted">No messages on this case yet.</Card> : (
+      {tab === "messages" && (msgs.length === 0 ? <Card className="px-4 py-8 text-center text-[13px] text-muted">No messages yet</Card> : (
         <div className="flex flex-col gap-3">
           {msgs.map((m) => (
             <Card key={m.id} className="px-4 py-3.5">
               <div className="mb-1 flex flex-wrap items-center gap-2 text-[12.5px]">
-                <Chip tone={m.direction === "in" ? "neutral" : m.state === "needs_approval" ? "warn" : "ok"}>{m.direction === "in" ? "Received" : m.state === "needs_approval" ? "Draft, waiting for approval" : "Sent"}</Chip>
+                <Chip tone={m.direction === "in" ? "neutral" : m.state === "needs_approval" ? "warn" : "ok"}>{m.direction === "in" ? "Received" : m.state === "needs_approval" ? "Draft, awaiting approval" : "Sent"}</Chip>
                 <span className="font-medium">{m.direction === "in" ? m.party : `To ${m.party}`}</span><span className="text-faint">{m.party_role} · {ago(m.at)}</span>
               </div>
               <div className="text-[13.5px] font-medium">{m.subject}</div>

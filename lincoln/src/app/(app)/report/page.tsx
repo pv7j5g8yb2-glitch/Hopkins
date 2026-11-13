@@ -22,11 +22,11 @@ export default async function Report() {
 
   return (
     <div className="rise max-w-[760px]">
-      <PageHead title="Lincoln report" sub="The last seven days." />
+      <PageHead title="Lincoln report" sub="Last 7 days" />
       <Card className="mb-8 px-5 py-5">
-        <div className="mb-1 text-[12px] text-muted">Work Lincoln took off your team</div>
+        <div className="mb-1 text-[12px] text-muted">Time saved</div>
         <div className="serif text-[44px] font-medium leading-none">{hours(total)}</div>
-        <div className="mt-1 text-[12.5px] text-faint">{acts.length} tasks across {new Set(acts.map((a) => a.case_id).filter(Boolean)).size} cases · estimate</div>
+        <div className="mt-1 text-[12.5px] text-faint">{acts.length} tasks · {new Set(acts.map((a) => a.case_id).filter(Boolean)).size} cases · estimate</div>
         <div className="mt-7 flex h-[120px] items-end gap-2.5">
           {days.map((d, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
@@ -56,7 +56,7 @@ export default async function Report() {
           </Card>
         </section>
       </div>
-      <p className="mt-8 text-[12px] leading-relaxed text-faint">How this is counted: each task Lincoln completes is multiplied by a standard time for that task. The standard times in this demo are placeholders. They will be replaced by an immigration attorney's figures and then by Lincoln's own measurements.</p>
+      <p className="mt-8 text-[12px] leading-relaxed text-faint">Estimate. Each completed task is counted at a standard time. Standard times are provisional.</p>
     </div>
   );
 }

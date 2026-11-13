@@ -37,13 +37,13 @@ export default function DraftView({ caseId, draftId, title, sections, facts, cal
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
         <div className="mr-auto min-w-0">
           <div className="truncate text-[13.5px] font-medium">{title}</div>
-          <div className="text-[11.5px] text-faint">{status === "approved" ? "Approved" : "Draft for attorney review"} · version 1</div>
+          <div className="text-[11.5px] text-faint">{status === "approved" ? "Approved" : "Draft"} · v1</div>
         </div>
-        <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-ok/70" />{facts} facts checked</span>
+        <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-ok/70" />{facts} sourced facts</span>
         <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-[#e2b23c]" />{calls} judgement calls</span>
-        <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-risk/70" />{notes} notes for you</span>
+        <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-risk/70" />{notes} attorney notes</span>
         <button onClick={() => setFocus((v) => !v)} className={clsx("flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] font-medium transition", focus ? "border-ink bg-ink text-canvas" : "border-line bg-white hover:bg-panel")}>
-          <Eye size={13} /> {focus ? "Showing what needs you" : "Show only what needs you"}
+          <Eye size={13} /> Review mode
         </button>
         <a href={`/api/drafts/${draftId}/docx`} className="flex h-7 items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 text-[12px] font-medium transition hover:bg-panel">
           <Download size={13} /> Word
@@ -84,7 +84,7 @@ export default function DraftView({ caseId, draftId, title, sections, facts, cal
             ))}
           </section>
         ))}
-        <p className="mt-10 border-t border-line pt-4 text-[11.5px] leading-relaxed text-faint">Prepared by Lincoln for attorney review. Lincoln is not a lawyer. Nothing here is filed until the attorney of record approves and signs.</p>
+        <p className="mt-10 border-t border-line pt-4 text-[11.5px] leading-relaxed text-faint">Prepared by Lincoln for attorney review. Not legal advice.</p>
       </article>
 
       {hover && hover.seg.page && (
@@ -98,7 +98,7 @@ export default function DraftView({ caseId, draftId, title, sections, facts, cal
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ok-bg text-ok"><Check size={11} strokeWidth={3} /></span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[12px] font-medium">{hover.seg.doc}</div>
-              <div className="text-[11px] text-faint">Client file, page {hover.seg.page} · checked against this page</div>
+              <div className="text-[11px] text-faint">Client file, page {hover.seg.page} · verified</div>
             </div>
           </div>
           <a href={`/api/pages/${caseId}/${hover.seg.page}`} target="_blank" className="block h-[220px] overflow-hidden bg-panel">

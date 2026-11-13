@@ -10,8 +10,9 @@ export default async function InboxPage() {
   const all = messages(firm.id);
   return (
     <div className="rise">
-      <PageHead title="Inbox" sub="Case mail only. Lincoln files each message to its case and says what it did about it." />
+      <PageHead title="Inbox" />
       <Card className="divide-y divide-line">
+        {all.length === 0 && <div className="px-4 py-8 text-center text-[13px] text-muted">No case mail yet</div>}
         {all.map((m) => (
           <div key={m.id} className="flex gap-3 px-4 py-3.5">
             <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${m.direction === "in" ? "bg-panel text-muted" : "bg-ink text-canvas"}`}>{m.direction === "in" ? <ArrowDownLeft size={13} /> : <ArrowUpRight size={13} />}</span>
@@ -20,7 +21,7 @@ export default async function InboxPage() {
                 <span className="font-medium">{m.direction === "in" ? m.party : `To ${m.party}`}</span>
                 <span className="text-faint">{m.party_role}</span>
                 {m.case_id && <Link href={`/cases/${m.case_id}?tab=messages`}><Chip>{m.client}</Chip></Link>}
-                {m.state === "needs_approval" && <Chip tone="warn">Waiting for approval</Chip>}
+                {m.state === "needs_approval" && <Chip tone="warn">Awaiting approval</Chip>}
                 {m.state === "sent" && <Chip tone="ok">Sent</Chip>}
                 <span className="ml-auto text-[11.5px] text-faint">{ago(m.at)}</span>
               </div>

@@ -11,8 +11,8 @@ node scripts/render-pages.mjs   # page images for the made up demo case
 npm run dev                     # http://localhost:3210
 ```
 
-Sign in with "Open the demo workspace". The demo firm, people, clients and cases are all made up.
-"Reset the demo" in the sidebar puts everything back.
+"View the sample workspace" on the sign in page opens a made up firm. "Reset" in the sidebar puts it
+back. "Create one" makes a real account with its own empty workspace.
 
 ## What works today
 
@@ -27,6 +27,10 @@ Sign in with "Open the demo workspace". The demo firm, people, clients and cases
 * Demo world: four events from outside (client email, referee letter, USCIS Request for Evidence,
   receipt notice) and what Lincoln does about each.
 * Inbox, Lincoln report (time saved, estimate), Library, Integrations (roadmap), Settings.
+* Accounts: sign up, sign in, sign out and password reset. Passwords are scrypt hashes; session and
+  reset tokens are stored only as SHA-256; repeated attempts are limited.
+* Privacy Policy and Terms of Service at `/privacy` and `/terms`. Company details come from
+  `src/lib/company.ts` and are placeholders until the company exists.
 
 ## What is scripted, and what is not built yet
 
@@ -34,7 +38,8 @@ Sign in with "Open the demo workspace". The demo firm, people, clients and cases
   yet read a new file live inside the app. That needs a model connected (`src/lib/llm.ts`).
 * The Assistant chat is wired to the model client but has not been tested against a live model.
 * Outside events are played by a button, not by a real inbox or USCIS.
-* Sign in with Microsoft or Google, real email, e-signing and imports are not built.
+* Sign in with Microsoft or Google, real email, e-signing and imports are not built. With no mail
+  provider connected, the password reset link is shown on screen instead of being emailed.
 * The standard task times behind the Lincoln report are placeholders.
 
 ## Security: where it stands

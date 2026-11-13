@@ -49,7 +49,7 @@ export const EVENTS: Event[] = [
       c.d.prepare("UPDATE cases SET state = 'needs_you', waiting_on = 'James Whitaker: response plan', summary = 'USCIS sent a Request for Evidence on two points. Lincoln has read it, set the deadline and drafted a response plan and the employer checklist.', next_date = ?, next_date_label = 'RFE response due' WHERE firm_id = ? AND id = 'c_eze'").run(due, c.firm);
       c.d.prepare("INSERT INTO approvals (id, firm_id, case_id, kind, title, brief, least_sure, if_wrong, payload, status, assignee_id, created_at, due) VALUES (?, ?, 'c_eze', 'plan', ?, ?, ?, ?, ?, 'pending', 'u_maria', ?, ?)").run(
         "a_eze_rfe", c.firm, "RFE response plan: specialty occupation and client site",
-        "USCIS asked two questions. This is how Lincoln proposes to answer them, and what it will ask the employer for.",
+        "USCIS asked two questions. Proposed answers to each, and the documents to request from the employer.",
         "Whether to add an expert opinion letter on the degree requirement. It costs the client more but answers the first question most directly.",
         "A thin response is usually followed by a denial, not a second request.",
         JSON.stringify({ messageId: "m_eze_checklist", points: [

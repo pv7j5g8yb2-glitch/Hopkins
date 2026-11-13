@@ -6,9 +6,18 @@ draft of the app is in `lincoln/` (Next.js, SQLite): Harvey style interface, a d
 cases, the full Halász O-1A case, approvals by decision, the support letter with facts linked to their
 pages, Word export, a scripted "demo world". See `lincoln/README.md` for what works and what is scripted.
 
-Next: (1) Ismael's feedback on the first draft; (2) connect the model: the key he gave starts
-"sk-cs4-" and is in `lincoln/.env.local` (not in git), but the provider's address and model name are
-still needed; (3) live reading of a new client file inside the app; (4) library entries per case type.
+Second pass (2026-11-13, after Ismael's feedback): interface stripped back and rewritten with no
+second person; real sign up, sign in, sign out and password reset (scrypt hashes, hashed session and
+reset tokens, attempt limits); Privacy Policy and Terms of Service pages; upgraded to Next.js 16 (npm
+audit clean). A new firm gets its own empty workspace and cannot reach another firm's cases or pages
+(tested).
+
+Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
+name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
+provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in
+`lincoln/.env.local` (not in git), but the provider's address and model name are unknown, and its terms
+must forbid training on customer content, as the Privacy Policy now promises; (4) live reading of a new
+client file; (5) library entries per case type.
 
 Last updated 2026-11-13. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.

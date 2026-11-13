@@ -1,6 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { hashPassword, initialsOf, limited, mailConfigured, newToken, sendMail, sha, validEmail, validPassword, verifyPassword } from "./auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db, resetDemo, uid } from "./db";
@@ -15,18 +16,82 @@ import { LIBRARY } from "./library";
 const now = () => new Date().toISOString();
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
+async function startSession(userId: string) {
+  const token = newToken();
+  db().prepare("INSERT INTO sessions (id, user_id, created_at) VALUES (?, ?, ?)").run(sha(token), userId, now());
+  (await cookies()).set(COOKIE, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 12 });
+}
+const clientKey = async () => ((await headers()).get("x-forwarded-for") ?? "local").split(",")[0].trim();
+
 export async function signInDemo() {
-  const d = db();
-  const sid = crypto.randomUUID() + crypto.randomUUID();
-  d.prepare("INSERT INTO sessions (id, user_id, created_at) VALUES (?, ?, ?)").run(sid, DEMO_USER, now());
-  (await cookies()).set(COOKIE, sid, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 12 });
+  await startSession(DEMO_USER);
   redirect("/");
+}
+
+export async function signIn(form: FormData) {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  if (limited(`in:${email}`) || limited(`in:${await clientKey()}`, 30)) redirect("/signin?error=limited");
+  const u = db().prepare("SELECT id, password_hash FROM users WHERE email = ?").get(email) as { id: string; password_hash: string | null } | undefined;
+  if (!verifyPassword(password, u?.password_hash ?? null) || !u) redirect("/signin?error=invalid");
+  await startSession(u.id);
+  redirect("/");
+}
+
+export async function signUp(form: FormData) {
+  const name = String(form.get("name") ?? "").trim().slice(0, 100);
+  const firmName = String(form.get("firm") ?? "").trim().slice(0, 120);
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  if (limited(`up:${await clientKey()}`, 10)) redirect("/signup?error=limited");
+  if (!name || !firmName || !validEmail(email)) redirect("/signup?error=fields");
+  if (!validPassword(password)) redirect("/signup?error=password");
+  const d = db();
+  if (d.prepare("SELECT 1 FROM users WHERE email = ?").get(email)) redirect("/signup?error=exists");
+  const firmId = "f_" + uid();
+  const userId = "u_" + uid();
+  d.transaction(() => {
+    d.prepare("INSERT INTO firms (id, name, demo) VALUES (?, ?, 0)").run(firmId, firmName);
+    d.prepare("INSERT INTO users (id, firm_id, name, email, role, initials, password_hash, created_at) VALUES (?, ?, ?, ?, 'Administrator', ?, ?, ?)").run(userId, firmId, name, email, initialsOf(name), hashPassword(password), now());
+  })();
+  await startSession(userId);
+  redirect("/");
+}
+
+export async function requestReset(form: FormData) {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  if (limited(`fp:${email}`, 5) || limited(`fp:${await clientKey()}`, 15)) redirect("/forgot?error=limited");
+  const u = db().prepare("SELECT id FROM users WHERE email = ? AND password_hash IS NOT NULL").get(email) as { id: string } | undefined;
+  let preview = "";
+  if (u) {
+    const token = newToken();
+    db().prepare("INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)").run(sha(token), u.id, new Date(Date.now() + 3600_000).toISOString());
+    sendMail(email, "Reset the Lincoln password", `A password reset was requested for this account. The link is valid for one hour: /reset/${token}`);
+    // Until a mail provider is connected, the link is shown on screen so the flow can be tested.
+    if (!mailConfigured()) preview = `&preview=${token}`;
+  }
+  redirect(`/forgot?sent=1${preview}`);
+}
+
+export async function resetPassword(form: FormData) {
+  const token = String(form.get("token") ?? "");
+  const password = String(form.get("password") ?? "");
+  if (!validPassword(password)) redirect(`/reset/${encodeURIComponent(token)}?error=password`);
+  const d = db();
+  const r = d.prepare("SELECT user_id FROM password_resets WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?").get(sha(token), now()) as { user_id: string } | undefined;
+  if (!r) redirect("/forgot?error=expired");
+  d.transaction(() => {
+    d.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(password), r.user_id);
+    d.prepare("UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL").run(now(), r.user_id);
+    d.prepare("DELETE FROM sessions WHERE user_id = ?").run(r.user_id);
+  })();
+  redirect("/signin?reset=1");
 }
 
 export async function signOut() {
   const jar = await cookies();
   const sid = jar.get(COOKIE)?.value;
-  if (sid) db().prepare("DELETE FROM sessions WHERE id = ?").run(sid);
+  if (sid) db().prepare("DELETE FROM sessions WHERE id = ?").run(sha(sid));
   jar.delete(COOKIE);
   redirect("/signin");
 }
@@ -69,7 +134,7 @@ export async function decideApproval(approvalId: string, decision: "approved" | 
   const tx = d.transaction(() => {
     if (a.kind === "decisions" && decision === "approved") {
       const qs = payload.questions as Question[];
-      if (qs.some((q) => !q.answer)) throw new Error("Answer every decision first.");
+      if (qs.some((q) => !q.answer)) throw new Error("Every decision must be answered first.");
       const answers = Object.fromEntries(qs.map((q) => [q.id, q.answer as string]));
       log(F, a.case_id, user.name, "decide", `Answered ${qs.length} strategy decisions.`);
       // criteria follow the attorney's answers
@@ -89,10 +154,10 @@ export async function decideApproval(approvalId: string, decision: "approved" | 
         d.prepare("INSERT INTO drafts (id, firm_id, case_id, title, kind, status, version, content, updated_at) VALUES (?, ?, ?, 'Petition support letter', 'letter', 'for_review', 1, ?, ?)").run(draftId, F, a.case_id, JSON.stringify(letter), now());
         log(F, a.case_id, "Lincoln", "draft", `Wrote the support letter from ${user.name.split(" ")[0]}'s decisions: ${letter.claimed.length} criteria argued, ${letter.facts} facts each linked to its page, ${letter.calls} judgement calls marked.`, 240);
         d.prepare("INSERT INTO approvals (id, firm_id, case_id, kind, title, brief, least_sure, if_wrong, payload, status, assignee_id, created_at, due) VALUES (?, ?, ?, 'draft_review', ?, ?, ?, ?, ?, 'pending', ?, ?, ?)").run(
-          uid(), F, a.case_id, "Support letter ready for your review",
-          `Written from your ${qs.length} decisions. ${letter.facts} facts are linked to their source page. Read the ${letter.calls} judgement calls and ${letter.notes} notes; the rest only needs a skim.`,
-          "The final merits paragraph: it is the one place where the argument is Lincoln's wording, not a fact from the file.",
-          "Nothing is filed from this step. Approving it moves the letter to the filing packet, where you sign.",
+          uid(), F, a.case_id, "Support letter for review",
+          `Drafted from ${qs.length} recorded decisions: ${letter.facts} sourced facts, ${letter.calls} judgement calls, ${letter.notes} attorney notes.`,
+          "The final merits paragraph: the one place where the argument is Lincoln's wording, not a fact from the file.",
+          "Nothing is filed at this step. Approval moves the letter to the filing packet for signature.",
           JSON.stringify({ draftId }), user.id, now(), day(3));
         d.prepare("UPDATE cases SET stage = 'Review', summary = ?, waiting_on = ? WHERE firm_id = ? AND id = ?").run(`Support letter written from ${user.name.split(" ")[0]}'s decisions and waiting for review. The consultation and the passport renewal are still open.`, `${user.name}: review the letter`, F, a.case_id);
       }
@@ -162,7 +227,7 @@ export async function createCase(form: FormData) {
   const id = "c_" + uid();
   const ref = `${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
   db().prepare(`INSERT INTO cases (id, firm_id, ref, client, counterpart, type_code, type_name, family, stage, state, waiting_on, summary, attorney_id, paralegal_id, opened_at, sensitive, pages)
-    VALUES (?, ?, ?, ?, NULL, ?, ?, ?, 'Intake', 'moving', NULL, ?, ?, ?, ?, ?, 0)`).run(id, firm.id, ref, client, code, typeName, family, `Opened by ${user.name}. Lincoln starts on the questionnaire and checklist as soon as a model is connected to this workspace.`, user.id, user.id, now(), family === "Humanitarian" ? 1 : 0);
+    VALUES (?, ?, ?, ?, NULL, ?, ?, ?, 'Intake', 'moving', NULL, ?, ?, ?, ?, ?, 0)`).run(id, firm.id, ref, client, code, typeName, family, `Opened by ${user.name}.`, user.id, user.id, now(), family === "Humanitarian" ? 1 : 0);
   log(firm.id, id, user.name, "open", "Opened the case.");
   revalidatePath("/", "layout");
   redirect(`/cases/${id}`);

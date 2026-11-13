@@ -78,5 +78,5 @@ export function stateTone(state: string): Tone {
   return state === "needs_you" ? "ink" : state === "moving" ? "ok" : "neutral";
 }
 export function stateLabel(state: string) {
-  return state === "needs_you" ? "Needs you" : state === "moving" ? "Moving" : state === "waiting" ? "Waiting on others" : "Filed";
+  return state === "needs_you" ? "For review" : state === "moving" ? "In progress" : state === "waiting" ? "Awaiting others" : "Filed";
 }

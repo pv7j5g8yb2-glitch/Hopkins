@@ -6,11 +6,11 @@ import { chat, llmConfigured, type Msg } from "@/lib/llm";
 
 export async function POST(req: Request) {
   const s = await currentUser();
-  if (!s) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+  if (!s) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   const { message } = (await req.json()) as { message?: string };
   const text = (message ?? "").trim().slice(0, 4000);
-  if (!text) return NextResponse.json({ error: "Write a question first." }, { status: 400 });
-  if (!llmConfigured()) return NextResponse.json({ error: "No model is connected to this workspace yet, so Lincoln cannot answer questions here. Everything else in the demo works." }, { status: 503 });
+  if (!text) return NextResponse.json({ error: "A question is required." }, { status: 400 });
+  if (!llmConfigured()) return NextResponse.json({ error: "The assistant is not enabled in this workspace." }, { status: 503 });
 
   const F = s.firm.id;
   const d = db();

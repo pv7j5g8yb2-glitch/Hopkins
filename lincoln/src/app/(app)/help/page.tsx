@@ -1,12 +1,12 @@
+import Link from "next/link";
 import { Card, PageHead } from "@/components/ui";
 import { requireUser } from "@/lib/session";
 
 const QA: [string, string][] = [
-  ["What does Lincoln do?", "It runs each immigration case from signed client to decision: it reads every document, chases what is missing, checks the evidence, drafts the forms and letters, watches every date and tells you when something needs you."],
-  ["What does it never do?", "It never gives legal advice to the public, never signs, and never files or sends anything legal without the attorney's approval. Lincoln is not a lawyer."],
-  ["How do I check its work quickly?", "Lincoln asks you to decide before it writes. In a draft, facts are underlined in green and linked to the page they came from, judgement calls are highlighted, and notes for you are in red. Read the highlights; skim the rest."],
-  ["Where do I see what it did?", "Every action is in the case under Activity, and the week's total is in the Lincoln report."],
-  ["What is the demo world?", "A made up firm with made up cases. The button in the sidebar plays events from the outside world, such as a client email or a USCIS notice, so you can watch Lincoln react."],
+  ["What Lincoln does", "Runs each immigration case from signed client to decision: reads every document, requests what is missing, grades the evidence, drafts forms and letters, tracks every date and raises anything that needs an attorney."],
+  ["What Lincoln never does", "Gives legal advice to the public, signs, or files or sends anything legal without an attorney's approval. Lincoln is not a lawyer."],
+  ["Reviewing a draft", "Sourced facts are underlined and link to the page they came from. Judgement calls are highlighted. Attorney notes are in red. Review mode dims everything else."],
+  ["Record of work", "Every action is listed under Activity in the case. Weekly totals are in the Lincoln report."],
 ];
 
 export default async function Help() {
@@ -17,6 +17,10 @@ export default async function Help() {
       <Card className="divide-y divide-line">
         {QA.map(([q, a]) => <div key={q} className="px-4 py-3.5"><div className="mb-0.5 text-[14px] font-medium">{q}</div><p className="text-[13.5px] leading-relaxed text-muted">{a}</p></div>)}
       </Card>
+      <div className="mt-5 flex gap-5 text-[12.5px] text-muted">
+        <Link href="/privacy" className="hover:text-ink">Privacy Policy</Link>
+        <Link href="/terms" className="hover:text-ink">Terms of Service</Link>
+      </div>
     </div>
   );
 }
