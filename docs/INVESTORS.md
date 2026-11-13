@@ -61,3 +61,21 @@ NFX. Crunchbase has the most data but is mostly paid.
   credits (sources disagree); the 6th cohort closed 23 Feb 2026, next window not found. Takes equity,
   so the "no VC before revenue" rule applies.
 * YC ($500k) and South Park Commons ($400k plus $600k) as above.
+
+## Application status as of 13 November 2026 (checked, mostly third party sources)
+* YC: W27 closed 2 Nov 2026. No official later dates found; guesses Spring 2027 around Jan to Feb,
+  Summer 2027 around May. Early Decision lets applicants apply now for a future batch. Paul Graham
+  (via Fortune) said YC typically does not consider under 18s who cannot contract.
+* South Park Commons: Fall 2026 closed 2 Aug. Spring cycles closed 1 Feb in 2026 and 2 Feb in 2025,
+  so Spring 2027 is likely early Feb 2027 (not announced). Fellowship: $400k for 7 percent plus $600k.
+* a16z speedrun: SR008 closed 1 Nov 2026. SR009 starts late July 2027, no deadline published; FAQ
+  says late applications are reviewed for the next residency. Up to $1M, solo founders allowed.
+* Conviction Embed: the official page says applications are open for cohort 7 (retreat 20 to 22
+  March, demo day 14 May, year not stated). $250k on an uncapped MFN SAFE plus credits (guide).
+  Two minute founder video. Rolling, 10 to 12 companies. Deadline not found.
+* NDRC accelerator: applications closed (checked 10 Sept 2026); EUR 100k uncapped SAFE; being replaced
+  by Enterprise Ireland's EUR 21M National Accelerator Programme (announced May 2026, operator tender
+  to follow). Pre-accelerator may be open.
+* Enterprise Ireland Pre-Seed Start Fund: continuously open (FAQ May 2025), EUR 50k or 100k as a
+  convertible loan note; company located, managed and controlled in Ireland; individuals
+  incorporating can apply; sole traders cannot.
