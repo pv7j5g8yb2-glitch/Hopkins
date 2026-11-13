@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS kv (firm_id TEXT NOT NULL, key TEXT NOT NULL, value T
 CREATE TABLE IF NOT EXISTS mailboxes (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, user_id TEXT NOT NULL, provider TEXT NOT NULL, email TEXT NOT NULL, refresh_enc TEXT NOT NULL, access_enc TEXT, expires_at INTEGER, last_check TEXT, last_error TEXT, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS security_events (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, user_id TEXT, at TEXT NOT NULL, kind TEXT NOT NULL, detail TEXT, ip TEXT);
 CREATE INDEX IF NOT EXISTS i_sec_user ON security_events(user_id, at);
+CREATE TABLE IF NOT EXISTS identities (provider TEXT NOT NULL, subject TEXT NOT NULL, user_id TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY (provider, subject));
 CREATE TABLE IF NOT EXISTS login_challenges (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS inbound_seen (mailbox_id TEXT NOT NULL, msg_id TEXT NOT NULL, PRIMARY KEY (mailbox_id, msg_id));
 CREATE INDEX IF NOT EXISTS i_cases_firm ON cases(firm_id);

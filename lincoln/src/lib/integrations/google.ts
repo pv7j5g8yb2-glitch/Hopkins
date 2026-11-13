@@ -17,8 +17,8 @@ export const SCOPES = [
 ];
 export const configured = () => Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.APP_URL);
 
-export function authUrl(state: string) {
-  const q = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: callback("google"), response_type: "code", scope: SCOPES.join(" "), access_type: "offline", prompt: "consent", include_granted_scopes: "true", state });
+export function authUrl(state: string, mode: "auth" | "connect" = "connect") {
+  const q = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: callback("google"), response_type: "code", scope: SCOPES.join(" "), access_type: "offline", prompt: mode === "auth" ? "select_account" : "consent", include_granted_scopes: "true", state });
   return api(`https://accounts.google.com/o/oauth2/v2/auth?${q}`);
 }
 
@@ -30,9 +30,10 @@ async function token(body: Record<string, string>) {
 
 export async function exchange(code: string) {
   const t = await token({ code, grant_type: "authorization_code", redirect_uri: callback("google") });
-  if (!t.refresh_token) throw new Error("Google did not return offline access.");
-  const claims = JSON.parse(Buffer.from((t.id_token ?? "..").split(".")[1] ?? "", "base64url").toString() || "{}") as { email?: string };
-  return { email: (claims.email ?? "").toLowerCase(), refresh: t.refresh_token, access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
+  const claims = JSON.parse(Buffer.from((t.id_token ?? "..").split(".")[1] ?? "", "base64url").toString() || "{}") as { email?: string; email_verified?: boolean; sub?: string; name?: string };
+  const email = (claims.email ?? "").toLowerCase();
+  // The id token comes straight from Google's token endpoint over TLS, so its claims are trusted as is.
+  return { email, accountEmail: claims.email_verified ? email : "", subject: claims.sub ?? "", name: claims.name ?? "", refresh: t.refresh_token ?? "", access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
 }
 
 async function access(c: Connection) {

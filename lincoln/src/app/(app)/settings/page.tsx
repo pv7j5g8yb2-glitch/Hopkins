@@ -2,8 +2,8 @@ import Link from "next/link";
 import clsx from "clsx";
 import AvatarField from "@/components/AvatarField";
 import { Avatar, PageHead, btn, field, label } from "@/components/ui";
-import { changePassword, confirmTwoStep, deleteFirm, disableTwoStep, disconnect, newInboundAddress, setTeamsChannel, signOutSession, startTwoStep, updateFirm, updateProfile } from "@/lib/actions";
-import { PROVIDERS, connectionsOf, settingsOf, teamsChannels } from "@/lib/integrations";
+import { changePassword, confirmTwoStep, deleteFirm, disableTwoStep, signOutSession, startTwoStep, updateFirm, updateProfile } from "@/lib/actions";
+import IntegrationsPanel from "@/components/IntegrationsPanel";
 import { db } from "@/lib/db";
 import QRCode from "qrcode";
 import { otpauth } from "@/lib/totp";
@@ -50,12 +50,6 @@ const CONTROLS: [string, boolean][] = [
   ["Zero retention agreement with the model provider", false],
   ["Independent security review", false],
 ];
-const INTEGRATIONS: [string, [string, string][]][] = [
-  ["Documents", [["Word add-in", "Lincoln inside Word"], ["Dropbox", "Files"], ["Box", "Files"]]],
-  ["Signatures and messaging", [["DocuSign", "Signatures"], ["Slack", "Notifications"]]],
-  ["Migration", [["Docketwise", "Cases and documents"], ["LollyLaw", "Cases and documents"], ["INSZoom", "Cases and documents"], ["Clio", "Matters and documents"], ["Folders or spreadsheet", "Anything else"]]],
-  ["Government and finance", [["USCIS case status", "Status"], ["LawPay", "Payments"], ["QuickBooks", "Accounts"], ["iManage", "Documents"], ["NetDocuments", "Documents"]]],
-];
 const KINDS: Record<string, string> = { read: "Reading documents", evidence: "Grading evidence", draft: "Drafting", check: "Checking facts and forms", chase: "Chasing documents", send: "Routine messages", file: "Filing mail", date: "Dates", status: "Status checks", form: "Forms", packet: "Filing packets", open: "Opening cases", bulletin: "Visa Bulletin" };
 const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -80,16 +74,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const sessions = tab === "security" ? (d.prepare("SELECT id, ip, agent, created_at, last_seen FROM sessions WHERE user_id = ? AND created_at > ? ORDER BY last_seen DESC").all(user.id, new Date(Date.now() - SESSION_HOURS * 3600_000).toISOString()) as { id: string; ip: string | null; agent: string | null; created_at: string; last_seen: string | null }[]) : [];
   const events = tab === "security" ? (d.prepare("SELECT id, kind, detail, ip, at FROM security_events WHERE user_id = ? ORDER BY at DESC LIMIT 12").all(user.id) as { id: string; kind: string; detail: string | null; ip: string | null; at: string }[]) : [];
   const controls: [string, boolean][] = [...CONTROLS, [`Model provider: ${modelHost}${/anthropic\.com$/.test(modelHost) ? "" : " (third party relay; not for client data)"}`, /anthropic\.com$/.test(modelHost)]];
-  const conns = connectionsOf(firm.id, user.id);
-  const ms = conns.find((c) => c.provider === "microsoft");
-  let channels: { teamId: string; channelId: string; name: string }[] = [];
-  if (tab === "integrations" && ms) {
-    try { channels = await teamsChannels(ms); } catch { channels = []; }
-  }
-  const integrationError = tab === "integrations" && error ? ({ google: "Google is not configured on this server.", microsoft: "Microsoft is not configured on this server.", state: "The sign in expired. Try again.", connect: "The sign in was not completed.", sample: "Accounts cannot be connected to the shared sample workspace." } as Record<string, string>)[error] : null;
   const hasPassword = Boolean((db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null }).password_hash);
   const admin = /admin|managing/i.test(user.role);
-  const err = error ? MSG[tab]?.[error] : null;
+  const err = error && tab !== "integrations" ? MSG[tab]?.[error] : null;
 
   return (
     <div className="rise">
@@ -226,80 +213,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             </div>
           )}
 
-          {tab === "integrations" && (
-            <>
-              <section className="mb-10">
-                <div className="border-t border-line">
-                  {PROVIDERS.map((p) => {
-                    const c = conns.find((x) => x.provider === p.id);
-                    return (
-                      <div key={p.id} className="border-b border-line py-4">
-                        <div className="flex items-center gap-4">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line text-[13px] font-medium">{p.name[0]}</span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-[13.5px] font-medium">{p.name}</span>
-                            <span className="block truncate text-[12px] text-faint">{c ? `${c.email}${c.last_check ? ` · checked ${ago(c.last_check)}` : ""}` : p.services.join(", ")}</span>
-                          </span>
-                          {c ? (
-                            <form action={disconnect}><input type="hidden" name="provider" value={p.id} /><button className={btn.ghost}>Disconnect</button></form>
-                          ) : p.configured() ? (
-                            <a href={`/api/connect/${p.id}`} className={btn.primary}>Connect</a>
-                          ) : (
-                            <span className="text-[12px] text-faint">Not configured</span>
-                          )}
-                        </div>
-                        {c && <p className="mt-2 pl-12 text-[12px] text-muted">{p.services.join(" · ")}</p>}
-                        {c?.last_error && <p className="mt-1 pl-12 text-[12px] text-risk">{c.last_error}</p>}
-                        {c && p.id === "microsoft" && (
-                          <form action={setTeamsChannel} className="mt-3 flex items-center gap-2 pl-12">
-                            <select name="channel" defaultValue={settingsOf(c).teams ? `${settingsOf(c).teams!.teamId}|${settingsOf(c).teams!.channelId}|${settingsOf(c).teams!.name}` : ""} className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-white px-2 text-[12.5px] outline-none focus:border-ink">
-                              <option value="">Teams notices off</option>
-                              {channels.map((ch) => <option key={ch.channelId} value={`${ch.teamId}|${ch.channelId}|${ch.name}`}>{ch.name}</option>)}
-                            </select>
-                            <button className={btn.secondary}>Save</button>
-                          </form>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {connected && <p className="mt-3 text-[13px] text-muted">Connected. New mail is read automatically from now on.</p>}
-                {integrationError && <p className="mt-3 text-[13px] text-risk">{integrationError}</p>}
-              </section>
-              {admin && (
-                <section className="mb-10">
-                  <h2 className="mb-1 text-[13px] font-medium">Forwarding address</h2>
-                  <div className="border-t border-line py-3">
-                    {inbound ? (
-                      <>
-                        <p className="mb-2 break-all rounded-lg bg-side px-3 py-2 font-mono text-[12px]">{`${process.env.APP_URL ?? ""}/api/inbound/${inbound}`}</p>
-                        <p className="text-[12px] text-faint">Shown once. Point a forwarding service at it (Postmark inbound format). Any mail system can then route case mail to Lincoln.</p>
-                      </>
-                    ) : (
-                      <form action={newInboundAddress} className="flex items-center justify-between gap-4">
-                        <span className="text-[12.5px] text-muted">For firms on any mail system. Issuing a new address disables the previous one.</span>
-                        <button className={btn.secondary}>Issue address</button>
-                      </form>
-                    )}
-                  </div>
-                </section>
-              )}
-              {INTEGRATIONS.map(([group, items]) => (
-                <section key={group} className="mb-8">
-                  <h2 className="mb-1 text-[13px] font-medium">{group}</h2>
-                  <div className="border-t border-line">
-                    {items.map(([name, what]) => (
-                      <Row key={name}>
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-[12px] font-medium text-muted">{name[0]}</span>
-                        <span className="min-w-0 flex-1"><span className="block text-[13px]">{name}</span><span className="block text-[12px] text-faint">{what}</span></span>
-                        <span className="text-[12px] text-faint">Planned</span>
-                      </Row>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </>
-          )}
+          {tab === "integrations" && <IntegrationsPanel user={user} firm={firm} connected={connected} error={error} inbound={inbound} />}
 
           {tab === "usage" && (() => {
             const acts = activitySince(firm.id, new Date(Date.now() - 7 * 86400000).toISOString(), viewer);

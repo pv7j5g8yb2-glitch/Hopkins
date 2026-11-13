@@ -14,7 +14,7 @@ export const PROVIDERS: { id: Provider; name: string; services: string[]; config
   { id: "microsoft", name: "Microsoft", services: ["Outlook", "Word", "Excel", "PowerPoint", "OneDrive", "SharePoint", "Teams"], configured: microsoft.configured },
 ];
 export const isProvider = (v: string): v is Provider => v === "google" || v === "microsoft";
-export const authUrl = (p: Provider, state: string) => P[p].authUrl(state);
+export const authUrl = (p: Provider, state: string, mode: "auth" | "connect" = "connect") => P[p].authUrl(state, mode);
 
 export const connectionsOf = (firmId: string, userId?: string) =>
   (userId
@@ -27,6 +27,20 @@ export const firmMailbox = (firmId: string, userId?: string) => (userId ? connec
 /** Completes a sign in. Mail already in the inbox is marked as seen, so only new mail is worked. */
 export async function connect(p: Provider, firmId: string, userId: string, code: string) {
   const t = await P[p].exchange(code);
+  if (!t.refresh) throw new Error("Offline access was not granted.");
+  linkIdentity(p, t.subject, userId);
+  return store(p, firmId, userId, t);
+}
+
+/** Lets this Google or Microsoft account sign in to the Lincoln user, unless it already belongs to another. */
+function linkIdentity(p: Provider, subject: string, userId: string) {
+  if (!subject || subject.endsWith(":")) return;
+  db().prepare("INSERT OR IGNORE INTO identities (provider, subject, user_id, created_at) VALUES (?, ?, ?, ?)").run(p, subject, userId, new Date().toISOString());
+}
+
+type Exchanged = Awaited<ReturnType<typeof google.exchange>>;
+
+async function store(p: Provider, firmId: string, userId: string, t: Exchanged) {
   const d = db();
   d.prepare("DELETE FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = ?").run(firmId, userId, p);
   const id = uid();
@@ -69,3 +83,41 @@ export const download = (c: Connection, id: string) => P[c.provider].download(c,
 export const upload = (c: Connection, name: string, kind: OfficeKind, data: Buffer) => P[c.provider].upload(c, name, kind, data);
 export const teamsChannels = (c: Connection) => microsoft.channels(c);
 export const teamsPost = (c: Connection, teamId: string, channelId: string, html: string) => microsoft.post(c, teamId, channelId, html);
+
+const CONSUMER = /^(gmail|googlemail|outlook|hotmail|live|msn|icloud|me|mac|yahoo|aol|proton|protonmail|pm)\./i;
+const firmNameFrom = (email: string) => {
+  const domain = email.split("@")[1] ?? "";
+  if (!domain || CONSUMER.test(domain)) return "New firm";
+  return domain.split(".")[0].split(/[-_]/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ") || "New firm";
+};
+
+export type SignInResult = { userId: string; firmId: string; created: boolean } | { error: "exists" | "unverified" | "sample" };
+
+/**
+ * Sign in or sign up with Google or Microsoft. A returning account is found by the provider's own
+ * account id, never by email. A new account gets its own empty firm, and the same consent connects
+ * mail, files, documents and calendar, so nothing else needs setting up.
+ */
+export async function signInWith(p: Provider, code: string): Promise<SignInResult> {
+  const t = await P[p].exchange(code);
+  const d = db();
+  const linked = t.subject ? (d.prepare("SELECT i.user_id, u.firm_id, f.demo FROM identities i JOIN users u ON u.id = i.user_id JOIN firms f ON f.id = u.firm_id WHERE i.provider = ? AND i.subject = ?").get(p, t.subject) as { user_id: string; firm_id: string; demo: number } | undefined) : undefined;
+  if (linked) {
+    if (linked.demo) return { error: "sample" };
+    if (t.refresh) await store(p, linked.firm_id, linked.user_id, t);
+    return { userId: linked.user_id, firmId: linked.firm_id, created: false };
+  }
+  if (!t.accountEmail || !t.subject) return { error: "unverified" };
+  // An existing password account is never taken over by email: it connects from Settings first.
+  if (d.prepare("SELECT 1 FROM users WHERE email = ?").get(t.accountEmail)) return { error: "exists" };
+  const firmId = "f_" + uid(), userId = "u_" + uid();
+  const name = (t.name || t.accountEmail.split("@")[0]).slice(0, 100);
+  const initials = name.split(/\s+/).filter(Boolean).map((w) => w[0].toUpperCase()).slice(0, 2).join("") || "U";
+  d.transaction(() => {
+    d.prepare("INSERT INTO firms (id, name, demo) VALUES (?, ?, 0)").run(firmId, firmNameFrom(t.accountEmail));
+    d.prepare("INSERT INTO users (id, firm_id, name, email, role, initials, password_hash, created_at) VALUES (?, ?, ?, ?, 'Administrator', ?, NULL, ?)").run(userId, firmId, name, t.accountEmail, initials, new Date().toISOString());
+  })();
+  linkIdentity(p, t.subject, userId);
+  if (t.refresh) await store(p, firmId, userId, t);
+  return { userId, firmId, created: true };
+}

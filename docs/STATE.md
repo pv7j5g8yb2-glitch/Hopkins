@@ -77,6 +77,15 @@ in with recovery codes, device list and sign out, a security record, strict head
 injection limits, sample workspace lock down and firm deletion. A scripted attack test (33 checks) and 7
 unit checks all pass. Password reset email needs RESEND_API_KEY and MAIL_FROM.
 
+Front door pass (2026-11-13): sign in and sign up redesigned (two tone card, building photo on the right).
+"Continue with Microsoft" and "Continue with Google" sign in, or create the account and its firm and connect
+every service in the same consent; returning users are found by the provider's account id, never by email,
+and an email that already has a password account is never taken over (it connects from Settings first).
+Microsoft accounts are identified by tenant and object id and the verified user principal name, not the
+mail attribute (the "nOAuth" problem). L squircle icon for browsers, iPhone home screen and Android.
+Integrations has its own page in the sidebar with real logos. Sidebar slides closed and open (remembered),
+phone drawer slides in, chat messages slide up, the send button animates.
+
 Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
 name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
 provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in

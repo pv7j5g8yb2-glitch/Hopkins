@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import clsx from "clsx";
-import { BookOpen, ChevronsUpDown, CircleCheck, CircleHelp, FolderClosed, House, Inbox, LogOut, Menu, Play, RotateCcw, Settings, SquarePen, X } from "lucide-react";
+import { Blocks, BookOpen, ChevronsUpDown, CircleCheck, CircleHelp, FolderClosed, House, Inbox, LogOut, Menu, PanelLeft, Play, RotateCcw, Settings, SquarePen, X } from "lucide-react";
 import { advanceDemo, resetDemoAction, signOut } from "@/lib/actions";
 import { Avatar } from "./ui";
 
@@ -19,6 +19,15 @@ type Props = {
 export default function Sidebar({ firm, user, review, recent, demo }: Props) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    try { setClosed(localStorage.getItem("lincoln.sidebar") === "closed"); } catch { /* storage unavailable */ }
+  }, []);
+  const toggle = (next: boolean) => {
+    setClosed(next);
+    document.documentElement.dataset.sidebar = next ? "closed" : "open";
+    try { localStorage.setItem("lincoln.sidebar", next ? "closed" : "open"); } catch { /* storage unavailable */ }
+  };
   const [menu, setMenu] = useState(false);
   const [pending, start] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -52,6 +61,7 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
       <div className="mb-4 flex items-center justify-between px-2.5">
         <Link href="/" className="wordmark text-[19px] leading-none">Lincoln</Link>
         <button onClick={() => setOpen(false)} className="rounded-md p-1 text-muted md:hidden" aria-label="Close menu"><X size={18} /></button>
+        <button onClick={() => toggle(true)} className="hidden rounded-md p-1 text-muted transition hover:bg-ink/[0.05] hover:text-ink md:block" aria-label="Close sidebar"><PanelLeft size={17} strokeWidth={1.7} /></button>
       </div>
       <nav className="flex flex-col gap-px">
         {item("/cases/new", "New case", SquarePen)}
@@ -61,6 +71,7 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
         {item("/approvals", "Review", CircleCheck, review)}
         {item("/inbox", "Inbox", Inbox)}
         {item("/library", "Library", BookOpen)}
+        {item("/integrations", "Integrations", Blocks)}
       </nav>
       {recent.length > 0 && (
         <div className="scroll-thin mt-6 min-h-0 flex-1 overflow-y-auto">
@@ -115,11 +126,12 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
           {review > 0 && <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-ink ring-2 ring-white" />}
         </button>
       </header>
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[248px] border-r border-line bg-side md:block">{body}</aside>
+      <aside className="sidebar-panel fixed inset-y-0 left-0 z-20 hidden w-[248px] border-r border-line bg-side md:block">{body}</aside>
+      {closed && <button onClick={() => toggle(false)} aria-label="Open sidebar" className="fade-in fixed left-3 top-3 z-20 hidden rounded-lg p-2 text-muted transition hover:bg-ink/[0.05] hover:text-ink md:block"><PanelLeft size={17} strokeWidth={1.7} /></button>}
       {open && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-ink/25" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-[280px] bg-side shadow-xl">{body}</aside>
+          <div className="fade-in absolute inset-0 bg-ink/25" onClick={() => setOpen(false)} />
+          <aside className="drawer-in absolute inset-y-0 left-0 w-[280px] bg-side shadow-xl">{body}</aside>
         </div>
       )}
     </>

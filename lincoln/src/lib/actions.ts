@@ -1,13 +1,14 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { hashPassword, initialsOf, limited, newToken, sha, validEmail, validPassword, verifyPassword } from "./auth";
 import { mailConfigured as systemMailConfigured, sendSystemMail } from "./mailer";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db, resetDemo, uid } from "./db";
-import { COOKIE, MFA_COOKIE, SESSION_HOURS, isAdmin, requireUser } from "./session";
+import { COOKIE, MFA_COOKIE, isAdmin, requireUser } from "./session";
 import { clientIp, securityEvent } from "./audit";
+import { beginChallenge, createSession } from "./login";
 import { verify as verifyTotp } from "./totp";
 import { open as openSecret } from "./secret";
 import { DEMO_USER } from "./seed";
@@ -27,14 +28,7 @@ import { deleteCaseFiles, forgetFirmKey } from "./storage";
 const now = () => new Date().toISOString();
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
-const cookieOpts = (maxAge: number) => ({ httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge });
-
-async function startSession(userId: string) {
-  const token = newToken();
-  const agent = ((await headers()).get("user-agent") ?? "").slice(0, 200);
-  db().prepare("INSERT INTO sessions (id, user_id, created_at, ip, agent, last_seen) VALUES (?, ?, ?, ?, ?, ?)").run(sha(token), userId, now(), await clientIp(), agent, now());
-  (await cookies()).set(COOKIE, token, cookieOpts(60 * 60 * SESSION_HOURS));
-}
+const startSession = createSession;
 const clientKey = clientIp;
 
 export async function signInDemo() {
@@ -54,10 +48,7 @@ export async function signIn(form: FormData) {
   }
   if (u.totp_enc) {
     // Password correct; the second step decides. The challenge lasts five minutes and five tries.
-    const token = newToken();
-    db().prepare("INSERT INTO login_challenges (token_hash, user_id, expires_at) VALUES (?, ?, ?)").run(sha(token), u.id, new Date(Date.now() + 5 * 60_000).toISOString());
-    (await cookies()).set(MFA_COOKIE, token, cookieOpts(300));
-    redirect("/signin/code");
+    redirect(await beginChallenge(u.id));
   }
   await securityEvent(u.firm_id, u.id, "sign_in");
   await startSession(u.id);
@@ -357,7 +348,15 @@ export async function changePassword(form: FormData) {
   const next = String(form.get("next") ?? "");
   if (limited(`pw:${user.id}`, 6)) redirect("/settings?tab=security&error=limited");
   const row = db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null };
-  if (!row.password_hash) redirect("/settings?tab=security&error=sample");
+  if (!row.password_hash) {
+    // An account created with Google or Microsoft sets its first password here; sample accounts cannot.
+    const f = db().prepare("SELECT demo FROM firms WHERE id = ?").get(user.firm_id) as { demo: number };
+    if (f.demo) redirect("/settings?tab=security&error=sample");
+    if (!validPassword(next)) redirect("/settings?tab=security&error=password");
+    db().prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(next), user.id);
+    await securityEvent(user.firm_id, user.id, "password_changed", "first password set");
+    redirect("/settings?tab=security&saved=1");
+  }
   if (!verifyPassword(current, row.password_hash)) redirect("/settings?tab=security&error=current");
   if (!validPassword(next)) redirect("/settings?tab=security&error=password");
   const sid = (await cookies()).get(COOKIE)?.value ?? "";

@@ -20,12 +20,12 @@ export const configured = () => Boolean(process.env.MICROSOFT_CLIENT_ID && proce
 const LOGIN = "https://login.microsoftonline.com/common/oauth2/v2.0";
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
-export function authUrl(state: string) {
+export function authUrl(state: string, _mode: "auth" | "connect" = "connect") {
   const q = new URLSearchParams({ client_id: process.env.MICROSOFT_CLIENT_ID!, redirect_uri: callback("microsoft"), response_type: "code", response_mode: "query", scope: SCOPES.join(" "), prompt: "select_account", state });
   return api(`${LOGIN}/authorize?${q}`);
 }
 
-type Token = { access_token: string; refresh_token?: string; expires_in?: number };
+type Token = { access_token: string; refresh_token?: string; expires_in?: number; id_token?: string };
 async function token(body: Record<string, string>) {
   const res = await fetch(api(`${LOGIN}/token`), { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ client_id: process.env.MICROSOFT_CLIENT_ID!, client_secret: process.env.MICROSOFT_CLIENT_SECRET!, scope: SCOPES.join(" "), ...body }) });
   return json<Token>(res, "Microsoft");
@@ -33,9 +33,12 @@ async function token(body: Record<string, string>) {
 
 export async function exchange(code: string) {
   const t = await token({ code, grant_type: "authorization_code", redirect_uri: callback("microsoft") });
-  if (!t.refresh_token) throw new Error("Microsoft did not return offline access.");
-  const me = await json<{ mail?: string; userPrincipalName?: string }>(await fetch(api(`${GRAPH}/me?$select=mail,userPrincipalName`), { headers: { Authorization: `Bearer ${t.access_token}` } }), "Microsoft");
-  return { email: (me.mail ?? me.userPrincipalName ?? "").toLowerCase(), refresh: t.refresh_token, access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
+  const me = await json<{ id?: string; mail?: string; userPrincipalName?: string; displayName?: string }>(await fetch(api(`${GRAPH}/me?$select=id,mail,userPrincipalName,displayName`), { headers: { Authorization: `Bearer ${t.access_token}` } }), "Microsoft");
+  const claims = JSON.parse(Buffer.from((t.id_token ?? "..").split(".")[1] ?? "", "base64url").toString() || "{}") as { tid?: string; oid?: string };
+  const upn = (me.userPrincipalName ?? "").toLowerCase();
+  // The mail attribute can be set by any tenant administrator, so it never identifies an account (the
+  // "nOAuth" problem). The user principal name has to be on a domain the tenant has verified.
+  return { email: (me.mail ?? me.userPrincipalName ?? "").toLowerCase(), accountEmail: upn.includes("@") && !upn.includes("#ext#") ? upn : "", subject: claims.oid || me.id ? `${claims.tid ?? "consumer"}:${claims.oid ?? me.id}` : "", name: me.displayName ?? "", refresh: t.refresh_token ?? "", access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
 }
 
 async function access(c: Connection) {

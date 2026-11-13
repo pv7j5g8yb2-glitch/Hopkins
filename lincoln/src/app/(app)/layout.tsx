@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         recent={recentCases(firm.id, 7, viewer).map((c) => ({ id: c.id, client: c.client }))}
         demo={firm.demo ? { next: EVENTS[step]?.label ?? null } : null}
       />
-      <main className="md:pl-[248px]">
+      <main className="app-main md:pl-[248px]">
         <div className="mx-auto w-full max-w-[1040px] px-4 pb-24 pt-6 md:px-12 md:pt-12">{children}</div>
       </main>
     </div>

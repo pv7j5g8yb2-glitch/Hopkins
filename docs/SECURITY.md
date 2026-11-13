@@ -14,6 +14,8 @@ Only what is actually in the code and was tested is listed. Nothing here is a ce
   deleted.
 * Mailbox logins (Google and Microsoft tokens) are encrypted at rest.
 * Passwords are hashed with scrypt; session, reset and sign in challenge tokens are stored only as hashes.
+* Sign in with Google or Microsoft finds the account by the provider's own account id; an email that
+  already has a password account is never taken over. Microsoft accounts never rely on the mail attribute.
 * Two step sign in with any authenticator app, with eight one time recovery codes; a code cannot be used
   twice; five tries per sign in (tested).
 * Session cookie: httpOnly, SameSite Lax, Secure and the __Host- prefix in production, 12 hours.
@@ -44,7 +46,7 @@ Only what is actually in the code and was tested is listed. Nothing here is a ce
 * A managed database with backups and row level isolation (today: one SQLite file on the server).
 * A direct Anthropic account with a zero data retention agreement (today: a third party relay).
 * An independent security review.
-* Firm wide enforcement of two step sign in, and sign in with Google or Microsoft.
+* Firm wide enforcement of two step sign in.
 * Narrower Google Drive access (a file picker instead of read access to all of Drive).
 
 ## Known and accepted

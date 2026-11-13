@@ -95,8 +95,8 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
       {head}
       <div className="flex flex-col gap-7 pb-36">
         {msgs.map((m, i) => m.role === "user"
-          ? <div key={i} className="ml-auto max-w-[85%] whitespace-pre-line rounded-2xl bg-panel px-4 py-2.5 text-[14.5px] leading-relaxed">{m.content}</div>
-          : <div key={i} className="text-[14.5px] leading-[1.7]"><Rich text={m.content} /></div>)}
+          ? <div key={i} className="msg-in ml-auto max-w-[85%] whitespace-pre-line rounded-2xl bg-panel px-4 py-2.5 text-[14.5px] leading-relaxed">{m.content}</div>
+          : <div key={i} className="msg-in text-[14.5px] leading-[1.7]"><Rich text={m.content} /></div>)}
         {busy && <div className="flex items-center gap-1"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink" /><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink [animation-delay:150ms]" /><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink [animation-delay:300ms]" /></div>}
         {error && <p className="text-[13px] text-risk">{error}</p>}
         <div ref={end} />
