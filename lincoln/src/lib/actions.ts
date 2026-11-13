@@ -336,3 +336,42 @@ export async function addFile(caseId: string, form: FormData) {
   revalidatePath("/", "layout");
   redirect(`/cases/${caseId}`);
 }
+
+export async function disconnect(form: FormData) {
+  const { user, firm } = await requireUser();
+  db().prepare("DELETE FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = ?").run(firm.id, user.id, String(form.get("provider") ?? ""));
+  revalidatePath("/", "layout");
+}
+
+export async function setTeamsChannel(form: FormData) {
+  const { user, firm } = await requireUser();
+  const [teamId, channelId, ...name] = String(form.get("channel") ?? "").split("|");
+  const c = db().prepare("SELECT id, settings FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = 'microsoft'").get(firm.id, user.id) as { id: string; settings: string | null } | undefined;
+  if (!c) return;
+  const s = JSON.parse(c.settings ?? "{}");
+  if (teamId && channelId) {
+    s.teams = { teamId, channelId, name: name.join("|") };
+    // Items for review from this moment on are posted.
+    setKv(firm.id, `teams:${c.id}`, new Date().toISOString());
+  }
+  else delete s.teams;
+  db().prepare("UPDATE mailboxes SET settings = ? WHERE id = ?").run(JSON.stringify(s), c.id);
+  revalidatePath("/settings");
+}
+
+/** Reads a PDF from Google Drive, OneDrive or SharePoint into a case. */
+export async function importFromCloud(caseId: string, provider: string, fileId: string, name: string) {
+  const { user, firm } = await requireUser();
+  const { connection, download, isProvider } = await import("./integrations");
+  const c = db().prepare("SELECT processing FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { processing: number } | undefined;
+  if (!c || c.processing || !isProvider(provider)) redirect(`/cases/${caseId}`);
+  const conn = connection(firm.id, user.id, provider);
+  if (!conn) redirect("/settings?tab=integrations");
+  const bytes = new Uint8Array(await download(conn, fileId));
+  if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) || bytes.length > 25 * 1024 * 1024) redirect(`/cases/${caseId}/import?from=${provider}&error=1`);
+  db().prepare("UPDATE cases SET processing = 1, note = NULL WHERE firm_id = ? AND id = ?").run(firm.id, caseId);
+  log(firm.id, caseId, user.name, "file", `Imported ${name.slice(0, 120)} from ${provider === "google" ? "Google Drive" : "OneDrive"}.`);
+  void processCase(firm.id, caseId, bytes, { append: true });
+  revalidatePath("/", "layout");
+  redirect(`/cases/${caseId}`);
+}

@@ -2,8 +2,8 @@ import Link from "next/link";
 import clsx from "clsx";
 import AvatarField from "@/components/AvatarField";
 import { Avatar, PageHead, btn, field, label } from "@/components/ui";
-import { changePassword, disconnectMailbox, newInboundAddress, updateFirm, updateProfile } from "@/lib/actions";
-import { firmMailbox, googleConfigured } from "@/lib/gmail";
+import { changePassword, disconnect, newInboundAddress, setTeamsChannel, updateFirm, updateProfile } from "@/lib/actions";
+import { PROVIDERS, connectionsOf, settingsOf, teamsChannels } from "@/lib/integrations";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { activitySince, people } from "@/lib/queries";
@@ -15,6 +15,8 @@ const RULES: [string, string, boolean][] = [
   ["Reminders when a client has not replied", "After 3 days", true],
   ["Filing case mail and attachments", "Always", true],
   ["Reading incoming case mail and attachments", "Every two minutes, connected mailbox", true],
+  ["Case dates added to the attorney's calendar", "Google or Outlook Calendar", true],
+  ["Items for review posted to Teams", "Chosen channel", true],
   ["Opening cases from new client enquiries", "Always", true],
   ["Approaching deadlines raised as issues", "14 days before", true],
   ["Other messages to clients or third parties", "Attorney approval", false],
@@ -32,8 +34,8 @@ const CONTROLS: [string, boolean][] = [
   ["Zero retention agreement with the model provider", false],
 ];
 const INTEGRATIONS: [string, [string, string][]][] = [
-  ["Documents", [["Microsoft Word", "Add in"], ["Google Drive", "Files"], ["OneDrive and SharePoint", "Files"], ["Dropbox", "Files"]]],
-  ["Calendars and signatures", [["Outlook Calendar", "Dates"], ["Google Calendar", "Dates"], ["DocuSign", "Signatures"], ["Microsoft Teams", "Notifications"], ["Slack", "Notifications"]]],
+  ["Documents", [["Word add-in", "Lincoln inside Word"], ["Dropbox", "Files"], ["Box", "Files"]]],
+  ["Signatures and messaging", [["DocuSign", "Signatures"], ["Slack", "Notifications"]]],
   ["Migration", [["Docketwise", "Cases and documents"], ["LollyLaw", "Cases and documents"], ["INSZoom", "Cases and documents"], ["Clio", "Matters and documents"], ["Folders or spreadsheet", "Anything else"]]],
   ["Government and finance", [["USCIS case status", "Status"], ["LawPay", "Payments"], ["QuickBooks", "Accounts"], ["iManage", "Documents"], ["NetDocuments", "Documents"]]],
 ];
@@ -53,8 +55,13 @@ function Row({ children, className }: { children: React.ReactNode; className?: s
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string; saved?: string; error?: string; connected?: string; inbound?: string }> }) {
   const { user, firm } = await requireUser();
   const { tab = "profile", saved, error, connected, inbound } = await searchParams;
-  const mailbox = firmMailbox(firm.id, user.id);
-  const integrationError = tab === "integrations" && error ? ({ google: "Gmail is not configured on this server.", state: "The connection expired. Try again.", connect: "Google did not complete the connection." } as Record<string, string>)[error] : null;
+  const conns = connectionsOf(firm.id, user.id);
+  const ms = conns.find((c) => c.provider === "microsoft");
+  let channels: { teamId: string; channelId: string; name: string }[] = [];
+  if (tab === "integrations" && ms) {
+    try { channels = await teamsChannels(ms); } catch { channels = []; }
+  }
+  const integrationError = tab === "integrations" && error ? ({ google: "Google is not configured on this server.", microsoft: "Microsoft is not configured on this server.", state: "The sign in expired. Try again.", connect: "The sign in was not completed." } as Record<string, string>)[error] : null;
   const hasPassword = Boolean((db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null }).password_hash);
   const admin = /admin|managing/i.test(user.role);
   const err = error ? MSG[tab]?.[error] : null;
@@ -136,29 +143,41 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           {tab === "integrations" && (
             <>
               <section className="mb-10">
-                <h2 className="mb-1 text-[13px] font-medium">Mailbox</h2>
                 <div className="border-t border-line">
-                  <Row>
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-[12px] font-medium text-muted">G</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[13px]">Gmail</span>
-                      <span className="block truncate text-[12px] text-faint">{mailbox ? `${mailbox.email}${mailbox.last_check ? ` · checked ${ago(mailbox.last_check)}` : ""}${mailbox.last_error ? ` · ${mailbox.last_error}` : ""}` : "Reads incoming case mail and sends approved replies"}</span>
-                    </span>
-                    {mailbox ? (
-                      <form action={disconnectMailbox}><button className={btn.ghost}>Disconnect</button></form>
-                    ) : googleConfigured() ? (
-                      <a href="/api/connect/google" className={btn.primary}>Connect</a>
-                    ) : (
-                      <span className="text-[12px] text-faint">Not configured</span>
-                    )}
-                  </Row>
-                  <Row>
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-[12px] font-medium text-muted">O</span>
-                    <span className="min-w-0 flex-1"><span className="block text-[13px]">Outlook</span><span className="block text-[12px] text-faint">Microsoft 365</span></span>
-                    <span className="text-[12px] text-faint">Planned</span>
-                  </Row>
+                  {PROVIDERS.map((p) => {
+                    const c = conns.find((x) => x.provider === p.id);
+                    return (
+                      <div key={p.id} className="border-b border-line py-4">
+                        <div className="flex items-center gap-4">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line text-[13px] font-medium">{p.name[0]}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[13.5px] font-medium">{p.name}</span>
+                            <span className="block truncate text-[12px] text-faint">{c ? `${c.email}${c.last_check ? ` · checked ${ago(c.last_check)}` : ""}` : p.services.join(", ")}</span>
+                          </span>
+                          {c ? (
+                            <form action={disconnect}><input type="hidden" name="provider" value={p.id} /><button className={btn.ghost}>Disconnect</button></form>
+                          ) : p.configured() ? (
+                            <a href={`/api/connect/${p.id}`} className={btn.primary}>Connect</a>
+                          ) : (
+                            <span className="text-[12px] text-faint">Not configured</span>
+                          )}
+                        </div>
+                        {c && <p className="mt-2 pl-12 text-[12px] text-muted">{p.services.join(" · ")}</p>}
+                        {c?.last_error && <p className="mt-1 pl-12 text-[12px] text-risk">{c.last_error}</p>}
+                        {c && p.id === "microsoft" && (
+                          <form action={setTeamsChannel} className="mt-3 flex items-center gap-2 pl-12">
+                            <select name="channel" defaultValue={settingsOf(c).teams ? `${settingsOf(c).teams!.teamId}|${settingsOf(c).teams!.channelId}|${settingsOf(c).teams!.name}` : ""} className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-white px-2 text-[12.5px] outline-none focus:border-ink">
+                              <option value="">Teams notices off</option>
+                              {channels.map((ch) => <option key={ch.channelId} value={`${ch.teamId}|${ch.channelId}|${ch.name}`}>{ch.name}</option>)}
+                            </select>
+                            <button className={btn.secondary}>Save</button>
+                          </form>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                {connected && <p className="mt-3 text-[13px] text-muted">Connected. Mail from now on is read automatically.</p>}
+                {connected && <p className="mt-3 text-[13px] text-muted">Connected. New mail is read automatically from now on.</p>}
                 {integrationError && <p className="mt-3 text-[13px] text-risk">{integrationError}</p>}
               </section>
               {admin && (

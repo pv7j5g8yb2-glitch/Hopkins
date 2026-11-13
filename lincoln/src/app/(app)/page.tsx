@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import AskBox from "@/components/AskBox";
 import { requireUser } from "@/lib/session";
 import { activitySince, pendingApprovals } from "@/lib/queries";
-import { firmMailbox } from "@/lib/gmail";
+import { firmMailbox } from "@/lib/integrations";
 import { ago, inDays } from "@/lib/format";
 
 export default async function Home() {
@@ -18,7 +18,7 @@ export default async function Home() {
       <AskBox />
       {!firm.demo && (
         <p className="mt-3 text-center text-[12.5px] text-faint">
-          {mailbox ? <>Watching {mailbox.email}{mailbox.last_check ? `, checked ${ago(mailbox.last_check)}` : ""}</> : <>No mailbox connected. <Link href="/settings?tab=integrations" className="text-ink underline underline-offset-4">Connect Gmail</Link></>}
+          {mailbox ? <>Watching {mailbox.email}{mailbox.last_check ? `, checked ${ago(mailbox.last_check)}` : ""}</> : <>No mail account connected. <Link href="/settings?tab=integrations" className="text-ink underline underline-offset-4">Connect Google or Microsoft</Link></>}
         </p>
       )}
 

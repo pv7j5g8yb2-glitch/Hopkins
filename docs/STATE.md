@@ -38,6 +38,17 @@ was refused because the relay account is out of credit. Gmail needs a Google Clo
 (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APP_URL); untested against Google until that exists. On Render's free
 plan the server sleeps after 15 minutes, which stops the mailbox checks.
 
+Fifth pass (2026-11-13): one sign in per company. Google connects Gmail, Drive, Docs, Sheets, Slides and
+Calendar; Microsoft connects Outlook, Word, Excel, PowerPoint, OneDrive, SharePoint and Teams. Lincoln reads
+mail from either, adds case dates to the attorney's calendar on its own, imports client PDFs from Drive,
+OneDrive or SharePoint, opens drafts in Word or Google Docs, exports the case list and exhibit index to Excel
+or Sheets and a case summary deck to PowerPoint or Slides, and posts new review items to a chosen Teams
+channel. Tested end to end against a local stand-in for both companies' APIs (sign in, mail in and out,
+calendar, file import, every export, Teams); not yet against the real services, which need a Google Cloud
+OAuth client and a Microsoft Entra app registration on the parent's account. Not built: a Word add-in that
+runs inside Word. Known: npm audit flags image-size (inside pptxgenjs, only used for images, which Lincoln
+never passes) and uuid (inside exceljs, the affected functions are not called).
+
 Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
 name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
 provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in

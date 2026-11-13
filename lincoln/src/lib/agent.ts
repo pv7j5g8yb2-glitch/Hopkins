@@ -2,7 +2,7 @@ import { db, uid } from "./db";
 import { chat, llmConfigured, parseJson } from "./llm";
 import { LIBRARY } from "./library";
 import { processCase } from "./intake";
-import { fetchNew, send, type Inbound, type Mailbox } from "./gmail";
+import { addEvent, fetchNew, send, settingsOf, teamsPost, type Connection, type Inbound } from "./integrations";
 
 // The part of Lincoln that works without being asked. Every incoming email is read, matched to a case
 // or opened as a new one, its attachments are read into the record, and the next step is prepared.
@@ -27,7 +27,7 @@ const CODES = LIBRARY.flatMap((f) => f.types.map(([c, n]) => `${c} (${n})`)).joi
 export async function handleInbound(firmId: string, mail: Inbound, mailboxId: string | null) {
   const d = db();
   const firm = d.prepare("SELECT name FROM firms WHERE id = ?").get(firmId) as { name: string };
-  const owner = (d.prepare("SELECT u.id, u.name FROM mailboxes m JOIN users u ON u.id = m.user_id WHERE m.id = ?").get(mailboxId) ?? d.prepare("SELECT id, name FROM users WHERE firm_id = ? ORDER BY rowid LIMIT 1").get(firmId)) as { id: string; name: string };
+  const owner = ((mailboxId ? d.prepare("SELECT u.id, u.name FROM mailboxes m JOIN users u ON u.id = m.user_id WHERE m.id = ?").get(mailboxId) : undefined) ?? d.prepare("SELECT id, name FROM users WHERE firm_id = ? ORDER BY rowid LIMIT 1").get(firmId)) as { id: string; name: string };
   const open = d.prepare("SELECT id, ref, client, client_email, counterpart, type_code FROM cases WHERE firm_id = ? ORDER BY opened_at DESC LIMIT 200").all(firmId) as { id: string; ref: string; client: string; client_email: string | null; counterpart: string | null; type_code: string }[];
   const msgId = uid();
   d.prepare("INSERT INTO messages (id, firm_id, case_id, direction, party, party_role, subject, body, at, state, lincoln_note, email, thread_id, mailbox_id) VALUES (?, ?, NULL, 'in', ?, NULL, ?, ?, ?, 'reading', NULL, ?, ?, ?)").run(msgId, firmId, mail.fromName, mail.subject.slice(0, 300) || "(no subject)", mail.text.slice(0, 20000), now(), mail.from, mail.threadId, mailboxId);
@@ -106,9 +106,9 @@ export async function deliver(firmId: string, messageId: string, approver: { id:
   const d = db();
   const m = d.prepare("SELECT * FROM messages WHERE firm_id = ? AND id = ?").get(firmId, messageId) as { id: string; email: string | null; subject: string; body: string; thread_id: string | null; mailbox_id: string | null; case_id: string | null; party: string } | undefined;
   if (!m) return false;
-  const mb = (m.mailbox_id ? d.prepare("SELECT * FROM mailboxes WHERE id = ? AND firm_id = ?").get(m.mailbox_id, firmId) : undefined) as Mailbox | undefined
-    ?? (d.prepare("SELECT * FROM mailboxes WHERE firm_id = ? AND user_id = ?").get(firmId, approver.id) as Mailbox | undefined)
-    ?? (d.prepare("SELECT * FROM mailboxes WHERE firm_id = ? LIMIT 1").get(firmId) as Mailbox | undefined);
+  const mb = (m.mailbox_id ? d.prepare("SELECT * FROM mailboxes WHERE id = ? AND firm_id = ?").get(m.mailbox_id, firmId) : undefined) as Connection | undefined
+    ?? (d.prepare("SELECT * FROM mailboxes WHERE firm_id = ? AND user_id = ?").get(firmId, approver.id) as Connection | undefined)
+    ?? (d.prepare("SELECT * FROM mailboxes WHERE firm_id = ? LIMIT 1").get(firmId) as Connection | undefined);
   if (!mb || !m.email) {
     d.prepare("UPDATE messages SET state = 'approved', lincoln_note = ? WHERE id = ?").run(`Approved by ${approver.name}. Not sent: ${!m.email ? "no recipient address" : "no mailbox connected"}.`, m.id);
     return false;
@@ -128,7 +128,7 @@ export async function deliver(firmId: string, messageId: string, approver: { id:
 export async function tick() {
   const d = db();
   if (llmConfigured()) {
-    for (const mb of d.prepare("SELECT * FROM mailboxes").all() as Mailbox[]) {
+    for (const mb of d.prepare("SELECT * FROM mailboxes").all() as Connection[]) {
       try {
         const mail = await fetchNew(mb);
         d.prepare("UPDATE mailboxes SET last_check = ?, last_error = NULL WHERE id = ?").run(now(), mb.id);
@@ -168,6 +168,41 @@ export async function tick() {
       d.prepare("UPDATE messages SET state = 'needs_approval' WHERE id = ?").run(mid);
       const attorney = d.prepare("SELECT attorney_id FROM cases WHERE id = ?").get(m.case_id) as { attorney_id: string };
       d.prepare("INSERT INTO approvals (id, firm_id, case_id, kind, title, brief, payload, status, assignee_id, created_at) VALUES (?, ?, ?, 'message', ?, 'No reply in 3 days.', ?, 'pending', ?, ?)").run(uid(), m.firm_id, m.case_id, `Reminder to ${m.party}`, JSON.stringify({ messageId: mid }), attorney.attorney_id, now());
+    }
+  }
+
+  // Case dates go into the responsible attorney's calendar, once each.
+  const conns = d.prepare("SELECT m.* FROM mailboxes m JOIN firms f ON f.id = m.firm_id WHERE f.demo = 0").all() as Connection[];
+  for (const c of conns) {
+    const due = d.prepare(`SELECT t.id, t.label, t.date, t.source, k.client, k.type_code, k.id AS case_id FROM dates t JOIN cases k ON k.id = t.case_id
+      WHERE t.firm_id = ? AND k.attorney_id = ? AND t.date >= date('now') AND NOT EXISTS (SELECT 1 FROM kv WHERE kv.firm_id = t.firm_id AND kv.key = 'cal:' || ? || ':' || t.id) LIMIT 10`).all(c.firm_id, c.user_id, c.id) as { id: string; label: string; date: string; source: string | null; client: string; type_code: string; case_id: string }[];
+    for (const t of due) {
+      try {
+        await addEvent(c, { title: `${t.client}: ${t.label}`, date: t.date, details: `${t.type_code} case. ${t.source ? `Source: ${t.source}. ` : ""}Added by Lincoln.` });
+        d.prepare("INSERT INTO kv (firm_id, key, value) VALUES (?, ?, '1')").run(c.firm_id, `cal:${c.id}:${t.id}`);
+        log(c.firm_id, t.case_id, "date", `Added to ${c.provider === "google" ? "Google Calendar" : "Outlook Calendar"}: ${t.label}, ${t.date}.`, 2);
+      } catch (e) {
+        d.prepare("UPDATE mailboxes SET last_error = ? WHERE id = ?").run(`Calendar: ${e instanceof Error ? e.message : "error"}`.slice(0, 200), c.id);
+        break;
+      }
+    }
+
+    // New items for review are posted to the chosen Teams channel.
+    const ch = settingsOf(c).teams;
+    if (c.provider === "microsoft" && ch) {
+      const since = (d.prepare("SELECT value FROM kv WHERE firm_id = ? AND key = ?").get(c.firm_id, `teams:${c.id}`) as { value: string } | undefined)?.value ?? new Date(Date.now() - 3600_000).toISOString();
+      const fresh = d.prepare("SELECT a.id, a.title, a.created_at, k.client FROM approvals a JOIN cases k ON k.id = a.case_id WHERE a.firm_id = ? AND a.status = 'pending' AND a.created_at > ? ORDER BY a.created_at LIMIT 10").all(c.firm_id, since) as { id: string; title: string; created_at: string; client: string }[];
+      for (const a of fresh) {
+        try {
+          const link = `${(process.env.APP_URL ?? "").replace(/\/$/, "")}/approvals?id=${a.id}`;
+          await teamsPost(c, ch.teamId, ch.channelId, `<b>For review:</b> ${a.title.replace(/</g, "&lt;")} (${a.client.replace(/</g, "&lt;")}). <a href="${link}">Open in Lincoln</a>`);
+          d.prepare("INSERT INTO kv (firm_id, key, value) VALUES (?, ?, ?) ON CONFLICT(firm_id, key) DO UPDATE SET value = excluded.value").run(c.firm_id, `teams:${c.id}`, a.created_at);
+        } catch (e) {
+          d.prepare("UPDATE mailboxes SET last_error = ? WHERE id = ?").run(`Teams: ${e instanceof Error ? e.message : "error"}`.slice(0, 200), c.id);
+          break;
+        }
+      }
+      if (!fresh.length) d.prepare("INSERT OR IGNORE INTO kv (firm_id, key, value) VALUES (?, ?, ?)").run(c.firm_id, `teams:${c.id}`, since);
     }
   }
 }

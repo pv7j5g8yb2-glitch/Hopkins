@@ -7,6 +7,9 @@ import Refresher from "@/components/Refresher";
 import { Avatar, Empty, StageBar, btn, field } from "@/components/ui";
 import { addFile, requestDraft } from "@/lib/actions";
 import FileDrop from "@/components/FileDrop";
+import ExportMenu from "@/components/ExportMenu";
+import { exportItems } from "@/lib/exports";
+import { connectionsOf } from "@/lib/integrations";
 import { requireUser } from "@/lib/session";
 import { caseActivity, caseApprovals, caseById, caseDates, caseDrafts, caseMessages, criteria, documents, issues, people } from "@/lib/queries";
 import { ago, inDays, longDate } from "@/lib/format";
@@ -20,7 +23,7 @@ const KIND: Record<string, string> = { date: "Date", conflict: "Conflict", missi
 const pageLink = "text-muted underline decoration-line underline-offset-4 transition hover:text-ink hover:decoration-ink";
 
 export default async function CasePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; draft?: string }> }) {
-  const { firm } = await requireUser();
+  const { user, firm } = await requireUser();
   const { id } = await params;
   const { tab = "overview", draft } = await searchParams;
   const c = caseById(firm.id, id);
@@ -52,8 +55,11 @@ export default async function CasePage({ params, searchParams }: { params: Promi
             {c.type_code} {c.type_name !== c.type_code ? c.type_name : ""}{c.counterpart ? ` · ${c.counterpart}` : ""} · {c.ref}{c.sensitive ? " · Restricted to case team" : ""}
           </p>
         </div>
+        <div className="flex items-center gap-3">
+          <ExportMenu label="Export" items={[...exportItems(firm.id, user.id, "case", id).map((i) => ({ ...i, label: i.label.replace(/^Open in (\w+.*)$/, "Exhibit index in $1").replace(/^Download \.xlsx$/, "Exhibit index .xlsx") })), ...exportItems(firm.id, user.id, "deck", id).map((i) => ({ ...i, label: i.label.replace(/^Open in (\w+.*)$/, "Summary deck in $1").replace(/^Download \.pptx$/, "Summary deck .pptx") }))]} />
         <div className="flex items-center gap-1">
           {team.map((u) => <span key={u} title={`${who[u].name}, ${who[u].role}`} className="rounded-full"><Avatar initials={who[u].initials} src={who[u].avatar} size={26} /></span>)}
+        </div>
         </div>
       </div>
 
@@ -162,10 +168,17 @@ export default async function CasePage({ params, searchParams }: { params: Promi
       )}
 
       {tab === "documents" && llmConfigured() && (
-        <form action={addFile.bind(null, id)} className="mb-6 flex max-w-[640px] items-start gap-2">
-          <div className="flex-1"><FileDrop /></div>
-          <button className={btn.secondary}>Add file</button>
-        </form>
+        <div className="mb-6 max-w-[640px]">
+          <form action={addFile.bind(null, id)} className="flex items-start gap-2">
+            <div className="flex-1"><FileDrop /></div>
+            <button className={btn.secondary}>Add file</button>
+          </form>
+          {connectionsOf(firm.id, user.id).length > 0 && (
+            <p className="mt-2 flex gap-4 text-[12.5px]">
+              {connectionsOf(firm.id, user.id).map((x) => <Link key={x.provider} href={`/cases/${id}/import?from=${x.provider}`} className="text-muted underline decoration-line underline-offset-4 hover:text-ink">{x.provider === "google" ? "Import from Google Drive" : "Import from OneDrive or SharePoint"}</Link>)}
+            </p>
+          )}
+        </div>
       )}
       {tab === "documents" && (docs.length === 0 ? none : (
         <>
@@ -254,7 +267,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
             ) : dr.status === "failed" ? (
               <p className="text-[13px] text-risk">The draft could not be produced. {L.error}</p>
             ) : (
-              <DraftView caseId={id} draftId={dr.id} title={dr.title} subtitle={`${c.type_code} · ${c.client}${c.counterpart ? ` · ${c.counterpart}` : ""}`} sections={L.sections} facts={L.facts} calls={L.calls} notes={L.notes} status={dr.status} generic={Boolean(L.generic)} />
+              <DraftView caseId={id} draftId={dr.id} title={dr.title} subtitle={`${c.type_code} · ${c.client}${c.counterpart ? ` · ${c.counterpart}` : ""}`} sections={L.sections} facts={L.facts} calls={L.calls} notes={L.notes} status={dr.status} generic={Boolean(L.generic)} exports={exportItems(firm.id, user.id, "draft", dr.id)} />
             )}
           </div>
         );

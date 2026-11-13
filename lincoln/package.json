@@ -16,9 +16,11 @@
     "better-sqlite3": "^13.1.1",
     "clsx": "^2.1.1",
     "docx": "^9.15.3",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.72.0",
     "next": "^16.4.6",
     "pdfjs-dist": "^6.5.438",
+    "pptxgenjs": "^3.12.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

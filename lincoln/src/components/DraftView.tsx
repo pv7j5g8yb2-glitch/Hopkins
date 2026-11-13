@@ -2,16 +2,16 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Download } from "lucide-react";
+import ExportMenu, { type ExportItem } from "./ExportMenu";
 import type { Section, Seg } from "@/lib/halasz";
 
 type Hover = { doc?: string; page: number; x: number; y: number } | null;
 
-type Props = { caseId: string; draftId: string; title: string; subtitle: string; sections: Section[]; facts: number; calls: number; notes: number; status: string; generic?: boolean };
+type Props = { caseId: string; draftId: string; title: string; subtitle: string; sections: Section[]; facts: number; calls: number; notes: number; status: string; generic?: boolean; exports: ExportItem[] };
 
 const PAGE_REF = /\((?:pp?\.|page)\s?(\d+)[^)]*\)|\[Attorney:[^\]]*\]/g;
 
-export default function DraftView({ caseId, draftId, title, subtitle, sections, facts, calls, notes, status, generic }: Props) {
+export default function DraftView({ caseId, title, subtitle, sections, facts, calls, notes, status, generic, exports }: Props) {
   const [focus, setFocus] = useState(false);
   const [hover, setHover] = useState<Hover>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -74,7 +74,7 @@ export default function DraftView({ caseId, draftId, title, subtitle, sections, 
           <div className="text-[12.5px] text-faint">{status === "approved" ? "Approved" : "Draft for review"} · {facts} sourced facts{calls ? ` · ${calls} judgement calls` : ""}{notes ? ` · ${notes} attorney notes` : ""}</div>
         </div>
         <button onClick={() => setFocus((v) => !v)} className={clsx("h-8 rounded-lg border px-3 text-[12.5px] font-medium transition", focus ? "border-ink bg-ink text-white" : "border-line bg-white hover:bg-panel")}>Review mode</button>
-        <a href={`/api/drafts/${draftId}/docx`} className="flex h-8 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-[12.5px] font-medium transition hover:bg-panel"><Download size={13} /> Word</a>
+        <ExportMenu items={exports} label="Open" />
       </div>
 
       <article className="mx-auto max-w-[740px] rounded-xl border border-line bg-white px-5 py-9 shadow-[0_1px_3px_rgba(22,22,20,0.04)] md:px-14 md:py-14">

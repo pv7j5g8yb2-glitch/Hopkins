@@ -881,3 +881,16 @@ Court appearances need a lawyer in the room; Lincoln could only prepare for them
   VC backed companies or rounds; solo led companies got 14.7 percent of priced round cash (2024).
 * Legal tech funding: record $4.6B in 2025 (Crunchbase); about $2.3B in Q1 2026, of which about 63
   percent went to Relativity, Legora and Harvey (Legalcomplex).
+
+
+## Devices lawyers work on (checked 2026-11-13)
+
+ABA Legal Technology Survey, via secondary write ups: in 2021, 53 percent of lawyers said a laptop was their
+primary work device and 44 percent a desktop; in 2022, 56 percent laptop and 41 percent desktop. Smartphones
+are secondary: 22 percent use one regularly for legal research and 32 percent occasionally (2022), though 81
+percent use one in court. Clio's own research (LawNext) found its mobile app is used in one to three minute
+blocks. No source found for immigration lawyers specifically or for AI tools; no 2024 to 2026 ABA figures
+found. Conclusion for Lincoln: desktop first for reading files and reviewing drafts; the phone for short
+approvals and notices.
+Sources: https://www.americanbar.org/groups/law_practice/resources/tech-report/2022/practice-management/ ,
+https://www.mycase.com/?p=16749 , https://www.iphonejd.com/?p=303 , https://www.lawnext.com/?p=13460
