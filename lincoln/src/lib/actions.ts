@@ -12,6 +12,7 @@ import { buildHalaszLetter } from "./letter";
 import { EVENTS } from "./demo-events";
 import type { Question } from "./halasz";
 import { LIBRARY } from "./library";
+import { draftForCase, processCase } from "./intake";
 
 const now = () => new Date().toISOString();
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
@@ -219,16 +220,86 @@ export async function resetDemoAction() {
 export async function createCase(form: FormData) {
   const { user, firm } = await requireUser();
   const client = String(form.get("client") ?? "").trim().slice(0, 120);
+  const counterpart = String(form.get("counterpart") ?? "").trim().slice(0, 120) || null;
   const code = String(form.get("type") ?? "").trim().slice(0, 40);
   const fam = LIBRARY.find((f) => f.types.some(([c]) => c === code));
   const family = fam?.name ?? "Other";
   const typeName = fam?.types.find(([c]) => c === code)?.[1] ?? code;
-  if (!client || !code) return;
+  if (!client || !code) redirect("/cases/new?error=fields");
+  const file = form.get("file");
+  let pdf: Uint8Array | null = null;
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 25 * 1024 * 1024) redirect("/cases/new?error=size");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // %PDF
+    if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) redirect("/cases/new?error=type");
+    pdf = bytes;
+  }
   const id = "c_" + uid();
   const ref = `${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-  db().prepare(`INSERT INTO cases (id, firm_id, ref, client, counterpart, type_code, type_name, family, stage, state, waiting_on, summary, attorney_id, paralegal_id, opened_at, sensitive, pages)
-    VALUES (?, ?, ?, ?, NULL, ?, ?, ?, 'Intake', 'moving', NULL, ?, ?, ?, ?, ?, 0)`).run(id, firm.id, ref, client, code, typeName, family, `Opened by ${user.name}.`, user.id, user.id, now(), family === "Humanitarian" ? 1 : 0);
+  db().prepare(`INSERT INTO cases (id, firm_id, ref, client, counterpart, type_code, type_name, family, stage, state, waiting_on, summary, attorney_id, paralegal_id, opened_at, sensitive, pages, processing)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Intake', 'moving', NULL, ?, ?, ?, ?, ?, 0, ?)`).run(id, firm.id, ref, client, counterpart, code, typeName, family, pdf ? "Reading the client file." : "Opened. No client file yet.", user.id, user.id, now(), family === "Humanitarian" ? 1 : 0, pdf ? 1 : 0);
   log(firm.id, id, user.name, "open", "Opened the case.");
+  if (pdf) void processCase(firm.id, id, pdf);
   revalidatePath("/", "layout");
   redirect(`/cases/${id}`);
+}
+
+export async function requestDraft(caseId: string, form: FormData) {
+  const { firm } = await requireUser();
+  const request = String(form.get("request") ?? "").trim().slice(0, 600);
+  const c = db().prepare("SELECT pages FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { pages: number } | undefined;
+  if (!c || !request || c.pages < 1) return;
+  const draftId = uid();
+  db().prepare("INSERT INTO drafts (id, firm_id, case_id, title, kind, status, version, content, updated_at) VALUES (?, ?, ?, ?, 'generic', 'drafting', 1, ?, ?)").run(draftId, firm.id, caseId, request.slice(0, 160), JSON.stringify({ sections: [], facts: 0, calls: 0, notes: 0, claimed: [], generic: true }), now());
+  void draftForCase(firm.id, caseId, draftId, request);
+  revalidatePath("/", "layout");
+  redirect(`/cases/${caseId}?tab=drafts&draft=${draftId}`);
+}
+
+export async function updateProfile(form: FormData) {
+  const { user } = await requireUser();
+  const name = String(form.get("name") ?? "").trim().slice(0, 100);
+  const role = String(form.get("role") ?? "").trim().slice(0, 60);
+  const avatar = String(form.get("avatar") ?? "");
+  if (!name) redirect("/settings?tab=profile&error=name");
+  const d = db();
+  d.prepare("UPDATE users SET name = ?, initials = ?, role = ? WHERE id = ?").run(name, initialsOf(name), role || user.role, user.id);
+  if (avatar === "remove") d.prepare("UPDATE users SET avatar = NULL WHERE id = ?").run(user.id);
+  else if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(avatar) && avatar.length < 400_000) d.prepare("UPDATE users SET avatar = ? WHERE id = ?").run(avatar, user.id);
+  revalidatePath("/", "layout");
+  redirect("/settings?tab=profile&saved=1");
+}
+
+export async function changePassword(form: FormData) {
+  const { user } = await requireUser();
+  const current = String(form.get("current") ?? "");
+  const next = String(form.get("next") ?? "");
+  if (limited(`pw:${user.id}`, 6)) redirect("/settings?tab=security&error=limited");
+  const row = db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null };
+  if (!row.password_hash) redirect("/settings?tab=security&error=sample");
+  if (!verifyPassword(current, row.password_hash)) redirect("/settings?tab=security&error=current");
+  if (!validPassword(next)) redirect("/settings?tab=security&error=password");
+  const sid = (await cookies()).get(COOKIE)?.value ?? "";
+  const d = db();
+  d.transaction(() => {
+    d.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(next), user.id);
+    // every other device is signed out
+    d.prepare("DELETE FROM sessions WHERE user_id = ? AND id != ?").run(user.id, sha(sid));
+  })();
+  redirect("/settings?tab=security&saved=1");
+}
+
+export async function updateFirm(form: FormData) {
+  const { user, firm } = await requireUser();
+  const name = String(form.get("firm") ?? "").trim().slice(0, 120);
+  if (!name || !/admin|managing/i.test(user.role)) redirect("/settings?tab=firm&error=1");
+  db().prepare("UPDATE firms SET name = ? WHERE id = ?").run(name, firm.id);
+  revalidatePath("/", "layout");
+  redirect("/settings?tab=firm&saved=1");
+}
+
+export async function clearChat(caseId: string | null) {
+  const { user, firm } = await requireUser();
+  db().prepare("DELETE FROM chat WHERE firm_id = ? AND user_id = ? AND case_id IS ?").run(firm.id, user.id, caseId);
 }

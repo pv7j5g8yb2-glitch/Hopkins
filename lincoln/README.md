@@ -70,6 +70,9 @@ name is free). Steps for the account holder (a parent or guardian):
 1. Create a Render account, then New, Blueprint, and connect the GitHub repository (branch
    `claude/amazing-noether-92ry61`, or merge it to main first).
 2. When asked for `LLM_API_KEY`, paste the model key there. It is never stored in git.
+   For a personal login in the sample firm, also set `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` (10
+   characters or more) and `SEED_USER_NAME` in the Environment tab. They are read when the database
+   is first created.
 3. Deploy. The Starter plan and its 1 GB disk keep accounts and decisions between restarts.
 4. Sample pages ship in `seed/pages` (made up documents), so no extra build step is needed.
 

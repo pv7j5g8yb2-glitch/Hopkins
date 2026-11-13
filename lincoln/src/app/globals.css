@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
+/* One ink, one paper, greys between. Red appears only on an error. */
 @theme {
   --color-ink: #161614;
   --color-paper: #f2f0ed;
-  --color-canvas: #fbfaf9;
+  --color-canvas: #ffffff;
+  --color-side: #f8f7f5;
   --color-panel: #f4f3f0;
-  --color-line: #e8e5e0;
-  --color-muted: #6f6c66;
-  --color-faint: #9c9993;
-  --color-ok: #2e6f4e;
-  --color-ok-bg: #e7f0ea;
-  --color-warn: #8a5a00;
-  --color-warn-bg: #faefd6;
-  --color-risk: #a8322a;
-  --color-risk-bg: #f9e6e3;
+  --color-line: #ebe9e4;
+  --color-muted: #6b6862;
+  --color-faint: #a09d96;
+  --color-ok: #161614;
+  --color-ok-bg: #f4f3f0;
+  --color-warn: #161614;
+  --color-warn-bg: #f4f3f0;
+  --color-risk: #9b2c24;
+  --color-risk-bg: #f8eceb;
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: "Literata Variable", Georgia, "Times New Roman", serif;
 }
@@ -32,17 +34,17 @@ body {
 }
 ::selection {
   background: #161614;
-  color: #fbfaf9;
+  color: #ffffff;
 }
 .serif {
   font-family: var(--font-serif);
   font-variation-settings: "opsz" 24;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
 }
 .wordmark {
   font-family: var(--font-serif);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.022em;
 }
 button,
 a,
@@ -56,16 +58,21 @@ button:not(:disabled),
 :focus-visible {
   outline: 2px solid #161614;
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 .scroll-thin {
   scrollbar-width: thin;
-  scrollbar-color: #d9d5ce transparent;
+  scrollbar-color: #dcd9d3 transparent;
 }
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(3px);
   }
   to {
     opacity: 1;
@@ -73,10 +80,22 @@ button:not(:disabled),
   }
 }
 .rise {
-  animation: rise 0.28s ease-out backwards;
+  animation: rise 0.22s ease-out backwards;
+}
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+.sweep {
+  animation: sweep 1.6s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .rise {
+  .rise,
+  .sweep {
     animation: none;
   }
 }

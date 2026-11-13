@@ -23,7 +23,10 @@ export function inDays(isoDate: string) {
   if (n === 0) return "today";
   if (n === 1) return "tomorrow";
   if (n === -1) return "yesterday";
-  if (n < 0) return `${-n} days ago`;
+  if (n < 0 && n > -14) return `${-n} days ago`;
+  if (n < 0 && n > -70) return `${Math.round(-n / 7)} weeks ago`;
+  if (n < 0 && n > -730) return `${Math.round(-n / 30)} months ago`;
+  if (n < 0) return `${Math.round(-n / 365)} years ago`;
   if (n < 14) return `in ${n} days`;
   if (n < 70) return `in ${Math.round(n / 7)} weeks`;
   return `in ${Math.round(n / 30)} months`;

@@ -1,15 +1,13 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { Check, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import ApprovalPanel from "@/components/ApprovalPanel";
-import { Card, Chip, PageHead } from "@/components/ui";
+import { Empty, PageHead } from "@/components/ui";
 import { requireUser } from "@/lib/session";
 import { approvalById, decidedApprovals, messageById, pendingApprovals } from "@/lib/queries";
 import { ago, inDays } from "@/lib/format";
 
-const KIND: Record<string, string> = { decisions: "Decisions", message: "Message", filing: "Filing", draft_review: "Review", plan: "Plan" };
-
-export default async function Approvals({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+export default async function Review({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
   const { firm } = await requireUser();
   const { id } = await searchParams;
   const pending = pendingApprovals(firm.id);
@@ -21,44 +19,55 @@ export default async function Approvals({ searchParams }: { searchParams: Promis
 
   return (
     <div className="rise">
-      <PageHead title="Approvals" />
+      <PageHead title="Review" />
       {pending.length === 0 ? (
-        <Card className="flex items-center gap-3 px-4 py-6 text-[13.5px] text-muted"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-ok-bg text-ok"><Check size={15} /></span>Nothing awaiting review</Card>
+        <Empty>Nothing for review</Empty>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-          <div className={clsx("flex-col gap-1.5", id ? "hidden lg:flex" : "flex")}>
+        <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
+          <ul className={clsx("flex-col border-t border-line", id ? "hidden lg:flex" : "flex")}>
             {pending.map((a) => (
-              <Link key={a.id} href={`/approvals?id=${a.id}`} scroll={false} className={clsx("rounded-xl border px-3.5 py-3 transition", sel?.id === a.id ? "border-ink bg-white" : "border-line bg-white hover:border-[#cfcbc3]")}>
-                <div className="mb-1 flex items-center gap-1.5"><Chip tone={a.kind === "decisions" || a.kind === "plan" ? "ink" : "neutral"}>{KIND[a.kind]}</Chip>{a.due && <span className="text-[11.5px] text-faint">due {inDays(a.due)}</span>}</div>
-                <div className="text-[13.5px] font-medium leading-snug">{a.title}</div>
-                <div className="mt-0.5 truncate text-[12px] text-muted">{a.client} · {a.type_code}</div>
-              </Link>
+              <li key={a.id} className="border-b border-line">
+                <Link href={`/approvals?id=${a.id}`} scroll={false} className={clsx("relative block py-3 pl-3 pr-2 transition hover:bg-side", sel?.id === a.id && "bg-side")}>
+                  {sel?.id === a.id && <span className="absolute inset-y-2 left-0 w-[2px] rounded-full bg-ink" />}
+                  <div className="text-[13.5px] font-medium leading-snug">{a.title}</div>
+                  <div className="mt-0.5 truncate text-[12px] text-muted">{a.client}{a.due ? ` · due ${inDays(a.due)}` : ""}</div>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
           {sel && (
-            <div className={clsx("min-w-0", !id && "hidden lg:block")}>
-              <Link href="/approvals" className="mb-3 inline-flex items-center gap-1 text-[12.5px] text-muted lg:hidden"><ChevronLeft size={14} /> Queue</Link>
-              <div className="mb-1 flex flex-wrap items-center gap-1.5"><Link href={`/cases/${sel.case_id}`}><Chip>{sel.client}</Chip></Link><Chip>{sel.type_code}</Chip><span className="text-[11.5px] text-faint">{ago(sel.created_at)}</span></div>
-              <h2 className="serif mb-3 text-[21px] font-medium leading-snug">{sel.title}</h2>
-              <div className="mb-5 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-3">
-                {[["Summary", sel.brief], ["Lowest confidence", sel.least_sure], ["Risk if wrong", sel.if_wrong]].map(([h, t]) => (
-                  <div key={h} className="bg-white px-4 py-3"><div className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-faint">{h}</div><p className="text-[13px] leading-relaxed">{t}</p></div>
-                ))}
+            <div className={clsx("min-w-0 max-w-[760px]", !id && "hidden lg:block")}>
+              <Link href="/approvals" className="mb-4 inline-flex items-center gap-1 text-[12.5px] text-muted lg:hidden"><ChevronLeft size={14} /> Review</Link>
+              <p className="mb-1 text-[12.5px] text-muted"><Link href={`/cases/${sel.case_id}`} className="hover:text-ink hover:underline">{sel.client}</Link> · {sel.type_code} · {ago(sel.created_at)}</p>
+              <h2 className="serif mb-2 text-[22px] font-medium leading-snug">{sel.title}</h2>
+              <p className="max-w-[640px] text-[13.5px] leading-relaxed">{sel.brief}</p>
+              {(sel.least_sure || sel.if_wrong) && (
+                <dl className="mt-3 grid max-w-[640px] gap-1.5 text-[13px] leading-relaxed">
+                  {sel.least_sure && <div className="flex gap-3"><dt className="w-[110px] shrink-0 text-faint">Lowest confidence</dt><dd>{sel.least_sure}</dd></div>}
+                  {sel.if_wrong && <div className="flex gap-3"><dt className="w-[110px] shrink-0 text-faint">Risk if wrong</dt><dd>{sel.if_wrong}</dd></div>}
+                </dl>
+              )}
+              <div className="mt-7">
+                <ApprovalPanel key={sel.id} id={sel.id} caseId={sel.case_id} kind={sel.kind} payload={payload} message={message ? { party: message.party, party_role: message.party_role, subject: message.subject, body: message.body } : null} />
               </div>
-              <ApprovalPanel key={sel.id} id={sel.id} caseId={sel.case_id} kind={sel.kind} payload={payload} message={message ? { party: message.party, party_role: message.party_role, subject: message.subject, body: message.body } : null} />
             </div>
           )}
         </div>
       )}
       {decided.length > 0 && (
-        <div className="mt-10">
-          <h2 className="mb-2 text-[12px] font-medium uppercase tracking-[0.06em] text-faint">Decided</h2>
-          <Card className="divide-y divide-line">
+        <details className="mt-12">
+          <summary className="cursor-pointer text-[13px] text-muted transition hover:text-ink">Decided · {decided.length}</summary>
+          <ul className="mt-2 border-t border-line">
             {decided.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 px-4 py-2.5 text-[13px]"><Chip tone={a.status === "approved" ? "ok" : "risk"}>{a.status === "approved" ? "Approved" : "Returned"}</Chip><span className="min-w-0 flex-1 truncate">{a.title}</span><span className="hidden truncate text-muted sm:block">{a.client}</span><span className="shrink-0 text-[11.5px] text-faint">{a.decided_at ? ago(a.decided_at) : ""}</span></div>
+              <li key={a.id} className="flex items-center gap-4 border-b border-line py-2.5 text-[13px]">
+                <span className="w-[72px] shrink-0 text-muted">{a.status === "approved" ? "Approved" : "Returned"}</span>
+                <span className="min-w-0 flex-1 truncate">{a.title}</span>
+                <span className="hidden truncate text-muted sm:block">{a.client}</span>
+                <span className="shrink-0 text-[12px] text-faint">{a.decided_at ? ago(a.decided_at) : ""}</span>
+              </li>
             ))}
-          </Card>
-        </div>
+          </ul>
+        </details>
       )}
     </div>
   );

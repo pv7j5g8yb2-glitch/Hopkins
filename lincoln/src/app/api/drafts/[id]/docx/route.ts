@@ -13,7 +13,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const font = "Times New Roman";
   const children: Paragraph[] = [
     new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun({ text: dr.title, font, size: 32, bold: true })] }),
-    new Paragraph({ spacing: { after: 240 }, children: [new TextRun({ text: "[Attorney: draft prepared by Lincoln for your review. Citations are to the client file by document and page. Notes for you are in square brackets and must be removed before filing.]", font, size: 20, italics: true })] }),
+    new Paragraph({ spacing: { after: 240 }, children: [new TextRun({ text: "[Attorney: draft prepared by Lincoln for review. Citations are to the client file by document and page. Notes in square brackets are to be removed before filing.]", font, size: 20, italics: true })] }),
   ];
   for (const sec of L.sections) {
     children.push(new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 280, after: 80 }, children: [new TextRun({ text: sec.cite ? `${sec.heading}: ${sec.cite}` : sec.heading, font, size: 26, bold: true })] }));
@@ -27,5 +27,5 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   }
   const buf = await Packer.toBuffer(new Document({ sections: [{ children }] }));
-  return new Response(new Uint8Array(buf), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "Content-Disposition": `attachment; filename="Halasz_support_letter_v${dr.version}.docx"` } });
+  return new Response(new Uint8Array(buf), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "Content-Disposition": `attachment; filename="${(dr.title.normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 80) || "Draft")}_v${dr.version}.docx"` } });
 }

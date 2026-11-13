@@ -12,12 +12,24 @@ reset tokens, attempt limits); Privacy Policy and Terms of Service pages; upgrad
 audit clean). A new firm gets its own empty workspace and cannot reach another firm's cases or pages
 (tested).
 
+Third pass (2026-11-13, after "too overloaded, too many colours, too talkative"): whole interface
+redone in one ink on white, no coloured chips, terse labels. Sidebar like Claude and ChatGPT (New case,
+Home, Cases, Review, Inbox, Library, recent cases, account menu with Settings, Help, Sign out and, in
+the sample firm only, Run next event and Reset). Home is the wordmark, one prompt box and the review
+list. Settings has Profile (photo, name, role), Security (change password, data protection status),
+Firm, Automation, Integrations and Usage (time saved). The Assistant can be scoped to one case and
+cites document numbers and pages. Live intake works (tested on a 16 page file): upload a PDF, Lincoln
+reads every page and writes documents, issues, dates, requirements and a client email for approval.
+Long files are read 12 pages at a time and merged; requests are queued one at a time. New drafts of
+any kind can be requested on a case. A personal login is created from the Render variables
+SEED_USER_EMAIL, SEED_USER_PASSWORD and SEED_USER_NAME (never in git). The relay account had about
+160 credits left on 2026-11-13; a full 52 page read needs more than that, so it needs a top up.
+
 Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
 name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
 provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in
 `lincoln/.env.local` (not in git), but the provider's address and model name are unknown, and its terms
-must forbid training on customer content, as the Privacy Policy now promises; (4) live reading of a new
-client file; (5) library entries per case type.
+must forbid training on customer content, as the Privacy Policy now promises; (4) library entries per case type; (5) the free Render plan wipes data on restart.
 
 Last updated 2026-11-13. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.

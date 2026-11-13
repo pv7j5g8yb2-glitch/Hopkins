@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { Card, PageHead } from "@/components/ui";
+import { PageHead } from "@/components/ui";
 import { requireUser } from "@/lib/session";
 
 const QA: [string, string][] = [
-  ["What Lincoln does", "Runs each immigration case from signed client to decision: reads every document, requests what is missing, grades the evidence, drafts forms and letters, tracks every date and raises anything that needs an attorney."],
-  ["What Lincoln never does", "Gives legal advice to the public, signs, or files or sends anything legal without an attorney's approval. Lincoln is not a lawyer."],
-  ["Reviewing a draft", "Sourced facts are underlined and link to the page they came from. Judgement calls are highlighted. Attorney notes are in red. Review mode dims everything else."],
-  ["Record of work", "Every action is listed under Activity in the case. Weekly totals are in the Lincoln report."],
+  ["Scope", "Lincoln runs each immigration case from engagement to decision: reads every document, requests what is missing, grades the evidence, drafts forms and letters, tracks every date and raises what requires an attorney."],
+  ["Limits", "Lincoln is not a lawyer. It gives no legal advice to the public, and signs, files or sends nothing legal without an attorney's approval."],
+  ["Drafts", "Sourced facts are underlined and open the page they came from. Judgement calls are shaded. Attorney notes are in square brackets. Review mode dims everything else."],
+  ["New cases", "Upload the client file as one PDF. Lincoln reads every page, lists the documents, opens issues, sets dates and drafts the first request to the client for approval."],
+  ["Record of work", "Every action is listed under Activity on the case. Weekly totals are in Settings, Usage."],
 ];
 
 export default async function Help() {
@@ -14,10 +15,10 @@ export default async function Help() {
   return (
     <div className="rise max-w-[680px]">
       <PageHead title="Help" />
-      <Card className="divide-y divide-line">
-        {QA.map(([q, a]) => <div key={q} className="px-4 py-3.5"><div className="mb-0.5 text-[14px] font-medium">{q}</div><p className="text-[13.5px] leading-relaxed text-muted">{a}</p></div>)}
-      </Card>
-      <div className="mt-5 flex gap-5 text-[12.5px] text-muted">
+      <dl className="border-t border-line">
+        {QA.map(([q, a]) => <div key={q} className="border-b border-line py-4"><dt className="mb-0.5 text-[13.5px] font-medium">{q}</dt><dd className="text-[13.5px] leading-relaxed text-muted">{a}</dd></div>)}
+      </dl>
+      <div className="mt-6 flex gap-5 text-[12.5px] text-muted">
         <Link href="/privacy" className="hover:text-ink">Privacy Policy</Link>
         <Link href="/terms" className="hover:text-ink">Terms of Service</Link>
       </div>

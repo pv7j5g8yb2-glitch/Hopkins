@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Check, Download, Eye } from "lucide-react";
+import { Download } from "lucide-react";
 import type { Section, Seg } from "@/lib/halasz";
 
-type Hover = { seg: Seg; x: number; y: number } | null;
+type Hover = { doc?: string; page: number; x: number; y: number } | null;
 
-export default function DraftView({ caseId, draftId, title, sections, facts, calls, notes, status }: { caseId: string; draftId: string; title: string; sections: Section[]; facts: number; calls: number; notes: number; status: string }) {
+type Props = { caseId: string; draftId: string; title: string; subtitle: string; sections: Section[]; facts: number; calls: number; notes: number; status: string; generic?: boolean };
+
+const PAGE_REF = /\((?:pp?\.|page)\s?(\d+)[^)]*\)|\[Attorney:[^\]]*\]/g;
+
+export default function DraftView({ caseId, draftId, title, subtitle, sections, facts, calls, notes, status, generic }: Props) {
   const [focus, setFocus] = useState(false);
   const [hover, setHover] = useState<Hover>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -18,92 +22,87 @@ export default function DraftView({ caseId, draftId, title, sections, facts, cal
     return () => window.removeEventListener("scroll", close, true);
   }, []);
 
-  const show = (seg: Seg, el: HTMLElement) => {
+  const show = (page: number, doc: string | undefined, el: HTMLElement) => {
     if (timer.current) clearTimeout(timer.current);
     const r = el.getClientRects()[0] ?? el.getBoundingClientRect();
     const w = Math.min(340, window.innerWidth - 24);
     const x = Math.max(12, Math.min(r.left, window.innerWidth - w - 12));
     const below = r.bottom + 8;
     const y = below + 300 > window.innerHeight ? Math.max(12, r.top - 308) : below;
-    setHover({ seg, x, y });
+    setHover({ doc, page, x, y });
   };
   const hide = () => {
     timer.current = setTimeout(() => setHover(null), 120);
   };
 
+  // Plain drafts carry their sources as (p. 12) and their open points as [Attorney: ...].
+  const plain = (text: string, key: number) => {
+    const out: React.ReactNode[] = [];
+    let last = 0;
+    for (const m of text.matchAll(PAGE_REF)) {
+      if (m.index! > last) out.push(<span key={`${key}-${last}`} className={focus ? "text-faint" : undefined}>{text.slice(last, m.index)}</span>);
+      if (m[1]) {
+        const page = Number(m[1]);
+        out.push(<a key={`${key}-p${m.index}`} href={`/api/pages/${caseId}/${page}`} target="_blank" onMouseEnter={(e) => show(page, undefined, e.currentTarget)} onMouseLeave={hide} className="whitespace-nowrap font-sans text-[12px] text-muted underline decoration-dotted underline-offset-4 hover:text-ink">{m[0]}</a>);
+      } else {
+        out.push(<span key={`${key}-n${m.index}`} className="font-sans text-[12.5px] italic text-ink"> {m[0]}</span>);
+      }
+      last = m.index! + m[0].length;
+    }
+    if (last < text.length) out.push(<span key={`${key}-end`} className={focus ? "text-faint" : undefined}>{text.slice(last)}</span>);
+    return out;
+  };
+
+  const seg = (g: Seg, k: number) =>
+    g.k === "fact" ? (
+      <span key={k} tabIndex={0} onMouseEnter={(e) => g.page && show(g.page, g.doc, e.currentTarget)} onMouseLeave={hide} onClick={(e) => g.page && show(g.page, g.doc, e.currentTarget)} className={clsx("cursor-help decoration-ink/35 decoration-dotted underline-offset-[5px]", focus ? "text-faint" : "underline")}>{g.t}</span>
+    ) : g.k === "call" ? (
+      <mark key={k} className="rounded-[2px] bg-[#ecebe6] px-0.5 text-ink">{g.t}</mark>
+    ) : g.k === "note" ? (
+      <span key={k} className="font-sans text-[12.5px] italic text-ink"> [Attorney: {g.t.trim()}]</span>
+    ) : generic ? (
+      <Fragment key={k}>{plain(g.t, k)}</Fragment>
+    ) : (
+      <span key={k} className={focus ? "text-faint" : undefined}>{g.t}</span>
+    );
+
   return (
     <div>
-      <div className="sticky top-12 z-10 -mx-1 mb-3 bg-canvas px-1 py-2 md:top-0">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-white px-3.5 py-2.5">
+      <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2">
         <div className="mr-auto min-w-0">
-          <div className="truncate text-[13.5px] font-medium">{title}</div>
-          <div className="text-[11.5px] text-faint">{status === "approved" ? "Approved" : "Draft"} · v1</div>
+          <div className="truncate text-[14px] font-medium">{title}</div>
+          <div className="text-[12.5px] text-faint">{status === "approved" ? "Approved" : "Draft for review"} · {facts} sourced facts{calls ? ` · ${calls} judgement calls` : ""}{notes ? ` · ${notes} attorney notes` : ""}</div>
         </div>
-        <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-ok/70" />{facts} sourced facts</span>
-        <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-[#e2b23c]" />{calls} judgement calls</span>
-        <span className="flex items-center gap-1.5 text-[12px] text-muted"><span className="h-2 w-2 rounded-sm bg-risk/70" />{notes} attorney notes</span>
-        <button onClick={() => setFocus((v) => !v)} className={clsx("flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] font-medium transition", focus ? "border-ink bg-ink text-canvas" : "border-line bg-white hover:bg-panel")}>
-          <Eye size={13} /> Review mode
-        </button>
-        <a href={`/api/drafts/${draftId}/docx`} className="flex h-7 items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 text-[12px] font-medium transition hover:bg-panel">
-          <Download size={13} /> Word
-        </a>
-      </div>
+        <button onClick={() => setFocus((v) => !v)} className={clsx("h-8 rounded-lg border px-3 text-[12.5px] font-medium transition", focus ? "border-ink bg-ink text-white" : "border-line bg-white hover:bg-panel")}>Review mode</button>
+        <a href={`/api/drafts/${draftId}/docx`} className="flex h-8 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-[12.5px] font-medium transition hover:bg-panel"><Download size={13} /> Word</a>
       </div>
 
-      <article className="mx-auto max-w-[720px] rounded-xl border border-line bg-white px-5 py-8 md:px-12 md:py-12">
-        <h2 className="serif mb-1 text-[22px] font-medium">Petition support letter</h2>
-        <p className="mb-8 text-[12.5px] text-faint">Form I-129, O-1A classification · Petitioner: Corvane Therapeutics, Inc. · Beneficiary: Dr. Réka Halász</p>
+      <article className="mx-auto max-w-[740px] rounded-xl border border-line bg-white px-5 py-9 shadow-[0_1px_3px_rgba(22,22,20,0.04)] md:px-14 md:py-14">
+        <h2 className="serif mb-1 text-[22px] font-medium">{title}</h2>
+        <p className="mb-10 text-[12.5px] text-faint">{subtitle}</p>
         {sections.map((s) => (
-          <section key={s.id} className="mb-7">
-            <h3 className="serif mb-0.5 text-[16.5px] font-medium">{s.heading}</h3>
-            {s.cite && <p className="mb-2 text-[11.5px] text-faint">{s.cite}</p>}
+          <section key={s.id} className="mb-8">
+            {s.heading && <h3 className="serif mb-1 text-[16.5px] font-medium">{s.heading}</h3>}
+            {s.cite && <p className="mb-2 text-[12px] text-faint">{s.cite}</p>}
             {s.paras.map((p, i) => (
-              <p key={i} className="serif mb-3 text-[14.5px] leading-[1.75]" style={{ fontVariationSettings: '"opsz" 12', letterSpacing: 0 }}>
-                {p.map((g, k) =>
-                  g.k === "fact" ? (
-                    <span
-                      key={k}
-                      tabIndex={0}
-                      onMouseEnter={(e) => show(g, e.currentTarget)}
-                      onMouseLeave={hide}
-                      onClick={(e) => show(g, e.currentTarget)}
-                      className={clsx("cursor-help rounded-[2px] decoration-ok/50 decoration-dotted underline-offset-[5px] transition hover:bg-ok-bg", focus ? "text-faint" : "underline")}
-                    >
-                      {g.t}
-                    </span>
-                  ) : g.k === "call" ? (
-                    <mark key={k} className="rounded-[3px] bg-warn-bg px-0.5 text-ink">{g.t}</mark>
-                  ) : g.k === "note" ? (
-                    <span key={k} className="font-sans text-[12.5px] leading-relaxed text-risk"> [{g.t.trim()}]</span>
-                  ) : (
-                    <span key={k} className={focus ? "text-faint" : undefined}>{g.t}</span>
-                  ),
-                )}
+              <p key={i} className={clsx("serif mb-3.5 text-[15px] leading-[1.75]", generic && "whitespace-pre-line")} style={{ fontVariationSettings: '"opsz" 12', letterSpacing: 0 }}>
+                {p.map(seg)}
               </p>
             ))}
           </section>
         ))}
-        <p className="mt-10 border-t border-line pt-4 text-[11.5px] leading-relaxed text-faint">Prepared by Lincoln for attorney review. Not legal advice.</p>
+        <p className="mt-12 border-t border-line pt-4 text-[12px] text-faint">Prepared for attorney review. Not legal advice.</p>
       </article>
 
-      {hover && hover.seg.page && (
-        <div
-          className="rise fixed z-50 w-[340px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-line bg-white shadow-[0_12px_40px_-12px_rgba(22,22,20,0.35)]"
-          style={{ left: hover.x, top: hover.y }}
-          onMouseEnter={() => timer.current && clearTimeout(timer.current)}
-          onMouseLeave={hide}
-        >
-          <div className="flex items-center gap-2 border-b border-line px-3 py-2">
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ok-bg text-ok"><Check size={11} strokeWidth={3} /></span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[12px] font-medium">{hover.seg.doc}</div>
-              <div className="text-[11px] text-faint">Client file, page {hover.seg.page} · verified</div>
-            </div>
+      {hover && (
+        <div className="rise fixed z-50 w-[340px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-line bg-white shadow-[0_16px_44px_-14px_rgba(22,22,20,0.35)]" style={{ left: hover.x, top: hover.y }} onMouseEnter={() => timer.current && clearTimeout(timer.current)} onMouseLeave={hide}>
+          <div className="border-b border-line px-3.5 py-2">
+            {hover.doc && <div className="truncate text-[12.5px] font-medium">{hover.doc}</div>}
+            <div className="text-[11.5px] text-faint">Client file, page {hover.page}</div>
           </div>
-          <a href={`/api/pages/${caseId}/${hover.seg.page}`} target="_blank" className="block h-[220px] overflow-hidden bg-panel">
+          <a href={`/api/pages/${caseId}/${hover.page}`} target="_blank" className="block h-[220px] overflow-hidden bg-panel">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/api/pages/${caseId}/${hover.seg.page}`} alt={`Page ${hover.seg.page}`} className="w-full" />
+            <img src={`/api/pages/${caseId}/${hover.page}`} alt={`Page ${hover.page}`} className="w-full" />
           </a>
         </div>
       )}

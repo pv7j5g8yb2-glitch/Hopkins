@@ -70,6 +70,12 @@ export function db(): Database.Database {
   d.pragma("journal_mode = WAL");
   d.pragma("foreign_keys = ON");
   d.exec(SCHEMA);
+  for (const [table, col, type] of [["users", "avatar", "TEXT"], ["cases", "processing", "INTEGER NOT NULL DEFAULT 0"], ["cases", "note", "TEXT"], ["chat", "case_id", "TEXT"]]) {
+    const cols = d.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some((c) => c.name === col)) d.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
+  }
+  // A server restart ends any background reading; do not leave cases marked as in progress.
+  d.exec("UPDATE cases SET processing = 0, note = 'Reading was interrupted. Upload the file again.' WHERE processing = 1");
   const n = d.prepare("SELECT COUNT(*) AS n FROM firms").get() as { n: number };
   if (n.n === 0) seed(d);
   g.__lincolnDb = d;

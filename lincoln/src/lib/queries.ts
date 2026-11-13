@@ -2,7 +2,7 @@ import { db } from "./db";
 
 // Every function takes the firm id first. There is no query in the app without it.
 
-export type Case = { id: string; ref: string; client: string; counterpart: string | null; type_code: string; type_name: string; family: string; stage: string; state: string; waiting_on: string | null; summary: string; attorney_id: string; paralegal_id: string; opened_at: string; next_date: string | null; next_date_label: string | null; sensitive: number; pages: number };
+export type Case = { id: string; ref: string; client: string; counterpart: string | null; type_code: string; type_name: string; family: string; stage: string; state: string; waiting_on: string | null; summary: string; attorney_id: string; paralegal_id: string; opened_at: string; next_date: string | null; next_date_label: string | null; sensitive: number; pages: number; processing: number; note: string | null };
 export type Doc = { id: string; case_id: string; n: number; title: string; kind: string; page_from: number | null; page_to: number | null; doc_date: string | null; source: string; language: string; is_scan: number; status: string; note: string | null; received_at: string };
 export type Criterion = { id: string; n: number; code: string; name: string; citation: string; recommendation: string; strength: string; summary: string; weakness: string; evidence: string };
 export type Issue = { id: string; case_id: string; kind: string; severity: string; title: string; detail: string; sources: string; status: string; resolution: string | null; created_at: string; resolved_at: string | null };
@@ -11,13 +11,14 @@ export type Activity = { id: string; case_id: string | null; at: string; actor: 
 export type Approval = { id: string; case_id: string; kind: string; title: string; brief: string; least_sure: string | null; if_wrong: string | null; payload: string; status: string; assignee_id: string; created_at: string; decided_at: string | null; decided_by: string | null; due: string | null; client?: string; type_code?: string };
 export type Message = { id: string; case_id: string | null; direction: string; party: string; party_role: string | null; subject: string; body: string; at: string; state: string; lincoln_note: string | null; client?: string | null };
 export type Draft = { id: string; case_id: string; title: string; kind: string; status: string; version: number; content: string; updated_at: string };
-export type Person = { id: string; name: string; email: string; role: string; initials: string };
+export type Person = { id: string; name: string; email: string; role: string; initials: string; avatar: string | null };
 
 const all = <T>(sql: string, ...a: unknown[]) => db().prepare(sql).all(...a) as T[];
 const one = <T>(sql: string, ...a: unknown[]) => db().prepare(sql).get(...a) as T | undefined;
 
-export const people = (firm: string) => all<Person>("SELECT id, name, email, role, initials FROM users WHERE firm_id = ? ORDER BY rowid", firm);
+export const people = (firm: string) => all<Person>("SELECT id, name, email, role, initials, avatar FROM users WHERE firm_id = ? ORDER BY rowid", firm);
 export const cases = (firm: string) => all<Case>("SELECT * FROM cases WHERE firm_id = ? ORDER BY CASE state WHEN 'needs_you' THEN 0 WHEN 'moving' THEN 1 WHEN 'waiting' THEN 2 ELSE 3 END, opened_at DESC", firm);
+export const recentCases = (firm: string, limit = 6) => all<Case>("SELECT * FROM cases WHERE firm_id = ? ORDER BY opened_at DESC LIMIT ?", firm, limit);
 export const caseById = (firm: string, id: string) => one<Case>("SELECT * FROM cases WHERE firm_id = ? AND id = ?", firm, id);
 export const documents = (firm: string, c: string) => all<Doc>("SELECT * FROM documents WHERE firm_id = ? AND case_id = ? ORDER BY n", firm, c);
 export const criteria = (firm: string, c: string) => all<Criterion>("SELECT * FROM criteria WHERE firm_id = ? AND case_id = ? ORDER BY n", firm, c);
@@ -38,4 +39,4 @@ export const caseDrafts = (firm: string, c: string) => all<Draft>("SELECT * FROM
 export const draftById = (firm: string, id: string) => one<Draft>("SELECT * FROM drafts WHERE firm_id = ? AND id = ?", firm, id);
 export const kv = (firm: string, key: string) => one<{ value: string }>("SELECT value FROM kv WHERE firm_id = ? AND key = ?", firm, key)?.value ?? null;
 export const setKv = (firm: string, key: string, value: string) => db().prepare("INSERT INTO kv (firm_id, key, value) VALUES (?, ?, ?) ON CONFLICT(firm_id, key) DO UPDATE SET value = excluded.value").run(firm, key, value);
-export const chatHistory = (firm: string, user: string) => all<{ id: string; role: string; content: string; at: string }>("SELECT id, role, content, at FROM chat WHERE firm_id = ? AND user_id = ? ORDER BY at", firm, user);
+export const chatHistory = (firm: string, user: string, caseId: string | null = null) => all<{ id: string; role: string; content: string; at: string }>("SELECT id, role, content, at FROM chat WHERE firm_id = ? AND user_id = ? AND case_id IS ? ORDER BY at", firm, user, caseId);

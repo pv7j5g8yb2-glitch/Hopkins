@@ -1,26 +1,33 @@
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
-import { Card, PageHead, btn } from "@/components/ui";
+import { PageHead, btn, field, label } from "@/components/ui";
+import FileDrop from "@/components/FileDrop";
 import { createCase } from "@/lib/actions";
 import { LIBRARY } from "@/lib/library";
+import { llmConfigured } from "@/lib/llm";
 import { requireUser } from "@/lib/session";
 
-export default async function NewCase() {
+const ERRORS: Record<string, string> = {
+  fields: "Client and case type are required.",
+  size: "The file exceeds 25 MB.",
+  type: "The file is not a PDF.",
+};
+
+export default async function NewCase({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   await requireUser();
+  const { error } = await searchParams;
   return (
-    <div className="rise max-w-[640px]">
-      <Link href="/cases" className="mb-4 inline-flex items-center gap-1 text-[12.5px] text-muted hover:text-ink"><ChevronLeft size={14} /> Cases</Link>
+    <div className="rise mx-auto max-w-[520px]">
       <PageHead title="New case" />
-      <form action={createCase}>
-        <Card className="flex flex-col gap-4 px-4 py-4">
-          <label className="block"><span className="mb-1 block text-[12.5px] text-muted">Client</span><input name="client" required maxLength={120} placeholder="Full name or company" className="h-9 w-full rounded-lg border border-line bg-white px-3 text-[13.5px] outline-none focus:border-ink" /></label>
-          <label className="block"><span className="mb-1 block text-[12.5px] text-muted">Kind of case</span>
-            <select name="type" required className="h-9 w-full rounded-lg border border-line bg-white px-2 text-[13.5px] outline-none focus:border-ink">
-              {LIBRARY.map((f) => <optgroup key={f.name} label={f.name}>{f.types.map(([code, name]) => <option key={f.name + code} value={code}>{code}: {name}</option>)}</optgroup>)}
-            </select>
-          </label>
-          <div><button className={btn.primary}>Open the case</button></div>
-        </Card>
+      <form action={createCase} className="flex flex-col gap-5">
+        <label className="block"><span className={label}>Client</span><input name="client" required maxLength={120} className={field} /></label>
+        <label className="block"><span className={label}>Petitioner or employer <span className="font-normal text-faint">Optional</span></span><input name="counterpart" maxLength={120} className={field} /></label>
+        <label className="block"><span className={label}>Case type</span>
+          <select name="type" required className={field}>
+            {LIBRARY.map((f) => <optgroup key={f.name} label={f.name}>{f.types.map(([code, name]) => <option key={f.name + code} value={code}>{code} · {name}</option>)}</optgroup>)}
+          </select>
+        </label>
+        {llmConfigured() && <div><span className={label}>Client file <span className="font-normal text-faint">Optional</span></span><FileDrop /></div>}
+        {error && ERRORS[error] && <p className="text-[13px] text-risk">{ERRORS[error]}</p>}
+        <div><button className={btn.primary}>Open case</button></div>
       </form>
     </div>
   );

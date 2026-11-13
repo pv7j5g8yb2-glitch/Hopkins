@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import clsx from "clsx";
-import { Check, CircleAlert, FileText, Sparkles } from "lucide-react";
+import { Check, FileText } from "lucide-react";
 import { acceptAllRecommended, answerQuestion, decideApproval } from "@/lib/actions";
 import type { Question } from "@/lib/halasz";
 
@@ -11,9 +11,12 @@ type Props = {
   id: string;
   caseId: string;
   kind: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any;
   message?: { party: string; party_role: string | null; subject: string; body: string } | null;
 };
+
+const box = "rounded-xl border border-line bg-white";
 
 export default function ApprovalPanel({ id, caseId, kind, payload, message }: Props) {
   const [pending, start] = useTransition();
@@ -28,15 +31,13 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
       }
     });
 
-  const footer = (label: string, disabled = false) => (
-    <div className="sticky bottom-0 -mx-4 mt-6 flex flex-wrap items-center gap-2 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur md:-mx-0 md:rounded-b-xl md:px-0">
-      <button disabled={pending || disabled} onClick={() => decide("approved")} className="flex h-9 items-center gap-1.5 rounded-lg bg-ink px-4 text-[13.5px] font-medium text-canvas transition hover:bg-black active:scale-[0.98] disabled:opacity-40">
-        <Check size={15} /> {label}
+  const footer = (text: string, disabled = false) => (
+    <div className="sticky bottom-0 mt-6 flex flex-wrap items-center gap-2 border-t border-line bg-white/95 py-3 backdrop-blur">
+      <button disabled={pending || disabled} onClick={() => decide("approved")} className="flex h-9 items-center gap-1.5 rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:opacity-35">
+        <Check size={14} /> {text}
       </button>
-      <button disabled={pending} onClick={() => decide("rejected")} className="flex h-9 items-center rounded-lg border border-line bg-white px-3.5 text-[13.5px] font-medium transition hover:bg-panel disabled:opacity-40">
-        Return
-      </button>
-      {error && <span className="flex items-center gap-1 text-[12.5px] text-risk"><CircleAlert size={13} />{error}</span>}
+      <button disabled={pending} onClick={() => decide("rejected")} className="h-9 rounded-lg border border-line bg-white px-3.5 text-[13px] font-medium transition hover:bg-panel disabled:opacity-40">Return</button>
+      {error && <span className="text-[12.5px] text-risk">{error}</span>}
     </div>
   );
 
@@ -45,42 +46,37 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
     const done = qs.filter((q) => q.answer).length;
     return (
       <div>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="h-1.5 w-28 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-ink transition-all" style={{ width: `${(done / qs.length) * 100}%` }} /></div>
-            <span className="text-[12.5px] text-muted">{done} of {qs.length} answered</span>
+            <div className="h-[3px] w-24 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-ink transition-all" style={{ width: `${(done / qs.length) * 100}%` }} /></div>
+            <span className="text-[12.5px] text-muted">{done} of {qs.length}</span>
           </div>
-          {done < qs.length && (
-            <button disabled={pending} onClick={() => start(() => acceptAllRecommended(id))} className="flex h-7 items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 text-[12px] font-medium transition hover:bg-panel">
-              <Sparkles size={12} /> Accept remaining recommendations
-            </button>
-          )}
+          {done < qs.length && <button disabled={pending} onClick={() => start(() => acceptAllRecommended(id))} className="h-8 rounded-lg border border-line bg-white px-3 text-[12.5px] font-medium transition hover:bg-panel">Accept recommendations</button>}
         </div>
-        <div className="flex flex-col gap-2.5">
+        <ol className="border-t border-line">
           {qs.map((q, i) => (
-            <div key={q.id} className={clsx("rounded-xl border bg-white px-4 py-3.5 transition", q.answer ? "border-line" : "border-[#cfcbc3] shadow-[0_1px_0_rgba(22,22,20,0.04)]")}>
-              <div className="mb-1 flex items-center gap-2 text-[11.5px] text-faint"><span className="tabular-nums">{i + 1}</span><span className="uppercase tracking-[0.06em]">{q.topic}</span></div>
+            <li key={q.id} className="border-b border-line py-5">
+              <div className="mb-1 text-[12px] text-faint">{i + 1} · {q.topic}</div>
               <p className="mb-2 text-[14.5px] font-medium leading-snug">{q.q}</p>
-              <ul className="mb-2.5 flex flex-col gap-1">
+              <ul className="mb-2.5 flex flex-col gap-0.5">
                 {q.evidence.map((e, k) => (
-                  <li key={k} className="flex items-start gap-2 text-[13px] leading-relaxed text-muted">
-                    <span className="mt-[8px] h-1 w-1 shrink-0 rounded-full bg-faint" />
-                    <span>{e.t}{e.page && <a href={`/api/pages/${caseId}/${e.page}`} target="_blank" className="ml-1.5 whitespace-nowrap rounded-md border border-line px-1.5 py-px text-[11px] text-muted hover:border-ink hover:text-ink">p. {e.page}</a>}</span>
+                  <li key={k} className="text-[13px] leading-relaxed text-muted">
+                    {e.t}{e.page && <a href={`/api/pages/${caseId}/${e.page}`} target="_blank" className="ml-1.5 whitespace-nowrap text-[12px] underline decoration-line underline-offset-4 hover:text-ink hover:decoration-ink">p. {e.page}</a>}
                   </li>
                 ))}
               </ul>
-              <p className="mb-3 text-[12.5px] leading-relaxed"><span className={clsx("mr-1.5 rounded-[5px] px-1.5 py-px text-[11.5px] font-medium", q.recommend === "yes" ? "bg-ok-bg text-ok" : "bg-risk-bg text-risk")}>Recommended: {q.recommend === "yes" ? "Yes" : "No"}</span><span className="text-muted">{q.why}</span></p>
-              <div className="inline-flex rounded-lg border border-line bg-canvas p-0.5">
+              <p className="mb-3 text-[13px] leading-relaxed"><span className="font-medium">Recommended: {q.recommend === "yes" ? "Yes" : "No"}.</span> <span className="text-muted">{q.why}</span></p>
+              <div className="inline-flex rounded-lg border border-line p-0.5">
                 {(["yes", "no", "change"] as const).map((a) => (
-                  <button key={a} disabled={pending} onClick={() => start(() => answerQuestion(id, q.id, a))} className={clsx("h-7 rounded-md px-3.5 text-[12.5px] font-medium transition", q.answer === a ? "bg-ink text-canvas" : "text-muted hover:text-ink")}>
+                  <button key={a} disabled={pending} onClick={() => start(() => answerQuestion(id, q.id, a))} className={clsx("h-7 rounded-md px-3.5 text-[12.5px] font-medium transition", q.answer === a ? "bg-ink text-white" : "text-muted hover:text-ink")}>
                     {a === "yes" ? "Yes" : a === "no" ? "No" : "More evidence"}
                   </button>
                 ))}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
-        {footer("Confirm and draft letter", done < qs.length)}
+        </ol>
+        {footer("Confirm and draft", done < qs.length)}
       </div>
     );
   }
@@ -88,12 +84,12 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
   if (kind === "message" && message) {
     return (
       <div>
-        <div className="rounded-xl border border-line bg-white">
-          <div className="border-b border-line px-4 py-3 text-[13px]">
-            <div><span className="inline-block w-16 text-faint">To</span>{message.party} <span className="text-faint">· {message.party_role}</span></div>
-            <div><span className="inline-block w-16 text-faint">Subject</span><span className="font-medium">{message.subject}</span></div>
+        <div className={box}>
+          <div className="border-b border-line px-5 py-3 text-[13px]">
+            <div className="flex gap-3"><span className="w-14 text-faint">To</span><span>{message.party} <span className="text-faint">{message.party_role}</span></span></div>
+            <div className="flex gap-3"><span className="w-14 text-faint">Subject</span><span className="font-medium">{message.subject}</span></div>
           </div>
-          <p className="whitespace-pre-line px-4 py-4 text-[13.5px] leading-relaxed">{message.body}</p>
+          <p className="whitespace-pre-line px-5 py-5 text-[13.5px] leading-relaxed">{message.body}</p>
         </div>
         {footer("Approve and send")}
       </div>
@@ -103,15 +99,14 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
   if (kind === "filing") {
     return (
       <div>
-        <div className="rounded-xl border border-line bg-white">
-          <div className="border-b border-line px-4 py-2.5 text-[12px] font-medium uppercase tracking-[0.06em] text-faint">Filing check</div>
-          <ul className="divide-y divide-line">
-            {(payload.checks as [string, boolean][]).map(([t, ok]) => (
-              <li key={t} className="flex items-center gap-2.5 px-4 py-2 text-[13px]"><span className={clsx("flex h-4 w-4 items-center justify-center rounded-full", ok ? "bg-ok-bg text-ok" : "bg-risk-bg text-risk")}><Check size={11} strokeWidth={3} /></span>{t}</li>
-            ))}
-          </ul>
-        </div>
-        {payload.note && <p className="mt-3 rounded-xl bg-warn-bg px-4 py-3 text-[13px] leading-relaxed text-ink"><span className="font-medium">Note: </span>{payload.note}</p>}
+        <ul className="border-t border-line">
+          {(payload.checks as [string, boolean][]).map(([t, ok]) => (
+            <li key={t} className="flex items-center gap-3 border-b border-line py-2.5 text-[13px]">
+              <Check size={14} className={ok ? "text-ink" : "text-risk"} />{t}
+            </li>
+          ))}
+        </ul>
+        {payload.note && <p className="mt-4 border-l border-ink pl-3 text-[13px] leading-relaxed">{payload.note}</p>}
         {footer("Approve for filing")}
       </div>
     );
@@ -120,11 +115,11 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
   if (kind === "draft_review") {
     return (
       <div>
-        <Link href={`/cases/${caseId}?tab=drafts`} className="group flex items-center gap-3 rounded-xl border border-line bg-white px-4 py-4 transition hover:border-ink">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-panel"><FileText size={18} /></span>
-          <div className="flex-1"><div className="text-[14px] font-medium">Petition support letter</div><div className="text-[12.5px] text-muted">Judgement calls highlighted. Each fact links to its source page.</div></div>
+        <Link href={`/cases/${caseId}?tab=drafts`} className={clsx(box, "flex items-center gap-3 px-4 py-4 transition hover:border-ink")}>
+          <FileText size={18} className="text-muted" />
+          <span className="flex-1 text-[14px] font-medium">Open draft</span>
         </Link>
-        {footer("Approve letter")}
+        {footer("Approve")}
       </div>
     );
   }
@@ -132,21 +127,18 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
   if (kind === "plan") {
     return (
       <div>
-        <div className="rounded-xl border border-line bg-white">
-          <div className="border-b border-line px-4 py-2.5 text-[12px] font-medium uppercase tracking-[0.06em] text-faint">Proposed response</div>
-          <ul className="divide-y divide-line">
-            {(payload.points as [string, string][]).map(([h, t]) => (
-              <li key={h} className="px-4 py-3"><div className="text-[13.5px] font-medium">{h}</div><p className="text-[13px] leading-relaxed text-muted">{t}</p></li>
-            ))}
-          </ul>
-        </div>
+        <ul className="border-t border-line">
+          {(payload.points as [string, string][]).map(([h, t]) => (
+            <li key={h} className="border-b border-line py-3"><div className="text-[13.5px] font-medium">{h}</div><p className="text-[13px] leading-relaxed text-muted">{t}</p></li>
+          ))}
+        </ul>
         {message && (
-          <div className="mt-3 rounded-xl border border-line bg-white">
-            <div className="border-b border-line px-4 py-2.5 text-[12.5px]"><span className="text-faint">To </span>{message.party}<span className="text-faint"> on approval · </span><span className="font-medium">{message.subject}</span></div>
-            <p className="whitespace-pre-line px-4 py-3.5 text-[13px] leading-relaxed text-muted">{message.body}</p>
+          <div className={clsx(box, "mt-5")}>
+            <div className="border-b border-line px-5 py-2.5 text-[12.5px]"><span className="text-faint">To </span>{message.party} <span className="text-faint">· </span><span className="font-medium">{message.subject}</span></div>
+            <p className="whitespace-pre-line px-5 py-4 text-[13px] leading-relaxed text-muted">{message.body}</p>
           </div>
         )}
-        {footer("Approve plan and send checklist")}
+        {footer("Approve and send")}
       </div>
     );
   }
