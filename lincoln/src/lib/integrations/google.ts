@@ -56,7 +56,7 @@ async function raw(c: Connection, url: string) {
 
 const GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me";
 export async function listInbox(c: Connection) {
-  const r = await call<{ messages?: { id: string }[] }>(c, `${GMAIL}/messages?q=${encodeURIComponent("in:inbox newer_than:3d -from:me")}&maxResults=25`, {}, "Gmail");
+  const r = await call<{ messages?: { id: string }[] }>(c, `${GMAIL}/messages?q=${encodeURIComponent("in:inbox newer_than:3d -from:me -category:promotions -category:social -category:forums")}&maxResults=25`, {}, "Gmail");
   return (r.messages ?? []).map((m) => m.id);
 }
 
@@ -80,7 +80,8 @@ export async function readMessage(c: Connection, id: string): Promise<Inbound> {
   };
   await walk(m.payload);
   const authn = m.payload.headers?.filter((x) => x.name.toLowerCase() === "authentication-results").map((x) => x.value).join(" ") ?? "";
-  return { verified: /dmarc=pass/i.test(authn), id, threadId: m.threadId, from: email, fromName: fromRaw.replace(/<[^>]+>/, "").replace(/"/g, "").trim() || email, subject: h("subject"), text: text.slice(0, 20000), attachments };
+  const bulk = Boolean(h("list-unsubscribe")) || /bulk|list|junk/i.test(h("precedence"));
+  return { bulk, verified: /dmarc=pass/i.test(authn), id, threadId: m.threadId, from: email, fromName: fromRaw.replace(/<[^>]+>/, "").replace(/"/g, "").trim() || email, subject: h("subject"), text: text.slice(0, 20000), attachments };
 }
 
 const header = (v: string) => (/^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v).toString("base64")}?=`);
@@ -128,4 +129,15 @@ export async function upload(c: Connection, name: string, kind: OfficeKind, data
   ]);
   const r = await call<{ id: string; webViewLink?: string }>(c, "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", { method: "POST", headers: { "Content-Type": `multipart/related; boundary=${boundary}` }, body }, "Google Drive");
   return r.webViewLink ?? `https://drive.google.com/open?id=${r.id}`;
+}
+
+// Instant delivery: Gmail tells Google Pub/Sub about new inbox mail, and Pub/Sub calls Lincoln.
+// The watch lasts up to 7 days; Lincoln renews it daily.
+export const pushConfigured = () => Boolean(process.env.GOOGLE_PUBSUB_TOPIC && process.env.GOOGLE_PUSH_TOKEN);
+export async function watch(c: Connection) {
+  if (!pushConfigured()) return;
+  const s = settingsOf(c);
+  if (s.watchUntil && s.watchUntil > Date.now() + 24 * 3600_000 * 5) return;
+  const r = await call<{ historyId: string; expiration: string }>(c, `${GMAIL}/watch`, { method: "POST", body: JSON.stringify({ topicName: process.env.GOOGLE_PUBSUB_TOPIC, labelIds: ["INBOX"], labelFilterBehavior: "INCLUDE" }) }, "Gmail");
+  db().prepare("UPDATE mailboxes SET settings = ? WHERE id = ?").run(JSON.stringify({ ...s, watchUntil: Number(r.expiration) }), c.id);
 }

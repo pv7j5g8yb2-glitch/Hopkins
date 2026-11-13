@@ -30,6 +30,10 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+      - key: GOOGLE_PUBSUB_TOPIC  # projects/<project id>/topics/lincoln-gmail, for instant Gmail delivery
+        sync: false
+      - key: GOOGLE_PUSH_TOKEN    # shared with the Pub/Sub push subscription address
+        generateValue: true
       - key: MICROSOFT_CLIENT_ID # from Microsoft Entra, app registration for Outlook, OneDrive, Teams
         sync: false
       - key: MICROSOFT_CLIENT_SECRET

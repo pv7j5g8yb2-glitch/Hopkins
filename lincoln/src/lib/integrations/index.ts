@@ -34,19 +34,32 @@ export async function connect(p: Provider, firmId: string, userId: string, code:
   const c = d.prepare("SELECT * FROM mailboxes WHERE id = ?").get(id) as Connection;
   const seen = d.prepare("INSERT OR IGNORE INTO inbound_seen (mailbox_id, msg_id) VALUES (?, ?)");
   for (const m of await P[p].listInbox(c)) seen.run(id, m);
+  try { await ensurePush(c); } catch (e) { d.prepare("UPDATE mailboxes SET last_error = ? WHERE id = ?").run(`Instant delivery not set up: ${e instanceof Error ? e.message : "error"}`.slice(0, 200), id); }
   return t.email;
 }
 
 export async function fetchNew(c: Connection): Promise<Inbound[]> {
   const d = db();
-  const seen = d.prepare("SELECT 1 FROM inbound_seen WHERE mailbox_id = ? AND msg_id = ?");
-  const fresh = (await P[c.provider].listInbox(c)).filter((id) => !seen.get(c.id, id)).slice(0, 5);
+  // Claim each message before reading it, so a notification and the safety sweep never both work it.
+  const claim = d.prepare("INSERT OR IGNORE INTO inbound_seen (mailbox_id, msg_id) VALUES (?, ?)");
   const out: Inbound[] = [];
-  for (const id of fresh) {
-    out.push(await P[c.provider].readMessage(c, id));
-    d.prepare("INSERT OR IGNORE INTO inbound_seen (mailbox_id, msg_id) VALUES (?, ?)").run(c.id, id);
+  for (const id of await P[c.provider].listInbox(c)) {
+    if (out.length >= 10) break;
+    if (claim.run(c.id, id).changes !== 1) continue;
+    try {
+      out.push(await P[c.provider].readMessage(c, id));
+    } catch (e) {
+      d.prepare("DELETE FROM inbound_seen WHERE mailbox_id = ? AND msg_id = ?").run(c.id, id);
+      throw e;
+    }
   }
   return out;
+}
+
+/** Asks the provider to notify Lincoln of new mail, and keeps the request from expiring. */
+export async function ensurePush(c: Connection) {
+  if (c.provider === "google") await google.watch(c);
+  else await microsoft.subscribe(c);
 }
 
 export const send = (c: Connection, to: string, subject: string, body: string, threadId?: string | null) => (c.provider === "google" ? google.send(c, to, subject, body, threadId) : microsoft.send(c, to, subject, body));

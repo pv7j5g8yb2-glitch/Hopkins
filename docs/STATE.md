@@ -61,6 +61,16 @@ address is not acted on. Tested: the page pipeline (a sideways phone photo came 
 and the spoofed instruction against the stand-in. Not tested: the model's reading of real photos (relay out
 of credit, 10 credits left) and a real iPhone HEIC file.
 
+Seventh pass (2026-11-13): mail arrives instantly. Gmail notifies through Google Pub/Sub
+(GOOGLE_PUBSUB_TOPIC, GOOGLE_PUSH_TOKEN) and Outlook through a Microsoft Graph subscription, both renewed
+automatically; a sweep every five minutes catches anything missed. Each email is claimed before it is read,
+so it is never worked twice, and a failed one is retried up to three times. Newsletters and other bulk mail
+(List-Unsubscribe or Precedence headers, Gmail promotions, social and forums) never reach the model and are
+never stored, except mail from .gov addresses; mail the model judges not to be case work is deleted at once.
+GET /api/health is for an uptime ping (cron-job.org) so the free Render server does not sleep. Tested
+against the stand-in: Gmail work began 3.5 seconds after the notification and Outlook 0.5 seconds; forged
+notifications were refused.
+
 Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
 name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
 provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in

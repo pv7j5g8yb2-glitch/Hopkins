@@ -2,7 +2,9 @@ import { db } from "../db";
 import { open, seal } from "../secret";
 import { api, callback, json } from "./http";
 import type { Connection, FileHit, Inbound, OfficeKind } from "./types";
-import { OFFICE_EXT, OFFICE_MIME } from "./types";
+import { OFFICE_EXT, OFFICE_MIME, settingsOf } from "./types";
+import { sign } from "../secret";
+import { appUrl } from "./http";
 
 // One Microsoft sign in covers Outlook mail and calendar, OneDrive, SharePoint, Word, Excel,
 // PowerPoint and Teams, all through Microsoft Graph. Word, Excel and PowerPoint files are saved to
@@ -73,7 +75,9 @@ export async function readMessage(c: Connection, id: string): Promise<Inbound> {
   // Mail from outside the organisation carries Authentication-Results; mail inside it does not.
   const authn = (m.internetMessageHeaders ?? []).filter((h) => h.name.toLowerCase() === "authentication-results").map((h) => h.value).join(" ");
   const sameOrg = from.split("@")[1] === c.email.split("@")[1];
-  return { verified: authn ? /dmarc=pass/i.test(authn) : sameOrg, id, threadId: m.conversationId, from, fromName: m.from?.emailAddress?.name || from, subject: m.subject ?? "", text: (m.body?.content ?? "").slice(0, 20000), attachments };
+  const header = (n: string) => (m.internetMessageHeaders ?? []).find((h) => h.name.toLowerCase() === n)?.value ?? "";
+  const bulk = Boolean(header("list-unsubscribe")) || /bulk|list|junk/i.test(header("precedence"));
+  return { bulk, verified: authn ? /dmarc=pass/i.test(authn) : sameOrg, id, threadId: m.conversationId, from, fromName: m.from?.emailAddress?.name || from, subject: m.subject ?? "", text: (m.body?.content ?? "").slice(0, 20000), attachments };
 }
 
 export async function send(c: Connection, to: string, subject: string, body: string) {
@@ -133,4 +137,22 @@ export async function channels(c: Connection) {
 
 export async function post(c: Connection, teamId: string, channelId: string, html: string) {
   await call(c, `/teams/${encodeURIComponent(teamId)}/channels/${encodeURIComponent(channelId)}/messages`, { method: "POST", body: JSON.stringify({ body: { contentType: "html", content: html } }) }, "Teams");
+}
+
+// Instant delivery: a Graph subscription calls Lincoln when mail lands in the inbox. Mail
+// subscriptions last at most a few days; Lincoln renews when less than a day is left.
+export const clientState = (c: Connection) => sign(`graph:${c.id}`).slice(0, 64);
+export async function subscribe(c: Connection) {
+  const s = settingsOf(c);
+  if (s.subId && s.subUntil && s.subUntil > Date.now() + 24 * 3600_000) return;
+  const until = new Date(Date.now() + 2.5 * 24 * 3600_000).toISOString();
+  if (s.subId) {
+    try {
+      await call(c, `/subscriptions/${encodeURIComponent(s.subId)}`, { method: "PATCH", body: JSON.stringify({ expirationDateTime: until }) }, "Microsoft");
+      db().prepare("UPDATE mailboxes SET settings = ? WHERE id = ?").run(JSON.stringify({ ...s, subUntil: Date.parse(until) }), c.id);
+      return;
+    } catch { /* expired or removed: create a new one */ }
+  }
+  const r = await call<{ id: string; expirationDateTime: string }>(c, "/subscriptions", { method: "POST", body: JSON.stringify({ changeType: "created", notificationUrl: `${appUrl()}/api/push/microsoft`, resource: "me/mailFolders('Inbox')/messages", expirationDateTime: until, clientState: clientState(c) }) }, "Microsoft");
+  db().prepare("UPDATE mailboxes SET settings = ? WHERE id = ?").run(JSON.stringify({ ...s, subId: r.id, subUntil: Date.parse(r.expirationDateTime) }), c.id);
 }

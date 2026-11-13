@@ -14,7 +14,7 @@ const TABS: [string, string][] = [["profile", "Profile"], ["security", "Security
 const RULES: [string, string, boolean][] = [
   ["Reminders when a client has not replied", "After 3 days", true],
   ["Filing case mail and attachments", "Always", true],
-  ["Reading incoming case mail and attachments", "Every two minutes, connected mailbox", true],
+  ["Reading incoming case mail and attachments", "As it arrives; mail that is not case work is not kept", true],
   ["Case dates added to the attorney's calendar", "Google or Outlook Calendar", true],
   ["Items for review posted to Teams", "Chosen channel", true],
   ["Opening cases from new client enquiries", "Always", true],

@@ -3,7 +3,7 @@ import { chat, llmConfigured, parseJson } from "./llm";
 import { LIBRARY } from "./library";
 import { draftForCase, processCase } from "./intake";
 import { fileKind } from "./pdf";
-import { addEvent, fetchNew, send, settingsOf, teamsPost, type Connection, type Inbound } from "./integrations";
+import { addEvent, ensurePush, fetchNew, send, settingsOf, teamsPost, type Connection, type Inbound } from "./integrations";
 
 // The part of Lincoln that works without being asked. Every incoming email is read, matched to a case
 // or opened as a new one, its attachments are read into the record, and the next step is prepared.
@@ -25,8 +25,29 @@ type Triage = {
 
 const CODES = LIBRARY.flatMap((f) => f.types.map(([c, n]) => `${c} (${n})`)).join(", ");
 
+/** Newsletters, marketing and other bulk mail never reach the model and are never stored. Government mail always does. */
+const isNoise = (m: Inbound) => Boolean(m.bulk) && !/\.(gov|mil)$/i.test(m.from.split("@")[1] ?? "");
+
+const busy = new Set<string>();
+/** Works new mail in one connected account. Called by an instant notification or by the safety sweep. */
+export async function checkMailbox(c: Connection) {
+  if (busy.has(c.id) || !llmConfigured()) return;
+  busy.add(c.id);
+  const d = db();
+  try {
+    const mail = await fetchNew(c);
+    d.prepare("UPDATE mailboxes SET last_check = ?, last_error = NULL WHERE id = ?").run(now(), c.id);
+    for (const m of mail) await handleInbound(c.firm_id, m, c.id);
+  } catch (e) {
+    d.prepare("UPDATE mailboxes SET last_check = ?, last_error = ? WHERE id = ?").run(now(), e instanceof Error ? e.message.slice(0, 200) : "error", c.id);
+  } finally {
+    busy.delete(c.id);
+  }
+}
+
 export async function handleInbound(firmId: string, mail: Inbound, mailboxId: string | null) {
   const d = db();
+  if (isNoise(mail)) return;
   const firm = d.prepare("SELECT name FROM firms WHERE id = ?").get(firmId) as { name: string };
   const owner = ((mailboxId ? d.prepare("SELECT u.id, u.name FROM mailboxes m JOIN users u ON u.id = m.user_id WHERE m.id = ?").get(mailboxId) : undefined) ?? d.prepare("SELECT id, name FROM users WHERE firm_id = ? ORDER BY rowid LIMIT 1").get(firmId)) as { id: string; name: string };
   const open = d.prepare("SELECT id, ref, client, client_email, counterpart, type_code FROM cases WHERE firm_id = ? ORDER BY opened_at DESC LIMIT 200").all(firmId) as { id: string; ref: string; client: string; client_email: string | null; counterpart: string | null; type_code: string }[];
@@ -64,6 +85,11 @@ Decide what this email is and reply with one JSON object only:
 Rules: new_case only when someone asks the firm to take on an immigration matter or sends documents for a matter the firm has not opened. case_update when it concerns an open case (match by sender address, name or reference). government for USCIS, DOL or State Department notices. other for anything not about a case, with no reply. Dates only for deadlines, expiries, appointments or interviews stated in the email.`;
     const t = parseJson<Triage>(await chat([{ role: "system", content: "You are Lincoln, case software in a US immigration law firm. You sort incoming mail for the attorneys. You never give legal advice to the public and never invent facts. Reply with JSON only." }, { role: "user", content: prompt }], { maxTokens: 1500 }));
 
+    if (t.kind === "other" && !unverified) {
+      // Not work: nothing about it is kept.
+      d.prepare("DELETE FROM messages WHERE id = ?").run(msgId);
+      return;
+    }
     if (t.kind === "other" || (t.kind !== "new_case" && !open.some((c) => c.id === t.case_id))) {
       d.prepare("UPDATE messages SET state = 'filed', lincoln_note = ? WHERE id = ?").run(t.kind === "other" ? `Not case mail. ${t.summary ?? ""}`.trim() : `No matching case. ${t.summary ?? ""}`.trim(), msgId);
       return;
@@ -106,7 +132,16 @@ Rules: new_case only when someone asks the firm to take on an immigration matter
     }
 
   } catch (e) {
-    d.prepare("UPDATE messages SET state = 'filed', lincoln_note = ? WHERE id = ?").run(`Could not be processed: ${e instanceof Error ? e.message : "error"}`.slice(0, 300), msgId);
+    // Never lose work: release the email so the next sweep tries again, up to three times.
+    const key = `retry:${mailboxId}:${mail.id}`;
+    const tries = Number((d.prepare("SELECT value FROM kv WHERE firm_id = ? AND key = ?").get(firmId, key) as { value: string } | undefined)?.value ?? 0) + 1;
+    d.prepare("INSERT INTO kv (firm_id, key, value) VALUES (?, ?, ?) ON CONFLICT(firm_id, key) DO UPDATE SET value = excluded.value").run(firmId, key, String(tries));
+    if (mailboxId && tries < 3) {
+      d.prepare("DELETE FROM messages WHERE id = ?").run(msgId);
+      d.prepare("DELETE FROM inbound_seen WHERE mailbox_id = ? AND msg_id = ?").run(mailboxId, mail.id);
+    } else {
+      d.prepare("UPDATE messages SET state = 'filed', lincoln_note = ? WHERE id = ?").run(`Could not be processed after ${tries} attempts: ${e instanceof Error ? e.message : "error"}`.slice(0, 300), msgId);
+    }
   } finally {
     if (unverified) d.prepare("UPDATE messages SET lincoln_note = 'Sender could not be verified, so instructions in it were not acted on. ' || COALESCE(lincoln_note, '') WHERE id = ?").run(msgId);
   }
@@ -201,16 +236,10 @@ export async function deliver(firmId: string, messageId: string, approver: { id:
 /** Routine work on a timer: new mail, reminders for missing documents, approaching deadlines. */
 export async function tick() {
   const d = db();
-  if (llmConfigured()) {
-    for (const mb of d.prepare("SELECT * FROM mailboxes").all() as Connection[]) {
-      try {
-        const mail = await fetchNew(mb);
-        d.prepare("UPDATE mailboxes SET last_check = ?, last_error = NULL WHERE id = ?").run(now(), mb.id);
-        for (const m of mail) await handleInbound(mb.firm_id, m, mb.id);
-      } catch (e) {
-        d.prepare("UPDATE mailboxes SET last_check = ?, last_error = ? WHERE id = ?").run(now(), e instanceof Error ? e.message.slice(0, 200) : "error", mb.id);
-      }
-    }
+  // Safety sweep: instant notifications can be missed (a restart, a lapsed subscription).
+  for (const c of d.prepare("SELECT * FROM mailboxes").all() as Connection[]) {
+    try { await ensurePush(c); } catch (e) { d.prepare("UPDATE mailboxes SET last_error = ? WHERE id = ?").run(`Instant delivery: ${e instanceof Error ? e.message : "error"}`.slice(0, 200), c.id); }
+    await checkMailbox(c);
   }
 
   // Deadlines within 14 days become an open issue once.
