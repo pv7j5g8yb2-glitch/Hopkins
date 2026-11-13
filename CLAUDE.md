@@ -1,7 +1,8 @@
-# Lincoln (stopped 2026-11-11)
+# Lincoln
 
-**Lincoln failed its blind test against plain Claude and is stopped; see `docs/STATE.md`. The rules
-below on writing, requirements and hard limits still apply to whatever comes next.**
+**Lincoln v0 (a prompt method) failed its blind test against plain Claude on 2026-11-11. On 2026-11-12
+Ismael restarted Lincoln as a case platform; the plan is `docs/LINCOLN-V1.md` and the app is in
+`lincoln/` (first draft built 2026-11-13). See `docs/STATE.md`.**
 
 Lincoln is an AI workspace for immigration lawyers (decided 2026-11-09, Ismael). It was called
 Hopkins until that day, and the repo and its GitHub name still say Hopkins. The earlier real

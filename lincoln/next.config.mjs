@@ -2,6 +2,7 @@
 const nextConfig = {
   serverExternalPackages: ["better-sqlite3"],
   poweredByHeader: false,
+  devIndicators: false,
   async headers() {
     return [
       {

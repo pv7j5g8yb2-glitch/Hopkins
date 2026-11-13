@@ -1,10 +1,16 @@
 # Where things stand (read this at the start of every session)
 
-**Lincoln stopped (2026-11-11).** It failed the pass bar agreed before the final test. Do not reopen it
-unless Ismael asks. Use the blind test method (`demo/`) as a one day filter for any next idea: if plain
-Claude or ChatGPT does the job about as well, drop the idea.
+**Lincoln is being built again (2026-11-13).** The prompt only version stopped on 2026-11-11 after its
+blind test. Ismael restarted it on 2026-11-12 as a case platform (`docs/LINCOLN-V1.md`). The first
+draft of the app is in `lincoln/` (Next.js, SQLite): Harvey style interface, a demo firm of 12 made up
+cases, the full Halász O-1A case, approvals by decision, the support letter with facts linked to their
+pages, Word export, a scripted "demo world". See `lincoln/README.md` for what works and what is scripted.
 
-Last updated 2026-11-12. `CLAUDE.md` holds the rules, this file holds the state. Update it when
+Next: (1) Ismael's feedback on the first draft; (2) connect the model: the key he gave starts
+"sk-cs4-" and is in `lincoln/.env.local` (not in git), but the provider's address and model name are
+still needed; (3) live reading of a new client file inside the app; (4) library entries per case type.
+
+Last updated 2026-11-13. `CLAUDE.md` holds the rules, this file holds the state. Update it when
 anything here changes. The repo is public: never put passwords, keys or personal details in it.
 
 ## Being explored: Lincoln autopilot (2026-11-12, not decided, nothing built)
