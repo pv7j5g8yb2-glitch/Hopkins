@@ -21,7 +21,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     fromName: body.FromFull?.Name || body.FromName || from,
     subject: String(body.Subject ?? ""),
     text: String(body.TextBody ?? "").slice(0, 20000),
-    attachments: (body.Attachments ?? []).filter((a) => /pdf/i.test(a.ContentType + a.Name)).slice(0, 3).map((a) => ({ name: a.Name, type: "application/pdf", data: Buffer.from(a.Content, "base64") })),
+    attachments: (body.Attachments ?? []).filter((a) => /pdf|^image\//i.test(a.ContentType) || /\.pdf$/i.test(a.Name)).slice(0, 20).map((a) => ({ name: a.Name, type: a.ContentType, data: Buffer.from(a.Content, "base64") })).filter((a) => a.type.includes("pdf") || a.data.length > 60_000),
   };
   void handleInbound(row.firm_id, mail, null);
   return NextResponse.json({ ok: true });

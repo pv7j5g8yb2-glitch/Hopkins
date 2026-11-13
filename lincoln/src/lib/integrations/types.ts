@@ -7,7 +7,8 @@ export type Connection = {
   last_check: string | null; last_error: string | null; settings: string | null;
 };
 
-export type Inbound = { id: string; threadId: string; from: string; fromName: string; subject: string; text: string; attachments: { name: string; type: string; data: Buffer }[] };
+/** verified: the sender's domain authenticated the message (DMARC), or it came from inside the same organisation. */
+export type Inbound = { id: string; threadId: string; from: string; fromName: string; subject: string; text: string; attachments: { name: string; type: string; data: Buffer }[]; verified?: boolean };
 export type FileHit = { id: string; name: string; modified: string | null; where: string };
 export type OfficeKind = "document" | "spreadsheet" | "presentation";
 

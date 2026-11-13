@@ -8,7 +8,7 @@ import { requireUser } from "@/lib/session";
 const ERRORS: Record<string, string> = {
   fields: "Client and case type are required.",
   size: "The file exceeds 25 MB.",
-  type: "The file is not a PDF.",
+  type: "Only PDFs and photos (JPEG, PNG, WebP, HEIC) are accepted.",
 };
 
 export default async function NewCase({ searchParams }: { searchParams: Promise<{ error?: string }> }) {

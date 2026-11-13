@@ -49,6 +49,18 @@ OAuth client and a Microsoft Entra app registration on the parent's account. Not
 runs inside Word. Known: npm audit flags image-size (inside pptxgenjs, only used for images, which Lincoln
 never passes) and uuid (inside exceljs, the affected functions are not called).
 
+Sixth pass (2026-11-13): photos and scans. Lincoln now takes JPEG, PNG, WebP and iPhone HEIC as well as
+PDF, several at once, from upload, email attachments (small inline images such as signature logos are
+skipped), Drive, OneDrive and SharePoint; the camera's rotation is applied. The reading rule: anything that
+cannot be read with certainty is not guessed and not used; it becomes a high issue ("Page 3 could not be
+read reliably"), and if the client sent it the client email asks for a clearer photo with how to take one.
+Verified colleagues can forward an email with an instruction ("draft the support letter by 4 December"):
+Lincoln matches the case, records the deadline, reads attachments and drafts into Review; senders are
+verified by DMARC, or by being inside the same Microsoft organisation; unverified mail from a member's
+address is not acted on. Tested: the page pipeline (a sideways phone photo came out upright), the verified
+and the spoofed instruction against the stand-in. Not tested: the model's reading of real photos (relay out
+of credit, 10 credits left) and a real iPhone HEIC file.
+
 Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
 name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
 provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in

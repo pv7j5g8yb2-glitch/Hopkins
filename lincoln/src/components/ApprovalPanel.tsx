@@ -115,7 +115,7 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
   if (kind === "draft_review") {
     return (
       <div>
-        <Link href={`/cases/${caseId}?tab=drafts`} className={clsx(box, "flex items-center gap-3 px-4 py-4 transition hover:border-ink")}>
+        <Link href={`/cases/${caseId}?tab=drafts${payload?.draftId ? `&draft=${payload.draftId}` : ""}`} className={clsx(box, "flex items-center gap-3 px-4 py-4 transition hover:border-ink")}>
           <FileText size={18} className="text-muted" />
           <span className="flex-1 text-[14px] font-medium">Open draft</span>
         </Link>

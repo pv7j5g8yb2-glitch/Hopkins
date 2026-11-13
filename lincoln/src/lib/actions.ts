@@ -13,6 +13,7 @@ import { EVENTS } from "./demo-events";
 import type { Question } from "./halasz";
 import { LIBRARY } from "./library";
 import { draftForCase, processCase } from "./intake";
+import { fileKind } from "./pdf";
 import { deliver } from "./agent";
 
 const now = () => new Date().toISOString();
@@ -177,8 +178,8 @@ export async function decideApproval(approvalId: string, decision: "approved" | 
       d.prepare("UPDATE cases SET summary = ?, waiting_on = 'Aisha Rahman: file the packet' WHERE firm_id = ? AND id = ?").run(`Approved for filing by ${user.name}. The packet is assembled and the filing checklist is with Aisha.`, F, a.case_id);
     } else if (a.kind === "draft_review" && decision === "approved") {
       d.prepare("UPDATE drafts SET status = 'approved', updated_at = ? WHERE firm_id = ? AND id = ?").run(now(), F, payload.draftId);
-      log(F, a.case_id, user.name, "decide", "Approved the support letter.");
-      d.prepare("UPDATE cases SET summary = 'Support letter approved. Lincoln is assembling the exhibits in filing order. The consultation and the passport renewal are still open.', waiting_on = 'Peer group: advisory opinion' WHERE firm_id = ? AND id = ?").run(F, a.case_id);
+      log(F, a.case_id, user.name, "decide", `Approved: ${a.title}.`);
+      if (firm.demo) d.prepare("UPDATE cases SET summary = 'Support letter approved. Lincoln is assembling the exhibits in filing order. The consultation and the passport renewal are still open.', waiting_on = 'Peer group: advisory opinion' WHERE firm_id = ? AND id = ?").run(F, a.case_id);
     } else if (a.kind === "plan" && decision === "approved") {
       log(F, a.case_id, user.name, "decide", "Approved the response plan.");
       const m = payload.messageId ? messageById(F, payload.messageId) : undefined;
@@ -230,15 +231,10 @@ export async function createCase(form: FormData) {
   const family = fam?.name ?? "Other";
   const typeName = fam?.types.find(([c]) => c === code)?.[1] ?? code;
   if (!client || !code) redirect("/cases/new?error=fields");
-  const file = form.get("file");
-  let pdf: Uint8Array | null = null;
-  if (file instanceof File && file.size > 0) {
-    if (file.size > 25 * 1024 * 1024) redirect("/cases/new?error=size");
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    // %PDF
-    if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) redirect("/cases/new?error=type");
-    pdf = bytes;
-  }
+  const got = await uploads(form);
+  if (got === "size") redirect("/cases/new?error=size");
+  if (got === "type") redirect("/cases/new?error=type");
+  const pdf = got.length ? got : null;
   const id = "c_" + uid();
   const ref = `${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
   db().prepare(`INSERT INTO cases (id, firm_id, ref, client, counterpart, type_code, type_name, family, stage, state, waiting_on, summary, attorney_id, paralegal_id, opened_at, sensitive, pages, processing)
@@ -323,16 +319,27 @@ export async function newInboundAddress() {
   redirect(`/settings?tab=integrations&inbound=${token}`);
 }
 
+/** PDFs and photos from a form, checked by content. "size" over 25 MB in total, "type" for anything else. */
+async function uploads(form: FormData): Promise<Uint8Array[] | "size" | "type"> {
+  const files = form.getAll("file").filter((f): f is File => f instanceof File && f.size > 0).slice(0, 40);
+  if (files.reduce((s, f) => s + f.size, 0) > 25 * 1024 * 1024) return "size";
+  const out: Uint8Array[] = [];
+  for (const f of files) {
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    if (!fileKind(bytes)) return "type";
+    out.push(bytes);
+  }
+  return out;
+}
+
 export async function addFile(caseId: string, form: FormData) {
   const { user, firm } = await requireUser();
   const c = db().prepare("SELECT processing FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { processing: number } | undefined;
-  const file = form.get("file");
-  if (!c || c.processing || !(file instanceof File) || file.size === 0 || file.size > 25 * 1024 * 1024) redirect(`/cases/${caseId}?tab=documents`);
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) redirect(`/cases/${caseId}?tab=documents`);
+  const got = await uploads(form);
+  if (!c || c.processing || typeof got === "string" || !got.length) redirect(`/cases/${caseId}?tab=documents${typeof got === "string" ? `&error=${got}` : ""}`);
   db().prepare("UPDATE cases SET processing = 1, note = NULL WHERE firm_id = ? AND id = ?").run(firm.id, caseId);
-  log(firm.id, caseId, user.name, "file", `Added ${file.name}.`);
-  void processCase(firm.id, caseId, bytes, { append: true });
+  log(firm.id, caseId, user.name, "file", `Added ${got.length === 1 ? "a file" : `${got.length} files`}.`);
+  void processCase(firm.id, caseId, got, { append: true });
   revalidatePath("/", "layout");
   redirect(`/cases/${caseId}`);
 }
@@ -368,10 +375,10 @@ export async function importFromCloud(caseId: string, provider: string, fileId: 
   const conn = connection(firm.id, user.id, provider);
   if (!conn) redirect("/settings?tab=integrations");
   const bytes = new Uint8Array(await download(conn, fileId));
-  if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) || bytes.length > 25 * 1024 * 1024) redirect(`/cases/${caseId}/import?from=${provider}&error=1`);
+  if (!fileKind(bytes) || bytes.length > 25 * 1024 * 1024) redirect(`/cases/${caseId}/import?from=${provider}&error=1`);
   db().prepare("UPDATE cases SET processing = 1, note = NULL WHERE firm_id = ? AND id = ?").run(firm.id, caseId);
   log(firm.id, caseId, user.name, "file", `Imported ${name.slice(0, 120)} from ${provider === "google" ? "Google Drive" : "OneDrive"}.`);
-  void processCase(firm.id, caseId, bytes, { append: true });
+  void processCase(firm.id, caseId, [bytes], { append: true });
   revalidatePath("/", "layout");
   redirect(`/cases/${caseId}`);
 }

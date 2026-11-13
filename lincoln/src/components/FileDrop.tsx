@@ -8,7 +8,10 @@ export default function FileDrop() {
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<{ name: string; size: number } | null>(null);
   const [over, setOver] = useState(false);
-  const set = (f: File | undefined) => setFile(f ? { name: f.name, size: f.size } : null);
+  const set = (list: FileList | null) => {
+    const fs = Array.from(list ?? []);
+    setFile(fs.length ? { name: fs.length === 1 ? fs[0].name : `${fs.length} files`, size: fs.reduce((s, f) => s + f.size, 0) } : null);
+  };
 
   return (
     <div
@@ -19,12 +22,12 @@ export default function FileDrop() {
         setOver(false);
         if (input.current && e.dataTransfer.files.length) {
           input.current.files = e.dataTransfer.files;
-          set(e.dataTransfer.files[0]);
+          set(e.dataTransfer.files);
         }
       }}
       className={clsx("rounded-lg border border-dashed transition", over ? "border-ink bg-side" : "border-[#d5d1ca]")}
     >
-      <input ref={input} type="file" name="file" accept="application/pdf" className="hidden" onChange={(e) => set(e.target.files?.[0])} />
+      <input ref={input} type="file" name="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.heic" className="hidden" onChange={(e) => set(e.target.files)} />
       {file ? (
         <div className="flex items-center gap-3 px-3.5 py-3">
           <FileText size={16} className="shrink-0 text-muted" />
@@ -34,8 +37,8 @@ export default function FileDrop() {
       ) : (
         <button type="button" onClick={() => input.current?.click()} className="flex w-full flex-col items-center gap-1.5 px-4 py-7 text-center">
           <Upload size={16} className="text-muted" />
-          <span className="text-[13px]">Upload PDF</span>
-          <span className="text-[12px] text-faint">One file, up to 25 MB and 90 pages</span>
+          <span className="text-[13px]">Upload PDFs or photos</span>
+          <span className="text-[12px] text-faint">Scans and phone photos accepted, up to 25 MB</span>
         </button>
       )}
     </div>

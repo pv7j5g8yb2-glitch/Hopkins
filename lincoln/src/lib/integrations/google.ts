@@ -70,14 +70,17 @@ export async function readMessage(c: Connection, id: string): Promise<Inbound> {
   const attachments: Inbound["attachments"] = [];
   const walk = async (p: Part) => {
     if (p.mimeType === "text/plain" && p.body?.data && !p.filename) text += Buffer.from(p.body.data, "base64url").toString("utf8");
-    if (p.filename && /pdf$/i.test(p.mimeType + p.filename) && p.body?.attachmentId && (p.body.size ?? 0) < 25 * 1024 * 1024) {
+    const isPdf = /pdf$/i.test(p.mimeType + p.filename);
+    const isPhoto = /^image\/(jpeg|png|webp|heic|heif)$/i.test(p.mimeType) && (p.body?.size ?? 0) > 60_000;
+    if (p.filename && (isPdf || isPhoto) && p.body?.attachmentId && (p.body.size ?? 0) < 25 * 1024 * 1024) {
       const a = await call<{ data: string }>(c, `${GMAIL}/messages/${id}/attachments/${p.body.attachmentId}`, {}, "Gmail");
-      attachments.push({ name: p.filename, type: "application/pdf", data: Buffer.from(a.data, "base64url") });
+      attachments.push({ name: p.filename, type: p.mimeType, data: Buffer.from(a.data, "base64url") });
     }
     for (const x of p.parts ?? []) await walk(x);
   };
   await walk(m.payload);
-  return { id, threadId: m.threadId, from: email, fromName: fromRaw.replace(/<[^>]+>/, "").replace(/"/g, "").trim() || email, subject: h("subject"), text: text.slice(0, 20000), attachments };
+  const authn = m.payload.headers?.filter((x) => x.name.toLowerCase() === "authentication-results").map((x) => x.value).join(" ") ?? "";
+  return { verified: /dmarc=pass/i.test(authn), id, threadId: m.threadId, from: email, fromName: fromRaw.replace(/<[^>]+>/, "").replace(/"/g, "").trim() || email, subject: h("subject"), text: text.slice(0, 20000), attachments };
 }
 
 const header = (v: string) => (/^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v).toString("base64")}?=`);
@@ -98,7 +101,7 @@ export async function addEvent(c: Connection, e: { title: string; date: string; 
 // Drive, Docs, Sheets, Slides
 
 export async function searchFiles(c: Connection, q: string): Promise<FileHit[]> {
-  const terms = [`mimeType = 'application/pdf'`, "trashed = false", ...(q ? [`name contains '${q.replace(/['\\]/g, "")}'`] : [])].join(" and ");
+  const terms = [`(mimeType = 'application/pdf' or mimeType contains 'image/')`, "trashed = false", ...(q ? [`name contains '${q.replace(/['\\]/g, "")}'`] : [])].join(" and ");
   const r = await call<{ files?: { id: string; name: string; modifiedTime?: string }[] }>(c, `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(terms)}&orderBy=modifiedTime desc&pageSize=25&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`, {}, "Google Drive");
   return (r.files ?? []).map((f) => ({ id: f.id, name: f.name, modified: f.modifiedTime ?? null, where: "Google Drive" }));
 }

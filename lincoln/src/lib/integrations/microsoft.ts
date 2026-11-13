@@ -52,7 +52,7 @@ async function call<T>(c: Connection, path: string, init: RequestInit = {}, what
 
 // Outlook mail
 
-type Msg = { id: string; conversationId: string; subject: string; from?: { emailAddress?: { address?: string; name?: string } }; body?: { content?: string }; hasAttachments?: boolean };
+type Msg = { id: string; conversationId: string; subject: string; from?: { emailAddress?: { address?: string; name?: string } }; body?: { content?: string }; hasAttachments?: boolean; internetMessageHeaders?: { name: string; value: string }[] };
 export async function listInbox(c: Connection) {
   const since = new Date(Date.now() - 3 * 86400000).toISOString();
   const r = await call<{ value?: { id: string; from?: Msg["from"] }[] }>(c, `/me/mailFolders/inbox/messages?$top=25&$orderby=receivedDateTime desc&$filter=${encodeURIComponent(`receivedDateTime ge ${since}`)}&$select=id,from`, {}, "Outlook");
@@ -60,14 +60,20 @@ export async function listInbox(c: Connection) {
 }
 
 export async function readMessage(c: Connection, id: string): Promise<Inbound> {
-  const m = await call<Msg>(c, `/me/messages/${encodeURIComponent(id)}?$select=id,conversationId,subject,from,body,hasAttachments`, { headers: { Prefer: 'outlook.body-content-type="text"' } }, "Outlook");
+  const m = await call<Msg>(c, `/me/messages/${encodeURIComponent(id)}?$select=id,conversationId,subject,from,body,hasAttachments,internetMessageHeaders`, { headers: { Prefer: 'outlook.body-content-type="text"' } }, "Outlook");
   const attachments: Inbound["attachments"] = [];
   if (m.hasAttachments) {
-    const a = await call<{ value?: { "@odata.type": string; name: string; contentType: string; contentBytes?: string; size?: number }[] }>(c, `/me/messages/${encodeURIComponent(id)}/attachments`, {}, "Outlook");
-    for (const x of a.value ?? []) if (x["@odata.type"] === "#microsoft.graph.fileAttachment" && /pdf/i.test(x.contentType + x.name) && x.contentBytes && (x.size ?? 0) < 25 * 1024 * 1024) attachments.push({ name: x.name, type: "application/pdf", data: Buffer.from(x.contentBytes, "base64") });
+    const a = await call<{ value?: { "@odata.type": string; name: string; contentType: string; contentBytes?: string; size?: number; isInline?: boolean }[] }>(c, `/me/messages/${encodeURIComponent(id)}/attachments`, {}, "Outlook");
+    for (const x of a.value ?? []) {
+      const ok = /pdf/i.test(x.contentType + x.name) || (/^image\/(jpeg|png|webp|heic|heif)$/i.test(x.contentType) && !x.isInline && (x.size ?? 0) > 60_000);
+      if (x["@odata.type"] === "#microsoft.graph.fileAttachment" && ok && x.contentBytes && (x.size ?? 0) < 25 * 1024 * 1024) attachments.push({ name: x.name, type: x.contentType, data: Buffer.from(x.contentBytes, "base64") });
+    }
   }
   const from = (m.from?.emailAddress?.address ?? "").toLowerCase();
-  return { id, threadId: m.conversationId, from, fromName: m.from?.emailAddress?.name || from, subject: m.subject ?? "", text: (m.body?.content ?? "").slice(0, 20000), attachments };
+  // Mail from outside the organisation carries Authentication-Results; mail inside it does not.
+  const authn = (m.internetMessageHeaders ?? []).filter((h) => h.name.toLowerCase() === "authentication-results").map((h) => h.value).join(" ");
+  const sameOrg = from.split("@")[1] === c.email.split("@")[1];
+  return { verified: authn ? /dmarc=pass/i.test(authn) : sameOrg, id, threadId: m.conversationId, from, fromName: m.from?.emailAddress?.name || from, subject: m.subject ?? "", text: (m.body?.content ?? "").slice(0, 20000), attachments };
 }
 
 export async function send(c: Connection, to: string, subject: string, body: string) {
@@ -88,13 +94,13 @@ export async function addEvent(c: Connection, e: { title: string; date: string; 
 export async function searchFiles(c: Connection, q: string): Promise<FileHit[]> {
   type Item = { id: string; name: string; lastModifiedDateTime?: string; parentReference?: { driveId?: string }; webUrl?: string };
   try {
-    const r = await call<{ value?: { hitsContainers?: { hits?: { resource: Item }[] }[] }[] }>(c, "/search/query", { method: "POST", body: JSON.stringify({ requests: [{ entityTypes: ["driveItem"], query: { queryString: `${q ? `${q} ` : ""}filetype:pdf` }, from: 0, size: 25 }] }) }, "Microsoft Search");
+    const r = await call<{ value?: { hitsContainers?: { hits?: { resource: Item }[] }[] }[] }>(c, "/search/query", { method: "POST", body: JSON.stringify({ requests: [{ entityTypes: ["driveItem"], query: { queryString: `${q ? `${q} ` : ""}(filetype:pdf OR filetype:jpg OR filetype:jpeg OR filetype:png OR filetype:heic)` }, from: 0, size: 25 }] }) }, "Microsoft Search");
     const hits = r.value?.[0]?.hitsContainers?.[0]?.hits ?? [];
     return hits.map(({ resource: f }) => ({ id: `${f.parentReference?.driveId ?? "me"}::${f.id}`, name: f.name, modified: f.lastModifiedDateTime ?? null, where: /sharepoint\.com\/sites\//i.test(f.webUrl ?? "") ? "SharePoint" : "OneDrive" }));
   } catch {
     // Personal Microsoft accounts have no Search API; fall back to OneDrive search.
     const r = await call<{ value?: Item[] }>(c, `/me/drive/root/search(q='${encodeURIComponent((q || "pdf").replace(/'/g, ""))}')?$top=25`, {}, "OneDrive");
-    return (r.value ?? []).filter((f) => /\.pdf$/i.test(f.name)).map((f) => ({ id: `me::${f.id}`, name: f.name, modified: f.lastModifiedDateTime ?? null, where: "OneDrive" }));
+    return (r.value ?? []).filter((f) => /\.(pdf|jpe?g|png|heic|webp)$/i.test(f.name)).map((f) => ({ id: `me::${f.id}`, name: f.name, modified: f.lastModifiedDateTime ?? null, where: "OneDrive" }));
   }
 }
 
