@@ -71,6 +71,12 @@ GET /api/health is for an uptime ping (cron-job.org) so the free Render server d
 against the stand-in: Gmail work began 3.5 seconds after the notification and Outlook 0.5 seconds; forged
 notifications were refused.
 
+Security pass (2026-11-13): see docs/SECURITY.md. Fixed a real hole (the reset link was shown to anyone
+who typed an email). Added per firm file encryption, restricted case enforcement everywhere, two step sign
+in with recovery codes, device list and sign out, a security record, strict headers, upload and header
+injection limits, sample workspace lock down and firm deletion. A scripted attack test (33 checks) and 7
+unit checks all pass. Password reset email needs RESEND_API_KEY and MAIL_FROM.
+
 Still open: (1) company details in `lincoln/src/lib/company.ts` are placeholders in [brackets] (legal
 name, address, contact email, governing law) and the two legal pages need a lawyer's check; (2) no mail
 provider, so reset links are shown on screen for now; (3) the model: the key starts "sk-cs4-" and is in

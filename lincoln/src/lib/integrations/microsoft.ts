@@ -2,7 +2,7 @@ import { db } from "../db";
 import { open, seal } from "../secret";
 import { api, callback, json } from "./http";
 import type { Connection, FileHit, Inbound, OfficeKind } from "./types";
-import { OFFICE_EXT, OFFICE_MIME, settingsOf } from "./types";
+import { OFFICE_EXT, OFFICE_MIME, safeAddress, settingsOf } from "./types";
 import { sign } from "../secret";
 import { appUrl } from "./http";
 
@@ -81,6 +81,8 @@ export async function readMessage(c: Connection, id: string): Promise<Inbound> {
 }
 
 export async function send(c: Connection, to: string, subject: string, body: string) {
+  to = safeAddress(to);
+  subject = subject.replace(/[\r\n]+/g, " ").slice(0, 300);
   await call(c, "/me/sendMail", { method: "POST", body: JSON.stringify({ message: { subject, body: { contentType: "Text", content: body }, toRecipients: [{ emailAddress: { address: to } }] }, saveToSentItems: true }) }, "Outlook");
 }
 

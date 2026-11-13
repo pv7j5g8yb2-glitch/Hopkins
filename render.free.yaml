@@ -41,6 +41,10 @@ services:
         sync: false
       - key: MICROSOFT_CLIENT_SECRET
         sync: false
+      - key: RESEND_API_KEY      # password reset emails
+        sync: false
+      - key: MAIL_FROM           # e.g. Lincoln <no-reply@uselincoln.com>
+        sync: false
       - key: LINCOLN_SECRET      # encrypts mailbox tokens at rest
         generateValue: true
       - key: LLM_API_KEY

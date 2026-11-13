@@ -8,7 +8,9 @@ import { currentUser } from "@/lib/session";
 // One sign in per company connects every Google or every Microsoft service at once.
 export async function GET(_: Request, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
-  if (!(await currentUser())) return NextResponse.redirect(new URL("/signin", appUrl()));
+  const s = await currentUser();
+  if (!s) return NextResponse.redirect(new URL("/signin", appUrl()));
+  if (s.firm.demo) return NextResponse.redirect(new URL("/settings?tab=integrations&error=sample", appUrl()));
   if (!isProvider(provider) || !PROVIDERS.find((p) => p.id === provider)!.configured()) return NextResponse.redirect(new URL(`/settings?tab=integrations&error=${provider}`, appUrl()));
   const state = newToken();
   (await cookies()).set("lincoln_oauth", `${provider}.${state}`, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 600 });

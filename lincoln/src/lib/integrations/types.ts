@@ -21,3 +21,10 @@ export const OFFICE_EXT: Record<OfficeKind, string> = { document: "docx", spread
 
 export type Settings = { folderId?: string; teams?: { teamId: string; channelId: string; name: string }; watchUntil?: number; subId?: string; subUntil?: number };
 export const settingsOf = (c: Connection): Settings => { try { return JSON.parse(c.settings ?? "{}"); } catch { return {}; } };
+
+/** One plain address, nothing that could add headers or recipients. */
+export function safeAddress(to: string) {
+  const a = to.trim().toLowerCase();
+  if (!/^[a-z0-9._%+'-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(a) || a.length > 254) throw new Error("The recipient address is not valid.");
+  return a;
+}

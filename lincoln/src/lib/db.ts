@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, c
 CREATE TABLE IF NOT EXISTS chat (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, user_id TEXT NOT NULL, role TEXT NOT NULL, content TEXT NOT NULL, at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS kv (firm_id TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (firm_id, key));
 CREATE TABLE IF NOT EXISTS mailboxes (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, user_id TEXT NOT NULL, provider TEXT NOT NULL, email TEXT NOT NULL, refresh_enc TEXT NOT NULL, access_enc TEXT, expires_at INTEGER, last_check TEXT, last_error TEXT, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS security_events (id TEXT PRIMARY KEY, firm_id TEXT NOT NULL, user_id TEXT, at TEXT NOT NULL, kind TEXT NOT NULL, detail TEXT, ip TEXT);
+CREATE INDEX IF NOT EXISTS i_sec_user ON security_events(user_id, at);
+CREATE TABLE IF NOT EXISTS login_challenges (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS inbound_seen (mailbox_id TEXT NOT NULL, msg_id TEXT NOT NULL, PRIMARY KEY (mailbox_id, msg_id));
 CREATE INDEX IF NOT EXISTS i_cases_firm ON cases(firm_id);
 CREATE INDEX IF NOT EXISTS i_docs_case ON documents(firm_id, case_id);
@@ -57,7 +60,7 @@ CREATE INDEX IF NOT EXISTS i_appr_firm ON approvals(firm_id, status);
 CREATE INDEX IF NOT EXISTS i_msg_firm ON messages(firm_id, at);
 `;
 
-const TABLES = ["mailboxes", "sessions", "kv", "chat", "drafts", "messages", "approvals", "activity", "dates", "issues", "criteria", "documents", "cases", "users", "firms"];
+const TABLES = ["security_events", "mailboxes", "sessions", "kv", "chat", "drafts", "messages", "approvals", "activity", "dates", "issues", "criteria", "documents", "cases", "users", "firms"];
 
 /** Where the database lives. On Render this is the persistent disk (DATA_DIR=/var/data). */
 export const dataDir = () => process.env.DATA_DIR || path.join(process.cwd(), "data");
@@ -73,10 +76,13 @@ export function db(): Database.Database {
   d.pragma("journal_mode = WAL");
   d.pragma("foreign_keys = ON");
   d.exec(SCHEMA);
-  for (const [table, col, type] of [["users", "avatar", "TEXT"], ["cases", "processing", "INTEGER NOT NULL DEFAULT 0"], ["cases", "note", "TEXT"], ["chat", "case_id", "TEXT"], ["cases", "client_email", "TEXT"], ["messages", "email", "TEXT"], ["messages", "thread_id", "TEXT"], ["messages", "mailbox_id", "TEXT"], ["mailboxes", "settings", "TEXT"]]) {
+  for (const [table, col, type] of [["users", "avatar", "TEXT"], ["cases", "processing", "INTEGER NOT NULL DEFAULT 0"], ["cases", "note", "TEXT"], ["chat", "case_id", "TEXT"], ["cases", "client_email", "TEXT"], ["messages", "email", "TEXT"], ["messages", "thread_id", "TEXT"], ["messages", "mailbox_id", "TEXT"], ["mailboxes", "settings", "TEXT"], ["users", "totp_enc", "TEXT"], ["users", "totp_pending_enc", "TEXT"], ["users", "totp_last_step", "INTEGER"], ["users", "recovery", "TEXT"], ["sessions", "ip", "TEXT"], ["sessions", "agent", "TEXT"], ["sessions", "last_seen", "TEXT"], ["firms", "key_enc", "TEXT"]]) {
     const cols = d.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
     if (!cols.some((c) => c.name === col)) d.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
   }
+  // The old outbox kept reset links in readable form; nothing may keep them.
+  d.exec("DELETE FROM outbox");
+  d.exec(`DELETE FROM sessions WHERE created_at < '${new Date(Date.now() - 24 * 3600_000).toISOString()}'`);
   // A server restart ends any background reading; do not leave cases marked as in progress.
   d.exec("UPDATE cases SET processing = 0, note = 'Reading was interrupted. Upload the file again.' WHERE processing = 1");
   const n = d.prepare("SELECT COUNT(*) AS n FROM firms").get() as { n: number };

@@ -2,7 +2,7 @@ import { db } from "../db";
 import { open, seal } from "../secret";
 import { api, callback, json } from "./http";
 import type { Connection, FileHit, Inbound, OfficeKind } from "./types";
-import { OFFICE_MIME, settingsOf } from "./types";
+import { OFFICE_MIME, safeAddress, settingsOf } from "./types";
 
 // One Google sign in covers Gmail, Drive, Docs, Sheets, Slides and Calendar. Docs, Sheets and Slides
 // are created through Drive by converting the Word, Excel and PowerPoint files Lincoln produces.
@@ -86,6 +86,8 @@ export async function readMessage(c: Connection, id: string): Promise<Inbound> {
 
 const header = (v: string) => (/^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v).toString("base64")}?=`);
 export async function send(c: Connection, to: string, subject: string, body: string, threadId?: string | null) {
+  to = safeAddress(to);
+  subject = subject.replace(/[\r\n]+/g, " ").slice(0, 300);
   const mime = [`From: ${c.email}`, `To: ${to}`, `Subject: ${header(subject)}`, "MIME-Version: 1.0", "Content-Type: text/plain; charset=UTF-8", "Content-Transfer-Encoding: base64", "", Buffer.from(body).toString("base64")].join("\r\n");
   await call(c, `${GMAIL}/messages/send`, { method: "POST", body: JSON.stringify({ raw: Buffer.from(mime).toString("base64url"), ...(threadId ? { threadId } : {}) }) }, "Gmail");
 }

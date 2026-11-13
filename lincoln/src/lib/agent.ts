@@ -250,6 +250,11 @@ export async function tick() {
     await checkMailbox(c);
   }
 
+  // Housekeeping: expired sign ins, challenges and reset links are removed.
+  d.prepare("DELETE FROM sessions WHERE created_at < ?").run(new Date(Date.now() - 24 * 3600_000).toISOString());
+  d.prepare("DELETE FROM login_challenges WHERE expires_at < ?").run(now());
+  d.prepare("DELETE FROM password_resets WHERE expires_at < ?").run(new Date(Date.now() - 24 * 3600_000).toISOString());
+
   // Deadlines within 14 days become an open issue once.
   const soon = d.prepare("SELECT t.id, t.firm_id, t.case_id, t.label, t.date FROM dates t JOIN firms f ON f.id = t.firm_id WHERE f.demo = 0 AND t.date >= date('now') AND t.date <= date('now', '+14 days')").all() as { id: string; firm_id: string; case_id: string; label: string; date: string }[];
   for (const t of soon) {

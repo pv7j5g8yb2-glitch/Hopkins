@@ -8,11 +8,11 @@ import { approvalById, decidedApprovals, messageById, pendingApprovals } from "@
 import { ago, inDays } from "@/lib/format";
 
 export default async function Review({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
-  const { firm } = await requireUser();
+  const { firm, viewer } = await requireUser();
   const { id } = await searchParams;
-  const pending = pendingApprovals(firm.id);
-  const decided = decidedApprovals(firm.id);
-  const picked = id ? approvalById(firm.id, id) : undefined;
+  const pending = pendingApprovals(firm.id, viewer);
+  const decided = decidedApprovals(firm.id, viewer);
+  const picked = id ? approvalById(firm.id, id, viewer) : undefined;
   const sel = picked && picked.status === "pending" ? picked : pending[0];
   const payload = sel ? JSON.parse(sel.payload) : null;
   const message = payload?.messageId ? messageById(firm.id, payload.messageId) : null;

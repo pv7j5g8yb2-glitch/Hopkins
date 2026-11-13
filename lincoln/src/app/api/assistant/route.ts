@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, uid } from "@/lib/db";
-import { currentUser } from "@/lib/session";
+import { currentUser, viewer } from "@/lib/session";
 import { caseById, caseDates, caseDrafts, cases, chatHistory, criteria, documents, issues, pendingApprovals, upcomingDates } from "@/lib/queries";
 import { llmConfigured, runAgent, type Tool } from "@/lib/llm";
 import { LIBRARY } from "@/lib/library";
@@ -26,15 +26,16 @@ export async function POST(req: Request) {
   if (!llmConfigured()) return NextResponse.json({ error: "The assistant is not enabled in this workspace." }, { status: 503 });
 
   const F = s.firm.id;
+  const V = viewer(s.user);
   const d = db();
-  const c = caseId ? caseById(F, caseId) : undefined;
+  const c = caseId ? caseById(F, caseId, V) : undefined;
   if (caseId && !c) return NextResponse.json({ error: "Case not found." }, { status: 404 });
   const scope = c?.id ?? null;
   const mb = firmMailbox(F, s.user.id);
   const today = new Date().toISOString().slice(0, 10);
   const changed = { any: false };
   const own = (id: unknown) => {
-    const x = caseById(F, String(id ?? ""));
+    const x = caseById(F, String(id ?? ""), V);
     if (!x) throw new Error("No such case in this firm.");
     return x;
   };
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
   async function handle(name: string, input: Record<string, unknown>): Promise<string> {
     if (name === "find_cases") {
       const q = String(input.query ?? "").toLowerCase();
-      const rows = cases(F).filter((x) => !q || [x.client, x.counterpart, x.type_code, x.type_name, x.ref, x.stage].some((v) => (v ?? "").toLowerCase().includes(q)));
+      const rows = cases(F, V).filter((x) => !q || [x.client, x.counterpart, x.type_code, x.type_name, x.ref, x.stage].some((v) => (v ?? "").toLowerCase().includes(q)));
       return rows.slice(0, 40).map((x) => `${x.id} | ${x.client}${x.counterpart ? ` / ${x.counterpart}` : ""} | ${x.type_code} | ${x.stage} | waiting on ${x.waiting_on ?? "nobody"} | ${x.summary}`).join("\n") || "No cases.";
     }
     if (name === "get_case") {
@@ -103,8 +104,8 @@ export async function POST(req: Request) {
 
   const overview = [
     `Today is ${today}.`,
-    `Cases: ${cases(F).length}. For review: ${pendingApprovals(F).map((a) => `${a.title} (${a.client})`).join("; ") || "none"}.`,
-    `Next dates: ${upcomingDates(F, 8).map((t) => `${t.date} ${t.label} (${t.client})`).join("; ") || "none"}.`,
+    `Cases: ${cases(F, V).length}. For review: ${pendingApprovals(F, V).map((a) => `${a.title} (${a.client})`).join("; ") || "none"}.`,
+    `Next dates: ${upcomingDates(F, 8, V).map((t) => `${t.date} ${t.label} (${t.client})`).join("; ") || "none"}.`,
     c ? `This conversation is about case ${c.id}, ${c.client} (${c.type_code}). Use get_case for its record.` : "",
   ].join("\n");
 
@@ -125,7 +126,7 @@ ${overview}`;
   const history = chatHistory(F, s.user.id, scope).slice(-16).map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
   const ins = d.prepare("INSERT INTO chat (id, firm_id, user_id, role, content, at, case_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
   try {
-    const reply = await runAgent(system, [...history, { role: "user", content: text }], TOOLS, handle);
+    const reply = await runAgent(system, [...history, { role: "user", content: text }], TOOLS, async (name, input) => `<data source="${name}">\n${(await handle(name, input)).replace(/<\/data>/gi, "")}\n</data>`);
     ins.run(uid(), F, s.user.id, "user", text, new Date().toISOString(), scope);
     ins.run(uid(), F, s.user.id, "assistant", reply, new Date(Date.now() + 1).toISOString(), scope);
     return NextResponse.json({ reply, changed: changed.any });

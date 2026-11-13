@@ -23,10 +23,10 @@ const KIND: Record<string, string> = { date: "Date", conflict: "Conflict", missi
 const pageLink = "text-muted underline decoration-line underline-offset-4 transition hover:text-ink hover:decoration-ink";
 
 export default async function CasePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; draft?: string }> }) {
-  const { user, firm } = await requireUser();
+  const { user, firm, viewer } = await requireUser();
   const { id } = await params;
   const { tab = "overview", draft } = await searchParams;
-  const c = caseById(firm.id, id);
+  const c = caseById(firm.id, id, viewer);
   if (!c) notFound();
   const who = Object.fromEntries(people(firm.id).map((p) => [p.id, p]));
   const docs = documents(firm.id, id);

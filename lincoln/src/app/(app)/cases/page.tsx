@@ -8,10 +8,10 @@ import ExportMenu from "@/components/ExportMenu";
 import { exportItems } from "@/lib/exports";
 
 export default async function Cases({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { user, firm } = await requireUser();
+  const { user, firm, viewer } = await requireUser();
   const { q = "" } = await searchParams;
   const term = q.trim().toLowerCase();
-  const all = cases(firm.id);
+  const all = cases(firm.id, viewer);
   const rows = term ? all.filter((c) => [c.client, c.counterpart, c.type_code, c.type_name, c.ref, c.stage].some((v) => (v ?? "").toLowerCase().includes(term))) : all;
 
   return (

@@ -5,15 +5,16 @@ import { signIn, signInDemo } from "@/lib/actions";
 import { currentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
-const ERR: Record<string, string> = { invalid: "Email or password is incorrect.", limited: "Too many attempts. Try again in 15 minutes." };
+const ERR: Record<string, string> = { invalid: "Email or password is incorrect.", limited: "Too many attempts. Try again in 15 minutes.", expired: "The sign in expired. Start again." };
 
-export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string; reset?: string }> }) {
+export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string; reset?: string; deleted?: string }> }) {
   if (await currentUser()) redirect("/");
-  const { error, reset } = await searchParams;
+  const { error, reset, deleted } = await searchParams;
   return (
     <AuthShell title="Sign in" footer={<>No account? <Link href="/signup" className="font-medium text-ink hover:underline">Create one</Link></>}>
       {error && ERR[error] && <Notice>{ERR[error]}</Notice>}
       {reset && <Notice tone="ok">Password updated.</Notice>}
+      {deleted && <Notice tone="ok">The firm and all of its data have been deleted.</Notice>}
       <form action={signIn} className="flex flex-col gap-2.5">
         <input name="email" type="email" required autoComplete="email" placeholder="Work email" className={field} />
         <input name="password" type="password" required autoComplete="current-password" placeholder="Password" className={field} />

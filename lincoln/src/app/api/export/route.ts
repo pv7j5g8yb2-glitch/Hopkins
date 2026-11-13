@@ -4,7 +4,7 @@ import { connection, isProvider, upload, type OfficeKind } from "@/lib/integrati
 import { OFFICE_EXT, OFFICE_MIME } from "@/lib/integrations/types";
 import { caseDeck, caseXlsx, casesXlsx, draftDocx } from "@/lib/office";
 import { caseById, draftById } from "@/lib/queries";
-import { currentUser } from "@/lib/session";
+import { currentUser, viewer } from "@/lib/session";
 
 // One route for every export: a draft as a document, the case list or a case index as a
 // spreadsheet, a case summary as a presentation. "to" is download, google or microsoft.
@@ -14,16 +14,17 @@ export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
   const what = q.get("what") ?? "", id = q.get("id") ?? "", to = q.get("to") ?? "download";
   const F = s.firm.id;
+  const V = viewer(s.user);
   let kind: OfficeKind, name: string, data: Buffer, caseId: string | null = null;
   if (what === "draft") {
     const dr = draftById(F, id);
     if (!dr || dr.status === "drafting" || dr.status === "failed") return new Response("Not found", { status: 404 });
-    const c = caseById(F, dr.case_id);
+    const c = caseById(F, dr.case_id, V);
     kind = "document"; name = `${c?.client ?? "Case"} ${dr.title} v${dr.version}`; data = await draftDocx(dr); caseId = dr.case_id;
   } else if (what === "cases") {
     kind = "spreadsheet"; name = `${s.firm.name} cases ${new Date().toISOString().slice(0, 10)}`; data = await casesXlsx(F);
   } else if (what === "case" || what === "deck") {
-    const c = caseById(F, id);
+    const c = caseById(F, id, V);
     if (!c) return new Response("Not found", { status: 404 });
     caseId = c.id;
     if (what === "case") { kind = "spreadsheet"; name = `${c.client} exhibit index`; data = await caseXlsx(F, c.id); }
@@ -35,6 +36,9 @@ export async function GET(req: Request) {
     return new Response(new Uint8Array(data), { headers: { "Content-Type": OFFICE_MIME[kind], "Content-Disposition": `attachment; filename="${file}"` } });
   }
   if (!isProvider(to)) return new Response("Unknown destination", { status: 400 });
+  // Writes to a connected account only when the request comes from Lincoln's own pages.
+  const site = req.headers.get("sec-fetch-site");
+  if (site && site !== "same-origin" && site !== "none") return new Response("Forbidden", { status: 403 });
   const conn = connection(F, s.user.id, to);
   if (!conn) return NextResponse.redirect(new URL("/settings?tab=integrations", req.url));
   try {

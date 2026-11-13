@@ -11,6 +11,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   const { token } = await params;
   const row = db().prepare("SELECT firm_id FROM kv WHERE key = 'inbound_hash' AND value = ?").get(sha(token)) as { firm_id: string } | undefined;
   if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (Number(req.headers.get("content-length") ?? 0) > 35 * 1024 * 1024) return NextResponse.json({ error: "Too large" }, { status: 413 });
   const body = (await req.json().catch(() => null)) as Postmark | null;
   if (!body) return NextResponse.json({ error: "Expected JSON" }, { status: 400 });
   const from = (body.FromFull?.Email ?? /<([^>]+)>/.exec(body.From ?? "")?.[1] ?? body.From ?? "").trim().toLowerCase();

@@ -5,8 +5,8 @@ import { messages } from "@/lib/queries";
 import { ago } from "@/lib/format";
 
 export default async function InboxPage() {
-  const { firm } = await requireUser();
-  const all = messages(firm.id);
+  const { firm, viewer } = await requireUser();
+  const all = messages(firm.id, viewer);
   return (
     <div className="rise">
       <PageHead title="Inbox" />

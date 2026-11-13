@@ -4,9 +4,9 @@ import { caseById, chatHistory } from "@/lib/queries";
 import { llmConfigured } from "@/lib/llm";
 
 export default async function Assistant({ searchParams }: { searchParams: Promise<{ q?: string; case?: string }> }) {
-  const { user, firm } = await requireUser();
+  const { user, firm, viewer } = await requireUser();
   const { q = "", case: caseId } = await searchParams;
-  const c = caseId ? caseById(firm.id, caseId) : undefined;
+  const c = caseId ? caseById(firm.id, caseId, viewer) : undefined;
   const scope = c ? { id: c.id, name: c.client } : null;
   return (
     <AssistantChat

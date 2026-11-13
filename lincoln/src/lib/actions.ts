@@ -1,13 +1,17 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
-import { hashPassword, initialsOf, limited, mailConfigured, newToken, sendMail, sha, validEmail, validPassword, verifyPassword } from "./auth";
+import { hashPassword, initialsOf, limited, newToken, sha, validEmail, validPassword, verifyPassword } from "./auth";
+import { mailConfigured as systemMailConfigured, sendSystemMail } from "./mailer";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db, resetDemo, uid } from "./db";
-import { COOKIE, requireUser } from "./session";
+import { COOKIE, MFA_COOKIE, SESSION_HOURS, isAdmin, requireUser } from "./session";
+import { clientIp, securityEvent } from "./audit";
+import { verify as verifyTotp } from "./totp";
+import { open as openSecret } from "./secret";
 import { DEMO_USER } from "./seed";
-import { approvalById, kv, messageById, setKv } from "./queries";
+import { approvalById, caseById, kv, messageById, setKv } from "./queries";
 import { buildHalaszLetter } from "./letter";
 import { EVENTS } from "./demo-events";
 import type { Question } from "./halasz";
@@ -15,28 +19,84 @@ import { LIBRARY } from "./library";
 import { draftForCase, processCase } from "./intake";
 import { fileKind } from "./pdf";
 import { deliver } from "./agent";
+import { randomBytes } from "node:crypto";
+import { newSecret as newTotpSecret } from "./totp";
+import { seal as sealSecret } from "./secret";
+import { deleteCaseFiles, forgetFirmKey } from "./storage";
 
 const now = () => new Date().toISOString();
 const day = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
+const cookieOpts = (maxAge: number) => ({ httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge });
+
 async function startSession(userId: string) {
   const token = newToken();
-  db().prepare("INSERT INTO sessions (id, user_id, created_at) VALUES (?, ?, ?)").run(sha(token), userId, now());
-  (await cookies()).set(COOKIE, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 12 });
+  const agent = ((await headers()).get("user-agent") ?? "").slice(0, 200);
+  db().prepare("INSERT INTO sessions (id, user_id, created_at, ip, agent, last_seen) VALUES (?, ?, ?, ?, ?, ?)").run(sha(token), userId, now(), await clientIp(), agent, now());
+  (await cookies()).set(COOKIE, token, cookieOpts(60 * 60 * SESSION_HOURS));
 }
-const clientKey = async () => ((await headers()).get("x-forwarded-for") ?? "local").split(",")[0].trim();
+const clientKey = clientIp;
 
 export async function signInDemo() {
+  if (limited(`demo:${await clientKey()}`, 20)) redirect("/signin?error=limited");
   await startSession(DEMO_USER);
   redirect("/");
 }
 
 export async function signIn(form: FormData) {
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const password = String(form.get("password") ?? "");
+  const email = String(form.get("email") ?? "").trim().toLowerCase().slice(0, 200);
+  const password = String(form.get("password") ?? "").slice(0, 200);
   if (limited(`in:${email}`) || limited(`in:${await clientKey()}`, 30)) redirect("/signin?error=limited");
-  const u = db().prepare("SELECT id, password_hash FROM users WHERE email = ?").get(email) as { id: string; password_hash: string | null } | undefined;
-  if (!verifyPassword(password, u?.password_hash ?? null) || !u) redirect("/signin?error=invalid");
+  const u = db().prepare("SELECT id, firm_id, password_hash, totp_enc FROM users WHERE email = ?").get(email) as { id: string; firm_id: string; password_hash: string | null; totp_enc: string | null } | undefined;
+  if (!verifyPassword(password, u?.password_hash ?? null) || !u) {
+    if (u) await securityEvent(u.firm_id, u.id, "sign_in_failed");
+    redirect("/signin?error=invalid");
+  }
+  if (u.totp_enc) {
+    // Password correct; the second step decides. The challenge lasts five minutes and five tries.
+    const token = newToken();
+    db().prepare("INSERT INTO login_challenges (token_hash, user_id, expires_at) VALUES (?, ?, ?)").run(sha(token), u.id, new Date(Date.now() + 5 * 60_000).toISOString());
+    (await cookies()).set(MFA_COOKIE, token, cookieOpts(300));
+    redirect("/signin/code");
+  }
+  await securityEvent(u.firm_id, u.id, "sign_in");
+  await startSession(u.id);
+  redirect("/");
+}
+
+export async function verifySignInCode(form: FormData) {
+  const jar = await cookies();
+  const token = jar.get(MFA_COOKIE)?.value ?? "";
+  const d = db();
+  const ch = d.prepare("SELECT user_id, expires_at, attempts FROM login_challenges WHERE token_hash = ?").get(sha(token)) as { user_id: string; expires_at: string; attempts: number } | undefined;
+  if (!ch || ch.expires_at < now() || ch.attempts >= 5) {
+    if (ch) d.prepare("DELETE FROM login_challenges WHERE token_hash = ?").run(sha(token));
+    jar.delete(MFA_COOKIE);
+    redirect("/signin?error=expired");
+  }
+  d.prepare("UPDATE login_challenges SET attempts = attempts + 1 WHERE token_hash = ?").run(sha(token));
+  const u = d.prepare("SELECT id, firm_id, totp_enc, totp_last_step, recovery FROM users WHERE id = ?").get(ch.user_id) as { id: string; firm_id: string; totp_enc: string; totp_last_step: number | null; recovery: string | null };
+  const code = String(form.get("code") ?? "").trim().slice(0, 40);
+  const step = verifyTotp(openSecret(u.totp_enc), code, u.totp_last_step);
+  let ok = step !== null;
+  if (ok) d.prepare("UPDATE users SET totp_last_step = ? WHERE id = ?").run(step, u.id);
+  else {
+    // A recovery code works once.
+    const codes = JSON.parse(u.recovery ?? "[]") as string[];
+    const h = sha(code.toUpperCase().replace(/[^A-Z0-9]/g, ""));
+    if (codes.includes(h)) {
+      ok = true;
+      d.prepare("UPDATE users SET recovery = ? WHERE id = ?").run(JSON.stringify(codes.filter((c) => c !== h)), u.id);
+      await securityEvent(u.firm_id, u.id, "recovery_code_used", `${codes.length - 1} left`);
+    }
+  }
+  if (!ok) {
+    await securityEvent(u.firm_id, u.id, "sign_in_code_failed");
+    redirect("/signin/code?error=code");
+  }
+  d.prepare("DELETE FROM login_challenges WHERE token_hash = ?").run(sha(token));
+  jar.delete(MFA_COOKIE);
+  await securityEvent(u.firm_id, u.id, "sign_in", "with two step code");
   await startSession(u.id);
   redirect("/");
 }
@@ -57,6 +117,7 @@ export async function signUp(form: FormData) {
     d.prepare("INSERT INTO firms (id, name, demo) VALUES (?, ?, 0)").run(firmId, firmName);
     d.prepare("INSERT INTO users (id, firm_id, name, email, role, initials, password_hash, created_at) VALUES (?, ?, ?, ?, 'Administrator', ?, ?, ?)").run(userId, firmId, name, email, initialsOf(name), hashPassword(password), now());
   })();
+  await securityEvent(firmId, userId, "account_created");
   await startSession(userId);
   redirect("/");
 }
@@ -69,9 +130,16 @@ export async function requestReset(form: FormData) {
   if (u) {
     const token = newToken();
     db().prepare("INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)").run(sha(token), u.id, new Date(Date.now() + 3600_000).toISOString());
-    sendMail(email, "Reset the Lincoln password", `A password reset was requested for this account. The link is valid for one hour: /reset/${token}`);
-    // Until a mail provider is connected, the link is shown on screen so the flow can be tested.
-    if (!mailConfigured()) preview = `&preview=${token}`;
+    const link = `${(process.env.APP_URL ?? "").replace(/\/$/, "")}/reset/${token}`;
+    const firm = (db().prepare("SELECT firm_id FROM users WHERE id = ?").get(u.id) as { firm_id: string }).firm_id;
+    await securityEvent(firm, u.id, "password_reset_requested");
+    if (systemMailConfigured()) {
+      try { await sendSystemMail(email, "Reset your Lincoln password", `A password reset was requested for your Lincoln account.\n\nThis link works once, for one hour:\n${link}\n\nIf you did not ask for this, ignore this email; nothing changes.`); } catch { /* the page says the same either way */ }
+    } else if (process.env.NODE_ENV !== "production") {
+      // Development only: with no mail provider the link is shown so the flow can be tested.
+      // In production it is never shown, or anyone could reset anyone's password.
+      preview = `&preview=${token}`;
+    }
   }
   redirect(`/forgot?sent=1${preview}`);
 }
@@ -81,8 +149,11 @@ export async function resetPassword(form: FormData) {
   const password = String(form.get("password") ?? "");
   if (!validPassword(password)) redirect(`/reset/${encodeURIComponent(token)}?error=password`);
   const d = db();
+  if (limited(`rs:${await clientKey()}`, 20)) redirect("/forgot?error=limited");
   const r = d.prepare("SELECT user_id FROM password_resets WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?").get(sha(token), now()) as { user_id: string } | undefined;
   if (!r) redirect("/forgot?error=expired");
+  const fid = (d.prepare("SELECT firm_id FROM users WHERE id = ?").get(r.user_id) as { firm_id: string }).firm_id;
+  await securityEvent(fid, r.user_id, "password_reset");
   d.transaction(() => {
     d.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(password), r.user_id);
     d.prepare("UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL").run(now(), r.user_id);
@@ -96,6 +167,7 @@ export async function signOut() {
   const sid = jar.get(COOKIE)?.value;
   if (sid) db().prepare("DELETE FROM sessions WHERE id = ?").run(sha(sid));
   jar.delete(COOKIE);
+  jar.delete(MFA_COOKIE);
   redirect("/signin");
 }
 
@@ -104,8 +176,8 @@ function log(firm: string, caseId: string | null, actor: string, kind: string, t
 }
 
 export async function answerQuestion(approvalId: string, qid: string, answer: "yes" | "no" | "change", note?: string) {
-  const { firm } = await requireUser();
-  const a = approvalById(firm.id, approvalId);
+  const { firm, viewer } = await requireUser();
+  const a = approvalById(firm.id, approvalId, viewer);
   if (!a || a.status !== "pending" || a.kind !== "decisions") return;
   const payload = JSON.parse(a.payload) as { questions: Question[] };
   const q = payload.questions.find((x) => x.id === qid);
@@ -117,8 +189,8 @@ export async function answerQuestion(approvalId: string, qid: string, answer: "y
 }
 
 export async function acceptAllRecommended(approvalId: string) {
-  const { firm } = await requireUser();
-  const a = approvalById(firm.id, approvalId);
+  const { firm, viewer } = await requireUser();
+  const a = approvalById(firm.id, approvalId, viewer);
   if (!a || a.status !== "pending" || a.kind !== "decisions") return;
   const payload = JSON.parse(a.payload) as { questions: Question[] };
   for (const q of payload.questions) if (!q.answer) q.answer = q.recommend;
@@ -127,9 +199,9 @@ export async function acceptAllRecommended(approvalId: string) {
 }
 
 export async function decideApproval(approvalId: string, decision: "approved" | "rejected") {
-  const { user, firm } = await requireUser();
+  const { user, firm, viewer } = await requireUser();
   const d = db();
-  const a = approvalById(firm.id, approvalId);
+  const a = approvalById(firm.id, approvalId, viewer);
   if (!a || a.status !== "pending") return;
   const F = firm.id;
   const payload = JSON.parse(a.payload);
@@ -232,6 +304,7 @@ export async function createCase(form: FormData) {
   const typeName = fam?.types.find(([c]) => c === code)?.[1] ?? code;
   if (!client || !code) redirect("/cases/new?error=fields");
   const got = await uploads(form);
+  if (firm.demo && Array.isArray(got) && got.length) redirect("/cases/new?error=sample");
   if (got === "size") redirect("/cases/new?error=size");
   if (got === "type") redirect("/cases/new?error=type");
   const pdf = got.length ? got : null;
@@ -246,7 +319,8 @@ export async function createCase(form: FormData) {
 }
 
 export async function requestDraft(caseId: string, form: FormData) {
-  const { firm } = await requireUser();
+  const { firm, viewer } = await requireUser();
+  if (!caseById(firm.id, caseId, viewer)) redirect("/cases");
   const request = String(form.get("request") ?? "").trim().slice(0, 600);
   const c = db().prepare("SELECT pages FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { pages: number } | undefined;
   if (!c || !request || c.pages < 1) return;
@@ -257,8 +331,14 @@ export async function requestDraft(caseId: string, form: FormData) {
   redirect(`/cases/${caseId}?tab=drafts&draft=${draftId}`);
 }
 
+/** The sample workspace is shared by every visitor: no uploads, connections or profile changes. */
+function notInSample(firm: { demo: number }, back: string) {
+  if (firm.demo) redirect(`${back}${back.includes("?") ? "&" : "?"}error=sample`);
+}
+
 export async function updateProfile(form: FormData) {
-  const { user } = await requireUser();
+  const { user, firm } = await requireUser();
+  notInSample(firm, "/settings?tab=profile");
   const name = String(form.get("name") ?? "").trim().slice(0, 100);
   const role = String(form.get("role") ?? "").trim().slice(0, 60);
   const avatar = String(form.get("avatar") ?? "");
@@ -287,11 +367,13 @@ export async function changePassword(form: FormData) {
     // every other device is signed out
     d.prepare("DELETE FROM sessions WHERE user_id = ? AND id != ?").run(user.id, sha(sid));
   })();
+  await securityEvent(user.firm_id, user.id, "password_changed", "other devices signed out");
   redirect("/settings?tab=security&saved=1");
 }
 
 export async function updateFirm(form: FormData) {
   const { user, firm } = await requireUser();
+  notInSample(firm, "/settings?tab=firm");
   const name = String(form.get("firm") ?? "").trim().slice(0, 120);
   if (!name || !/admin|managing/i.test(user.role)) redirect("/settings?tab=firm&error=1");
   db().prepare("UPDATE firms SET name = ? WHERE id = ?").run(name, firm.id);
@@ -313,7 +395,7 @@ export async function disconnectMailbox() {
 /** Issues a new secret forwarding address for the firm. The old one stops working. */
 export async function newInboundAddress() {
   const { user, firm } = await requireUser();
-  if (!/admin|managing/i.test(user.role)) return;
+  if (!isAdmin(user.role) || firm.demo) return;
   const token = newToken();
   setKv(firm.id, "inbound_hash", sha(token));
   redirect(`/settings?tab=integrations&inbound=${token}`);
@@ -333,8 +415,10 @@ async function uploads(form: FormData): Promise<Uint8Array[] | "size" | "type"> 
 }
 
 export async function addFile(caseId: string, form: FormData) {
-  const { user, firm } = await requireUser();
+  const { user, firm, viewer } = await requireUser();
+  if (!caseById(firm.id, caseId, viewer)) redirect("/cases");
   const c = db().prepare("SELECT processing FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { processing: number } | undefined;
+  notInSample(firm, `/cases/${caseId}?tab=documents`);
   const got = await uploads(form);
   if (!c || c.processing || typeof got === "string" || !got.length) redirect(`/cases/${caseId}?tab=documents${typeof got === "string" ? `&error=${got}` : ""}`);
   db().prepare("UPDATE cases SET processing = 1, note = NULL WHERE firm_id = ? AND id = ?").run(firm.id, caseId);
@@ -346,12 +430,17 @@ export async function addFile(caseId: string, form: FormData) {
 
 export async function disconnect(form: FormData) {
   const { user, firm } = await requireUser();
-  db().prepare("DELETE FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = ?").run(firm.id, user.id, String(form.get("provider") ?? ""));
+  const provider = String(form.get("provider") ?? "");
+  const c = db().prepare("SELECT refresh_enc FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = ?").get(firm.id, user.id, provider) as { refresh_enc: string } | undefined;
+  if (c) await revokeAccess(provider, c.refresh_enc);
+  db().prepare("DELETE FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = ?").run(firm.id, user.id, provider);
+  await securityEvent(firm.id, user.id, "disconnected", provider);
   revalidatePath("/", "layout");
 }
 
 export async function setTeamsChannel(form: FormData) {
   const { user, firm } = await requireUser();
+  if (firm.demo) return;
   const [teamId, channelId, ...name] = String(form.get("channel") ?? "").split("|");
   const c = db().prepare("SELECT id, settings FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = 'microsoft'").get(firm.id, user.id) as { id: string; settings: string | null } | undefined;
   if (!c) return;
@@ -368,7 +457,9 @@ export async function setTeamsChannel(form: FormData) {
 
 /** Reads a PDF from Google Drive, OneDrive or SharePoint into a case. */
 export async function importFromCloud(caseId: string, provider: string, fileId: string, name: string) {
-  const { user, firm } = await requireUser();
+  const { user, firm, viewer } = await requireUser();
+  if (!caseById(firm.id, caseId, viewer)) redirect("/cases");
+  notInSample(firm, `/cases/${caseId}`);
   const { connection, download, isProvider } = await import("./integrations");
   const c = db().prepare("SELECT processing FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { processing: number } | undefined;
   if (!c || c.processing || !isProvider(provider)) redirect(`/cases/${caseId}`);
@@ -381,4 +472,78 @@ export async function importFromCloud(caseId: string, provider: string, fileId: 
   void processCase(firm.id, caseId, [bytes], { append: true });
   revalidatePath("/", "layout");
   redirect(`/cases/${caseId}`);
+}
+
+/** Tells Google to revoke Lincoln's access (Microsoft has no revoke endpoint; the user can remove the app in their account). */
+async function revokeAccess(provider: string, refreshEnc: string) {
+  if (provider !== "google") return;
+  try { await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(openSecret(refreshEnc))}`, { method: "POST" }); } catch { /* best effort */ }
+}
+
+// Two step sign in
+
+export async function startTwoStep() {
+  const { user, firm } = await requireUser();
+  notInSample(firm, "/settings?tab=security");
+  db().prepare("UPDATE users SET totp_pending_enc = ? WHERE id = ?").run(sealSecret(newTotpSecret()), user.id);
+  redirect("/settings?tab=security&setup=1");
+}
+
+export async function confirmTwoStep(form: FormData) {
+  const { user, firm } = await requireUser();
+  const row = db().prepare("SELECT totp_pending_enc FROM users WHERE id = ?").get(user.id) as { totp_pending_enc: string | null };
+  if (!row.totp_pending_enc) redirect("/settings?tab=security");
+  if (limited(`2fa:${user.id}`, 10)) redirect("/settings?tab=security&setup=1&error=limited");
+  const secret = openSecret(row.totp_pending_enc);
+  const step = verifyTotp(secret, String(form.get("code") ?? ""), null);
+  if (step === null) redirect("/settings?tab=security&setup=1&error=code");
+  const codes = Array.from({ length: 8 }, () => randomBytes(5).toString("hex").toUpperCase());
+  db().prepare("UPDATE users SET totp_enc = ?, totp_pending_enc = NULL, totp_last_step = ?, recovery = ? WHERE id = ?").run(sealSecret(secret), step, JSON.stringify(codes.map((c) => sha(c))), user.id);
+  await securityEvent(firm.id, user.id, "two_step_on");
+  // Shown once, never stored in readable form.
+  redirect(`/settings?tab=security&codes=${codes.join("-")}`);
+}
+
+export async function disableTwoStep(form: FormData) {
+  const { user, firm } = await requireUser();
+  const row = db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null };
+  if (limited(`2fa:${user.id}`, 10) || !verifyPassword(String(form.get("password") ?? ""), row.password_hash)) redirect("/settings?tab=security&error=current");
+  db().prepare("UPDATE users SET totp_enc = NULL, totp_pending_enc = NULL, recovery = NULL WHERE id = ?").run(user.id);
+  await securityEvent(firm.id, user.id, "two_step_off");
+  redirect("/settings?tab=security&saved=1");
+}
+
+export async function signOutSession(form: FormData) {
+  const { user, firm, sessionId } = await requireUser();
+  const target = String(form.get("session") ?? "");
+  if (target === "others") db().prepare("DELETE FROM sessions WHERE user_id = ? AND id != ?").run(user.id, sessionId);
+  else db().prepare("DELETE FROM sessions WHERE user_id = ? AND id = ? AND id != ?").run(user.id, target, sessionId);
+  await securityEvent(firm.id, user.id, "sessions_signed_out", target === "others" ? "all other devices" : "one device");
+  revalidatePath("/settings");
+}
+
+/** Permanently deletes the firm: every case, file, message, connection and account. Administrators only. */
+export async function deleteFirm(form: FormData) {
+  const { user, firm } = await requireUser();
+  if (firm.demo || !isAdmin(user.role)) redirect("/settings?tab=firm&error=1");
+  const row = db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null };
+  if (limited(`del:${user.id}`, 5) || !verifyPassword(String(form.get("password") ?? ""), row.password_hash) || String(form.get("confirm") ?? "").trim() !== firm.name) redirect("/settings?tab=firm&error=delete");
+  const d = db();
+  const conns = d.prepare("SELECT provider, refresh_enc FROM mailboxes WHERE firm_id = ?").all(firm.id) as { provider: string; refresh_enc: string }[];
+  for (const c of conns) await revokeAccess(c.provider, c.refresh_enc);
+  const caseIds = (d.prepare("SELECT id FROM cases WHERE firm_id = ?").all(firm.id) as { id: string }[]).map((c) => c.id);
+  d.transaction(() => {
+    for (const t of ["security_events", "chat", "drafts", "messages", "approvals", "activity", "dates", "issues", "criteria", "documents", "cases", "kv"]) d.prepare(`DELETE FROM ${t} WHERE firm_id = ?`).run(firm.id);
+    d.prepare("DELETE FROM inbound_seen WHERE mailbox_id IN (SELECT id FROM mailboxes WHERE firm_id = ?)").run(firm.id);
+    d.prepare("DELETE FROM mailboxes WHERE firm_id = ?").run(firm.id);
+    d.prepare("DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE firm_id = ?)").run(firm.id);
+    d.prepare("DELETE FROM password_resets WHERE user_id IN (SELECT id FROM users WHERE firm_id = ?)").run(firm.id);
+    d.prepare("DELETE FROM login_challenges WHERE user_id IN (SELECT id FROM users WHERE firm_id = ?)").run(firm.id);
+    d.prepare("DELETE FROM users WHERE firm_id = ?").run(firm.id);
+    d.prepare("DELETE FROM firms WHERE id = ?").run(firm.id);
+  })();
+  for (const id of caseIds) deleteCaseFiles(id);
+  forgetFirmKey(firm.id);
+  (await cookies()).delete(COOKIE);
+  redirect("/signin?deleted=1");
 }

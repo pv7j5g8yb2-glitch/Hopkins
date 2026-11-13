@@ -9,10 +9,10 @@ import { requireUser } from "@/lib/session";
 import { ago } from "@/lib/format";
 
 export default async function ImportPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string; q?: string; error?: string }> }) {
-  const { user, firm } = await requireUser();
+  const { user, firm, viewer } = await requireUser();
   const { id } = await params;
   const { from = "", q = "", error } = await searchParams;
-  const c = caseById(firm.id, id);
+  const c = caseById(firm.id, id, viewer);
   if (!c || !isProvider(from)) notFound();
   const conn = connection(firm.id, user.id, from);
   let hits: FileHit[] = [];

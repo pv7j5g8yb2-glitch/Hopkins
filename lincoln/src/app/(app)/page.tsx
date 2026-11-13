@@ -7,9 +7,9 @@ import { firmMailbox } from "@/lib/integrations";
 import { ago, inDays } from "@/lib/format";
 
 export default async function Home() {
-  const { firm } = await requireUser();
-  const review = pendingApprovals(firm.id);
-  const done = activitySince(firm.id, new Date(Date.now() - 48 * 3600_000).toISOString()).reverse().slice(0, 5);
+  const { firm, viewer } = await requireUser();
+  const review = pendingApprovals(firm.id, viewer);
+  const done = activitySince(firm.id, new Date(Date.now() - 48 * 3600_000).toISOString(), viewer).reverse().slice(0, 5);
   const mailbox = firmMailbox(firm.id);
 
   return (
