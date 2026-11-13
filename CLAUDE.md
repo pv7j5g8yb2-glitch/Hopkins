@@ -73,6 +73,9 @@ would. Keep screens minimal: no explanatory sentences for things the user can se
 address the user in the second person inside the product (no "you", "your", "Needs you"); use neutral
 labels such as "For review" and "Awaiting approval". Emails Lincoln drafts to clients are the exception.
 
+**Never push a failing build (2026-11-13).** Check the real exit status of the type check and `npm run
+build` before every push to the session branch; Render deploys from it. A grep for "Compiled" is not a check.
+
 ## The project
 
 * **What it is:** a self serve AI workspace for immigration lawyers in the US (the law is federal,
