@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #161614;
+  --color-paper: #f2f0ed;
+  --color-canvas: #fbfaf9;
+  --color-panel: #f4f3f0;
+  --color-line: #e8e5e0;
+  --color-muted: #6f6c66;
+  --color-faint: #9c9993;
+  --color-ok: #2e6f4e;
+  --color-ok-bg: #e7f0ea;
+  --color-warn: #8a5a00;
+  --color-warn-bg: #faefd6;
+  --color-risk: #a8322a;
+  --color-risk-bg: #f9e6e3;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Literata Variable", Georgia, "Times New Roman", serif;
+}
+
+html {
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+::selection {
+  background: #161614;
+  color: #fbfaf9;
+}
+.serif {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 24;
+  letter-spacing: -0.01em;
+}
+.wordmark {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+[role="button"] {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid #161614;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #d9d5ce transparent;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.28s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}

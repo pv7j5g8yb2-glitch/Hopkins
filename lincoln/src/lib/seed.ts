@@ -1,0 +1,123 @@
+import type Database from "better-sqlite3";
+import { HALASZ_CRITERIA, HALASZ_DOCS, HALASZ_ISSUES, HALASZ_QUESTIONS } from "./halasz";
+
+// The demo workspace. Every firm, person, client, company and case here is made up.
+
+export const DEMO_FIRM = "f_demo";
+export const DEMO_USER = "u_maria";
+const H = 3600_000;
+const iso = (hoursAgo: number) => new Date(Date.now() - hoursAgo * H).toISOString();
+const day = (daysFromNow: number) => new Date(Date.now() + daysFromNow * 24 * H).toISOString().slice(0, 10);
+let seq = 0;
+const id = (p: string) => `${p}_${(++seq).toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+
+type CaseRow = [id: string, ref: string, client: string, counterpart: string | null, code: string, typeName: string, family: string, stage: string, state: string, waiting: string | null, summary: string, att: string, para: string, openedDaysAgo: number, nextInDays: number | null, nextLabel: string | null, sensitive: 0 | 1];
+
+const CASES: CaseRow[] = [
+  ["c_halasz", "2026-0412", "Dr. Réka Halász", "Corvane Therapeutics, Inc.", "O-1A", "O-1A extraordinary ability", "Evidence petitions", "Strategy", "needs_you", "Maria Alvarez: 10 decisions", "All 52 pages read. Six criteria are strong. Lincoln needs ten decisions from you before it writes the support letter.", "u_maria", "u_daniel", 4, 21, "Target filing", 0],
+  ["c_haddad", "2026-0398", "Mariam Haddad", null, "N-400", "Naturalisation", "Citizenship and documents", "Review", "needs_you", "Maria Alvarez: sign off", "Form N-400 is complete and has passed the filing check. One note on a 2019 trip of 171 days.", "u_maria", "u_aisha", 19, 3, "Planned filing", 0],
+  ["c_eze", "2026-0291", "Chidi Eze", "Okafor Systems LLC", "H-1B", "H-1B extension", "Work visas", "Filed", "moving", "USCIS", "Extension filed on 9 September with premium processing requested by the employer. Receipt notice filed to the case.", "u_james", "u_daniel", 71, null, null, 0],
+  ["c_ribeiro", "2026-0377", "Ana and Tomás Ribeiro", null, "I-130 / I-485", "Marriage based green card", "Relationship petitions", "Evidence", "waiting", "Client: 2 documents", "Lincoln has 14 of 16 documents. Waiting for the joint lease and a certified translation of Tomás's birth certificate. Third reminder goes on Monday.", "u_james", "u_aisha", 26, 12, "Medical exam booked", 0],
+  ["c_nair", "2026-0355", "Dr. Priya Nair", null, "EB-2 NIW", "EB-2 National Interest Waiver", "Evidence petitions", "Evidence", "waiting", "Referees: 3 of 5 letters", "Two of five referee letters are signed. Lincoln has chased the other three and drafted the petition letter up to the endeavour section.", "u_maria", "u_daniel", 33, 9, "Referee deadline", 0],
+  ["c_mejia", "2026-0340", "L. F. M.", null, "I-589", "Asylum (defensive)", "Humanitarian", "Drafting", "moving", null, "Declaration draft 2 is with James. Country conditions packet has 41 sources, each linked to the paragraph it supports.", "u_james", "u_aisha", 48, 38, "Individual hearing", 1],
+  ["c_watanabe", "2026-0421", "Kenji Watanabe", "Brightline Robotics K.K.", "L-1A", "L-1A new office", "Evidence petitions", "Intake", "moving", "Client: questionnaire", "Engagement letter signed yesterday. Lincoln sent the questionnaire and the new office checklist in English and Japanese.", "u_maria", "u_aisha", 1, 6, "Questionnaire due", 0],
+  ["c_petrova", "2026-0302", "Sofia Petrova", null, "I-751", "Removal of conditions", "Relationship petitions", "Filed", "moving", "USCIS", "Filed on 21 October. Waiting for the receipt notice, which extends her green card.", "u_james", "u_daniel", 60, null, null, 0],
+  ["c_mwangi", "2026-0318", "G. M.", null, "I-918", "U visa", "Humanitarian", "Evidence", "waiting", "Police department: certification", "Supplement B certification requested from the police department on 14 October. Lincoln follows up every 14 days.", "u_maria", "u_aisha", 52, 5, "Next follow up", 1],
+  ["c_perm", "2026-0266", "Corvane Therapeutics, Inc.", "for Wei Chen", "PERM", "PERM labour certification", "Labour certification", "Evidence", "moving", null, "Prevailing wage determination received. Recruitment runs until 2 December; Lincoln is logging every advert and applicant.", "u_maria", "u_daniel", 96, 19, "Recruitment ends", 0],
+  ["c_ortiz", "2026-0349", "Daniel Ortiz", null, "I-601A", "Provisional waiver", "Waivers", "Drafting", "moving", null, "Hardship evidence is mapped to each factor. Lincoln is drafting the brief; two medical records are still to arrive.", "u_james", "u_aisha", 40, 15, "Draft to attorney", 0],
+  ["c_schmidt", "2026-0388", "Hannah Schmidt", null, "FOIA", "FOIA request (A-file)", "Records", "Filed", "waiting", "USCIS", "Request filed on 30 October. Lincoln checks the status every week.", "u_maria", "u_daniel", 14, null, null, 0],
+];
+
+export function seed(d: Database.Database) {
+  seq = 0;
+  const F = DEMO_FIRM;
+  d.prepare("INSERT INTO firms (id, name, demo) VALUES (?, ?, 1)").run(F, "Kestrel Immigration Law");
+  const insUser = d.prepare("INSERT INTO users (id, firm_id, name, email, role, initials) VALUES (?, ?, ?, ?, ?, ?)");
+  insUser.run("u_maria", F, "Maria Alvarez", "maria@kestrel.example", "Managing attorney", "MA");
+  insUser.run("u_james", F, "James Whitaker", "james@kestrel.example", "Attorney", "JW");
+  insUser.run("u_daniel", F, "Daniel Kim", "daniel@kestrel.example", "Paralegal", "DK");
+  insUser.run("u_aisha", F, "Aisha Rahman", "aisha@kestrel.example", "Paralegal", "AR");
+
+  const insCase = d.prepare(`INSERT INTO cases (id, firm_id, ref, client, counterpart, type_code, type_name, family, stage, state, waiting_on, summary, attorney_id, paralegal_id, opened_at, next_date, next_date_label, sensitive, pages)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  for (const c of CASES) insCase.run(c[0], F, c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10], c[11], c[12], iso(c[13] * 24), c[14] === null ? null : day(c[14]), c[15], c[16], c[0] === "c_halasz" ? 52 : 0);
+
+  // Halász: documents, criteria, issues, dates
+  const insDoc = d.prepare("INSERT INTO documents (id, firm_id, case_id, n, title, kind, page_from, page_to, doc_date, source, language, is_scan, status, note, received_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  for (const x of HALASZ_DOCS) insDoc.run(id("d"), F, "c_halasz", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], iso(86));
+  const insCrit = d.prepare("INSERT INTO criteria (id, firm_id, case_id, n, code, name, citation, recommendation, strength, summary, weakness, evidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  HALASZ_CRITERIA.forEach((c, i) => insCrit.run(id("k"), F, "c_halasz", i + 1, c.code, c.name, c.citation, c.recommendation, c.strength, c.summary, c.weakness, JSON.stringify(c.evidence)));
+  const insIssue = d.prepare("INSERT INTO issues (id, firm_id, case_id, kind, severity, title, detail, sources, status, resolution, created_at, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', NULL, ?, NULL)");
+  for (const i of HALASZ_ISSUES) insIssue.run(`i_${i.key}`, F, "c_halasz", i.kind, i.severity, i.title, i.detail, JSON.stringify(i.pages), iso(84));
+  const insDate = d.prepare("INSERT INTO dates (id, firm_id, case_id, label, date, kind, source) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  insDate.run(id("t"), F, "c_halasz", "H-1B status ends (I-94)", "2027-01-15", "expiry", "Form I-94, page 6");
+  insDate.run(id("t"), F, "c_halasz", "Passport expires", "2027-03-02", "expiry", "Passport, page 5");
+  insDate.run(id("t"), F, "c_halasz", "O-1 employment starts", "2027-01-04", "start", "Employment agreement, page 7");
+  insDate.run(id("t"), F, "c_halasz", "Target filing", day(21), "target", "Set by Maria Alvarez");
+  for (const c of CASES) if (c[0] !== "c_halasz" && c[14] !== null && c[15]) insDate.run(id("t"), F, c[0], c[15], day(c[14]), "target", null);
+  insDate.run(id("t"), F, "c_mejia", "Evidence filing deadline", day(23), "deadline", "Immigration court scheduling order");
+  insDate.run(id("t"), F, "c_haddad", "Continuous residence: 5 years reached", day(-12), "start", "Green card, resident since date");
+
+  // Messages
+  const insMsg = d.prepare("INSERT INTO messages (id, firm_id, case_id, direction, party, party_role, subject, body, at, state, lincoln_note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  insMsg.run("m_h_in", F, "c_halasz", "in", "Réka Halász", "Client", "Documents for my O-1", "Dear Maria,\n\nAs promised, here is everything I could find, in one PDF (52 pages), plus the salary survey HR sent me as a spreadsheet. Prof. Ferrante's letter is in there twice, I think: her first draft and the signed one.\n\nI am Head of Research now, so please use that title. My CV has the latest numbers.\n\nBest wishes,\nRéka", iso(86), "filed", "Read all 52 pages and the spreadsheet. Found 37 documents and 13 issues. Did not use the title or the CV figures: the HR letter and the dated printouts say otherwise.");
+  insMsg.run("m_h_client", F, "c_halasz", "out", "Réka Halász", "Client", "Three things we need from you", "Dear Réka,\n\nThank you for the documents. We have read all of them. To keep your petition on time, we need three things:\n\n1. Certified English translations of your Fiatal Kutatói Díj certificate and the Hajdúsági Napló article. We can order these for you; please reply \"yes\" if you would like us to.\n2. A short note explaining the name \"Halasz-Toth\" on your 2024 CV, with a document that shows the change if you have one.\n3. Your passport expires on 2 March 2027. Please start the renewal now and send us the new identity page when you have it.\n\nOne question: is the GitHub account \"rhalasz\" yours?\n\nYour H-1B status ends on 15 January 2027, so we are aiming to file well before then.\n\nKind regards,\nMaria Alvarez\nKestrel Immigration Law", iso(10), "needs_approval", "Drafted from the issues list. Waiting for your approval before it is sent.");
+  insMsg.run("m_h_iscsb", F, "c_halasz", "out", "ISCSB Secretariat", "Peer group", "Request for an advisory opinion: Dr. Réka Halász (O-1A)", "Dear Secretariat,\n\nWe represent Corvane Therapeutics, Inc., which is filing an O-1A petition for Dr. Réka Halász, the recipient of your 2025 Protein Innovators Prize.\n\nUS immigration rules ask for a written advisory opinion from a peer group in the beneficiary's field, describing the nature of the work and the person's qualifications (8 CFR 214.2(o)(5)). As the international society in computational structural biology, the ISCSB is well placed to give one.\n\nWould the Society be willing to provide a short letter? We can send a summary of her work and the points the letter usually covers. We would be grateful for a reply by the end of next week.\n\nYours faithfully,\nMaria Alvarez\nKestrel Immigration Law", iso(9), "needs_approval", "The Brenner letter cannot serve as the consultation. Drafted a request to the ISCSB instead. Waiting for your approval.");
+  insMsg.run(id("m"), F, "c_ribeiro", "out", "Ana Ribeiro", "Client", "Reminder: two documents still needed", "Dear Ana,\n\nA quick reminder that we still need your joint lease and a certified translation of Tomás's birth certificate. You can upload both with the secure link below.\n\nKind regards,\nAisha Rahman\nKestrel Immigration Law", iso(30), "sent", "Second reminder, sent under the firm's reminder rule. Next one on Monday.");
+  insMsg.run(id("m"), F, "c_ribeiro", "in", "Ana Ribeiro", "Client", "Re: Reminder: two documents still needed", "Hi Aisha, sorry for the delay. The landlord is sending the lease this week. The translation is being done by my cousin, is that ok?", iso(20), "filed", "Flagged for Aisha: a translation by a relative needs a translator's certification and is weaker than an independent one. Drafted a reply explaining this.");
+  insMsg.run(id("m"), F, "c_nair", "in", "Prof. Henrik Lindqvist", "Referee", "Re: Letter of support for Dr. Nair", "Dear Mr Kim, I have made two small changes to the second paragraph and signed. Attached.", iso(15), "filed", "Signed letter filed. Compared with the draft: two wording changes, no change of substance. 2 of 5 letters are now in.");
+  insMsg.run(id("m"), F, "c_watanabe", "out", "Kenji Watanabe", "Client", "Welcome, and your first steps", "Dear Mr Watanabe,\n\nThank you for signing the engagement letter. Your questionnaire and the new office checklist are at the secure link below, in English and Japanese.\n\nKind regards,\nAisha Rahman\nKestrel Immigration Law", iso(18), "sent", "Sent automatically when the engagement letter was signed.");
+  insMsg.run(id("m"), F, "c_eze", "in", "USCIS", "Government", "Receipt notice I-797C", "Receipt notice for Form I-129, received 9 September 2026.", iso(24 * 60), "filed", "Receipt number and dates filed to the case.");
+  insMsg.run(id("m"), F, "c_perm", "in", "Corvane HR", "Employer", "Applicant CVs, week 2", "Three more applications came in for the posting. CVs attached.", iso(27), "filed", "Three applicants logged in the recruitment report with the date received. Nothing for you to do yet.");
+
+  // Approvals
+  const insAppr = d.prepare("INSERT INTO approvals (id, firm_id, case_id, kind, title, brief, least_sure, if_wrong, payload, status, assignee_id, created_at, due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)");
+  insAppr.run("a_h_strategy", F, "c_halasz", "decisions", "Strategy for the petition: ten decisions", "Lincoln has graded every document against the eight O-1A criteria. Answer these and it writes the support letter from your answers.", "Critical role. The evidence is real but comes mostly from Corvane.", "A criterion claimed on weak evidence invites a Request for Evidence and weakens the stronger ones.", JSON.stringify({ questions: HALASZ_QUESTIONS }), "u_maria", iso(10), day(2));
+  insAppr.run("a_h_client", F, "c_halasz", "message", "Email to Dr. Halász: translations, name history, passport", "Asks the client for the three things holding up the petition, and one question.", "Whether you want to offer to order the translations for her.", "Low. It is a request for documents; nothing in it is legal advice.", JSON.stringify({ messageId: "m_h_client" }), "u_maria", iso(10), day(1));
+  insAppr.run("a_h_iscsb", F, "c_halasz", "message", "Request to the ISCSB for an advisory opinion", "The Brenner letter cannot serve as the consultation. This asks the ISCSB for one.", "Whether you would rather ask ESPI, or both.", "A slow reply costs time: the consultation is required and her status ends on 15 January.", JSON.stringify({ messageId: "m_h_iscsb" }), "u_maria", iso(9), day(1));
+  insAppr.run("a_haddad", F, "c_haddad", "filing", "N-400 ready to file", "Form N-400 for Mariam Haddad is complete. It passed 23 of 23 filing checks.", "A 171 day trip abroad in 2019. It is under 180 days, so continuous residence is not presumed broken, but it is close.", "If continuous residence were found broken, the application would be denied and the fee lost.", JSON.stringify({ checks: [["Form edition is current", true], ["All required fields complete", true], ["Names and dates match the green card", true], ["Five years of residence reached", true], ["Trips abroad listed and totalled", true], ["Selective Service: not applicable", true], ["Fee and payment form", true], ["Two passport photos: not needed (US filing)", true]], note: "Trip from 3 February to 24 July 2019: 171 days. Her tax return and lease for 2019 are in the file to show ties to the US." }), "u_maria", iso(14), day(3));
+
+  // Activity: what Lincoln did, with standard minutes
+  const insAct = d.prepare("INSERT INTO activity (id, firm_id, case_id, at, actor, kind, text, minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  const act = (c: string | null, h: number, kind: string, text: string, min: number, actor = "Lincoln") => insAct.run(id("x"), F, c, iso(h), actor, kind, text, min);
+  act("c_halasz", 86, "read", "Read the client's 52 page file and the salary spreadsheet. Found 37 documents, 7 of them scans.", 150);
+  act("c_halasz", 85.5, "file", "Filed the client's email and attachments to the case.", 4);
+  act("c_halasz", 85, "check", "Compared every figure across documents. Opened 13 issues, 4 of them conflicts.", 60);
+  act("c_halasz", 84, "date", "Set three dates from the documents: I-94 end, passport expiry, employment start.", 9);
+  act("c_halasz", 60, "evidence", "Graded 37 documents against the eight O-1A criteria. Six strong, one moderate, one not met.", 180);
+  act("c_halasz", 59, "check", "Left out six items and recorded why: paid award, internal award, open membership, predatory journal, employer press release, unsigned draft.", 25);
+  act("c_halasz", 10.5, "draft", "Turned the strategy into ten decisions for Maria.", 40);
+  act("c_halasz", 10, "draft", "Drafted an email to the client asking for translations, the name history and a passport renewal.", 12);
+  act("c_halasz", 9, "draft", "Drafted a request to the ISCSB for an advisory opinion.", 15);
+  act("c_haddad", 40, "form", "Completed Form N-400 from the questionnaire and the green card.", 55);
+  act("c_haddad", 39, "check", "Totalled 9 trips abroad from passport stamps: 412 days in five years. Longest: 171 days.", 35);
+  act("c_haddad", 14, "check", "Ran the filing check: 23 of 23 passed, one note for the attorney.", 20);
+  act("c_ribeiro", 54, "read", "Read 14 uploaded documents. Sent one back: the marriage certificate scan was cut off at the seal.", 45);
+  act("c_ribeiro", 30, "chase", "Sent the second reminder for the joint lease and the birth certificate translation.", 6);
+  act("c_ribeiro", 20, "file", "Filed Ana's reply and flagged the translation question for Aisha.", 5);
+  act("c_nair", 72, "draft", "Drafted five referee letters from the CV and publications.", 150);
+  act("c_nair", 70, "send", "Sent each referee their draft to edit and sign.", 15);
+  act("c_nair", 36, "chase", "Reminded three referees who had not replied.", 12);
+  act("c_nair", 15, "file", "Filed Prof. Lindqvist's signed letter and compared it with the draft: no change of substance.", 10);
+  act("c_mejia", 44, "evidence", "Linked 41 country conditions sources to the paragraphs of the declaration they support.", 120);
+  act("c_mejia", 22, "date", "Recalculated the evidence filing deadline from the court's scheduling order.", 5);
+  act("c_watanabe", 19, "open", "Opened the case when the engagement letter was signed.", 10);
+  act("c_watanabe", 18, "send", "Sent the questionnaire and new office checklist in English and Japanese.", 20);
+  act("c_petrova", 47, "status", "Checked the USCIS case status: no change.", 3);
+  act("c_mwangi", 26, "chase", "Followed up with the police department on the certification request.", 8);
+  act("c_perm", 27, "file", "Logged three applicants in the recruitment report.", 12);
+  act("c_perm", 100, "date", "Set the recruitment end date and the 30 day quiet period.", 6);
+  act("c_ortiz", 33, "evidence", "Mapped 22 hardship documents to the five hardship factors.", 90);
+  act("c_ortiz", 12, "draft", "Drafted the statement of facts for the waiver brief.", 75);
+  act("c_schmidt", 50, "status", "Checked the FOIA request status: in queue.", 3);
+  act(null, 8, "status", "Checked USCIS status for 4 filed cases. No changes.", 12);
+  act(null, 7.5, "bulletin", "Read the December Visa Bulletin. No date changes affect open cases.", 15);
+  for (let dgo = 5; dgo <= 7; dgo++) {
+    act(null, dgo * 24 + 3, "status", "Checked USCIS status for 4 filed cases.", 12);
+    act("c_perm", dgo * 24 + 5, "file", "Logged recruitment responses.", 10);
+    act("c_nair", dgo * 24 + 6, "read", "Read new publications and citation records.", 35 + dgo * 5);
+    act("c_ortiz", dgo * 24 + 2, "read", "Read medical and financial records as they arrived.", 50 - dgo * 3);
+  }
+
+  d.prepare("INSERT INTO kv (firm_id, key, value) VALUES (?, 'demo_step', '0')").run(F);
+}
