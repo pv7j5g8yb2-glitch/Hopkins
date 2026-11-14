@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AuthShell, { Notice, field, submit } from "@/components/AuthShell";
 import { resetPassword } from "@/lib/actions";
+import PasswordInput from "@/components/PasswordInput";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function Reset({ params, searchParams }: { params: Promise<
       {error === "password" && <Notice>The password needs at least 10 characters.</Notice>}
       <form action={resetPassword} className="flex flex-col gap-2.5">
         <input type="hidden" name="token" value={token} />
-        <input name="password" type="password" required minLength={10} autoComplete="new-password" placeholder="New password (10 characters or more)" className={field} />
+        <PasswordInput />
         <button className={submit}>Update password</button>
       </form>
     </AuthShell>

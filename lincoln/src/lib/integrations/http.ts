@@ -8,7 +8,9 @@ export function api(url: string) {
 export async function json<T>(res: Response, what: string): Promise<T> {
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    const msg = /"message"\s*:\s*"([^"]{1,160})"/.exec(body)?.[1] ?? /"error_description"\s*:\s*"([^"]{1,160})"/.exec(body)?.[1];
+    const code = /"error"\s*:\s*"([\w.-]{1,60})"/.exec(body)?.[1];
+    const desc = /"message"\s*:\s*"([^"]{1,160})"/.exec(body)?.[1] ?? /"error_description"\s*:\s*"([^"]{1,160})"/.exec(body)?.[1];
+    const msg = [code, desc].filter(Boolean).join(": ");
     throw new Error(`${what} replied ${res.status}${msg ? `: ${msg}` : ""}`);
   }
   return (await res.json()) as T;

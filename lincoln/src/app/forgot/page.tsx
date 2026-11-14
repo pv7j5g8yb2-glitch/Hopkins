@@ -22,7 +22,7 @@ export default async function Forgot({ searchParams }: { searchParams: Promise<{
         </>
       ) : (
         <form action={requestReset} className="flex flex-col gap-2.5">
-          <input name="email" type="email" required autoComplete="email" placeholder="Work email" className={field} />
+          <input name="email" type="email" required autoComplete="email" placeholder="you@example.com" className={field} />
           <button className={submit}>Send reset link</button>
         </form>
       )}
