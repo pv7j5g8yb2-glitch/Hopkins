@@ -72,6 +72,9 @@ bottom, "Ask Lincoln anything") and must answer honestly about what Lincoln can 
 would. Keep screens minimal: no explanatory sentences for things the user can see for themselves. Never
 address the user in the second person inside the product (no "you", "your", "Needs you"); use neutral
 labels such as "For review" and "Awaiting approval". Emails Lincoln drafts to clients are the exception.
+No status chatter or helper text (Ismael, 2026-11-14: "a serious software platform never talks to the user
+like this"): no "checked just now", no confirmations like "Connected. New mail is read...", no subtitles
+under names, no checklists of what works, no descriptions under rows or buttons. Errors are a few words.
 
 **Lincoln on phones and manual work (Ismael, 2026-11-14).** On phones Lincoln uses the Hopkins Liquid Glass
 tab bar (Home, Cases, +, Review, More), with a lens that glides, stretches and follows a finger, and the More
