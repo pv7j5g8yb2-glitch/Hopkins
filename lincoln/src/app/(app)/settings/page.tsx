@@ -3,7 +3,6 @@ import clsx from "clsx";
 import AvatarField from "@/components/AvatarField";
 import { Avatar, PageHead, btn, field, label } from "@/components/ui";
 import { changePassword, confirmTwoStep, deleteFirm, disableTwoStep, signOutSession, startTwoStep, updateFirm, updateProfile } from "@/lib/actions";
-import IntegrationsPanel from "@/components/IntegrationsPanel";
 import { db } from "@/lib/db";
 import QRCode from "qrcode";
 import { otpauth } from "@/lib/totp";
@@ -13,19 +12,18 @@ import { requireUser } from "@/lib/session";
 import { activitySince, people } from "@/lib/queries";
 import { ago, hours } from "@/lib/format";
 
-const TABS: [string, string][] = [["profile", "Profile"], ["security", "Security"], ["firm", "Firm"], ["automation", "Automation"], ["integrations", "Integrations"], ["usage", "Usage"]];
+const TABS: [string, string][] = [["profile", "Profile"], ["security", "Security"], ["firm", "Firm"], ["automation", "Automation"], ["usage", "Usage"]];
 
 const RULES: [string, string, boolean][] = [
-  ["Reminders when a client has not replied", "After 3 days", true],
-  ["Filing case mail and attachments", "Always", true],
-  ["Reading incoming case mail and attachments", "As it arrives; mail that is not case work is not kept", true],
-  ["Case dates added to the attorney's calendar", "Google or Outlook Calendar", true],
-  ["Items for review posted to Teams", "Chosen channel", true],
-  ["Opening cases from new client enquiries", "Always", true],
-  ["Approaching deadlines raised as issues", "14 days before", true],
-  ["Other messages to clients or third parties", "Attorney approval", false],
-  ["Legal strategy and eligibility", "Attorney decision", false],
-  ["Anything signed, filed or sent to USCIS or a court", "Attorney approval", false],
+  ["Reading and filing case mail", "", true],
+  ["Opening new cases", "", true],
+  ["Client reminders after 3 days", "", true],
+  ["Deadlines raised 14 days before", "", true],
+  ["Dates added to the calendar", "", true],
+  ["Review items posted to Teams", "", true],
+  ["Other messages", "", false],
+  ["Strategy and eligibility", "", false],
+  ["Filings and signatures", "", false],
 ];
 const EVENT: Record<string, string> = { sign_in: "Signed in", sign_in_failed: "Wrong password", sign_in_code_failed: "Wrong two step code", recovery_code_used: "Recovery code used", password_changed: "Password changed", password_reset_requested: "Password reset requested", password_reset: "Password reset", two_step_on: "Two step sign in turned on", two_step_off: "Two step sign in turned off", connected: "Account connected", disconnected: "Account disconnected", sessions_signed_out: "Devices signed out", account_created: "Account created" };
 const device = (ua: string | null) => {
@@ -34,29 +32,13 @@ const device = (ua: string | null) => {
   const br = /Edg\//.test(u) ? "Edge" : /Chrome\//.test(u) ? "Chrome" : /Firefox\//.test(u) ? "Firefox" : /Safari\//.test(u) ? "Safari" : "";
   return br ? `${br} on ${os}` : os;
 };
-const modelHost = (() => { try { return new URL(process.env.LLM_BASE_URL ?? "").host; } catch { return "not connected"; } })();
-const CONTROLS: [string, boolean][] = [
-  ["Firm separation on every record and query", true],
-  ["Client files encrypted at rest with a key per firm (AES-256)", true],
-  ["Mailbox logins encrypted at rest", true],
-  ["Restricted cases visible only to their team and administrators", true],
-  ["Passwords hashed with scrypt; session and reset tokens stored only as hashes", true],
-  ["Two step sign in with an authenticator app", true],
-  ["Record of sign ins, security changes and every action Lincoln takes", true],
-  ["Strict browser security headers; HTTPS only", true],
-  ["Mail that is not case work is not kept", true],
-  ["Firm deletion: every case, file and connection, permanently", true],
-  ["Managed database with backups and row level isolation", false],
-  ["Zero retention agreement with the model provider", false],
-  ["Independent security review", false],
-];
 const KINDS: Record<string, string> = { read: "Reading documents", evidence: "Grading evidence", draft: "Drafting", check: "Checking facts and forms", chase: "Chasing documents", send: "Routine messages", file: "Filing mail", date: "Dates", status: "Status checks", form: "Forms", packet: "Filing packets", open: "Opening cases", bulletin: "Visa Bulletin" };
 const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const MSG: Record<string, Record<string, string>> = {
-  profile: { name: "A name is required.", sample: "The sample workspace is shared by every visitor, so profiles cannot be changed." },
-  security: { limited: "Too many attempts. Try again in 15 minutes.", sample: "Sample accounts have no password or two step sign in.", current: "The password is incorrect.", password: "The new password must be at least 10 characters.", code: "That code is not valid. Codes change every 30 seconds." },
-  firm: { "1": "Only an administrator can do that.", sample: "The sample workspace cannot be changed.", delete: "Nothing was deleted: the password or the firm name did not match." },
+  profile: { name: "Name required.", sample: "Not available in the sample workspace." },
+  security: { limited: "Too many attempts. Try again in 15 minutes.", sample: "Not available in the sample workspace.", current: "Wrong password.", password: "10 characters min.", code: "Wrong code." },
+  firm: { "1": "Administrators only.", sample: "Not available in the sample workspace.", delete: "Name or password did not match." },
 };
 
 function Row({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -73,7 +55,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const qr = secretText ? await QRCode.toDataURL(otpauth(secretText, user.email), { margin: 1, width: 360 }) : null;
   const sessions = tab === "security" ? (d.prepare("SELECT id, ip, agent, created_at, last_seen FROM sessions WHERE user_id = ? AND created_at > ? ORDER BY last_seen DESC").all(user.id, new Date(Date.now() - SESSION_HOURS * 3600_000).toISOString()) as { id: string; ip: string | null; agent: string | null; created_at: string; last_seen: string | null }[]) : [];
   const events = tab === "security" ? (d.prepare("SELECT id, kind, detail, ip, at FROM security_events WHERE user_id = ? ORDER BY at DESC LIMIT 12").all(user.id) as { id: string; kind: string; detail: string | null; ip: string | null; at: string }[]) : [];
-  const controls: [string, boolean][] = [...CONTROLS, [`Model provider: ${modelHost}${/anthropic\.com$/.test(modelHost) ? "" : " (third party relay; not for client data)"}`, /anthropic\.com$/.test(modelHost)]];
   const hasPassword = Boolean((db().prepare("SELECT password_hash FROM users WHERE id = ?").get(user.id) as { password_hash: string | null }).password_hash);
   const admin = /admin|managing/i.test(user.role);
   const err = error && tab !== "integrations" ? MSG[tab]?.[error] : null;
@@ -107,21 +88,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               {hasPassword ? (
                 <form action={changePassword} className="flex flex-col gap-4">
                   <label className="block"><span className={label}>Current password</span><input name="current" type="password" required autoComplete="current-password" className={field} /></label>
-                  <label className="block"><span className={label}>New password</span><input name="next" type="password" required minLength={10} autoComplete="new-password" className={field} /></label>
-                  <p className="-mt-2 text-[12px] text-faint">At least 10 characters. Other devices are signed out.</p>
+                  <label className="block"><span className={label}>New password</span><input name="next" type="password" required minLength={10} autoComplete="new-password" placeholder="10 characters min." className={field} /></label>
                   <div><button className={btn.primary}>Update password</button></div>
                 </form>
               ) : (
-                <p className="text-[13px] text-muted">Sample accounts have no password.</p>
+                <p className="text-[13px] text-muted">Not available in the sample workspace.</p>
               )}
 
               <h2 className="mb-1 mt-12 text-[14px] font-medium">Two step sign in</h2>
               <div className="border-t border-line pt-3">
                 {codes ? (
                   <>
-                    <p className="mb-3 text-[13px]">Two step sign in is on. Recovery codes, shown once; each works one time if the phone is lost:</p>
+                    <p className="mb-3 text-[13px]">Recovery codes</p>
                     <div className="mb-2 grid grid-cols-2 gap-1.5 rounded-lg bg-side p-3 font-mono text-[13px] sm:grid-cols-4">{codes.split("-").map((c) => <span key={c}>{c}</span>)}</div>
-                    <p className="text-[12px] text-faint">Store them somewhere safe. They are not shown again.</p>
+                    <p className="text-[12px] text-faint">Shown once.</p>
                   </>
                 ) : twoStep.on ? (
                   <form action={disableTwoStep} className="flex flex-wrap items-end gap-2">
@@ -131,7 +111,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   </form>
                 ) : setup && qr ? (
                   <form action={confirmTwoStep} className="flex flex-col gap-3">
-                    <p className="text-[13px]">Scan with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password), then enter the 6 digit code.</p>
+                    
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={qr} alt="QR code for the authenticator app" width={180} height={180} className="rounded-lg border border-line" />
                     <p className="break-all font-mono text-[12px] text-faint">{secretText}</p>
@@ -139,7 +119,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   </form>
                 ) : (
                   <form action={startTwoStep} className="flex items-center justify-between gap-4">
-                    <span className="text-[13px] text-muted">Off. A code from a phone is asked for at every sign in.</span>
+                    <span className="text-[13px] text-muted">Off</span>
                     <button className={btn.secondary} disabled={Boolean(firm.demo)}>Set up</button>
                   </form>
                 )}
@@ -149,7 +129,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <div className="border-t border-line">
                 {sessions.map((x) => (
                   <Row key={x.id}>
-                    <span className="min-w-0 flex-1"><span className="block truncate text-[13px]">{device(x.agent)}{x.id === sessionId ? <span className="text-faint"> · this device</span> : null}</span><span className="block text-[12px] text-faint">{x.ip ?? "Unknown address"} · signed in {ago(x.created_at)}{x.last_seen ? ` · active ${ago(x.last_seen)}` : ""}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-[13px]">{device(x.agent)}{x.id === sessionId ? <span className="text-faint"> · this device</span> : null}</span><span className="block text-[12px] text-faint">{x.ip ? `${x.ip} · ` : ""}{ago(x.last_seen ?? x.created_at)}</span></span>
                     {x.id !== sessionId && <form action={signOutSession}><input type="hidden" name="session" value={x.id} /><button className={btn.ghost}>Sign out</button></form>}
                   </Row>
                 ))}
@@ -163,11 +143,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 ))}
               </div>
 
-              <h2 className="mb-1 mt-12 text-[14px] font-medium">Data protection</h2>
-              <div className="border-t border-line">
-                {controls.map(([t, on]) => <Row key={t}><span className="flex-1 text-[13px]">{t}</span><span className={clsx("text-[12.5px]", on ? "text-ink" : "text-faint")}>{on ? "Active" : "Planned"}</span></Row>)}
-              </div>
-              <p className="mt-3 text-[12px] text-faint">Client data is accepted once every control is active.</p>
             </>
           )}
 
@@ -194,7 +169,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <section className="mt-12">
               <h2 className="mb-1 text-[14px] font-medium">Delete firm</h2>
               <form action={deleteFirm} className="flex flex-col gap-3 border-t border-line pt-3">
-                <p className="text-[13px] text-muted">Permanently deletes every case, file, message, connection and account in {firm.name}. This cannot be undone.</p>
+                <p className="text-[13px] text-muted">Cannot be undone.</p>
                 <input name="confirm" required placeholder={`Type ${firm.name}`} className={clsx(field, "max-w-[360px]")} />
                 <input name="password" type="password" required autoComplete="current-password" placeholder="Password" className={clsx(field, "max-w-[360px]")} />
                 <div><button className="inline-flex h-9 items-center rounded-lg border border-risk/40 px-3.5 text-[13px] font-medium text-risk transition hover:bg-risk-bg">Delete everything</button></div>
@@ -204,16 +179,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
           {tab === "automation" && (
             <div className="border-t border-line">
-              {RULES.map(([t, d, auto]) => (
+              {RULES.map(([t, , auto]) => (
                 <Row key={t}>
-                  <span className="min-w-0 flex-1"><span className="block text-[13px]">{t}</span><span className="block text-[12px] text-faint">{d}</span></span>
+                  <span className="min-w-0 flex-1 text-[13px]">{t}</span>
                   <span className={clsx("text-[12.5px]", auto ? "text-muted" : "font-medium")}>{auto ? "Automatic" : "Approval"}</span>
                 </Row>
               ))}
             </div>
           )}
 
-          {tab === "integrations" && <IntegrationsPanel user={user} firm={firm} connected={connected} error={error} inbound={inbound} />}
 
           {tab === "usage" && (() => {
             const acts = activitySince(firm.id, new Date(Date.now() - 7 * 86400000).toISOString(), viewer);
@@ -240,7 +214,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <div className="mt-10 border-t border-line">
                   {byKind.map(([k, m]) => <Row key={k} className="py-2.5"><span className="flex-1 text-[13px]">{KINDS[k] ?? k}</span><span className="text-[13px] tabular-nums text-muted">{hours(m)}</span></Row>)}
                 </div>
-                <p className="mt-3 text-[12px] text-faint">Each completed task counted at a provisional standard time.</p>
               </>
             );
           })()}

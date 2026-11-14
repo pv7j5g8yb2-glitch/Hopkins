@@ -42,7 +42,7 @@ export default function AvatarField({ initials, current }: { initials: string; c
           <button type="button" onClick={() => input.current?.click()} className="h-8 rounded-lg border border-line bg-card px-3 text-[12.5px] font-medium transition hover:bg-panel">Upload photo</button>
           {preview && <button type="button" onClick={() => { setValue("remove"); setPreview(null); }} className="h-8 rounded-lg px-2.5 text-[12.5px] text-muted transition hover:bg-panel hover:text-ink">Remove</button>}
         </div>
-        <span className={error ? "text-[12px] text-risk" : "text-[12px] text-faint"}>{error ? "The image could not be read" : "PNG, JPEG or WebP"}</span>
+        <span className={error ? "text-[12px] text-risk" : "text-[12px] text-faint"}>{error ? "The image could not be read" : ""}</span>
       </div>
     </div>
   );

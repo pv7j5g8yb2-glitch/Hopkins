@@ -3,11 +3,8 @@ import { PageHead } from "@/components/ui";
 import { requireUser } from "@/lib/session";
 
 const QA: [string, string][] = [
-  ["Scope", "Lincoln runs each immigration case from engagement to decision: reads every document, requests what is missing, grades the evidence, drafts forms and letters, tracks every date and raises what requires an attorney."],
   ["Limits", "Lincoln is not a lawyer. It gives no legal advice to the public, and signs, files or sends nothing legal without an attorney's approval."],
-  ["Drafts", "Sourced facts are underlined and open the page they came from. Judgement calls are shaded. Attorney notes are in square brackets. Review mode dims everything else."],
-  ["New cases", "Upload the client file as one PDF. Lincoln reads every page, lists the documents, opens issues, sets dates and drafts the first request to the client for approval."],
-  ["Record of work", "Every action is listed under Activity on the case. Weekly totals are in Settings, Usage."],
+  ["Drafts", "Underlined facts open their source page. Shaded text is a judgement call."],
 ];
 
 export default async function Help() {

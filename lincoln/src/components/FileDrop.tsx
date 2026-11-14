@@ -35,10 +35,9 @@ export default function FileDrop() {
           <button type="button" aria-label="Remove file" onClick={() => { if (input.current) input.current.value = ""; setFile(null); }} className="rounded-md p-1 text-faint transition hover:bg-panel hover:text-ink"><X size={15} /></button>
         </div>
       ) : (
-        <button type="button" onClick={() => input.current?.click()} className="flex w-full flex-col items-center gap-1.5 px-4 py-7 text-center">
-          <Upload size={16} className="text-muted" />
-          <span className="text-[13px]">Upload PDFs or photos</span>
-          <span className="text-[12px] text-faint">Scans and phone photos accepted, up to 25 MB</span>
+        <button type="button" onClick={() => input.current?.click()} className="flex w-full items-center justify-center gap-2 px-4 py-3 text-[13px] text-muted transition hover:text-ink">
+          <Upload size={15} />
+          Choose files
         </button>
       )}
     </div>

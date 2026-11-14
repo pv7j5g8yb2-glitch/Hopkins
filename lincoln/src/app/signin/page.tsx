@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 const ERR: Record<string, string> = {
   invalid: "Email or password is incorrect.",
   limited: "Too many attempts. Try again in 15 minutes.",
-  expired: "The sign in expired. Start again.",
-  provider: "Sign in with Google or Microsoft could not be completed.",
-  linked: "This email already has a Lincoln account. Sign in with the password, then connect Google or Microsoft in Integrations.",
+  expired: "Sign in expired. Try again.",
+  provider: "Sign in failed.",
+  linked: "An account with this email exists. Sign in with its password.",
 };
 
 export default async function SignIn({ searchParams }: { searchParams: Promise<{ error?: string; code?: string; reset?: string; deleted?: string }> }) {
@@ -24,7 +24,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
     >
       {error && ERR[error] && <Notice>{ERR[error]}{code ? <span className="mt-1 block font-mono text-[11.5px] opacity-80">{code.replace(/[^\w.-]/g, "").slice(0, 40)}</span> : null}</Notice>}
       {reset && <Notice tone="ok">Password updated.</Notice>}
-      {deleted && <Notice tone="ok">The firm and all of its data have been deleted.</Notice>}
+      {deleted && <Notice tone="ok">Firm deleted.</Notice>}
       <SocialButtons />
       <form action={signIn} className="flex flex-col gap-4">
         <label className="block"><span className={fieldLabel}>Email address</span><input name="email" type="email" required autoComplete="email" placeholder="you@example.com" className={field} /></label>

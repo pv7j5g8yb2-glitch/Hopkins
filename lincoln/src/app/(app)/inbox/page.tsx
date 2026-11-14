@@ -20,8 +20,8 @@ export default async function InboxPage() {
                 <span className="ml-auto text-faint">{m.state === "needs_approval" ? <Link href="/approvals" className="font-medium text-ink">Awaiting approval</Link> : m.direction === "in" ? (m.state === "reading" ? "Reading" : m.state === "unsure" ? <span className="font-medium text-ink">Not sorted</span> : "Received") : m.state === "approved" ? "Approved, not sent" : "Sent"} · {ago(m.at)}</span>
               </div>
               <div className="mt-1 text-[13.5px]">{m.subject}</div>
-              <p className="mt-0.5 line-clamp-2 max-w-[760px] text-[13px] leading-relaxed text-muted">{m.body}</p>
-              {m.lincoln_note && <p className="mt-2 max-w-[760px] border-l border-ink pl-3 text-[12.5px] leading-relaxed">{m.lincoln_note}</p>}
+              <p className="mt-0.5 line-clamp-1 max-w-[760px] text-[13px] leading-relaxed text-muted">{m.body}</p>
+              {m.lincoln_note && <p className="mt-1.5 line-clamp-1 max-w-[760px] text-[12.5px] text-faint">{m.lincoln_note}</p>}
             </li>
           ))}
         </ul>

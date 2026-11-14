@@ -70,7 +70,6 @@ export default async function CasePage({ params, searchParams }: { params: Promi
           <>
             <p className="text-[14.5px] leading-relaxed">{c.summary}</p>
             {c.note && <p className="mt-2 text-[13px] text-risk">{c.note}</p>}
-            {c.waiting_on && <p className="mt-1.5 text-[13px] text-muted">Awaiting {c.waiting_on}</p>}
           </>
         )}
       </div>
@@ -82,7 +81,6 @@ export default async function CasePage({ params, searchParams }: { params: Promi
               <Link href={`/approvals?id=${a.id}`} className="group flex items-center gap-3 px-4 py-3 transition hover:bg-side">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
                 <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{a.title}</span>
-                <span className="hidden text-[12.5px] text-muted sm:block">For review</span>
                 <ChevronRight size={15} className="shrink-0 text-faint transition group-hover:text-ink" />
               </Link>
             </li>
@@ -173,7 +171,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
       )}
       {tab === "documents" && (docs.length === 0 ? none : (
         <>
-          <p className="mb-3 text-[12.5px] text-faint">{c.pages} pages · {docs.length} documents{docs.some((d) => d.is_scan) ? ` · ${docs.filter((d) => d.is_scan).length} scanned` : ""}</p>
+          <p className="mb-3 text-[12.5px] text-faint">{c.pages} pages · {docs.length} documents</p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-[13px]">
               <thead><tr className="border-b border-line text-left text-[12px] text-faint"><th className="w-9 py-2 font-normal">No.</th><th className="px-3 font-normal">Document</th><th className="px-3 font-normal">Pages</th><th className="px-3 font-normal">Source</th><th className="py-2 pl-3 font-normal">Assessment</th></tr></thead>
@@ -241,7 +239,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
           <div>
             {llmConfigured() && c.pages > 0 && !c.processing && (
               <form action={requestDraft.bind(null, id)} className="mb-6 flex max-w-[640px] gap-2">
-                <input name="request" required maxLength={600} placeholder="New draft: cover letter, RFE response, declaration" className={field} />
+                <input name="request" required maxLength={600} placeholder="New draft" className={field} />
                 <button className={btn.primary}>Draft</button>
               </form>
             )}
@@ -251,7 +249,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
               </div>
             )}
             {!dr || !L ? (
-              <Empty>{decisions ? <>The support letter is drafted once the strategy decisions are recorded. <Link href={`/approvals?id=${decisions.id}`} className="text-ink underline underline-offset-4">Open decisions</Link></> : "No drafts"}</Empty>
+              <Empty>{decisions ? <>Awaiting strategy decisions. <Link href={`/approvals?id=${decisions.id}`} className="text-ink underline underline-offset-4">Open decisions</Link></> : "No drafts"}</Empty>
             ) : dr.status === "drafting" ? (
               <div className="py-6"><Refresher /><p className="text-[14px]">Drafting</p><div className="mt-3 h-[3px] w-full max-w-[320px] overflow-hidden rounded-full bg-line"><div className="sweep h-full w-1/3 rounded-full bg-ink" /></div></div>
             ) : dr.status === "failed" ? (

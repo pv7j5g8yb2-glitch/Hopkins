@@ -2,11 +2,11 @@ import CaseComposer from "@/components/CaseComposer";
 import { requireUser } from "@/lib/session";
 
 const ERRORS: Record<string, string> = {
-  size: "The files exceed 25 MB.",
-  type: "Only PDFs and photos (JPEG, PNG, WebP, HEIC) are accepted.",
-  sample: "Cases cannot be opened in the shared sample workspace.",
+  size: "25 MB max.",
+  type: "PDFs and photos only.",
+  sample: "Not available in the sample workspace.",
   model: "Lincoln's model is not connected.",
-  failed: "The case could not be opened. Try again in a moment.",
+  failed: "Could not open the case. Try again.",
 };
 
 export default async function NewCase({ searchParams }: { searchParams: Promise<{ error?: string }> }) {

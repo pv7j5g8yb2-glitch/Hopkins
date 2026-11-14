@@ -73,10 +73,9 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
     <div className="mb-6 flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-1 text-[13px] text-muted">
         <Link href={scope ? `/cases/${scope.id}` : "/"} aria-label="Back" className="-ml-1.5 rounded-lg p-1.5 transition hover:bg-panel hover:text-ink md:hidden"><ChevronLeft size={18} /></Link>
-        <span className="truncate">{scope ? <Link href={`/cases/${scope.id}`} className="hover:text-ink">{scope.name}</Link> : "Assistant"}</span>
       </div>
       {msgs.length > 0 && (
-        <button onClick={() => start(async () => { await clearChat(scope?.id ?? null); setMsgs([]); setError(null); })} className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] text-muted transition hover:bg-panel hover:text-ink"><SquarePen size={13} /> New chat</button>
+        <button onClick={() => start(async () => { await clearChat(scope?.id ?? null); setMsgs([]); setError(null); })} aria-label="New chat" title="New chat" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-panel hover:text-ink"><SquarePen size={16} /></button>
       )}
     </div>
   );

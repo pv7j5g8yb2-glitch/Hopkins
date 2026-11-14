@@ -1,10 +1,9 @@
 import clsx from "clsx";
 import { btn } from "./ui";
-import { disconnect, newInboundAddress, setTeamsChannel } from "@/lib/actions";
+import { disconnect, setTeamsChannel } from "@/lib/actions";
 import { PROVIDERS, checkHealth, connectionsOf, settingsOf, teamsChannels } from "@/lib/integrations";
-import { Check, CircleAlert } from "lucide-react";
-import { ago } from "@/lib/format";
-import { isAdmin, type User, type Firm } from "@/lib/session";
+import { CircleAlert } from "lucide-react";
+import type { User, Firm } from "@/lib/session";
 
 /** Brand logos live in /public/logos. Shown at a fixed size inside a soft tile. */
 export function Logo({ name, size = 28 }: { name: string; size?: number }) {
@@ -40,7 +39,7 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
   const ms = conns.find((c) => c.provider === "microsoft");
   let channels: { teamId: string; channelId: string; name: string }[] = [];
   if (ms) { try { channels = await teamsChannels(ms); } catch { channels = []; } }
-  const problem = error ? ({ google: "Google is not configured on this server.", microsoft: "Microsoft is not configured on this server.", state: "The sign in expired. Try again.", connect: "The sign in was not completed.", sample: "Accounts cannot be connected to the shared sample workspace." } as Record<string, string>)[error] : null;
+  const problem = error ? ({ google: "Google is not configured on this server.", microsoft: "Microsoft is not configured on this server.", state: "The sign in expired. Try again.", connect: "The sign in was not completed.", sample: "Not available in the sample workspace." } as Record<string, string>)[error] : null;
 
   return (
     <div>
@@ -54,7 +53,7 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
                   <Logo name={p.name} size={26} />
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-medium">{p.name}</span>
-                    <span className="block truncate text-[12px] text-faint">{c ? `${c.email}${c.last_check ? ` · checked ${ago(c.last_check)}` : ""}` : p.id === "google" ? "Gmail and Google Workspace" : "Microsoft 365 and Outlook.com"}</span>
+                    {c && <span className="block truncate text-[12px] text-faint">{c.email}</span>}
                   </span>
                   {c ? (
                     <form action={disconnect}><input type="hidden" name="provider" value={p.id} /><button className={btn.ghost}>Disconnect</button></form>
@@ -64,19 +63,11 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
                     <span className="text-[12px] text-faint">Not configured</span>
                   )}
                 </div>
-                {c && health[p.id] && (
-                  <div className="mt-4 border-t border-line pt-3">
-                    {health[p.id].map((h) => (
-                      <div key={h.service} className="flex items-center gap-2 py-1 text-[12.5px]">
-                        {h.ok ? <Check size={14} className="shrink-0 text-ink" /> : <CircleAlert size={14} className="shrink-0 text-risk" />}
-                        <span className="flex-1">{h.service}</span>
-                        {!h.ok && <span className="truncate text-faint">{h.note}</span>}
-                      </div>
-                    ))}
-                    <div className="mt-2 flex gap-4 text-[12.5px]">
-                      {health[p.id].some((h) => h.note === "Permission not granted") && <a href={`/api/connect/${p.id}`} className="font-medium text-ink underline underline-offset-4">Grant missing permissions</a>}
-                      <a href="/integrations?recheck=1" className="text-muted underline decoration-line underline-offset-4 hover:text-ink">Check again</a>
-                    </div>
+                {c && health[p.id]?.some((h) => !h.ok) && (
+                  <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-3 text-[12.5px]">
+                    <CircleAlert size={14} className="shrink-0 text-risk" />
+                    <span className="min-w-0 flex-1 text-muted">{health[p.id].filter((h) => !h.ok).map((h) => h.service).join(", ")}</span>
+                    <a href={`/api/connect/${p.id}`} className="font-medium text-ink underline underline-offset-4">Reconnect</a>
                   </div>
                 )}
                 {!c && <div className="mt-4 flex flex-wrap gap-2">
@@ -91,7 +82,7 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
                 {c && p.id === "microsoft" && (
                   <form action={setTeamsChannel} className="mt-4 flex items-center gap-2">
                     <select name="channel" defaultValue={settingsOf(c).teams ? `${settingsOf(c).teams!.teamId}|${settingsOf(c).teams!.channelId}|${settingsOf(c).teams!.name}` : ""} className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-card px-2 text-[12.5px] outline-none focus:border-ink">
-                      <option value="">Teams notices off</option>
+                      <option value="">Teams off</option>
                       {channels.map((ch) => <option key={ch.channelId} value={`${ch.teamId}|${ch.channelId}|${ch.name}`}>{ch.name}</option>)}
                     </select>
                     <button className={btn.secondary}>Save</button>
@@ -101,43 +92,20 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
             );
           })}
         </div>
-        {connected && <p className="mt-3 text-[13px] text-muted">Connected. New mail is read automatically from now on.</p>}
         {problem && <p className="mt-3 text-[13px] text-risk">{problem}</p>}
       </section>
 
-      {isAdmin(user.role) && !firm.demo && (
-        <section className="mb-10">
-          <h2 className="mb-1 text-[13px] font-medium">Forwarding address</h2>
-          <div className="border-t border-line py-3">
-            {inbound ? (
-              <>
-                <p className="mb-2 break-all rounded-lg bg-side px-3 py-2 font-mono text-[12px]">{`${process.env.APP_URL ?? ""}/api/inbound/${inbound}`}</p>
-                <p className="text-[12px] text-faint">Shown once. For a forwarding service in Postmark inbound format.</p>
-              </>
-            ) : (
-              <form action={newInboundAddress} className="flex items-center justify-between gap-4">
-                <span className="text-[12.5px] text-muted">For mail hosted outside Google and Microsoft. A new address disables the previous one.</span>
-                <button className={btn.secondary}>Issue address</button>
-              </form>
-            )}
-          </div>
-        </section>
-      )}
-
-      {PLANNED.map(([group, items]) => (
-        <section key={group} className="mb-8">
-          <h2 className="mb-1 text-[13px] font-medium">{group}</h2>
-          <div className="border-t border-line">
-            {items.map(([name, what]) => (
-              <div key={name} className="flex items-center gap-3 border-b border-line py-3">
-                <Logo name={name} size={24} />
-                <span className="min-w-0 flex-1"><span className="block text-[13px]">{name}</span><span className="block text-[12px] text-faint">{what}</span></span>
-                <span className="text-[12px] text-faint">Planned</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+      <section>
+        <h2 className="mb-1 text-[13px] font-medium">Planned</h2>
+        <div className="grid border-t border-line sm:grid-cols-2 sm:gap-x-10">
+          {PLANNED.flatMap(([, items]) => items).map(([name]) => (
+            <div key={name} className="flex items-center gap-3 border-b border-line py-2.5">
+              <Logo name={name} size={22} />
+              <span className="text-[13px]">{name}</span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

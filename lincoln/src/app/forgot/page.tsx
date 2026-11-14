@@ -3,7 +3,7 @@ import AuthShell, { Notice, field, submit } from "@/components/AuthShell";
 import { requestReset } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
-const ERR: Record<string, string> = { limited: "Too many requests. Try again later.", expired: "That reset link has expired or was already used." };
+const ERR: Record<string, string> = { limited: "Too many requests. Try again later.", expired: "Link expired." };
 
 export default async function Forgot({ searchParams }: { searchParams: Promise<{ error?: string; sent?: string; preview?: string }> }) {
   const { error, sent, preview } = await searchParams;
@@ -12,7 +12,7 @@ export default async function Forgot({ searchParams }: { searchParams: Promise<{
       {error && ERR[error] && <Notice>{ERR[error]}</Notice>}
       {sent ? (
         <>
-          <Notice tone="ok">If an account exists for that email, a reset link has been issued. It is valid for one hour.</Notice>
+          <Notice tone="ok">If the account exists, a reset link is on its way.</Notice>
           {preview && (
             <p className="rounded-xl border border-dashed border-edge bg-card px-3.5 py-3 text-[12.5px] leading-relaxed text-muted">
               Email delivery is not connected in this environment. Preview link:{" "}

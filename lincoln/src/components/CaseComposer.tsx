@@ -16,11 +16,6 @@ function Send({ ready }: { ready: boolean }) {
   );
 }
 
-function Working() {
-  const { pending } = useFormStatus();
-  return pending ? <p className="fade-in mt-3 text-center text-[12.5px] text-faint">Opening the case</p> : null;
-}
-
 /** One box: what the case is, and the client's files if there are any. Enter sends. */
 export default function CaseComposer() {
   const form = useRef<HTMLFormElement>(null);
@@ -91,7 +86,6 @@ export default function CaseComposer() {
         </div>
       </div>
       <input ref={input} type="file" name="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => { const picked = Array.from(e.target.files ?? []); sync([...files, ...picked].slice(0, 40)); }} />
-      <Working />
     </form>
   );
 }
