@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   jar.delete("lincoln_oauth");
   const [mode, p, state] = expected.split(".");
   const code = url.searchParams.get("code");
-  if (!isProvider(provider) || p !== provider || !code || !state || url.searchParams.get("state") !== state) return go(mode === "auth" ? "/signin?error=provider" : "/settings?tab=integrations&error=state");
+  if (!isProvider(provider) || p !== provider || !code || !state || url.searchParams.get("state") !== state) return go(mode === "auth" ? "/signin?error=provider" : "/integrations?error=state");
 
   if (mode === "auth") {
     try {
@@ -36,13 +36,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
 
   const s = await currentUser();
   if (!s) return go("/signin");
-  if (s.firm.demo) return go("/settings?tab=integrations&error=sample");
+  if (s.firm.demo) return go("/integrations?error=sample");
   try {
     const email = await connect(provider, s.firm.id, s.user.id, code);
     await securityEvent(s.firm.id, s.user.id, "connected", `${provider} ${email}`);
-    return go(`/settings?tab=integrations&connected=${provider}`);
+    return go(`/integrations?connected=${provider}`);
   } catch (e) {
     console.error("Connection failed", provider, e instanceof Error ? e.message : e);
-    return go("/settings?tab=integrations&error=connect");
+    return go("/integrations?error=connect");
   }
 }

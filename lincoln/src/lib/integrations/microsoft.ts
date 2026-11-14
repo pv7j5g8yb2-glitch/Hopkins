@@ -38,7 +38,7 @@ export async function exchange(code: string) {
   const upn = (me.userPrincipalName ?? "").toLowerCase();
   // The mail attribute can be set by any tenant administrator, so it never identifies an account (the
   // "nOAuth" problem). The user principal name has to be on a domain the tenant has verified.
-  return { email: (me.mail ?? me.userPrincipalName ?? "").toLowerCase(), accountEmail: upn.includes("@") && !upn.includes("#ext#") ? upn : "", subject: claims.oid || me.id ? `${claims.tid ?? "consumer"}:${claims.oid ?? me.id}` : "", name: me.displayName ?? "", refresh: t.refresh_token ?? "", access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
+  return { email: (me.mail ?? me.userPrincipalName ?? "").toLowerCase(), accountEmail: upn.includes("@") && !upn.includes("#ext#") ? upn : "", subject: claims.oid || me.id ? `${claims.tid ?? "consumer"}:${claims.oid ?? me.id}` : "", name: me.displayName ?? "", granted: scopesOf(t.access_token), refresh: t.refresh_token ?? "", access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
 }
 
 async function access(c: Connection) {
@@ -160,4 +160,34 @@ export async function subscribe(c: Connection) {
   }
   const r = await call<{ id: string; expirationDateTime: string }>(c, "/subscriptions", { method: "POST", body: JSON.stringify({ changeType: "created", notificationUrl: `${appUrl()}/api/push/microsoft`, resource: "me/mailFolders('Inbox')/messages", expirationDateTime: until, clientState: clientState(c) }) }, "Microsoft");
   db().prepare("UPDATE mailboxes SET settings = ? WHERE id = ?").run(JSON.stringify({ ...s, subId: r.id, subUntil: Date.parse(r.expirationDateTime) }), c.id);
+}
+
+/** Graph access tokens list the granted delegated permissions in their scp claim. */
+function scopesOf(accessToken: string) {
+  try { return String(JSON.parse(Buffer.from(accessToken.split(".")[1] ?? "", "base64url").toString()).scp ?? ""); } catch { return ""; }
+}
+
+export type Health = { service: string; ok: boolean; note?: string }[];
+
+export async function health(c: Connection): Promise<Health> {
+  const granted = settingsOf(c).granted ?? "";
+  const has = (s: string) => !granted || granted.split(/\s+/).some((x) => x.toLowerCase() === s.toLowerCase());
+  const probe = async (service: string, path: string, scope: string, personal?: string) => {
+    if (!has(scope)) return { service, ok: false, note: "Permission not granted" };
+    try { await call(c, path); return { service, ok: true }; } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed";
+      return { service, ok: false, note: personal && / 40[0134]/.test(msg) ? personal : msg };
+    }
+  };
+  const out: Health = [
+    await probe("Outlook", "/me/mailFolders/inbox?$select=id", "Mail.ReadWrite"),
+    { service: "Sending", ok: has("Mail.Send"), note: has("Mail.Send") ? undefined : "Permission not granted" },
+    await probe("Calendar", "/me/events?$top=1&$select=id", "Calendars.ReadWrite"),
+    await probe("OneDrive, Word, Excel, PowerPoint", "/me/drive?$select=id", "Files.ReadWrite.All"),
+    await probe("SharePoint", "/sites?search=*&$top=1&$select=id", "Sites.Read.All", "Work accounts only"),
+    await probe("Teams", "/me/joinedTeams?$select=id", "Team.ReadBasic.All", "Work accounts only"),
+  ];
+  const s = settingsOf(c);
+  out.push({ service: "Instant mail", ok: Boolean(s.subId && s.subUntil && s.subUntil > Date.now()), note: s.subId ? undefined : "Not set up yet; mail is checked every 5 minutes" });
+  return out;
 }

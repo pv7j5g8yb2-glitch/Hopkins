@@ -1,7 +1,8 @@
 import clsx from "clsx";
 import { btn } from "./ui";
 import { disconnect, newInboundAddress, setTeamsChannel } from "@/lib/actions";
-import { PROVIDERS, connectionsOf, settingsOf, teamsChannels } from "@/lib/integrations";
+import { PROVIDERS, checkHealth, connectionsOf, settingsOf, teamsChannels } from "@/lib/integrations";
+import { Check, CircleAlert } from "lucide-react";
 import { ago } from "@/lib/format";
 import { isAdmin, type User, type Firm } from "@/lib/session";
 
@@ -33,8 +34,9 @@ const PLANNED: [string, [string, string][]][] = [
   ["Government and finance", [["USCIS case status", "Receipt status, through the official USCIS API"], ["LawPay", "Payments"], ["QuickBooks", "Accounts"], ["Zapier", "Other tools"]]],
 ];
 
-export default async function IntegrationsPanel({ user, firm, connected, error, inbound }: { user: User; firm: Firm; connected?: string; error?: string; inbound?: string }) {
+export default async function IntegrationsPanel({ user, firm, connected, error, inbound, recheck }: { user: User; firm: Firm; connected?: string; error?: string; inbound?: string; recheck?: boolean }) {
   const conns = connectionsOf(firm.id, user.id);
+  const health = Object.fromEntries(await Promise.all(conns.map(async (c) => [c.provider, await checkHealth(c, recheck || Boolean(connected))] as const)));
   const ms = conns.find((c) => c.provider === "microsoft");
   let channels: { teamId: string; channelId: string; name: string }[] = [];
   if (ms) { try { channels = await teamsChannels(ms); } catch { channels = []; } }
@@ -62,14 +64,29 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
                     <span className="text-[12px] text-faint">Not configured</span>
                   )}
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
+                {c && health[p.id] && (
+                  <div className="mt-4 border-t border-line pt-3">
+                    {health[p.id].map((h) => (
+                      <div key={h.service} className="flex items-center gap-2 py-1 text-[12.5px]">
+                        {h.ok ? <Check size={14} className="shrink-0 text-ink" /> : <CircleAlert size={14} className="shrink-0 text-risk" />}
+                        <span className="flex-1">{h.service}</span>
+                        {!h.ok && <span className="truncate text-faint">{h.note}</span>}
+                      </div>
+                    ))}
+                    <div className="mt-2 flex gap-4 text-[12.5px]">
+                      {health[p.id].some((h) => h.note === "Permission not granted") && <a href={`/api/connect/${p.id}`} className="font-medium text-ink underline underline-offset-4">Grant missing permissions</a>}
+                      <a href="/integrations?recheck=1" className="text-muted underline decoration-line underline-offset-4 hover:text-ink">Check again</a>
+                    </div>
+                  </div>
+                )}
+                {!c && <div className="mt-4 flex flex-wrap gap-2">
                   {p.services.map((s) => (
                     <span key={s} className={clsx("flex items-center gap-1.5 rounded-full border px-2 py-1 text-[12px]", c ? "border-line text-ink" : "border-line text-muted")}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`/logos/${LOGO_FILE[s]}`} alt="" width={14} height={14} className="h-[14px] w-[14px] object-contain" />{s}
                     </span>
                   ))}
-                </div>
+                </div>}
                 {c?.last_error && <p className="mt-3 text-[12px] text-risk">{c.last_error}</p>}
                 {c && p.id === "microsoft" && (
                   <form action={setTeamsChannel} className="mt-4 flex items-center gap-2">

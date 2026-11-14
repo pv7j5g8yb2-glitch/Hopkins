@@ -44,10 +44,11 @@ async function store(p: Provider, firmId: string, userId: string, t: Exchanged) 
   const d = db();
   d.prepare("DELETE FROM mailboxes WHERE firm_id = ? AND user_id = ? AND provider = ?").run(firmId, userId, p);
   const id = uid();
-  d.prepare("INSERT INTO mailboxes (id, firm_id, user_id, provider, email, refresh_enc, access_enc, expires_at, created_at, settings) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '{}')").run(id, firmId, userId, p, t.email, seal(t.refresh), seal(t.access), t.expires, new Date().toISOString());
+  d.prepare("INSERT INTO mailboxes (id, firm_id, user_id, provider, email, refresh_enc, access_enc, expires_at, created_at, settings) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(id, firmId, userId, p, t.email, seal(t.refresh), seal(t.access), t.expires, new Date().toISOString(), JSON.stringify({ granted: t.granted }));
   const c = d.prepare("SELECT * FROM mailboxes WHERE id = ?").get(id) as Connection;
   const seen = d.prepare("INSERT OR IGNORE INTO inbound_seen (mailbox_id, msg_id) VALUES (?, ?)");
-  for (const m of await P[p].listInbox(c)) seen.run(id, m);
+  // A missing mail permission must not stop the sign in; the Integrations page shows what is missing.
+  try { for (const m of await P[p].listInbox(c)) seen.run(id, m); } catch (e) { d.prepare("UPDATE mailboxes SET last_error = ? WHERE id = ?").run(`Mail: ${e instanceof Error ? e.message : "error"}`.slice(0, 200), id); }
   try { await ensurePush(c); } catch (e) { d.prepare("UPDATE mailboxes SET last_error = ? WHERE id = ?").run(`Instant delivery not set up: ${e instanceof Error ? e.message : "error"}`.slice(0, 200), id); }
   return t.email;
 }
@@ -120,4 +121,14 @@ export async function signInWith(p: Provider, code: string): Promise<SignInResul
   linkIdentity(p, t.subject, userId);
   if (t.refresh) await store(p, firmId, userId, t);
   return { userId, firmId, created: true };
+}
+
+const healthCache = new Map<string, { at: number; value: import("./google").Health }>();
+/** Live check of every service on a connection, cached for five minutes. */
+export async function checkHealth(c: Connection, fresh = false) {
+  const hit = healthCache.get(c.id);
+  if (!fresh && hit && Date.now() - hit.at < 5 * 60_000) return hit.value;
+  const value = await Promise.race([P[c.provider].health(c), new Promise<import("./google").Health>((r) => setTimeout(() => r([{ service: "Check", ok: false, note: "Timed out" }]), 12_000))]);
+  healthCache.set(c.id, { at: Date.now(), value });
+  return value;
 }

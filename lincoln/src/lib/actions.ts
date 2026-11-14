@@ -397,7 +397,7 @@ export async function newInboundAddress() {
   if (!isAdmin(user.role) || firm.demo) return;
   const token = newToken();
   setKv(firm.id, "inbound_hash", sha(token));
-  redirect(`/settings?tab=integrations&inbound=${token}`);
+  redirect(`/integrations?inbound=${token}`);
 }
 
 /** PDFs and photos from a form, checked by content. "size" over 25 MB in total, "type" for anything else. */
@@ -463,7 +463,7 @@ export async function importFromCloud(caseId: string, provider: string, fileId: 
   const c = db().prepare("SELECT processing FROM cases WHERE firm_id = ? AND id = ?").get(firm.id, caseId) as { processing: number } | undefined;
   if (!c || c.processing || !isProvider(provider)) redirect(`/cases/${caseId}`);
   const conn = connection(firm.id, user.id, provider);
-  if (!conn) redirect("/settings?tab=integrations");
+  if (!conn) redirect("/integrations");
   const bytes = new Uint8Array(await download(conn, fileId));
   if (!fileKind(bytes) || bytes.length > 25 * 1024 * 1024) redirect(`/cases/${caseId}/import?from=${provider}&error=1`);
   db().prepare("UPDATE cases SET processing = 1, note = NULL WHERE firm_id = ? AND id = ?").run(firm.id, caseId);

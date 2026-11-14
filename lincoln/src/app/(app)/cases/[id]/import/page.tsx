@@ -24,7 +24,7 @@ export default async function ImportPage({ params, searchParams }: { params: Pro
     <div className="rise max-w-[720px]">
       <Link href={`/cases/${id}?tab=documents`} className="mb-5 inline-flex items-center gap-1 text-[12.5px] text-muted hover:text-ink"><ChevronLeft size={14} /> {c.client}</Link>
       <PageHead title={from === "google" ? "Import from Google Drive" : "Import from OneDrive and SharePoint"} />
-      {!conn ? <Empty><Link href="/settings?tab=integrations" className="text-ink underline underline-offset-4">Connect {from === "google" ? "Google" : "Microsoft"}</Link></Empty> : (
+      {!conn ? <Empty><Link href="/integrations" className="text-ink underline underline-offset-4">Connect {from === "google" ? "Google" : "Microsoft"}</Link></Empty> : (
         <>
           <form className="relative mb-5 max-w-[360px]">
             <input type="hidden" name="from" value={from} />

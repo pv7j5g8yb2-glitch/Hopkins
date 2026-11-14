@@ -18,7 +18,7 @@ export default async function Home() {
       <AskBox />
       {!firm.demo && (
         <p className="mt-3 text-center text-[12.5px] text-faint">
-          {mailbox ? <>Watching {mailbox.email}{mailbox.last_check ? `, checked ${ago(mailbox.last_check)}` : ""}</> : <>No mail account connected. <Link href="/settings?tab=integrations" className="text-ink underline underline-offset-4">Connect Google or Microsoft</Link></>}
+          {mailbox ? <>Watching {mailbox.email}{mailbox.last_check ? `, checked ${ago(mailbox.last_check)}` : ""}</> : <>No mail account connected. <Link href="/integrations" className="text-ink underline underline-offset-4">Connect Google or Microsoft</Link></>}
         </p>
       )}
 

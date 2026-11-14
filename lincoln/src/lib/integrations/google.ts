@@ -22,7 +22,7 @@ export function authUrl(state: string, mode: "auth" | "connect" = "connect") {
   return api(`https://accounts.google.com/o/oauth2/v2/auth?${q}`);
 }
 
-type Token = { access_token: string; refresh_token?: string; expires_in?: number; id_token?: string };
+type Token = { access_token: string; refresh_token?: string; expires_in?: number; id_token?: string; scope?: string };
 async function token(body: Record<string, string>) {
   const res = await fetch(api("https://oauth2.googleapis.com/token"), { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID!, client_secret: process.env.GOOGLE_CLIENT_SECRET!, ...body }) });
   return json<Token>(res, "Google");
@@ -33,7 +33,7 @@ export async function exchange(code: string) {
   const claims = JSON.parse(Buffer.from((t.id_token ?? "..").split(".")[1] ?? "", "base64url").toString() || "{}") as { email?: string; email_verified?: boolean; sub?: string; name?: string };
   const email = (claims.email ?? "").toLowerCase();
   // The id token comes straight from Google's token endpoint over TLS, so its claims are trusted as is.
-  return { email, accountEmail: claims.email_verified ? email : "", subject: claims.sub ?? "", name: claims.name ?? "", refresh: t.refresh_token ?? "", access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
+  return { email, accountEmail: claims.email_verified ? email : "", subject: claims.sub ?? "", name: claims.name ?? "", granted: t.scope ?? "", refresh: t.refresh_token ?? "", access: t.access_token, expires: Date.now() + (t.expires_in ?? 3000) * 1000 };
 }
 
 async function access(c: Connection) {
@@ -143,4 +143,25 @@ export async function watch(c: Connection) {
   if (s.watchUntil && s.watchUntil > Date.now() + 24 * 3600_000 * 5) return;
   const r = await call<{ historyId: string; expiration: string }>(c, `${GMAIL}/watch`, { method: "POST", body: JSON.stringify({ topicName: process.env.GOOGLE_PUBSUB_TOPIC, labelIds: ["INBOX"], labelFilterBehavior: "INCLUDE" }) }, "Gmail");
   db().prepare("UPDATE mailboxes SET settings = ? WHERE id = ?").run(JSON.stringify({ ...s, watchUntil: Number(r.expiration) }), c.id);
+}
+
+export type Health = { service: string; ok: boolean; note?: string }[];
+const has = (granted: string, scope: string) => granted.split(/\s+/).includes(`https://www.googleapis.com/auth/${scope}`);
+
+/** Calls each service once, read only, and checks the permissions that cannot be tried without side effects. */
+export async function health(c: Connection): Promise<Health> {
+  const granted = settingsOf(c).granted ?? "";
+  const probe = async (service: string, url: string, scope: string) => {
+    if (granted && !has(granted, scope)) return { service, ok: false, note: "Permission not granted" };
+    try { await call(c, url); return { service, ok: true }; } catch (e) { return { service, ok: false, note: e instanceof Error ? e.message : "Failed" }; }
+  };
+  const out: Health = [
+    await probe("Gmail", `${GMAIL}/profile`, "gmail.readonly"),
+    granted ? { service: "Sending", ok: has(granted, "gmail.send"), note: has(granted, "gmail.send") ? undefined : "Permission not granted" } : { service: "Sending", ok: true },
+    await probe("Drive", "https://www.googleapis.com/drive/v3/files?pageSize=1&fields=files(id)", "drive.readonly"),
+    granted ? { service: "Docs, Sheets, Slides", ok: has(granted, "drive.file"), note: has(granted, "drive.file") ? undefined : "Permission not granted" } : { service: "Docs, Sheets, Slides", ok: true },
+    await probe("Calendar", "https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=1", "calendar.events"),
+  ];
+  out.push(pushConfigured() ? { service: "Instant mail", ok: Boolean(settingsOf(c).watchUntil && settingsOf(c).watchUntil! > Date.now()), note: settingsOf(c).watchUntil ? undefined : "Not set up yet; mail is checked every 5 minutes" } : { service: "Instant mail", ok: false, note: "Off; mail is checked every 5 minutes" });
+  return out;
 }

@@ -40,7 +40,7 @@ export async function GET(req: Request) {
   const site = req.headers.get("sec-fetch-site");
   if (site && site !== "same-origin" && site !== "none") return new Response("Forbidden", { status: 403 });
   const conn = connection(F, s.user.id, to);
-  if (!conn) return NextResponse.redirect(new URL("/settings?tab=integrations", req.url));
+  if (!conn) return NextResponse.redirect(new URL("/integrations", req.url));
   try {
     const link = await upload(conn, name, kind, data);
     const app = to === "google" ? { document: "Google Docs", spreadsheet: "Google Sheets", presentation: "Google Slides" }[kind] : { document: "Word", spreadsheet: "Excel", presentation: "PowerPoint" }[kind];
