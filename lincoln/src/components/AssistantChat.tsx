@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useRef, useState, useTransition } from "react";
-import { SquarePen } from "lucide-react";
+import { SquarePen, ChevronLeft } from "lucide-react";
 import Composer from "./Composer";
 import { clearChat } from "@/lib/actions";
 
@@ -71,7 +71,10 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
 
   const head = (
     <div className="mb-6 flex items-center justify-between gap-3">
-      <div className="min-w-0 truncate text-[13px] text-muted">{scope ? <Link href={`/cases/${scope.id}`} className="hover:text-ink">{scope.name}</Link> : "Assistant"}</div>
+      <div className="flex min-w-0 items-center gap-1 text-[13px] text-muted">
+        <Link href={scope ? `/cases/${scope.id}` : "/"} aria-label="Back" className="-ml-1.5 rounded-lg p-1.5 transition hover:bg-panel hover:text-ink md:hidden"><ChevronLeft size={18} /></Link>
+        <span className="truncate">{scope ? <Link href={`/cases/${scope.id}`} className="hover:text-ink">{scope.name}</Link> : "Assistant"}</span>
+      </div>
       {msgs.length > 0 && (
         <button onClick={() => start(async () => { await clearChat(scope?.id ?? null); setMsgs([]); setError(null); })} className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] text-muted transition hover:bg-panel hover:text-ink"><SquarePen size={13} /> New chat</button>
       )}
@@ -81,7 +84,7 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
   if (msgs.length === 0) {
     return (
       <div className="mx-auto max-w-[680px]">
-        {scope && head}
+        {scope ? head : <Link href="/" aria-label="Back" className="-ml-1.5 inline-flex rounded-lg p-1.5 text-muted md:hidden"><ChevronLeft size={18} /></Link>}
         <div className="flex min-h-[62dvh] flex-col justify-center">
           <h1 className="wordmark mb-8 text-center text-[40px] leading-none md:text-[46px]">Lincoln</h1>
           {box}
@@ -101,7 +104,7 @@ export default function AssistantChat({ initial, q, connected, scope }: { initia
         {error && <p className="text-[13px] text-risk">{error}</p>}
         <div ref={end} />
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white from-70% to-transparent px-4 pb-5 pt-8 md:left-[248px] md:px-12">
+      <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-canvas from-70% to-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 md:left-[248px] md:px-12">
         <div className="mx-auto max-w-[720px]">{box}</div>
       </div>
     </div>

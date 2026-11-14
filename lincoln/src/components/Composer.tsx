@@ -15,7 +15,7 @@ export default function Composer({ value, onChange, onSend, busy, placeholder = 
     el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
   }, [value]);
   return (
-    <form onSubmit={(e) => { e.preventDefault(); if (!busy && value.trim()) go(); }} className="flex items-end gap-2 rounded-[22px] border border-line bg-white py-2 pl-4 pr-2 shadow-[0_2px_12px_-6px_rgba(22,22,20,0.18)] transition focus-within:border-[#c9c5bd]">
+    <form onSubmit={(e) => { e.preventDefault(); if (!busy && value.trim()) go(); }} className="flex items-end gap-2 rounded-[22px] border border-line bg-card py-2 pl-4 pr-2 shadow-[0_2px_12px_-6px_rgba(22,22,20,0.18)] transition focus-within:border-edge">
       <textarea
         ref={ref}
         rows={1}
@@ -31,7 +31,7 @@ export default function Composer({ value, onChange, onSend, busy, placeholder = 
         placeholder={placeholder}
         className="block max-h-[220px] min-h-[24px] flex-1 resize-none bg-transparent py-[5px] text-[15px] leading-6 outline-none placeholder:text-faint"
       />
-      <button key={fly} disabled={busy || !value.trim()} aria-label="Send" className={`mb-px flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-white transition-colors hover:bg-black ${fly ? "send-pop" : ""} ${busy || !value.trim() ? "opacity-20" : ""}`}><ArrowUp size={16} /></button>
+      <button key={fly} disabled={busy || !value.trim()} aria-label="Send" className={`mb-px flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink text-canvas transition-colors hover:opacity-90 ${fly ? "send-pop" : ""} ${busy || !value.trim() ? "opacity-20" : ""}`}><ArrowUp size={16} /></button>
     </form>
   );
 }

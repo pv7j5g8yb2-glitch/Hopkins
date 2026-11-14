@@ -57,7 +57,7 @@ export default function DraftView({ caseId, title, subtitle, sections, facts, ca
     g.k === "fact" ? (
       <span key={k} tabIndex={0} onMouseEnter={(e) => g.page && show(g.page, g.doc, e.currentTarget)} onMouseLeave={hide} onClick={(e) => g.page && show(g.page, g.doc, e.currentTarget)} className={clsx("cursor-help decoration-ink/35 decoration-dotted underline-offset-[5px]", focus ? "text-faint" : "underline")}>{g.t}</span>
     ) : g.k === "call" ? (
-      <mark key={k} className="rounded-[2px] bg-[#ecebe6] px-0.5 text-ink">{g.t}</mark>
+      <mark key={k} className="rounded-[2px] bg-panel px-0.5 text-ink">{g.t}</mark>
     ) : g.k === "note" ? (
       <span key={k} className="font-sans text-[12.5px] italic text-ink"> [Attorney: {g.t.trim()}]</span>
     ) : generic ? (
@@ -73,11 +73,11 @@ export default function DraftView({ caseId, title, subtitle, sections, facts, ca
           <div className="truncate text-[14px] font-medium">{title}</div>
           <div className="text-[12.5px] text-faint">{status === "approved" ? "Approved" : "Draft for review"} · {facts} sourced facts{calls ? ` · ${calls} judgement calls` : ""}{notes ? ` · ${notes} attorney notes` : ""}</div>
         </div>
-        <button onClick={() => setFocus((v) => !v)} className={clsx("h-8 rounded-lg border px-3 text-[12.5px] font-medium transition", focus ? "border-ink bg-ink text-white" : "border-line bg-white hover:bg-panel")}>Review mode</button>
+        <button onClick={() => setFocus((v) => !v)} className={clsx("h-8 rounded-lg border px-3 text-[12.5px] font-medium transition", focus ? "border-ink bg-ink text-canvas" : "border-line bg-card hover:bg-panel")}>Review mode</button>
         <ExportMenu items={exports} label="Open" />
       </div>
 
-      <article className="mx-auto max-w-[740px] rounded-xl border border-line bg-white px-5 py-9 shadow-[0_1px_3px_rgba(22,22,20,0.04)] md:px-14 md:py-14">
+      <article className="mx-auto max-w-[740px] rounded-xl border border-line bg-card px-5 py-9 shadow-[0_1px_3px_rgba(22,22,20,0.04)] md:px-14 md:py-14">
         <h2 className="serif mb-1 text-[22px] font-medium">{title}</h2>
         <p className="mb-10 text-[12.5px] text-faint">{subtitle}</p>
         {sections.map((s) => (
@@ -95,7 +95,7 @@ export default function DraftView({ caseId, title, subtitle, sections, facts, ca
       </article>
 
       {hover && (
-        <div className="rise fixed z-50 w-[340px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-line bg-white shadow-[0_16px_44px_-14px_rgba(22,22,20,0.35)]" style={{ left: hover.x, top: hover.y }} onMouseEnter={() => timer.current && clearTimeout(timer.current)} onMouseLeave={hide}>
+        <div className="rise fixed z-50 w-[340px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border border-line bg-card shadow-[0_16px_44px_-14px_rgba(22,22,20,0.35)]" style={{ left: hover.x, top: hover.y }} onMouseEnter={() => timer.current && clearTimeout(timer.current)} onMouseLeave={hide}>
           <div className="border-b border-line px-3.5 py-2">
             {hover.doc && <div className="truncate text-[12.5px] font-medium">{hover.doc}</div>}
             <div className="text-[11.5px] text-faint">Client file, page {hover.page}</div>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import clsx from "clsx";
-import { Blocks, BookOpen, ChevronsUpDown, CircleCheck, CircleHelp, FolderClosed, House, Inbox, LogOut, Menu, PanelLeft, Play, RotateCcw, Settings, SquarePen, X } from "lucide-react";
+import { Blocks, BookOpen, ChevronsUpDown, CircleCheck, CircleHelp, FolderClosed, House, Inbox, LogOut, PanelLeft, Play, RotateCcw, Settings, SquarePen } from "lucide-react";
 import { advanceDemo, resetDemoAction, signOut } from "@/lib/actions";
 import { Avatar } from "./ui";
 
@@ -18,7 +18,6 @@ type Props = {
 
 export default function Sidebar({ firm, user, review, recent, demo }: Props) {
   const path = usePathname();
-  const [open, setOpen] = useState(false);
   const [closed, setClosed] = useState(false);
   useEffect(() => {
     try { setClosed(localStorage.getItem("lincoln.sidebar") === "closed"); } catch { /* storage unavailable */ }
@@ -32,7 +31,6 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
   const [pending, start] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    setOpen(false);
     setMenu(false);
   }, [path]);
   useEffect(() => {
@@ -47,7 +45,7 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
   const item = (href: string, text: string, Icon: typeof Inbox, count?: number) => {
     const active = href === "/" ? path === "/" || path.startsWith("/assistant") : href === "/cases" ? path === "/cases" : path.startsWith(href);
     return (
-      <Link href={href} className={clsx("flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition", active ? "bg-ink/[0.06] font-medium text-ink" : "text-[#3d3b37] hover:bg-ink/[0.04]")}>
+      <Link href={href} className={clsx("flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition", active ? "bg-ink/[0.06] font-medium text-ink" : "text-ink/80 hover:bg-ink/[0.04]")}>
         <Icon size={15} strokeWidth={1.7} className="shrink-0" />
         <span className="flex-1 truncate">{text}</span>
         {count ? <span className="text-[12px] tabular-nums text-muted">{count}</span> : null}
@@ -60,8 +58,7 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
     <div className="flex h-full flex-col px-2.5 pb-2.5 pt-4">
       <div className="mb-4 flex items-center justify-between px-2.5">
         <Link href="/" className="wordmark text-[19px] leading-none">Lincoln</Link>
-        <button onClick={() => setOpen(false)} className="rounded-md p-1 text-muted md:hidden" aria-label="Close menu"><X size={18} /></button>
-        <button onClick={() => toggle(true)} className="hidden rounded-md p-1 text-muted transition hover:bg-ink/[0.05] hover:text-ink md:block" aria-label="Close sidebar"><PanelLeft size={17} strokeWidth={1.7} /></button>
+        <button onClick={() => toggle(true)} className="rounded-md p-1 text-muted transition hover:bg-ink/[0.05] hover:text-ink" aria-label="Close sidebar"><PanelLeft size={17} strokeWidth={1.7} /></button>
       </div>
       <nav className="flex flex-col gap-px">
         {item("/cases/new", "New case", SquarePen)}
@@ -77,7 +74,7 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
         <div className="scroll-thin mt-6 min-h-0 flex-1 overflow-y-auto">
           <div className="mb-1 px-2.5 text-[11.5px] text-faint">Recent</div>
           {recent.map((c) => (
-            <Link key={c.id} href={`/cases/${c.id}`} className={clsx("block truncate rounded-lg px-2.5 py-[6px] text-[13px] transition", path === `/cases/${c.id}` ? "bg-ink/[0.06] text-ink" : "text-[#3d3b37] hover:bg-ink/[0.04]")}>
+            <Link key={c.id} href={`/cases/${c.id}`} className={clsx("block truncate rounded-lg px-2.5 py-[6px] text-[13px] transition", path === `/cases/${c.id}` ? "bg-ink/[0.06] text-ink" : "text-ink/80 hover:bg-ink/[0.04]")}>
               {c.client}
             </Link>
           ))}
@@ -85,7 +82,7 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
       )}
       <div ref={menuRef} className="relative mt-auto pt-2">
         {menu && (
-          <div className="rise absolute inset-x-0 bottom-full z-10 mb-1 rounded-xl border border-line bg-white p-1 shadow-[0_10px_36px_-12px_rgba(22,22,20,0.28)]">
+          <div className="rise absolute inset-x-0 bottom-full z-10 mb-1 rounded-xl border border-line bg-card p-1 shadow-[0_10px_36px_-12px_rgba(22,22,20,0.28)]">
             <Link href="/settings" className={menuItem}><Settings size={14} strokeWidth={1.7} />Settings</Link>
             <Link href="/help" className={menuItem}><CircleHelp size={14} strokeWidth={1.7} />Help</Link>
             {demo && (
@@ -119,21 +116,8 @@ export default function Sidebar({ firm, user, review, recent, demo }: Props) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur md:hidden">
-        <Link href="/" className="wordmark text-[18px] leading-none">Lincoln</Link>
-        <button onClick={() => setOpen(true)} className="relative rounded-md p-1.5" aria-label="Open menu">
-          <Menu size={20} />
-          {review > 0 && <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-ink ring-2 ring-white" />}
-        </button>
-      </header>
       <aside className="sidebar-panel fixed inset-y-0 left-0 z-20 hidden w-[248px] border-r border-line bg-side md:block">{body}</aside>
       {closed && <button onClick={() => toggle(false)} aria-label="Open sidebar" className="fade-in fixed left-3 top-3 z-20 hidden rounded-lg p-2 text-muted transition hover:bg-ink/[0.05] hover:text-ink md:block"><PanelLeft size={17} strokeWidth={1.7} /></button>}
-      {open && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fade-in absolute inset-0 bg-ink/25" onClick={() => setOpen(false)} />
-          <aside className="drawer-in absolute inset-y-0 left-0 w-[280px] bg-side shadow-xl">{body}</aside>
-        </div>
-      )}
     </>
   );
 }

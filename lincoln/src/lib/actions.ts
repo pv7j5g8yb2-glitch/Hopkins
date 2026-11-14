@@ -19,7 +19,8 @@ import type { Question } from "./halasz";
 import { LIBRARY } from "./library";
 import { draftForCase, processCase } from "./intake";
 import { fileKind } from "./pdf";
-import { deliver } from "./agent";
+import { llmConfigured } from "./llm";
+import { deliver, takeInstruction } from "./agent";
 import { randomBytes } from "node:crypto";
 import { newSecret as newTotpSecret } from "./totp";
 import { seal as sealSecret } from "./secret";
@@ -285,28 +286,28 @@ export async function resetDemoAction() {
   redirect("/signin");
 }
 
-export async function createCase(form: FormData) {
+/** New case from one prompt: Lincoln reads what was typed and any files, then opens and works the case. */
+export async function startCase(form: FormData) {
   const { user, firm } = await requireUser();
-  const client = String(form.get("client") ?? "").trim().slice(0, 120);
-  const counterpart = String(form.get("counterpart") ?? "").trim().slice(0, 120) || null;
-  const code = String(form.get("type") ?? "").trim().slice(0, 40);
-  const fam = LIBRARY.find((f) => f.types.some(([c]) => c === code));
-  const family = fam?.name ?? "Other";
-  const typeName = fam?.types.find(([c]) => c === code)?.[1] ?? code;
-  if (!client || !code) redirect("/cases/new?error=fields");
+  const text = String(form.get("text") ?? "").trim().slice(0, 8000);
+  const names = form.getAll("file").filter((f): f is File => f instanceof File && f.size > 0).map((f) => f.name.slice(0, 120));
+  if (firm.demo) redirect("/cases/new?error=sample");
   const got = await uploads(form);
-  if (firm.demo && Array.isArray(got) && got.length) redirect("/cases/new?error=sample");
   if (got === "size") redirect("/cases/new?error=size");
   if (got === "type") redirect("/cases/new?error=type");
-  const pdf = got.length ? got : null;
-  const id = "c_" + uid();
-  const ref = `${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-  db().prepare(`INSERT INTO cases (id, firm_id, ref, client, counterpart, type_code, type_name, family, stage, state, waiting_on, summary, attorney_id, paralegal_id, opened_at, sensitive, pages, processing)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Intake', 'moving', NULL, ?, ?, ?, ?, ?, 0, ?)`).run(id, firm.id, ref, client, counterpart, code, typeName, family, pdf ? "Reading the client file." : "Opened. No client file yet.", user.id, user.id, now(), family === "Humanitarian" ? 1 : 0, pdf ? 1 : 0);
-  log(firm.id, id, user.name, "open", "Opened the case.");
-  if (pdf) void processCase(firm.id, id, pdf);
+  if (!text && !got.length) redirect("/cases/new");
+  if (!llmConfigured()) redirect("/cases/new?error=model");
+  let caseId: string | null = null;
+  try {
+    const r = await takeInstruction(firm.id, { id: user.id, name: user.name, role: user.role }, { text, files: got.map((data, i) => ({ name: names[i] ?? `file ${i + 1}`, data })), via: "app" });
+    caseId = r.caseId;
+    void r.work;
+  } catch {
+    redirect("/cases/new?error=failed");
+  }
   revalidatePath("/", "layout");
-  redirect(`/cases/${id}`);
+  if (!caseId) redirect(`/assistant?q=${encodeURIComponent(text)}`);
+  redirect(`/cases/${caseId}`);
 }
 
 export async function requestDraft(caseId: string, form: FormData) {

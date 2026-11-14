@@ -10,7 +10,7 @@ import { isAdmin, type User, type Firm } from "@/lib/session";
 export function Logo({ name, size = 28 }: { name: string; size?: number }) {
   const file = LOGO_FILE[name];
   return (
-    <span className="flex shrink-0 items-center justify-center rounded-[9px] border border-line bg-white" style={{ width: size + 8, height: size + 8 }}>
+    <span className="flex shrink-0 items-center justify-center rounded-[9px] border border-line bg-card" style={{ width: size + 8, height: size + 8 }}>
       {file
         ? // eslint-disable-next-line @next/next/no-img-element
           <img src={`/logos/${file}`} alt="" width={Math.round(size * 0.8)} height={Math.round(size * 0.8)} className="object-contain" style={{ width: Math.round(size * 0.8), height: Math.round(size * 0.8) }} />
@@ -49,7 +49,7 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
           {PROVIDERS.map((p) => {
             const c = conns.find((x) => x.provider === p.id);
             return (
-              <div key={p.id} className="rounded-2xl border border-line bg-white p-5">
+              <div key={p.id} className="rounded-2xl border border-line bg-card p-5">
                 <div className="flex items-center gap-3">
                   <Logo name={p.name} size={26} />
                   <span className="min-w-0 flex-1">
@@ -90,7 +90,7 @@ export default async function IntegrationsPanel({ user, firm, connected, error, 
                 {c?.last_error && <p className="mt-3 text-[12px] text-risk">{c.last_error}</p>}
                 {c && p.id === "microsoft" && (
                   <form action={setTeamsChannel} className="mt-4 flex items-center gap-2">
-                    <select name="channel" defaultValue={settingsOf(c).teams ? `${settingsOf(c).teams!.teamId}|${settingsOf(c).teams!.channelId}|${settingsOf(c).teams!.name}` : ""} className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-white px-2 text-[12.5px] outline-none focus:border-ink">
+                    <select name="channel" defaultValue={settingsOf(c).teams ? `${settingsOf(c).teams!.teamId}|${settingsOf(c).teams!.channelId}|${settingsOf(c).teams!.name}` : ""} className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-card px-2 text-[12.5px] outline-none focus:border-ink">
                       <option value="">Teams notices off</option>
                       {channels.map((ch) => <option key={ch.channelId} value={`${ch.teamId}|${ch.channelId}|${ch.name}`}>{ch.name}</option>)}
                     </select>

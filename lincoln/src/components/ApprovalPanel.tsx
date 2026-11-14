@@ -16,7 +16,7 @@ type Props = {
   message?: { party: string; party_role: string | null; subject: string; body: string } | null;
 };
 
-const box = "rounded-xl border border-line bg-white";
+const box = "rounded-xl border border-line bg-card";
 
 export default function ApprovalPanel({ id, caseId, kind, payload, message }: Props) {
   const [pending, start] = useTransition();
@@ -32,11 +32,11 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
     });
 
   const footer = (text: string, disabled = false) => (
-    <div className="sticky bottom-0 mt-6 flex flex-wrap items-center gap-2 border-t border-line bg-white/95 py-3 backdrop-blur">
-      <button disabled={pending || disabled} onClick={() => decide("approved")} className="flex h-9 items-center gap-1.5 rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition hover:bg-black active:scale-[0.98] disabled:opacity-35">
+    <div className="sticky bottom-0 mt-6 flex flex-wrap items-center gap-2 border-t border-line bg-card/95 py-3 backdrop-blur">
+      <button disabled={pending || disabled} onClick={() => decide("approved")} className="flex h-9 items-center gap-1.5 rounded-lg bg-ink px-4 text-[13px] font-medium text-canvas transition hover:opacity-90 active:scale-[0.98] disabled:opacity-35">
         <Check size={14} /> {text}
       </button>
-      <button disabled={pending} onClick={() => decide("rejected")} className="h-9 rounded-lg border border-line bg-white px-3.5 text-[13px] font-medium transition hover:bg-panel disabled:opacity-40">Return</button>
+      <button disabled={pending} onClick={() => decide("rejected")} className="h-9 rounded-lg border border-line bg-card px-3.5 text-[13px] font-medium transition hover:bg-panel disabled:opacity-40">Return</button>
       {error && <span className="text-[12.5px] text-risk">{error}</span>}
     </div>
   );
@@ -51,7 +51,7 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
             <div className="h-[3px] w-24 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-ink transition-all" style={{ width: `${(done / qs.length) * 100}%` }} /></div>
             <span className="text-[12.5px] text-muted">{done} of {qs.length}</span>
           </div>
-          {done < qs.length && <button disabled={pending} onClick={() => start(() => acceptAllRecommended(id))} className="h-8 rounded-lg border border-line bg-white px-3 text-[12.5px] font-medium transition hover:bg-panel">Accept recommendations</button>}
+          {done < qs.length && <button disabled={pending} onClick={() => start(() => acceptAllRecommended(id))} className="h-8 rounded-lg border border-line bg-card px-3 text-[12.5px] font-medium transition hover:bg-panel">Accept recommendations</button>}
         </div>
         <ol className="border-t border-line">
           {qs.map((q, i) => (
@@ -68,7 +68,7 @@ export default function ApprovalPanel({ id, caseId, kind, payload, message }: Pr
               <p className="mb-3 text-[13px] leading-relaxed"><span className="font-medium">Recommended: {q.recommend === "yes" ? "Yes" : "No"}.</span> <span className="text-muted">{q.why}</span></p>
               <div className="inline-flex rounded-lg border border-line p-0.5">
                 {(["yes", "no", "change"] as const).map((a) => (
-                  <button key={a} disabled={pending} onClick={() => start(() => answerQuestion(id, q.id, a))} className={clsx("h-7 rounded-md px-3.5 text-[12.5px] font-medium transition", q.answer === a ? "bg-ink text-white" : "text-muted hover:text-ink")}>
+                  <button key={a} disabled={pending} onClick={() => start(() => answerQuestion(id, q.id, a))} className={clsx("h-7 rounded-md px-3.5 text-[12.5px] font-medium transition", q.answer === a ? "bg-ink text-canvas" : "text-muted hover:text-ink")}>
                     {a === "yes" ? "Yes" : a === "no" ? "No" : "More evidence"}
                   </button>
                 ))}

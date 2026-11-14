@@ -73,6 +73,12 @@ would. Keep screens minimal: no explanatory sentences for things the user can se
 address the user in the second person inside the product (no "you", "your", "Needs you"); use neutral
 labels such as "For review" and "Awaiting approval". Emails Lincoln drafts to clients are the exception.
 
+**Lincoln on phones and manual work (Ismael, 2026-11-14).** On phones Lincoln uses the Hopkins Liquid Glass
+tab bar (Home, Cases, +, Review, More), with a lens that glides, stretches and follows a finger, and the More
+menu as a glass sheet; no top bar or slide out menu. The app follows the device's light or dark setting.
+A case is opened by prompting Lincoln (one box: describe it or attach files), never by filling a form; the
+normal path is Lincoln opening cases from mail by itself. Keep screens light: hide empty sections.
+
 **Never push a failing build (2026-11-13).** Check the real exit status of the type check and `npm run
 build` before every push to the session branch; Render deploys from it. A grep for "Compiled" is not a check.
 

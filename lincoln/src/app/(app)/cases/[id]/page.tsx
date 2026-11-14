@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import DraftView from "@/components/DraftView";
 import Refresher from "@/components/Refresher";
-import { Avatar, Empty, StageBar, btn, field } from "@/components/ui";
+import { Empty, btn, field } from "@/components/ui";
 import { addFile, requestDraft } from "@/lib/actions";
 import FileDrop from "@/components/FileDrop";
 import ExportMenu from "@/components/ExportMenu";
 import { exportItems } from "@/lib/exports";
 import { connectionsOf } from "@/lib/integrations";
 import { requireUser } from "@/lib/session";
-import { caseActivity, caseApprovals, caseById, caseDates, caseDrafts, caseMessages, criteria, documents, issues, people } from "@/lib/queries";
+import { caseActivity, caseApprovals, caseById, caseDates, caseDrafts, caseMessages, criteria, documents, issues } from "@/lib/queries";
 import { ago, inDays, longDate } from "@/lib/format";
 import { llmConfigured } from "@/lib/llm";
 import type { LetterContent } from "@/lib/letter";
@@ -28,7 +28,6 @@ export default async function CasePage({ params, searchParams }: { params: Promi
   const { tab = "overview", draft } = await searchParams;
   const c = caseById(firm.id, id, viewer);
   if (!c) notFound();
-  const who = Object.fromEntries(people(firm.id).map((p) => [p.id, p]));
   const docs = documents(firm.id, id);
   const iss = issues(firm.id, id);
   const open = iss.filter((i) => i.status === "open");
@@ -40,8 +39,9 @@ export default async function CasePage({ params, searchParams }: { params: Promi
   const todayIso = new Date().toISOString().slice(0, 10);
   const upcoming = dates.filter((d) => d.date >= todayIso);
   const past = dates.filter((d) => d.date < todayIso).reverse();
-  const team = Array.from(new Set([c.attorney_id, c.paralegal_id])).filter((u) => who[u]);
-  const tabs: [string, string, number?][] = [["overview", "Overview"], ["documents", "Documents", docs.length], ["evidence", "Evidence"], ["drafts", "Drafts", drafts.length], ["messages", "Messages", msgs.length], ["activity", "Activity"]];
+  const crit = criteria(firm.id, id);
+  const all: [string, string, number | undefined, boolean][] = [["overview", "Overview", undefined, true], ["documents", "Documents", docs.length, docs.length > 0 || llmConfigured()], ["evidence", "Evidence", undefined, crit.length > 0], ["drafts", "Drafts", drafts.length, drafts.length > 0 || c.pages > 0], ["messages", "Messages", msgs.length, msgs.length > 0], ["activity", "Activity", undefined, true]];
+  const tabs = all.filter((t) => t[3] || t[0] === tab);
   const none = <Empty>No records</Empty>;
 
   return (
@@ -52,20 +52,15 @@ export default async function CasePage({ params, searchParams }: { params: Promi
         <div className="min-w-0">
           <h1 className="serif flex items-center gap-2 text-[27px] font-medium leading-tight">{c.sensitive ? <Lock size={17} className="text-faint" /> : null}{c.client}</h1>
           <p className="mt-1.5 text-[13px] text-muted">
-            {c.type_code} {c.type_name !== c.type_code ? c.type_name : ""}{c.counterpart ? ` · ${c.counterpart}` : ""} · {c.ref}{c.sensitive ? " · Restricted to case team" : ""}
+            {c.type_code}{c.counterpart ? ` · ${c.counterpart}` : ""} · {c.stage}{c.sensitive ? " · Restricted" : ""}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <ExportMenu label="Export" items={[...exportItems(firm.id, user.id, "case", id).map((i) => ({ ...i, label: i.label.replace(/^Open in (\w+.*)$/, "Exhibit index in $1").replace(/^Download \.xlsx$/, "Exhibit index .xlsx") })), ...exportItems(firm.id, user.id, "deck", id).map((i) => ({ ...i, label: i.label.replace(/^Open in (\w+.*)$/, "Summary deck in $1").replace(/^Download \.pptx$/, "Summary deck .pptx") }))]} />
-        <div className="flex items-center gap-1">
-          {team.map((u) => <span key={u} title={`${who[u].name}, ${who[u].role}`} className="rounded-full"><Avatar initials={who[u].initials} src={who[u].avatar} size={26} /></span>)}
-        </div>
+          {docs.length > 0 && <ExportMenu label="Export" items={[...exportItems(firm.id, user.id, "case", id).map((i) => ({ ...i, label: i.label.replace(/^Open in (\w+.*)$/, "Exhibit index in $1").replace(/^Download \.xlsx$/, "Exhibit index .xlsx") })), ...exportItems(firm.id, user.id, "deck", id).map((i) => ({ ...i, label: i.label.replace(/^Open in (\w+.*)$/, "Summary deck in $1").replace(/^Download \.pptx$/, "Summary deck .pptx") }))]} />}
         </div>
       </div>
 
-      <StageBar stage={c.stage} />
-
-      <div className="mt-6 max-w-[720px]">
+      <div className="max-w-[720px]">
         {c.processing ? (
           <div>
             <p className="text-[14px]">Reading the client file</p>
@@ -96,7 +91,7 @@ export default async function CasePage({ params, searchParams }: { params: Promi
       )}
 
       {!c.processing && <>
-      <div className="mb-6 mt-8 flex gap-5 overflow-x-auto border-b border-line">
+      <div className="edge-fade mb-6 mt-8 flex gap-5 overflow-x-auto border-b border-line pr-6">
         {tabs.map(([k, text, count]) => (
           <Link key={k} href={`/cases/${id}?tab=${k}`} scroll={false} className={clsx("-mb-px whitespace-nowrap border-b-[1.5px] pb-2.5 text-[13px] transition", tab === k ? "border-ink font-medium text-ink" : "border-transparent text-muted hover:text-ink")}>
             {text}{count ? <span className="ml-1.5 text-[12px] font-normal text-faint">{count}</span> : null}
@@ -104,11 +99,13 @@ export default async function CasePage({ params, searchParams }: { params: Promi
         ))}
       </div>
 
-      {tab === "overview" && (
+      {tab === "overview" && (open.length + resolved.length + dates.length === 0 ? (
+        <p className="text-[13px] text-faint">{c.pages > 0 ? "Nothing open" : "No client file yet"}</p>
+      ) : (
         <div className="grid gap-12 lg:grid-cols-[1.6fr_1fr]">
           <section>
-            <h2 className="mb-1 text-[13px] font-medium">Open issues{open.length ? <span className="ml-1.5 font-normal text-faint">{open.length}</span> : null}</h2>
-            {open.length === 0 ? <p className="border-t border-line py-5 text-[13px] text-faint">No open issues</p> : (
+            {open.length > 0 && <h2 className="mb-1 text-[13px] font-medium">Open issues<span className="ml-1.5 font-normal text-faint">{open.length}</span></h2>}
+            {open.length > 0 && (
               <ul className="border-t border-line">
                 {open.map((i) => (
                   <li key={i.id} className="border-b border-line py-3.5">
@@ -135,10 +132,10 @@ export default async function CasePage({ params, searchParams }: { params: Promi
               </details>
             )}
           </section>
-          <section className="flex flex-col gap-10">
-            <div>
+          {dates.length > 0 && (
+            <section>
               <h2 className="mb-1 text-[13px] font-medium">Dates</h2>
-              {upcoming.length === 0 ? <p className="border-t border-line py-5 text-[13px] text-faint">No upcoming dates</p> : (
+              {upcoming.length > 0 && (
                 <ul className="border-t border-line">
                   {upcoming.map((d) => (
                     <li key={d.id} className="flex items-baseline gap-3 border-b border-line py-2.5">
@@ -156,16 +153,10 @@ export default async function CasePage({ params, searchParams }: { params: Promi
                   </ul>
                 </details>
               )}
-            </div>
-            <div>
-              <h2 className="mb-1 text-[13px] font-medium">Team</h2>
-              <ul className="border-t border-line">
-                {team.map((u) => <li key={u} className="flex items-center gap-2.5 border-b border-line py-2.5"><Avatar initials={who[u].initials} src={who[u].avatar} size={24} /><span className="flex-1 text-[13px]">{who[u].name}</span><span className="text-[12px] text-faint">{who[u].role}</span></li>)}
-              </ul>
-            </div>
-          </section>
+            </section>
+          )}
         </div>
-      )}
+      ))}
 
       {tab === "documents" && llmConfigured() && (
         <div className="mb-6 max-w-[640px]">
@@ -206,7 +197,6 @@ export default async function CasePage({ params, searchParams }: { params: Promi
       ))}
 
       {tab === "evidence" && (() => {
-        const crit = criteria(firm.id, id);
         if (crit.length === 0) return none;
         return (
           <div className="flex flex-col">
@@ -306,10 +296,10 @@ export default async function CasePage({ params, searchParams }: { params: Promi
 
       {llmConfigured() && !c.processing && (
         <div className="mt-12 max-w-[640px]">
-          <form action="/assistant" method="get" className="flex gap-2">
+          <form action="/assistant" method="get" className="flex items-center gap-2 rounded-full border border-line bg-card py-1.5 pl-4 pr-1.5 transition focus-within:border-edge">
             <input type="hidden" name="case" value={id} />
-            <input name="q" required placeholder="Ask about this case" className={field} />
-            <button className={btn.secondary}>Ask</button>
+            <input name="q" required placeholder={`Ask about ${c.client}`} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint" />
+            <button aria-label="Ask" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink text-canvas"><ArrowUp size={16} /></button>
           </form>
         </div>
       )}

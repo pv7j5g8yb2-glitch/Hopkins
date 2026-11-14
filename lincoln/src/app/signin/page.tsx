@@ -20,7 +20,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
     <AuthShell
       title="Welcome back"
       footer={<Link href="/signup" className="font-medium text-ink hover:underline">Create an account</Link>}
-      below={<form action={signInDemo}><button className="text-[13px] font-medium text-muted underline decoration-[#cfccc6] underline-offset-4 transition hover:text-ink">View the demo account</button></form>}
+      below={<form action={signInDemo}><button className="text-[13px] font-medium text-muted underline decoration-edge underline-offset-4 transition hover:text-ink">View the demo account</button></form>}
     >
       {error && ERR[error] && <Notice>{ERR[error]}{code ? <span className="mt-1 block font-mono text-[11.5px] opacity-80">{code.replace(/[^\w.-]/g, "").slice(0, 40)}</span> : null}</Notice>}
       {reset && <Notice tone="ok">Password updated.</Notice>}

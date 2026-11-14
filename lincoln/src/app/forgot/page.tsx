@@ -14,7 +14,7 @@ export default async function Forgot({ searchParams }: { searchParams: Promise<{
         <>
           <Notice tone="ok">If an account exists for that email, a reset link has been issued. It is valid for one hour.</Notice>
           {preview && (
-            <p className="rounded-xl border border-dashed border-[#d6d2cb] bg-white px-3.5 py-3 text-[12.5px] leading-relaxed text-muted">
+            <p className="rounded-xl border border-dashed border-edge bg-card px-3.5 py-3 text-[12.5px] leading-relaxed text-muted">
               Email delivery is not connected in this environment. Preview link:{" "}
               <Link href={`/reset/${preview}`} className="font-medium text-ink underline">set a new password</Link>
             </p>

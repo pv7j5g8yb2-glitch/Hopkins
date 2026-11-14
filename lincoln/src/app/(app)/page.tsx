@@ -16,9 +16,9 @@ export default async function Home() {
     <div className="rise mx-auto max-w-[680px] pt-[6vh] md:pt-[11vh]">
       <h1 className="wordmark mb-8 text-center text-[40px] leading-none md:text-[46px]">Lincoln</h1>
       <AskBox />
-      {!firm.demo && (
-        <p className="mt-3 text-center text-[12.5px] text-faint">
-          {mailbox ? <>Watching {mailbox.email}{mailbox.last_check ? `, checked ${ago(mailbox.last_check)}` : ""}</> : <>No mail account connected. <Link href="/integrations" className="text-ink underline underline-offset-4">Connect Google or Microsoft</Link></>}
+      {!firm.demo && !mailbox && (
+        <p className="mt-3 text-center text-[12.5px]">
+          <Link href="/integrations" className="text-faint underline decoration-edge underline-offset-4 transition hover:text-ink">Connect mail</Link>
         </p>
       )}
 

@@ -25,7 +25,7 @@ export default function FileDrop() {
           set(e.dataTransfer.files);
         }
       }}
-      className={clsx("rounded-lg border border-dashed transition", over ? "border-ink bg-side" : "border-[#d5d1ca]")}
+      className={clsx("rounded-lg border border-dashed transition", over ? "border-ink bg-side" : "border-edge")}
     >
       <input ref={input} type="file" name="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.heic" className="hidden" onChange={(e) => set(e.target.files)} />
       {file ? (

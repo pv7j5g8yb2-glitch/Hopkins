@@ -82,7 +82,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <div className="rise">
       <PageHead title="Settings" />
       <div className="grid gap-8 md:grid-cols-[180px_1fr]">
-        <nav className="flex gap-1 overflow-x-auto md:flex-col">
+        <nav className="edge-fade flex gap-1 overflow-x-auto pr-6 md:flex-col md:pr-0">
           {TABS.map(([k, t]) => (
             <Link key={k} href={`/settings?tab=${k}`} scroll={false} className={clsx("whitespace-nowrap rounded-lg px-3 py-[7px] text-[13px] transition", tab === k ? "bg-ink/[0.06] font-medium text-ink" : "text-muted hover:text-ink")}>{t}</Link>
           ))}
@@ -232,7 +232,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <div className="mt-8 flex h-[110px] items-end gap-3">
                   {days.map((d, i) => (
                     <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
-                      <div className={clsx("w-full rounded-[4px]", i === 6 ? "bg-ink" : "bg-[#dedbd5]")} style={{ height: `${Math.max(2, (d.min / max) * 84)}px` }} />
+                      <div className={clsx("w-full rounded-[4px]", i === 6 ? "bg-ink" : "bg-edge")} style={{ height: `${Math.max(2, (d.min / max) * 84)}px` }} />
                       <span className="text-[11px] text-faint">{d.label}</span>
                     </div>
                   ))}
